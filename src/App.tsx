@@ -1,34 +1,67 @@
 import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
 import './App.css'
+import styled from 'styled-components';
+import { Input } from './styles/Common';
+
+const FormWrapper = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 20px;
+
+  form {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 400px;
+  }
+`;
+
+const BtnDiv = styled.div`
+  display: flex;
+  align-items: center;
+  width: 100%;
+  gap: 16px;
+  justify-content: end;
+`;
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+
+  const handleLogin = () => {
+    // Perform login logic here
+  };
+
+  const handleRegister = () => {
+    // Navigate to the register view
+  };
 
   return (
-    <>
-      <div>
-        <a href="https://vitejs.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
+    <FormWrapper>
+      <img src='https://framerusercontent.com/images/3djlle6W5wE61QQGlOQuLh5QvQ.jpg' style={{ width: '300px' }} />
+      <h2>Login</h2>
+      <form>
+
+        <Input
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder='Email'
+        />
+
+        <Input
+          type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          placeholder='Password'
+        />
+        <BtnDiv>
+          <a href="#" onClick={handleRegister}>Register</a>
+          <button type="button" onClick={handleLogin}>Login</button>
+        </BtnDiv>
+      </form>
+    </FormWrapper>
   )
 }
 
