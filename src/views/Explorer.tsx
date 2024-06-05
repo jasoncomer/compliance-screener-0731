@@ -105,6 +105,13 @@ const Explorer: React.FC<Props> = () => {
     setEdges(edges);
   }, [data]);
 
+  const onKeyDownHandler = (e: { keyCode: number; }) => {
+    console.log('key', e);
+    if (e.keyCode === 13) {
+      fetchData();
+    }
+  };
+
   if (loading) {
     return (
       <SpinnerWrapper>
@@ -132,6 +139,7 @@ const Explorer: React.FC<Props> = () => {
             value={address}
             placeholder='Enter a Bitcoin or Ethereum address'
             onChange={(e) => setAddress(e.target.value)}
+            onKeyUp={onKeyDownHandler}
           />
           <Button type='primary' onClick={fetchData}>Explore</Button>
         </div>

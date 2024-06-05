@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { ICase } from '../typings/interfaces';
+import { ECaseStatus } from '../typings/enums';
 
 const initData: ICase[] = [
   {
@@ -7,21 +8,21 @@ const initData: ICase[] = [
     clientName: 'John Brown',
     clientEmail: 'john@bs.ai',
     blockchainAddress: '1Lx4wf9EixbFCb7KtiZRqRszdwdqYt3Cxn',
-    status: 'active',
+    status: ECaseStatus.ACTIVE,
   },
   {
     id: 'blk-0922',
     clientName: 'Jim Green',
     clientEmail: 'jim@bs.ai',
     blockchainAddress: 'bc1qkl2824mh3trjrhj8...jcvsx4zfkkwnep736ght',
-    status: 'complete',
+    status: ECaseStatus.ARCHIVED,
   },
   {
     id: 'blk-0921',
     clientName: 'Joe Black',
     clientEmail: 'joe@bs.ai',
     blockchainAddress: 'bc1qrna7e5r6jv2g0sa39hngccr4g2myyfwmhjf3j8',
-    status: 'pending',
+    status: ECaseStatus.ACTIVE,
   },
 ];
 

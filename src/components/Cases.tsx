@@ -4,6 +4,7 @@ import styled from 'styled-components';
 import CasesTable from './CasesTable';
 import useData from '../hooks/useData';
 import { ICase } from '../typings/interfaces';
+import { ECaseStatus } from '../typings/enums';
 
 const { TextArea } = Input;
 
@@ -24,7 +25,7 @@ const CaseWrapper = styled.div`
 const ButtonDiv = styled.div`
   display: flex;
   justify-content: flex-end;
-  margin-bottom: 2em;
+  margin-bottom: -2em;
 `;
 
 const Cases: React.FC<Props> = () => {
@@ -35,21 +36,19 @@ const Cases: React.FC<Props> = () => {
   const [notes, setNotes] = useState('');
   const { cases, setCases } = useData();
 
-  const handleCreateCase = (values: object) => {
-    console.log('create case', values);
-    console.log('create case', { clientEmail, clientName, blockchainAddress, notes });
-
+  const handleCreateCase = () => {
     if (!clientEmail || !clientName || !blockchainAddress) {
       console.log('Please fill all fields');
       return;
     }
+
     const newCase: ICase = {
       clientEmail,
       clientName,
       blockchainAddress,
       notes,
       id: `blk-${Math.random() * 10000}`.slice(0, 8),
-      status: 'pending',
+      status: ECaseStatus.ACTIVE,
     };
     setCases([...cases, newCase]);
     setIsModalOpen(false);

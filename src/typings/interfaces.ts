@@ -1,3 +1,5 @@
+import { ECaseStatus } from "./enums";
+
 export interface IUser {
   name: string;
   email: string;
@@ -14,7 +16,7 @@ export interface ICase {
   clientName: string;
   clientEmail: string;
   blockchainAddress: string;
-  status: 'active' | 'complete' | 'pending';
+  status: ECaseStatus;
 
   _id?: string;
   blockchain?: 'bitcoin' | 'ethereum';

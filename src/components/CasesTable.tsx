@@ -1,10 +1,29 @@
-import { TableProps, Tag, Space, Table } from 'antd';
+import { TableProps, Tag, Space, Table, Button, Tabs as AntTabs } from 'antd';
 import { ICase } from '../typings/interfaces';
 import { FC } from 'react';
+import { DeleteOutlined } from '@ant-design/icons';
+import styled from 'styled-components';
+import { ECaseStatus } from '../typings/enums';
 
+const Tabs = styled(AntTabs)`
+  .ant-tabs-nav {
+    margin-bottom: 0;
+  }
+`;
 interface Props {
   cases: ICase[];
 }
+
+const CardTabItems = [
+  {
+    label: 'Active',
+    key: '1',
+  },
+  {
+    label: 'Complete',
+    key: '2',
+  },
+];
 
 const CasesTable: FC<Props> = ({ cases }) => {
   const handleDelete = (id: string) => {
@@ -33,15 +52,7 @@ const CasesTable: FC<Props> = ({ cases }) => {
       key: 'status',
       dataIndex: 'status',
       render: (_, { status }) => {
-        let color = 'yellow';
-        switch (status) {
-          case 'active':
-            color = 'green'; break;
-          case 'complete':
-            color = 'volcano'; break;
-          default:
-            color = 'yellow';
-        }
+        const color = status === ECaseStatus.ACTIVE ? 'green' : 'orange';
         return (
           <Tag color={color}>
             {status}
@@ -52,18 +63,45 @@ const CasesTable: FC<Props> = ({ cases }) => {
     {
       title: 'Action',
       key: 'action',
-      render: (_, record) => (
-        <Space size="middle">
-          <a onClick={() => handleDelete(record.id)}>
-            Delete
-          </a>
-        </Space>
-      ),
+      render: (_, record) => {
+        if (record.status === ECaseStatus.ARCHIVED) return null;
+        return (
+          <Space size="middle">
+            <Button type="default" icon={<DeleteOutlined />} onClick={() => handleDelete(record.id)}></Button>
+          </Space>
+        );
+      }
     },
   ];
 
   return (
-    <Table columns={columns} dataSource={cases} />
+    <Tabs
+      defaultActiveKey="1"
+      type="card"
+      size={'large'}
+      items={CardTabItems.map((item) => {
+        let localCases = cases;
+        switch (item.key) {
+          case '1':
+            localCases = cases.filter((c) => c.status === ECaseStatus.ACTIVE);
+            break;
+          case '2':
+            localCases = cases.filter((c) => c.status === ECaseStatus.ARCHIVED);
+            break;
+        }
+
+        return {
+          label: item.label,
+          key: item.key,
+          children: (
+            <Table<ICase>
+              columns={columns}
+              dataSource={localCases}
+            />
+          )
+        }
+      })}
+    />
   );
 };
 

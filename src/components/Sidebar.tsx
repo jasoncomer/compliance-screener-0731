@@ -1,8 +1,8 @@
 import { useMemo, useState } from 'react';
 import Sider from 'antd/es/layout/Sider';
 import styled from 'styled-components';
-import { Button } from 'antd';
-import { FolderOpenOutlined, FolderOutlined, SearchOutlined, SettingFilled, SettingOutlined } from '@ant-design/icons';
+import { Button, Tooltip } from 'antd';
+import { FolderOpenOutlined, FolderOutlined, LogoutOutlined, SearchOutlined, SettingFilled, SettingOutlined } from '@ant-design/icons';
 import { colors } from '../styles/variables';
 import { useNavigate, useParams } from 'react-router-dom';
 
@@ -14,6 +14,7 @@ const SiderWrapper = styled(Sider)`
 const SiderContent = styled.div<{ $collapsed: boolean }>`
   display: flex;
   flex-direction: column;
+  height: 100%;
   color: white;
   padding: ${props => props.$collapsed ? '0.5em' : '1em'};
   justify-content: center;
@@ -27,6 +28,10 @@ const SiderContent = styled.div<{ $collapsed: boolean }>`
       svg {
         fill: ${colors.primary} !important;
       }
+    }
+    &:hover {
+      color: ${colors.primary};
+      cursor: pointer;
     }
   }
   
@@ -69,6 +74,10 @@ const Sidebar = () => {
     nav(`/home/${section}`);
   }
 
+  const handleLogout = () => {
+    nav('/');
+  }
+
   return (
     <SiderWrapper
       collapsible
@@ -81,48 +90,82 @@ const Sidebar = () => {
         {collapsed ? (
           <>
             {/** Icons */}
-            {activeSection === 'cases' ? <FolderOpenOutlined className='active' /> : <FolderOutlined onClick={() => handleSectionChange('cases')} />}
-            {activeSection === 'settings' ? <SettingFilled className='active' /> : <SettingOutlined onClick={() => handleSectionChange('settings')} />}
-            {activeSection === 'explorer' ? <SearchOutlined className='active' /> : <SearchOutlined onClick={() => handleSectionChange('explorer')} />}
-          </>
-        ) : (
-          <div>
-            {/** Buttons */}
             {activeSection === 'cases' ? (
-              <Button
-                ghost
-                className='active'
-                icon={<FolderOpenOutlined className='active' />}>Cases</Button>
+              <Tooltip placement="bottom" title={'Cases'} mouseEnterDelay={1}>
+                <FolderOpenOutlined className='active' />
+              </Tooltip>
             ) : (
-              <Button
-                ghost
-                color='primary'
-                onClick={() => handleSectionChange('cases')}
-                icon={<FolderOutlined />}>Cases</Button>
-            )}
-            {activeSection === 'explorer' ? (
-              <Button
-                ghost
-                className='active'
-                icon={<SearchOutlined className='active' />}>Explorer</Button>
-            ) : (
-              <Button
-                ghost
-                onClick={() => handleSectionChange('explorer')}
-                icon={<SearchOutlined />}>Explorer</Button>
+              <Tooltip placement="bottom" title={'Cases'} mouseEnterDelay={1}>
+                <FolderOutlined onClick={() => handleSectionChange('cases')} />
+              </Tooltip>
             )}
             {activeSection === 'settings' ? (
-              <Button
-                ghost
-                className='active'
-                icon={<SettingFilled className='active' />}>Settings</Button>
+              <Tooltip placement="bottom" title={'Settings'} mouseEnterDelay={1}>
+                <SettingFilled className='active' />
+              </Tooltip>
             ) : (
-              <Button
-                ghost
-                onClick={() => handleSectionChange('settings')}
-                icon={<SettingOutlined />}>Settings</Button>
+              <Tooltip placement="bottom" title={'Settings'} mouseEnterDelay={1}>
+                <SettingOutlined onClick={() => handleSectionChange('settings')} />
+              </Tooltip>
             )}
-          </div>
+            {activeSection === 'explorer' ? (
+              <Tooltip placement="bottom" title={'Explorer'} mouseEnterDelay={1}>
+                <SearchOutlined className='active' />
+              </Tooltip>
+            ) : (
+              <Tooltip placement="bottom" title={'Explorer'} mouseEnterDelay={1}>
+                <SearchOutlined onClick={() => handleSectionChange('explorer')} />
+              </Tooltip>
+            )}
+            <Tooltip placement="bottom" title={'Log Out'} mouseEnterDelay={1}>
+              <LogoutOutlined style={{ marginTop: 'auto' }} />
+            </Tooltip>
+          </>
+        ) : (
+          <>
+            <div>
+              {activeSection === 'cases' ? (
+                <Button
+                  ghost
+                  className='active'
+                  icon={<FolderOpenOutlined className='active' />}>Cases</Button>
+              ) : (
+                <Button
+                  ghost
+                  color='primary'
+                  onClick={() => handleSectionChange('cases')}
+                  icon={<FolderOutlined />}>Cases</Button>
+              )}
+              {activeSection === 'explorer' ? (
+                <Button
+                  ghost
+                  className='active'
+                  icon={<SearchOutlined className='active' />}>Explorer</Button>
+              ) : (
+                <Button
+                  ghost
+                  onClick={() => handleSectionChange('explorer')}
+                  icon={<SearchOutlined />}>Explorer</Button>
+              )}
+              {activeSection === 'settings' ? (
+                <Button
+                  ghost
+                  className='active'
+                  icon={<SettingFilled className='active' />}>Settings</Button>
+              ) : (
+                <Button
+                  ghost
+                  onClick={() => handleSectionChange('settings')}
+                  icon={<SettingOutlined />}>Settings</Button>
+              )}
+            </div>
+            <Button
+              ghost
+              onClick={handleLogout}
+              icon={<LogoutOutlined style={{ marginTop: 'auto' }} />}
+              style={{ marginTop: 'auto' }}
+            >Log Out</Button>
+          </>
         )}
       </SiderContent>
     </SiderWrapper>
