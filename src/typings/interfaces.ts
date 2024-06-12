@@ -11,16 +11,20 @@ export interface IUser {
   updatedAt?: string;
 }
 
-export interface ICase {
-  id: string;
+export interface ICaseCreate {
   clientName: string;
   clientEmail: string;
-  blockchainAddress: string;
+  addresses: string[];
   status: ECaseStatus;
-
-  _id?: string;
-  blockchain?: 'bitcoin' | 'ethereum';
   notes?: string;
+}
+
+export interface ICase extends ICaseCreate {
+  _id: string;
+  caseId: string;
+  userId: string;
+  blockchain?: 'bitcoin' | 'ethereum';
+  key?: string;
 }
 
 export interface ITx {
@@ -93,4 +97,12 @@ export interface Output {
   spent_by: string;
   addresses: string[];
   script_type: string;
+}
+
+export interface IBSApiResponse<T> {
+  success: boolean;
+  error: boolean;
+  message: string;
+  data: T;
+  status: number;  
 }

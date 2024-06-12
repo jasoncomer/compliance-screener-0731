@@ -2,15 +2,29 @@ import { useState } from 'react';
 import { BtnDiv, FormWrapper, Input } from '../styles/Common';
 import { Button } from 'antd';
 import { useNavigate } from 'react-router-dom';
+import { api, setAuthToken } from '../api/api';
+import { useAppContext } from '../context/AppContext';
 
 const Login = () => {
   const nav = useNavigate();
-  // const [username, setUsername] = useState('');
+  const { setUser } = useAppContext();
+
   const [password, setPassword] = useState('');
   const [email, setEmail] = useState('');
 
-  const handleLogin = () => {
-    nav('/home');
+  const handleLogin = async () => {
+    await api.users.authenticateUser(email, password)
+      .then(res => {
+        if (res.success) {
+          localStorage.setItem('accessToken', res.data.accessToken);
+          localStorage.setItem('refreshToken', res.data.refreshToken);
+          localStorage.setItem('user', JSON.stringify(res.data.user));
+          setAuthToken(res.data.accessToken);
+          setUser(res.data.user);
+          nav('/home/cases');
+        }
+      })
+      .catch(console.error)
   };
 
   const navRegister = () => {

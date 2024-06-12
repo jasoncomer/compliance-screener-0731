@@ -1,12 +1,10 @@
-import { Button, Form, Input, Modal } from 'antd';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
 import CasesTable from './CasesTable';
-import useData from '../hooks/useData';
+import ModalAddCase from './modals/ModalAddCase';
 import { ICase } from '../typings/interfaces';
-import { ECaseStatus } from '../typings/enums';
-
-const { TextArea } = Input;
+import { api } from '../api/api';
+import { useAppContext } from '../context/AppContext';
 
 interface Props { }
 
@@ -22,107 +20,37 @@ const CaseWrapper = styled.div`
   padding: 2em;
 `;
 
-const ButtonDiv = styled.div`
-  display: flex;
-  justify-content: flex-end;
-  margin-bottom: -2em;
-`;
-
 const Cases: React.FC<Props> = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [clientName, setClientName] = useState('');
-  const [clientEmail, setClientEmail] = useState('');
-  const [blockchainAddress, setBlockchainAddress] = useState('');
-  const [notes, setNotes] = useState('');
-  const { cases, setCases } = useData();
+  const { cases, setCases } = useAppContext();
 
-  const handleCreateCase = () => {
-    if (!clientEmail || !clientName || !blockchainAddress) {
-      console.log('Please fill all fields');
-      return;
-    }
+  useEffect(() => {
+    api.cases.getUserCases()
+      .then(res => setCases(res))
+      .catch(console.error)
+  }, [setCases]);
 
-    const newCase: ICase = {
-      clientEmail,
-      clientName,
-      blockchainAddress,
-      notes,
-      id: `blk-${Math.random() * 10000}`.slice(0, 8),
-      status: ECaseStatus.ACTIVE,
-    };
-    setCases([...cases, newCase]);
-    setIsModalOpen(false);
+  useEffect(() => {
+    console.log('cases', cases);
+  }, [cases]);
+
+  const handleCase = (data: ICase) => {
+    console.log(data);
+    setCases(prev => [...prev, data]);
   };
 
   return (
     <>
       <CaseWrapper>
-        <ButtonDiv>
-          <Button type="primary" onClick={() => setIsModalOpen(prev => !prev)}>Add Case</Button>
-        </ButtonDiv>
-        <CasesTable cases={cases} />
+        <CasesTable cases={cases} setIsModalOpen={setIsModalOpen} />
       </CaseWrapper>
 
-      <Modal
-        title="New Case"
-        centered
-        open={isModalOpen}
-        onCancel={() => setIsModalOpen(false)}
-        footer={null}
-      >
-        <Form
-          onFinish={handleCreateCase}
-        >
-          <Form.Item>
-            <Input
-              required
-              placeholder="Client Name"
-              type='text'
-              value={clientName}
-              onChange={(e) => setClientName(e.target.value)}
-            />
-          </Form.Item>
-
-          <Form.Item>
-            <Input
-              required
-              placeholder="Client Email"
-              type='email'
-              value={clientEmail}
-              onChange={(e) => setClientEmail(e.target.value)}
-            />
-          </Form.Item>
-
-          <Form.Item>
-            <Input
-              required
-              placeholder="Address of interest (BTC/ETH)"
-              type='text'
-              value={blockchainAddress}
-              onChange={(e) => setBlockchainAddress(e.target.value)}
-            />
-          </Form.Item>
-
-          <Form.Item>
-            <TextArea
-              placeholder="Case Notes"
-              rows={10}
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-            />
-          </Form.Item>
-
-          <div style={{ display: 'flex', flexDirection: 'row', gap: '1em', justifyContent: 'flex-end' }}>
-            <Button type="default" onClick={() => setIsModalOpen(false)}>
-              Cancel
-            </Button>
-
-            <Button type="primary" htmlType="submit">
-              Create
-            </Button>
-          </div>
-        </Form>
-      </Modal>
+      <ModalAddCase
+        isModalOpen={isModalOpen}
+        setIsModalOpen={setIsModalOpen}
+        cases={cases}
+        setCase={handleCase}
+        />
     </>
   );
 };

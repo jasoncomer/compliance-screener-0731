@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Layout } from 'antd';
 import Sidebar from '../components/Sidebar';
 // import Navbar from '../components/Navbar';
@@ -6,6 +6,7 @@ import { Route, RouteProps, Routes } from 'react-router-dom';
 import Cases from '../components/Cases';
 import Explorer from './Explorer';
 import Settings from './Settings';
+import { setAuthToken } from '../api/api';
 
 const { Content } = Layout;
 
@@ -15,10 +16,14 @@ const contentStyle: React.CSSProperties = {
   minHeight: 120,
   lineHeight: '120px',
   color: '#fff',
-  // backgroundColor: '#0958d9',
 };
 
 const Home: React.FC<RouteProps> = () => {
+  useEffect(() => {
+    const token = localStorage.getItem('accessToken');
+    if (token) setAuthToken(token);
+  }, [])
+
   return (
     <Layout>
       <Sidebar />
@@ -26,11 +31,9 @@ const Home: React.FC<RouteProps> = () => {
         {/* <Navbar /> */}
         <Content style={contentStyle}>
           <Routes>
-            <Route path="cases" element={<Cases />} />
-            <Route path="settings" element={<Settings />} />
-            <Route path="explorer" element={<Explorer />} />
-            {/** Redirect to cases for all other paths */}
-
+            <Route path="/cases" element={<Cases />} />
+            <Route path="/settings" element={<Settings />} />
+            <Route path="/explorer" element={<Explorer />} />
           </Routes>
         </Content>
       </Layout>

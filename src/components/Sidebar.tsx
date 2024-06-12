@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import Sider from 'antd/es/layout/Sider';
 import styled from 'styled-components';
 import { Button, Tooltip } from 'antd';
-import { FolderOpenOutlined, FolderOutlined, LogoutOutlined, SearchOutlined, SettingFilled, SettingOutlined } from '@ant-design/icons';
+import { AlertFilled, AlertOutlined, FolderOpenOutlined, FolderOutlined, LogoutOutlined, SearchOutlined, SettingFilled, SettingOutlined } from '@ant-design/icons';
 import { colors } from '../styles/variables';
 import { useNavigate, useParams } from 'react-router-dom';
 
@@ -56,13 +56,14 @@ const SiderContent = styled.div<{ $collapsed: boolean }>`
   }
 `;
 
-type Section = 'cases' | 'settings' | 'explorer';
+type Section = 'alerts' | 'cases' | 'explorer' | 'settings';
 
 const Sidebar = () => {
   const nav = useNavigate();
   const params = useParams();
   const [collapsed, setCollapsed] = useState(false);
   const section = useMemo(() => params['*'], [params]);
+
   const [activeSection, setActiveSection] = useState<Section>(section as Section);
 
   const toggleCollapsed = () => {
@@ -99,15 +100,6 @@ const Sidebar = () => {
                 <FolderOutlined onClick={() => handleSectionChange('cases')} />
               </Tooltip>
             )}
-            {activeSection === 'settings' ? (
-              <Tooltip placement="bottom" title={'Settings'} mouseEnterDelay={1}>
-                <SettingFilled className='active' />
-              </Tooltip>
-            ) : (
-              <Tooltip placement="bottom" title={'Settings'} mouseEnterDelay={1}>
-                <SettingOutlined onClick={() => handleSectionChange('settings')} />
-              </Tooltip>
-            )}
             {activeSection === 'explorer' ? (
               <Tooltip placement="bottom" title={'Explorer'} mouseEnterDelay={1}>
                 <SearchOutlined className='active' />
@@ -115,6 +107,24 @@ const Sidebar = () => {
             ) : (
               <Tooltip placement="bottom" title={'Explorer'} mouseEnterDelay={1}>
                 <SearchOutlined onClick={() => handleSectionChange('explorer')} />
+              </Tooltip>
+            )}
+            {activeSection === 'alerts' ? (
+              <Tooltip placement="bottom" title={'Alerts'} mouseEnterDelay={1}>
+                <AlertFilled className='active' />
+              </Tooltip>
+            ) : (
+              <Tooltip placement="bottom" title={'Alerts'} mouseEnterDelay={1}>
+                <AlertOutlined onClick={() => handleSectionChange('alerts')} />
+              </Tooltip>
+            )}
+            {activeSection === 'settings' ? (
+              <Tooltip placement="bottom" title={'Settings'} mouseEnterDelay={1}>
+                <SettingFilled className='active' />
+              </Tooltip>
+            ) : (
+              <Tooltip placement="bottom" title={'Settings'} mouseEnterDelay={1}>
+                <SettingOutlined onClick={() => handleSectionChange('settings')} />
               </Tooltip>
             )}
             <Tooltip placement="bottom" title={'Log Out'} mouseEnterDelay={1}>
@@ -146,6 +156,17 @@ const Sidebar = () => {
                   ghost
                   onClick={() => handleSectionChange('explorer')}
                   icon={<SearchOutlined />}>Explorer</Button>
+              )}
+              {activeSection === 'alerts' ? (
+                <Button
+                  ghost
+                  className='active'
+                  icon={<AlertFilled className='active' />}>Alerts</Button>
+              ) : (
+                <Button
+                  ghost
+                  onClick={() => handleSectionChange('alerts')}
+                  icon={<AlertOutlined />}>Alerts</Button>
               )}
               {activeSection === 'settings' ? (
                 <Button

@@ -1,9 +1,10 @@
-import { TableProps, Tag, Space, Table, Button, Tabs as AntTabs } from 'antd';
+import { TableProps, Tag, Table, Button, Tabs as AntTabs } from 'antd';
 import { ICase } from '../typings/interfaces';
 import { FC } from 'react';
-import { DeleteOutlined } from '@ant-design/icons';
 import styled from 'styled-components';
 import { ECaseStatus } from '../typings/enums';
+import { truncateAddress } from '../utils/crypto';
+import DeleteCaseButton from './DeleteCaseButton';
 
 const Tabs = styled(AntTabs)`
   .ant-tabs-nav {
@@ -12,6 +13,7 @@ const Tabs = styled(AntTabs)`
 `;
 interface Props {
   cases: ICase[];
+  setIsModalOpen: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 const CardTabItems = [
@@ -25,16 +27,12 @@ const CardTabItems = [
   },
 ];
 
-const CasesTable: FC<Props> = ({ cases }) => {
-  const handleDelete = (id: string) => {
-    console.log('delete', id);
-  }
-
+const CasesTable: FC<Props> = ({ cases, setIsModalOpen }) => {
   const columns: TableProps<ICase>['columns'] = [
     {
       title: 'Case #',
-      dataIndex: 'id',
-      key: 'id',
+      dataIndex: 'caseId',
+      key: 'caseId',
       render: (text) => <a>{text}</a>,
     },
     {
@@ -44,8 +42,9 @@ const CasesTable: FC<Props> = ({ cases }) => {
     },
     {
       title: 'Address',
-      dataIndex: 'blockchainAddress',
-      key: 'blockchainAddress',
+      dataIndex: 'addresses',
+      key: 'addresses',
+      render: (addresses) => addresses.map((addr: string) => truncateAddress(addr)).join(', '),
     },
     {
       title: 'Status',
@@ -63,14 +62,7 @@ const CasesTable: FC<Props> = ({ cases }) => {
     {
       title: 'Action',
       key: 'action',
-      render: (_, record) => {
-        if (record.status === ECaseStatus.ARCHIVED) return null;
-        return (
-          <Space size="middle">
-            <Button type="default" icon={<DeleteOutlined />} onClick={() => handleDelete(record.id)}></Button>
-          </Space>
-        );
-      }
+      render: (_, record) => <DeleteCaseButton caseDoc={record} />,
     },
   ];
 
@@ -79,6 +71,7 @@ const CasesTable: FC<Props> = ({ cases }) => {
       defaultActiveKey="1"
       type="card"
       size={'large'}
+      tabBarExtraContent={<Button type="primary" onClick={() => setIsModalOpen(prev => !prev)}>Add Case</Button>}
       items={CardTabItems.map((item) => {
         let localCases = cases;
         switch (item.key) {

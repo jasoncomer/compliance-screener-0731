@@ -10,10 +10,9 @@ export const BtnDiv = styled.div`
 
 export const Input = styled.input`
   padding: 13px;
-  margin: 10px;
   border-radius: 16px;
   border: 1px solid #ccc;
-  width: calc(100% - 20px);
+  flex: 1;
 `;
 
 export const FormWrapper = styled.div`
@@ -25,7 +24,7 @@ export const FormWrapper = styled.div`
   form {
     display: flex;
     flex-direction: column;
-    align-items: center;
     width: 400px;
+    gap: 1em;
   }
 `;
