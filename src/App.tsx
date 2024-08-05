@@ -7,9 +7,10 @@ import Register from "./views/Register";
 import Home from "./views/Home";
 import { ConfigProvider, ThemeConfig } from "antd";
 import { colors } from './styles/variables';
-import { AppProvider } from "./context/AppContext";
+import { useAppContext } from "./context/AppContext";
 
 function App() {
+  const { user } = useAppContext();
 
   const theme: ThemeConfig = {
     token: {
@@ -18,16 +19,16 @@ function App() {
   };
 
   return (
-    <AppProvider>
-      <ConfigProvider theme={theme}>
-        <Routes>
-          <Route path="/" element={<Login />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/home/*" element={<Home />} />
-        </Routes>
-      </ConfigProvider>
-    </AppProvider>
+    <ConfigProvider theme={theme}>
+      <Routes>
+        <Route path="/" element={<Login />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/home/*" element={<Home />} />
+
+        <Route path="*" element={user ? <Home /> : <Login />} />
+      </Routes>
+    </ConfigProvider>
   )
 }
 

@@ -1,6 +1,7 @@
 import axios, { AxiosInstance } from 'axios';
 import { users } from './auth';
 import { cases } from './cases';
+import { blockchain } from './blockchain';
 
 const BASE_URL = 'http://localhost:8000/api/v1';
 
@@ -14,6 +15,7 @@ export const setAuthToken = (token: string) => {
 }
 
 export const api = {
-  users,
+  blockchain,
   cases,
+  users,
 };

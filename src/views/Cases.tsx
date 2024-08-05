@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
-import CasesTable from './CasesTable';
-import ModalAddCase from './modals/ModalAddCase';
+import CasesTable from '../components/CasesTable';
+import ModalAddCase from '../components/modals/ModalAddCase';
 import { ICase } from '../typings/interfaces';
 import { api } from '../api/api';
 import { useAppContext } from '../context/AppContext';

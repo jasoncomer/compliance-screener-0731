@@ -1,10 +1,11 @@
 import { TableProps, Tag, Table, Button, Tabs as AntTabs } from 'antd';
 import { ICase } from '../typings/interfaces';
-import { FC } from 'react';
+import { FC, useState } from 'react';
 import styled from 'styled-components';
 import { ECaseStatus } from '../typings/enums';
 import { truncateAddress } from '../utils/crypto';
 import DeleteCaseButton from './DeleteCaseButton';
+import ModalCaseContent from './modals/ModalCaseContent';
 
 const Tabs = styled(AntTabs)`
   .ant-tabs-nav {
@@ -28,12 +29,25 @@ const CardTabItems = [
 ];
 
 const CasesTable: FC<Props> = ({ cases, setIsModalOpen }) => {
+  const [selectedCase, setSelectedCase] = useState<ICase>();
+
+  const selectCase = (caseId: string) => {
+    const selected = cases.find((c) => c.caseId === caseId);
+    if (selected) {
+      setSelectedCase(selected);
+    }
+  };
+  const closeModal = () => setSelectedCase(undefined);
+
   const columns: TableProps<ICase>['columns'] = [
     {
       title: 'Case #',
       dataIndex: 'caseId',
       key: 'caseId',
-      render: (text) => <a>{text}</a>,
+      render: (text) => <a onClick={(e) => {
+        e.preventDefault();
+        selectCase(text);
+      }} >{text}</a>,
     },
     {
       title: 'Client Name',
@@ -67,34 +81,40 @@ const CasesTable: FC<Props> = ({ cases, setIsModalOpen }) => {
   ];
 
   return (
-    <Tabs
-      defaultActiveKey="1"
-      type="card"
-      size={'large'}
-      tabBarExtraContent={<Button type="primary" onClick={() => setIsModalOpen(prev => !prev)}>Add Case</Button>}
-      items={CardTabItems.map((item) => {
-        let localCases = cases;
-        switch (item.key) {
-          case '1':
-            localCases = cases.filter((c) => c.status === ECaseStatus.ACTIVE);
-            break;
-          case '2':
-            localCases = cases.filter((c) => c.status === ECaseStatus.ARCHIVED);
-            break;
-        }
+    <>
+      <Tabs
+        defaultActiveKey="1"
+        type="card"
+        size={'large'}
+        tabBarExtraContent={<Button type="primary" onClick={() => setIsModalOpen(prev => !prev)}>Add Case</Button>}
+        items={CardTabItems.map((item) => {
+          let localCases = cases;
+          switch (item.key) {
+            case '1':
+              localCases = cases.filter((c) => c.status === ECaseStatus.ACTIVE);
+              break;
+            case '2':
+              localCases = cases.filter((c) => c.status === ECaseStatus.ARCHIVED);
+              break;
+          }
 
-        return {
-          label: item.label,
-          key: item.key,
-          children: (
-            <Table<ICase>
-              columns={columns}
-              dataSource={localCases}
-            />
-          )
-        }
-      })}
-    />
+          return {
+            label: item.label,
+            key: item.key,
+            children: (
+              <Table<ICase>
+                columns={columns}
+                dataSource={localCases}
+              />
+            )
+          }
+        })}
+      />
+
+      {selectedCase &&
+        <ModalCaseContent userCase={selectedCase} open={!!selectedCase} close={closeModal} />
+      }
+    </>
   );
 };
 

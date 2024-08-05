@@ -1,16 +1,31 @@
 import { useState } from 'react';
 import { BtnDiv, FormWrapper, Input } from '../styles/Common';
-import { Button } from 'antd';
+import { Button, notification } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import { api, setAuthToken } from '../api/api';
 import { useAppContext } from '../context/AppContext';
 
+
+import type { NotificationArgsProps } from 'antd';
+
+type NotificationPlacement = NotificationArgsProps['placement'];
+
 const Login = () => {
   const nav = useNavigate();
   const { setUser } = useAppContext();
+  const [notifApi, contextHolder] = notification.useNotification();
 
   const [password, setPassword] = useState('');
   const [email, setEmail] = useState('');
+
+  const openNotification = (placement: NotificationPlacement) => {
+    notifApi.error({
+      message: `Login failed`,
+      description: `Please check your email and password`,
+      placement,
+      duration: 4,
+    });
+  };
 
   const handleLogin = async () => {
     await api.users.authenticateUser(email, password)
@@ -24,7 +39,10 @@ const Login = () => {
           nav('/home/cases');
         }
       })
-      .catch(console.error)
+      .catch((err) => {
+        openNotification('topRight');
+        console.error(err);
+      })
   };
 
   const navRegister = () => {
@@ -32,6 +50,8 @@ const Login = () => {
   };
 
   return (
+    <>
+    {contextHolder}
     <FormWrapper>
       <img src='https://framerusercontent.com/images/3djlle6W5wE61QQGlOQuLh5QvQ.jpg' style={{ width: '300px' }} />
       <h2>Login</h2>
@@ -56,6 +76,8 @@ const Login = () => {
         </BtnDiv>
       </form>
     </FormWrapper>
+
+    </>
   );
 };
 

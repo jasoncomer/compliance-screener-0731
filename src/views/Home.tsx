@@ -3,10 +3,11 @@ import { Layout } from 'antd';
 import Sidebar from '../components/Sidebar';
 // import Navbar from '../components/Navbar';
 import { Route, RouteProps, Routes } from 'react-router-dom';
-import Cases from '../components/Cases';
+import Cases from './Cases';
 import Explorer from './Explorer';
 import Settings from './Settings';
 import { setAuthToken } from '../api/api';
+import BlockExplorer from './blockexplorer/BlockExplorer';
 
 const { Content } = Layout;
 
@@ -34,6 +35,7 @@ const Home: React.FC<RouteProps> = () => {
             <Route path="/cases" element={<Cases />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/explorer" element={<Explorer />} />
+            <Route path="/block-explorer/*" element={<BlockExplorer />} />
           </Routes>
         </Content>
       </Layout>

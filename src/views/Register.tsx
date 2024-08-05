@@ -1,14 +1,29 @@
 import React, { useState } from 'react';
 import { BtnDiv, FormWrapper, Input } from '../styles/Common';
-import { Button } from 'antd';
+import { Button, notification } from 'antd';
 import { api } from '../api/api';
 
+import type { NotificationArgsProps } from 'antd';
+
+type NotificationPlacement = NotificationArgsProps['placement'];
+
 const Register = () => {
+  const [notifApi, contextHolder] = notification.useNotification();
+
   const [name, setName] = useState('');
   const [surname, setSurname] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+
+  const openNotification = (placement: NotificationPlacement) => {
+    notifApi.error({
+      message: `Registration failed`,
+      description: 'Error creating account. Please check your details and try again',
+      placement,
+      duration: 4,
+    });
+  };
 
   const handleSubmit = async (event: React.FormEvent) => {
     if (loading) return;
@@ -33,12 +48,12 @@ const Register = () => {
         console.log('Register response:', res);
         // save to local storage
         localStorage.setItem('accessToken', accessToken);
-        alert('Registration successful!');
+        localStorage.setItem('user', JSON.stringify(user));
         window.location.href = '/home/cases';
       })
       .catch((err) => {
         console.error(err);
-        alert('An error occurred. Please try again.');
+        openNotification('topRight');
       })
       .finally(() => {
         setLoading(false);
@@ -50,47 +65,50 @@ const Register = () => {
   }
 
   return (
-    <FormWrapper>
-      <img src='https://framerusercontent.com/images/3djlle6W5wE61QQGlOQuLh5QvQ.jpg' style={{ width: '300px' }} />
-      <h2>Register</h2>
-      <form onSubmit={handleSubmit}>
+    <>
+      {contextHolder}
+      <FormWrapper>
+        <img src='https://framerusercontent.com/images/3djlle6W5wE61QQGlOQuLh5QvQ.jpg' style={{ width: '300px' }} />
+        <h2>Register</h2>
+        <form onSubmit={handleSubmit}>
 
-        <div style={{ display: 'flex', flexDirection: 'row', width: '100%', gap: '1em' }}>
-          <Input
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder='First Name'
-          />
-          <Input
-            type="text"
-            value={surname}
-            onChange={(e) => setSurname(e.target.value)}
-            placeholder='Last Name'
-          />
-        </div>
+          <div style={{ display: 'flex', flexDirection: 'row', width: '100%', gap: '1em' }}>
+            <Input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder='First Name'
+            />
+            <Input
+              type="text"
+              value={surname}
+              onChange={(e) => setSurname(e.target.value)}
+              placeholder='Last Name'
+            />
+          </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', width: '100%', gap: '1em' }}>
-          <Input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder='Email'
-          />
-          <Input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder='Password'
-          />
-        </div>
+          <div style={{ display: 'flex', flexDirection: 'column', width: '100%', gap: '1em' }}>
+            <Input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder='Email'
+            />
+            <Input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder='Password'
+            />
+          </div>
 
-        <BtnDiv>
-          <Button ghost type='default' onClick={navLogin}>Login</Button>
-          <Button disabled={loading} type="primary" onClick={handleSubmit}>Register</Button>
-        </BtnDiv>
-      </form>
-    </FormWrapper>
+          <BtnDiv>
+            <Button ghost type='default' onClick={navLogin}>Login</Button>
+            <Button disabled={loading} type="primary" onClick={handleSubmit}>Register</Button>
+          </BtnDiv>
+        </form>
+      </FormWrapper>
+    </>
   );
 };
 

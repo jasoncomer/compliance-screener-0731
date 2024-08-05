@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import Sider from 'antd/es/layout/Sider';
 import styled from 'styled-components';
 import { Button, Tooltip } from 'antd';
-import { AlertFilled, AlertOutlined, FolderOpenOutlined, FolderOutlined, LogoutOutlined, SearchOutlined, SettingFilled, SettingOutlined } from '@ant-design/icons';
+import { AlertFilled, AlertOutlined, FolderOpenOutlined, FolderOutlined, GlobalOutlined, LogoutOutlined, SearchOutlined, SettingFilled, SettingOutlined } from '@ant-design/icons';
 import { colors } from '../styles/variables';
 import { useNavigate, useParams } from 'react-router-dom';
 
@@ -56,7 +56,19 @@ const SiderContent = styled.div<{ $collapsed: boolean }>`
   }
 `;
 
-type Section = 'alerts' | 'cases' | 'explorer' | 'settings';
+const ButtonDiv = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  button {
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-start;
+  }
+`;
+
+type Section = 'alerts' | 'cases' | 'explorer' | 'settings' | 'block-explorer';
 
 const Sidebar = () => {
   const nav = useNavigate();
@@ -109,6 +121,15 @@ const Sidebar = () => {
                 <SearchOutlined onClick={() => handleSectionChange('explorer')} />
               </Tooltip>
             )}
+            {activeSection === 'block-explorer' ? (
+              <Tooltip placement="bottom" title={'Block Explorer'} mouseEnterDelay={1}>
+                <GlobalOutlined className='active' />
+              </Tooltip>
+            ) : (
+              <Tooltip placement="bottom" title={'Block Explorer'} mouseEnterDelay={1}>
+                <GlobalOutlined onClick={() => handleSectionChange('block-explorer')} />
+              </Tooltip>
+            )}
             {activeSection === 'alerts' ? (
               <Tooltip placement="bottom" title={'Alerts'} mouseEnterDelay={1}>
                 <AlertFilled className='active' />
@@ -127,21 +148,24 @@ const Sidebar = () => {
                 <SettingOutlined onClick={() => handleSectionChange('settings')} />
               </Tooltip>
             )}
+
             <Tooltip placement="bottom" title={'Log Out'} mouseEnterDelay={1}>
               <LogoutOutlined style={{ marginTop: 'auto' }} />
             </Tooltip>
           </>
         ) : (
           <>
-            <div>
+            <ButtonDiv>
               {activeSection === 'cases' ? (
                 <Button
                   ghost
+                  block
                   className='active'
                   icon={<FolderOpenOutlined className='active' />}>Cases</Button>
               ) : (
                 <Button
                   ghost
+                  block
                   color='primary'
                   onClick={() => handleSectionChange('cases')}
                   icon={<FolderOutlined />}>Cases</Button>
@@ -149,39 +173,61 @@ const Sidebar = () => {
               {activeSection === 'explorer' ? (
                 <Button
                   ghost
+                  block
                   className='active'
                   icon={<SearchOutlined className='active' />}>Explorer</Button>
               ) : (
                 <Button
                   ghost
+                  block
                   onClick={() => handleSectionChange('explorer')}
                   icon={<SearchOutlined />}>Explorer</Button>
+              )}
+              {activeSection === 'block-explorer' ? (
+                <Button
+                  ghost
+                  block
+                  className='active'
+                  icon={<GlobalOutlined className='active' />}>Block Explorer</Button>
+              ) : (
+                <Button
+                  ghost
+                  block
+                  onClick={() => handleSectionChange('block-explorer')}
+                  icon={<GlobalOutlined />}>Block Explorer</Button>
               )}
               {activeSection === 'alerts' ? (
                 <Button
                   ghost
+                  block
                   className='active'
                   icon={<AlertFilled className='active' />}>Alerts</Button>
               ) : (
                 <Button
                   ghost
+                  block
                   onClick={() => handleSectionChange('alerts')}
                   icon={<AlertOutlined />}>Alerts</Button>
               )}
+
               {activeSection === 'settings' ? (
                 <Button
                   ghost
+                  block
                   className='active'
                   icon={<SettingFilled className='active' />}>Settings</Button>
               ) : (
                 <Button
                   ghost
+                  block
                   onClick={() => handleSectionChange('settings')}
                   icon={<SettingOutlined />}>Settings</Button>
               )}
-            </div>
+
+            </ButtonDiv>
             <Button
               ghost
+              block
               onClick={handleLogout}
               icon={<LogoutOutlined style={{ marginTop: 'auto' }} />}
               style={{ marginTop: 'auto' }}
