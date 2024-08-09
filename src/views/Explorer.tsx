@@ -68,11 +68,11 @@ const Explorer: React.FC<Props> = () => {
     const nodes: GraphNode[] = [];
     const edges: GraphEdge[] = [];
 
-    data.txs.forEach((tx) => {
-      tx.inputs.forEach((input) => {
-        input.addresses.forEach((fromAddress) => {
-          tx.outputs.forEach((output) => {
-            output.addresses.forEach((toAddress) => {
+    (data.txs || []).forEach((tx) => {
+      (tx.inputs || []).forEach((input) => {
+        (input.addresses || []).forEach((fromAddress) => {
+          (tx.outputs || []).forEach((output) => {
+            (output.addresses || []).forEach((toAddress) => {
               nodes.push({ id: fromAddress, label: fromAddress });
               nodes.push({
                 id: toAddress,

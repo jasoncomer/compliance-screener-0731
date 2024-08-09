@@ -3,7 +3,7 @@ import { Modal, Typography } from 'antd';
 import { ICase } from '../../typings/interfaces';
 import styled from 'styled-components';
 
-const { Title, Text } = Typography;
+const { Title: AntTitle, Text } = Typography;
 
 interface ModalCaseContentProps {
   userCase: ICase;
@@ -44,9 +44,23 @@ const AddressList = styled.ul`
   margin: 0;
 `;
 
+const Title = styled(AntTitle)`
+  margin-top: 0;
+`;
+
 const ModalCaseContent: React.FC<ModalCaseContentProps> = ({ userCase, open, close }) => {
   const { addresses: addressesString, caseId, clientEmail, clientName, status, userId, blockchain, notes } = userCase;
   const addresses = Array.isArray(addressesString) ? addressesString.join(',') : addressesString;
+
+  /**
+   * TODO
+   * - Add a section to display a summary of the case
+   *    - Are the addresses of the case active, inactive (no transactions), or dormant (no transactions for a long time)?
+   *   - How many transactions have been made to/from the addresses?
+   *  - How much BTC has been transacted?
+   * - Add a section to display the transactions made to/from the addresses
+   *   - Show the transaction hash, the amount transacted, and the date of the transaction
+   */
 
   return (
     <Modal

@@ -17,6 +17,7 @@ const contentStyle: React.CSSProperties = {
   minHeight: 120,
   lineHeight: '120px',
   color: '#fff',
+  overflow: 'auto',
 };
 
 const Home: React.FC<RouteProps> = () => {
