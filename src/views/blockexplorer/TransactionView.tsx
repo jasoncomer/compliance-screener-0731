@@ -1,16 +1,17 @@
 import React, { useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { BtcTransaction } from '../../typings/BtcTransaction';
-import { api } from '../../api/api';
 import { BsBlock } from '../../styles/Table';
 import BtcTransactionSummary from './transaction/BtcTransactionSummary';
 import BtcTransactionTable from './transaction/BtcTransactionTable';
 import { BsWrapper } from '../../styles/ocmmon';
+import { api } from '../../api/api';
 
 
-interface TransactionProps { }
+interface TransactionProps {
+}
 
-const Transaction: React.FC<TransactionProps> = () => {
+const TransactionView: React.FC<TransactionProps> = () => {
   const { txid } = useParams();
   const [transaction, setTransaction] = React.useState<BtcTransaction>();
 
@@ -29,6 +30,9 @@ const Transaction: React.FC<TransactionProps> = () => {
     fetchTransaction();
   }, [txid]);
 
+  if (!transaction) return <div>Loading...</div>;
+
+  console.log('[Transaction] txid:', txid);
   if (!transaction) return <div>Loading...</div>;
 
   return (
@@ -50,4 +54,4 @@ const Transaction: React.FC<TransactionProps> = () => {
   );
 };
 
-export default Transaction;
+export default TransactionView;

@@ -1,10 +1,10 @@
+import { Route, Routes, useNavigate } from 'react-router-dom';
+import styled from 'styled-components';
 import { Input } from 'antd';
 import React from 'react';
-import styled from 'styled-components';
 
 import { determineInputType } from '../../utils/crypto';
-import { Route, Routes, useNavigate } from 'react-router-dom';
-import Transaction from './Transaction';
+import TransactionView from './TransactionView';
 import Address from './Address';
 
 const { Search: AntSearch } = Input;
@@ -51,7 +51,7 @@ const BlockExplorer: React.FC = () => {
       <Search placeholder={searchPlaceholder} onSearch={onSearch} value={searchValue} onChange={(e) => setSearchValue(e.target.value)} />
 
       <Routes>
-        <Route path="/transaction/:txid" element={<Transaction />} />
+        <Route path="/transaction/:txid" element={<TransactionView />} />
         <Route path="/block/:block" element={<div>Block</div>} />
         <Route path="/address/:address" element={<Address />} />
       </Routes>
