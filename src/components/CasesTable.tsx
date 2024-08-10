@@ -103,6 +103,7 @@ const CasesTable: FC<Props> = ({ cases, setIsModalOpen }) => {
             key: item.key,
             children: (
               <Table<ICase>
+                key={item.key}
                 columns={columns}
                 dataSource={localCases}
               />

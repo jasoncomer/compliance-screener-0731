@@ -7,8 +7,7 @@ import AccountSummary from '../components/AccountSummary';
 import { satsToBTC } from '../utils/crypto';
 import GraphButtons from '../components/GraphButtons';
 
-interface Props {
-}
+interface Props {}
 
 const SpinnerWrapper = styled.div`
   position: relative;
