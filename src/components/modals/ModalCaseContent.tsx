@@ -5,7 +5,6 @@ import { Modal, Typography, Button, Table } from 'antd';
 import { ICase } from '../../typings/interfaces';
 import styled from 'styled-components';
 import { api } from '../../api/api';
-import { satsToBTC } from '../../utils/crypto';
 import { IBtcAddressSummary } from '../../typings/BtcAddress';
 
 const { Title: AntTitle, Text } = Typography;
@@ -86,7 +85,7 @@ const ModalCaseContent: React.FC<ModalCaseContentProps> = ({ userCase, open, clo
   const addresses = Array.isArray(addressesString) ? addressesString.join(',') : addressesString;
 
   const [summary, setSummary] = useState<IBtcAddressSummary>();
-  const [transactions, setTransactions] = useState<ITransaction[]>([]);
+  const [transactions] = useState<ITransaction[]>([]);
 
   useEffect(() => {
     console.log('transactions', transactions);

@@ -27,7 +27,7 @@ export const fetchBlockchainData = async (input: string, type: string) => {
   try {
     // Fetch blockchain data from API
     switch (type) {
-      case 'transaction': return api.blockchain.getTransfers(input);
+      case 'transaction': return api.blockchain.getTransaction(input);
       case 'block': return api.blockchain.getBlock(Number(input));
       case 'address': return api.blockchain.getAddress(input);
       default: throw new Error('Invalid input type');
