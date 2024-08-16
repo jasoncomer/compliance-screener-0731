@@ -1,13 +1,14 @@
 import { api } from "../api/api";
+import { BtcTransaction } from "../typings/BtcTransaction";
 
-export const satsToBTC = (sats: number) => sats / 100000000;
+const satsToBTC = (sats: number) => sats / 100000000;
 
-export const truncateAddress = (address: string) => {
+const truncateAddress = (address: string) => {
   const digits = 4;
   return `${address.slice(0, digits)}...${address.slice(-digits)}`;
 };
 
-export const determineInputType = (input: string | null) => {
+const determineInputType = (input: string | null) => {
   if (!input) return null;
 
   // btc tx hash
@@ -23,7 +24,7 @@ export const determineInputType = (input: string | null) => {
   return null;
 };
 
-export const fetchBlockchainData = async (input: string, type: string) => {
+const fetchBlockchainData = async (input: string, type: string) => {
   try {
     // Fetch blockchain data from API
     switch (type) {
@@ -43,7 +44,7 @@ export const fetchBlockchainData = async (input: string, type: string) => {
  * @param address The Bitcoin address to validate
  * @returns True if the address is valid, false otherwise
  */
-function isValidBitcoinAddress(address: string): boolean {
+const isValidBitcoinAddress = (address: string): boolean => {
   // Regular expressions for different Bitcoin address formats
   const p2pkhRegex = /^[13][a-km-zA-HJ-NP-Z1-9]{25,34}$/;
   const p2shRegex = /^3[a-km-zA-HJ-NP-Z1-9]{25,34}$/;
@@ -57,7 +58,7 @@ function isValidBitcoinAddress(address: string): boolean {
  * @param txHash The transaction hash to validate
  * @returns True if the transaction hash is valid, false otherwise
  */
-function isValidBitcoinTransactionHash(txHash: string): boolean {
+const isValidBitcoinTransactionHash = (txHash: string): boolean => {
   const txHashRegex = /^[a-fA-F0-9]{64}$/;
   return txHashRegex.test(txHash);
 }
@@ -67,7 +68,7 @@ function isValidBitcoinTransactionHash(txHash: string): boolean {
  * @param blockNumber The block number to validate
  * @returns True if the block number is valid, false otherwise
  */
-function isValidBitcoinBlockNumber(blockNumber: number): boolean {
+const isValidBitcoinBlockNumber = (blockNumber: number): boolean => {
   // Bitcoin block numbers are non-negative integers
   return Number.isInteger(blockNumber) && blockNumber >= 0;
 }
@@ -77,15 +78,34 @@ function isValidBitcoinBlockNumber(blockNumber: number): boolean {
  * @param blockHash The block hash to validate
  * @returns True if the block hash is valid, false otherwise
  */
-function isValidBitcoinBlockHash(blockHash: string): boolean {
+const isValidBitcoinBlockHash = (blockHash: string): boolean => {
   const blockHashRegex = /^[a-fA-F0-9]{64}$/;
   return blockHashRegex.test(blockHash);
 }
 
-// Export the utility functions
+const getSumOfInputs = (tx: BtcTransaction, address: string) => {
+  return tx.cpin.reduce((acc: number, input) => {
+    return input.addr === address ? acc + input.amt : acc;
+  }, 0);
+}
+
+const getSumOfOutputs = (tx: BtcTransaction, address: string) => {
+  return tx.cpout.reduce((acc: number, output) => {
+    return output.addr === address ? acc + output.amt : acc;
+  }, 0);
+}
+const getTransactionAmountOfAddress = (tx: BtcTransaction, address: string) => {
+  return getSumOfOutputs(tx, address) - getSumOfInputs(tx, address);
+}
+
 export {
+  satsToBTC,
+  truncateAddress,
+  determineInputType,
+  fetchBlockchainData,
   isValidBitcoinAddress,
   isValidBitcoinTransactionHash,
   isValidBitcoinBlockNumber,
-  isValidBitcoinBlockHash
+  isValidBitcoinBlockHash,
+  getTransactionAmountOfAddress,
 };

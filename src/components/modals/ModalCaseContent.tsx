@@ -1,20 +1,15 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Modal, Typography, Button, Table } from 'antd';
 import { ICase } from '../../typings/interfaces';
 import styled from 'styled-components';
 import { api } from '../../api/api';
 import { IBtcAddressSummary } from '../../typings/BtcAddress';
+import { BtcTransaction } from '../../typings/BtcTransaction';
+import { satsToBTC, getTransactionAmountOfAddress } from '../../utils/crypto';
 
 const { Title: AntTitle, Text } = Typography;
-
-
-interface ITransaction {
-  hash: string;
-  amount: number;
-  date: string;
-}
 
 interface ModalCaseContentProps {
   userCase: ICase;
@@ -63,6 +58,8 @@ const Title = styled(AntTitle)`
 `;
 
 const SummarySection = styled(InfoSection)`
+  display: flex;
+  justify-content: space-between;
   margin-top: 16px;
 `;
 
@@ -80,32 +77,43 @@ const DownloadButton = styled(Button)`
   margin-top: 16px;
 `;
 
+const Textarea = styled.textarea`
+  width: 100%;
+  height: 100px;
+  padding: 8px;
+  border-radius: 8px;
+  border: 1px solid #d9d9d9;
+  margin-top: 16px;
+`;
+
 const ModalCaseContent: React.FC<ModalCaseContentProps> = ({ userCase, open, close }) => {
   const { addresses: addressesString, caseId, clientEmail, clientName, status, userId, blockchain, notes } = userCase;
-  const addresses = Array.isArray(addressesString) ? addressesString.join(',') : addressesString;
+  const addresses = useMemo(() => Array.isArray(addressesString) ? addressesString : [addressesString], [addressesString]);
 
   const [summary, setSummary] = useState<IBtcAddressSummary>();
-  const [transactions] = useState<ITransaction[]>([]);
-
-  useEffect(() => {
-    console.log('transactions', transactions);
-  }, [transactions]);
+  const [transactions, setTransactions] = useState<BtcTransaction[]>([]);
 
   useEffect(() => {
     if (open) {
-      // fetchCaseSummary(caseId).then(setSummary);
-      console.log('addresses', addresses);
       const addrTmp = "16va6NxJrMGe5d2LP6wUzuVnzBBoKQZKom";
       api.blockchain.getAddressSummary(addrTmp)
+        .then(data => setSummary(data))
+        .catch(console.error);
+      api.blockchain.getAddress(addrTmp)
         .then(data => {
-          console.log('data', data);
-          setSummary(data);
+          const txs = data.txData.map((tx) => ({
+            ...tx,
+            amount: satsToBTC(getTransactionAmountOfAddress(tx, addrTmp)),
+            date: new Date(tx.timestamp * 1000).toLocaleString(),
+          }));
+          setTransactions(txs);
         })
         .catch(console.error);
     }
   }, [open, caseId, addresses]);
 
   const downloadPdfReport = async (address: string) => {
+    console.log('Downloading PDF report for address:', address);
     const report = await api.blockchain.generateReport(address)
       .catch((error) => console.error(error));
 
@@ -121,6 +129,11 @@ const ModalCaseContent: React.FC<ModalCaseContentProps> = ({ userCase, open, clo
 
   const columns = [
     {
+      title: 'Date',
+      dataIndex: 'date',
+      key: 'date',
+    },
+    {
       title: 'Transaction Hash',
       dataIndex: 'txid',
       key: 'txid',
@@ -128,12 +141,7 @@ const ModalCaseContent: React.FC<ModalCaseContentProps> = ({ userCase, open, clo
     {
       title: 'Amount (BTC)',
       dataIndex: 'amount',
-      key: 'inamt',
-    },
-    {
-      title: 'Date',
-      dataIndex: 'date',
-      key: 'date',
+      key: 'amount',
     },
   ];
 
@@ -164,7 +172,7 @@ const ModalCaseContent: React.FC<ModalCaseContentProps> = ({ userCase, open, clo
         <InfoSection>
           <Title level={4}>Addresses</Title>
           <AddressList>
-            {addresses.split(',').map((address, index) => (
+            {addresses.map((address, index) => (
               <li key={index}><Value>{address.trim()}</Value></li>
             ))}
           </AddressList>
@@ -172,12 +180,20 @@ const ModalCaseContent: React.FC<ModalCaseContentProps> = ({ userCase, open, clo
 
         {summary && (
           <SummarySection>
-            <Title level={4}>Case Summary</Title>
-            <p><Label>Address Balance:</Label><Value>{summary.balance}</Value></p>
-            <p><Label>Total Transactions:</Label><Value>{summary.txCount}</Value></p>
-            <p><Label>Total BTC Transacted:</Label><Value>{summary.totalReceived + summary.totalSent}</Value></p>
-            <p><Label>Total Received:</Label><Value>{summary.totalReceived}</Value></p>
-            <p><Label>Total Sent:</Label><Value>{summary.totalSent}</Value></p>
+            <section>
+              <Title level={4}>Case Summary</Title>
+              <p><Label>Address Balance:</Label><Value>{summary.balance}</Value></p>
+              <p><Label>Total Transactions:</Label><Value>{summary.txCount}</Value></p>
+              <p><Label>Total BTC Transacted:</Label><Value>{summary.totalReceived + summary.totalSent}</Value></p>
+              <p><Label>Total Received:</Label><Value>{summary.totalReceived}</Value></p>
+              <p><Label>Total Sent:</Label><Value>{summary.totalSent}</Value></p>
+            </section>
+            <section>
+              {/* Support for multiple addresses is not implemented yet */}
+              <DownloadButton type="primary" onClick={() => downloadPdfReport(addresses[0])}>
+                Download PDF Report
+              </DownloadButton>
+            </section>
           </SummarySection>
         )}
 
@@ -188,13 +204,9 @@ const ModalCaseContent: React.FC<ModalCaseContentProps> = ({ userCase, open, clo
 
         <InfoSection>
           <Title level={4}>Notes</Title>
-          <Text>{notes}</Text>
+          <Textarea>{notes}</Textarea>
         </InfoSection>
 
-        {/* Support for multiple addresses is not implemented yet */}
-        <DownloadButton type="primary" onClick={() => downloadPdfReport(addresses[0])}>
-          Download PDF Report
-        </DownloadButton>
       </Wrapper>
     </Modal>
   );
