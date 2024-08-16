@@ -26,15 +26,12 @@ const BlockExplorer: React.FC = () => {
   const [searchValue, setSearchValue] = React.useState('');
 
   const onSearch = (value: string) => {
-    console.log('value', value);
     if (!value) return;
 
     // fetch data based on type
     const load = async () => {
       const type = determineInputType(value);
-      console.log('type:', type);
       if (!type) return;
-      console.log('navigating to /home/block-explorer/', type, value);
       navigate(`/home/block-explorer/${type}/${value}`);
       setSearchValue(''); // Clear the input after navigation
     }
