@@ -6,8 +6,11 @@ import styled from 'styled-components';
 import AccountSummary from '../components/AccountSummary';
 import { satsToBTC } from '../utils/crypto';
 import GraphButtons from '../components/GraphButtons';
+import { truncateStringMiddle } from '../utils/generic';
+import NodeContextMenu from '../components/explorer/NodeContextMenu';
+import { api } from '../api/api';
 
-interface Props {}
+interface Props { }
 
 const SpinnerWrapper = styled.div`
   position: relative;
@@ -72,11 +75,17 @@ const Explorer: React.FC<Props> = () => {
         (input.addresses || []).forEach((fromAddress) => {
           (tx.outputs || []).forEach((output) => {
             (output.addresses || []).forEach((toAddress) => {
-              nodes.push({ id: fromAddress, label: fromAddress });
+              nodes.push({
+                id: fromAddress,
+                label: truncateStringMiddle(fromAddress, 20),
+              });
               nodes.push({
                 id: toAddress,
-                label: toAddress,
+                label: truncateStringMiddle(toAddress, 20),
               });
+
+              if (fromAddress == toAddress) return;
+
               edges.push({
                 id: `${fromAddress}-${toAddress}`,
                 label: `${satsToBTC(output.value)} BTC`,
@@ -146,6 +155,19 @@ const Explorer: React.FC<Props> = () => {
     );
   }
 
+  const onExpandAddress = (address: string) => {
+    console.log('expand address', address);
+    api.blockchain.getAddressSummary(address)
+      .then((data) => {
+        console.log('address summary', data);
+        // re-build graph
+        fetchData();
+      })
+      .catch((err) => {
+        console.error('error fetching address summary', err);
+      });
+  }
+
   return (
     <div style={{ position: 'fixed', width: '100%', height: '100%' }}>
       <GraphButtons onClick={toggleLayout} />
@@ -158,6 +180,14 @@ const Explorer: React.FC<Props> = () => {
         edges={edges}
         layoutType={layout}
         edgeLabelPosition="natural"
+        draggable
+        layoutOverrides={{
+          nodeLevelRatio: 5,
+        }}
+        onNodeContextMenu={(event, nodeId) => {
+          console.log('nodeId', nodeId);
+        }}
+        contextMenu={({ data, onClose }) => <NodeContextMenu data={data} onClose={onClose} onExpandAddress={onExpandAddress} />}
       />
     </div>
   );
