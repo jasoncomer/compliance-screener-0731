@@ -84,13 +84,13 @@ const isValidBitcoinBlockHash = (blockHash: string): boolean => {
 }
 
 const getSumOfInputs = (tx: BtcTransaction, address: string) => {
-  return tx.cpin.reduce((acc: number, input) => {
+  return tx.inputs.reduce((acc: number, input) => {
     return input.addr === address ? acc + input.amt : acc;
   }, 0);
 }
 
 const getSumOfOutputs = (tx: BtcTransaction, address: string) => {
-  return tx.cpout.reduce((acc: number, output) => {
+  return tx.outputs.reduce((acc: number, output) => {
     return output.addr === address ? acc + output.amt : acc;
   }, 0);
 }

@@ -19,11 +19,8 @@ const TransactionView: React.FC<TransactionProps> = () => {
 
   useEffect(() => {
     const fetchTransaction = async () => {
-      console.log('before txid:', txid, typeof txid);
       if (!txid || typeof txid != 'string') return;
-      console.log('fetching txid:', txid);
       const response = await api.blockchain.getTransaction(txid);
-      console.log('data:', response);
       setTransaction(response);
     }
 

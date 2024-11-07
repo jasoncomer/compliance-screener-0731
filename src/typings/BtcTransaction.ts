@@ -6,15 +6,15 @@ export interface BtcTransaction {
   input_cnt: number;
   output_cnt: number;
   txfee: number;
-  block_date: Date;
+
   coinjoin: boolean;
   coinbase: boolean;
   timestamp: number;
-  cpin: {
+  inputs: {
     addr: string;
     amt: number;
   }[];
-  cpout: {
+  outputs: {
     intxid: string;
     addr: string;
     amt: number;
