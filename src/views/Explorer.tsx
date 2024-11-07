@@ -21,14 +21,14 @@ const SpinnerWrapper = styled.div`
 `;
 
 const Explorer: React.FC<Props> = () => {
-  const [address, setAddress] = useState<string>('');
+  const [addresses, setAddresses] = useState<string[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
 
-  const [data, setData] = useState<IApiResponse>();
+  const [data, setData] = useState<IApiResponse[]>();
   const [error, setError] = useState<string>('');
 
   // graph
-  const [layout, setLayout] = useState<LayoutTypes>('forceDirected2d');
+  const [layout, setLayout] = useState<LayoutTypes>('treeLr2d');
   const [nodes, setNodes] = useState<GraphNode[]>([]);
   const [edges, setEdges] = useState<GraphEdge[]>([]);
 
@@ -42,58 +42,75 @@ const Explorer: React.FC<Props> = () => {
   }
 
   const fetchData = () => {
-    console.log('fetchData', address);
-    if (!address) return;
+    console.log('fetchData', addresses);
+    if (!addresses.length) return;
 
-    setLoading(true);
-    fetch(`https://api.blockcypher.com/v1/btc/main/addrs/${address}/full`)
-      .then((res) => res.json())
-      .then((data) => {
-        console.log(data);
-        if (data.error) {
-          return setError(data.error);
-        }
-        setData(data as IApiResponse);
-      })
-      .catch((err) => {
-        console.error(err);
-        setError(err.message);
-      })
-      .finally(() => {
-        setLoading(false);
-      });
+    // setLoading(true);
+
+    const promises = addresses.map((address) => {
+      return fetch(`https://api.blockcypher.com/v1/btc/main/addrs/${address}/full`)
+        .then((res) => res.json())
+        .then((data) => {
+          console.log(data);
+          if (data.error) {
+            return setError(data.error);
+          }
+          return data;
+        })
+        .catch((err) => {
+          console.error(err);
+          setError(err.message);
+        })
+        .finally(() => {
+          setLoading(false);
+        });
+    });
+
+    Promise.all(promises).then((dataArr) => {
+      const allData = dataArr.map((data) => data as IApiResponse).filter((data) => data !== null);
+      setData(allData);
+    });
   };
 
   useEffect(() => {
-    if (!data) return;
+    if (!data?.length) return;
+    console.log('addresses', addresses);
+    fetchData();
+  }, [addresses]);
+
+  useEffect(() => {
+    if (!data?.length) return;
+
 
     const nodes: GraphNode[] = [];
     const edges: GraphEdge[] = [];
 
-    (data.txs || []).forEach((tx) => {
-      (tx.inputs || []).forEach((input) => {
-        (input.addresses || []).forEach((fromAddress) => {
-          (tx.outputs || []).forEach((output) => {
-            (output.addresses || []).forEach((toAddress) => {
-              nodes.push({
-                id: fromAddress,
-                label: truncateStringMiddle(fromAddress, 20),
-              });
-              nodes.push({
-                id: toAddress,
-                label: truncateStringMiddle(toAddress, 20),
-              });
+    data.forEach((innerData) => {
+      (innerData.txs || []).forEach((tx) => {
+        (tx.inputs || []).forEach((input) => {
+          (input.addresses || []).forEach((fromAddress) => {
+            (tx.outputs || []).forEach((output) => {
+              (output.addresses || []).forEach((toAddress) => {
+                nodes.push({
+                  id: fromAddress,
+                  label: truncateStringMiddle(fromAddress, 20),
+                });
+                nodes.push({
+                  id: toAddress,
+                  label: truncateStringMiddle(toAddress, 20),
+                });
 
-              if (fromAddress == toAddress) return;
+                if (fromAddress == toAddress) return;
 
-              edges.push({
-                id: `${fromAddress}-${toAddress}`,
-                label: `${satsToBTC(output.value)} BTC`,
-                source: fromAddress,
-                target: toAddress,
-                data: {
-                  amount: output.value
-                }
+                edges.push({
+                  id: `${fromAddress}-${toAddress}`,
+                  label: `${satsToBTC(output.value)} BTC`,
+                  source: fromAddress,
+                  target: toAddress,
+                  data: {
+                    amount: output.value
+                  }
+                });
               });
             });
           });
@@ -111,7 +128,7 @@ const Explorer: React.FC<Props> = () => {
 
     setNodes(uniqueNodes);
     setEdges(edges);
-  }, [data]);
+  }, [data, addresses]);
 
   const onKeyDownHandler = (e: { keyCode: number; }) => {
     console.log('key', e);
@@ -144,9 +161,9 @@ const Explorer: React.FC<Props> = () => {
           <Input
             width={400}
             type="text"
-            value={address}
+            value={addresses}
             placeholder='Enter a Bitcoin or Ethereum address'
-            onChange={(e) => setAddress(e.target.value)}
+            onChange={(e) => setAddresses([e.target.value])}
             onKeyUp={onKeyDownHandler}
           />
           <Button type='primary' onClick={fetchData}>Explore</Button>
@@ -157,22 +174,14 @@ const Explorer: React.FC<Props> = () => {
 
   const onExpandAddress = (address: string) => {
     console.log('expand address', address);
-    api.blockchain.getAddressSummary(address)
-      .then((data) => {
-        console.log('address summary', data);
-        // re-build graph
-        fetchData();
-      })
-      .catch((err) => {
-        console.error('error fetching address summary', err);
-      });
+    setAddresses([...addresses, address]);
   }
 
   return (
     <div style={{ position: 'fixed', width: '100%', height: '100%' }}>
       <GraphButtons onClick={toggleLayout} />
 
-      <AccountSummary data={data} />
+      <AccountSummary data={data[0]} />
 
       <GraphCanvas
         labelType='all'

@@ -38,7 +38,7 @@ const BtcTransactionSummary: React.FC<BtcTransactionSummaryProps> = ({ transacti
             <strong>Height:</strong> {transaction.block.toLocaleString()}
           </span>
           <span>
-            <strong>Timestamp:</strong> {new Date(transaction.block_date).toISOString()}
+            <strong>Timestamp:</strong> {new Date(transaction.timestamp).toISOString()}
           </span>
           <span>
             <strong>Coinbase:</strong> {transaction.coinbase ? 'Yes' : 'No'}

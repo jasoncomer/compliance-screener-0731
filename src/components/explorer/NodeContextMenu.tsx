@@ -1,6 +1,5 @@
 import { Menu as AntdMenu } from "antd";
 import { FC } from "react";
-import { ContextMenuEvent } from "reagraph";
 import styled from "styled-components";
 
 const Menu = styled(AntdMenu)`

@@ -29,7 +29,7 @@ const TableWrapper = styled.div`
 `;
 
 const BtcTransactionInputsOutputs: React.FC<BtcTransactionInputsOutputsProps> = ({ transaction }) => {
-  const { cpin, cpout } = transaction;
+  const { inputs: cpin, outputs: cpout } = transaction;
 
   const totalInput = cpin.reduce((acc, input) => acc + input.amt, 0);
   const totalOutput = cpout.reduce((acc, output) => acc + output.amt, 0);
