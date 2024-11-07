@@ -5,7 +5,7 @@ import { satsToBTC } from '../../../utils/crypto';
 import { Link } from 'react-router-dom';
 
 interface BtcInputsOutputsProps {
-  data: BtcTransaction['cpin'];
+  data: BtcTransaction['inputs'];
   type: 'inputs' | 'outputs';
 }
 
@@ -66,7 +66,7 @@ const BtcInputsOutputs: React.FC<BtcInputsOutputsProps> = ({ data }) => {
 
   return (
     <Wrapper>
-      {displayData.map((input, index) => (
+      {displayData.map((input: BtcTransaction['inputs'][0], index: number) => (
         <Row key={index}>
           <BtcTxAddress address={input.addr} />
           <span>{satsToBTC(input.amt)}</span>
