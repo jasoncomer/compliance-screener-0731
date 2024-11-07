@@ -8,7 +8,7 @@ import { satsToBTC } from '../utils/crypto';
 import GraphButtons from '../components/GraphButtons';
 import { truncateStringMiddle } from '../utils/generic';
 import NodeContextMenu from '../components/explorer/NodeContextMenu';
-import { api } from '../api/api';
+// import { api } from '../api/api';
 
 interface Props { }
 
@@ -193,7 +193,7 @@ const Explorer: React.FC<Props> = () => {
         layoutOverrides={{
           nodeLevelRatio: 5,
         }}
-        onNodeContextMenu={(event, nodeId) => {
+        onNodeContextMenu={(_, nodeId) => {
           console.log('nodeId', nodeId);
         }}
         contextMenu={({ data, onClose }) => <NodeContextMenu data={data} onClose={onClose} onExpandAddress={onExpandAddress} />}
