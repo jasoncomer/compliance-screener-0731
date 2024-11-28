@@ -2,7 +2,7 @@ import { api } from "../api/api";
 import { BtcTransaction } from "../typings/BtcTransaction";
 
 const satsToBTC = (sats: number) => sats / 100000000;
-
+const BTCToSats = (btc: number) => btc * 100000000;
 const truncateAddress = (address: string) => {
   const digits = 4;
   return `${address.slice(0, digits)}...${address.slice(-digits)}`;
@@ -100,6 +100,7 @@ const getTransactionAmountOfAddress = (tx: BtcTransaction, address: string) => {
 
 export {
   satsToBTC,
+  BTCToSats,
   truncateAddress,
   determineInputType,
   fetchBlockchainData,

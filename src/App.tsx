@@ -5,6 +5,7 @@ import {
 import Login from './views/Login';
 import Register from "./views/Register";
 import Home from "./views/Home";
+import BlockHam from './views/BlockHam';
 import { ConfigProvider, ThemeConfig } from "antd";
 import { colors } from './styles/variables';
 import { useAppContext } from "./context/AppContext";

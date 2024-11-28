@@ -31,10 +31,17 @@ const generateReport = async (address: string) => {
   return res.data;
 };
 
+const getSOT = async () => {
+  // set axios timeout to 10 seconds
+  const res = await axiosInstance.get(`/blockchain/sot`, { timeout: 20000 });
+  return res.data;
+};
+
 export const blockchain = {
   generateReport,
   getAddress,
   getAddressSummary,
   getBlock,
   getTransaction,
+  getSOT,
 };

@@ -7,6 +7,7 @@ import { BsWrapper } from '../../styles/ocmmon';
 import styled from 'styled-components';
 import BtcTransactionTable from './transaction/BtcTransactionTable';
 import { BtcTransaction } from '../../typings/BtcTransaction';
+import { satsToBTC } from '../../utils/crypto';
 
 const SummaryWrapper = styled.div`
   display: flex;
@@ -37,6 +38,7 @@ const Address: React.FC = () => {
       try {
         if (!address) return;
         const { data, txData } = await api.blockchain.getAddress(address);
+        console.log(data);
         setAddrData(data);
         setTxs(txData);
       } catch (error) {
@@ -63,7 +65,7 @@ const Address: React.FC = () => {
           <hr />
           <SummaryWrapper>
             <div className='col'>
-              <span><strong>Balance:</strong> {addrData?.balance} BTC</span>
+              <span><strong>Balance:</strong> {satsToBTC(addrData?.balance || 0)} BTC</span>
               <span><strong>First block:</strong> {addrData?.first_block?.toLocaleString()}</span>
               <span><strong>Last block:</strong> {addrData?.last_block?.toLocaleString()}</span>
             </div>

@@ -68,7 +68,7 @@ const ButtonDiv = styled.div`
   }
 `;
 
-type Section = 'alerts' | 'cases' | 'explorer' | 'settings' | 'block-explorer';
+type Section = 'alerts' | 'cases' | 'explorer' | 'settings' | 'block-explorer' | 'blockham';
 
 const Sidebar = () => {
   const nav = useNavigate();
@@ -137,6 +137,15 @@ const Sidebar = () => {
             ) : (
               <Tooltip placement="bottom" title={'Alerts'} mouseEnterDelay={1}>
                 <AlertOutlined onClick={() => handleSectionChange('alerts')} />
+              </Tooltip>
+            )}
+            {activeSection === 'blockham' ? (
+              <Tooltip placement="bottom" title={'BlockHam'} mouseEnterDelay={1}>
+                <GlobalOutlined className='active' />
+              </Tooltip>
+            ) : (
+              <Tooltip placement="bottom" title={'BlockHam'} mouseEnterDelay={1}>
+                <GlobalOutlined onClick={() => handleSectionChange('blockham')} />
               </Tooltip>
             )}
             {activeSection === 'settings' ? (
@@ -209,7 +218,19 @@ const Sidebar = () => {
                   onClick={() => handleSectionChange('alerts')}
                   icon={<AlertOutlined />}>Alerts</Button>
               )}
-
+              {activeSection === 'blockham' ? (
+                <Button
+                  ghost
+                  block
+                  className='active'
+                  icon={<GlobalOutlined className='active' />}>BlockHam</Button>
+              ) : (
+                <Button
+                  ghost
+                  block
+                  onClick={() => handleSectionChange('blockham')}
+                  icon={<GlobalOutlined />}>BlockHam</Button>
+              )}
               {activeSection === 'settings' ? (
                 <Button
                   ghost

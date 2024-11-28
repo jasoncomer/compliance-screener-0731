@@ -8,6 +8,7 @@ import Explorer from './Explorer';
 import Settings from './Settings';
 import { setAuthToken } from '../api/api';
 import BlockExplorer from './blockexplorer/BlockExplorer';
+import BlockHam from './BlockHam';
 
 const { Content } = Layout;
 
@@ -36,6 +37,7 @@ const Home: React.FC<RouteProps> = () => {
             <Route path="/cases" element={<Cases />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/explorer" element={<Explorer />} />
+            <Route path="/blockham" element={<BlockHam />} />
             <Route path="/block-explorer/*" element={<BlockExplorer />} />
           </Routes>
         </Content>

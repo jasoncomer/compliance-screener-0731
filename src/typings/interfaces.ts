@@ -106,3 +106,27 @@ export interface IBSApiResponse<T> {
   data: T;
   status: number;  
 }
+
+export interface SOT {
+  date_updated: string;
+  user: string;
+  revisit_site: boolean;
+  kyc_req: boolean;
+  entity_id: string;
+  url: string;
+  proper_name: string;
+  entity_type: string;
+  dead: boolean;
+  legal_info_url: string;
+  contact_email: string;
+  contact_telegram: string;
+  contact_twitter: string;
+  logo: string;
+  centralized: boolean;
+  year_founded: string;
+  social_media_profile: string;
+  social_media_profile_2: string;
+  social_media_profile_3: string;
+  description_merged: string;
+  associate_country_1: string;
+}
