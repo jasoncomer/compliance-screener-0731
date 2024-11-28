@@ -1,5 +1,6 @@
 import { IBtcAddress, IBtcAddressSummary } from "../typings/BtcAddress";
 import { BtcTransaction } from "../typings/BtcTransaction";
+import { SOT } from "../typings/interfaces";
 import { axiosInstance } from "./api";
 
 const getAddressSummary = async (address: string): Promise<IBtcAddressSummary> => {
@@ -32,9 +33,30 @@ const generateReport = async (address: string) => {
 };
 
 const getSOT = async () => {
-  // set axios timeout to 10 seconds
   const res = await axiosInstance.get(`/blockchain/sot`, { timeout: 20000 });
-  return res.data;
+  
+  // TODO: fix the logo url for all SOTs in the sheet
+  const sot = (res.data as SOT[]).map(item => {
+    if (item.logo && !item.logo.startsWith('https://')) {
+      item.logo = 'https://' + item.logo;
+    }
+    return item;
+  });
+  return sot;
+};
+
+export const updateSOT = async (id: string, data: Partial<SOT>): Promise<SOT> => {
+  const response = await axiosInstance.put(`/blockchain/sot/${id}`, {
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(data),
+  });
+  return response.data;
+};
+
+export const deleteSOT = async (id: string): Promise<void> => {
+  await axiosInstance.delete(`/blockchain/sot/${id}`);
 };
 
 export const blockchain = {
@@ -44,4 +66,6 @@ export const blockchain = {
   getBlock,
   getTransaction,
   getSOT,
+  updateSOT,
+  deleteSOT,
 };

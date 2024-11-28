@@ -3,7 +3,11 @@ import styled from 'styled-components';
 import { Typography, AutoComplete, Input, Avatar } from 'antd';
 import { UserOutlined } from '@ant-design/icons';
 import Sifter from 'sifter';
-import { api } from '../api/api';
+import { useDispatch, useSelector } from 'react-redux';
+
+import SOTEditor from '../components/SOTEditor';
+import { AppDispatch, RootState } from '../store/store';
+import { fetchSOT } from '../store/slices/sotSlice';
 import { SOT } from '../typings/interfaces';
 
 const { Title } = Typography;
@@ -12,15 +16,16 @@ const BlockHamWrapper = styled.div`
   padding: 24px;
   height: 100%;
   width: 100%;
+  h2 {
+    margin-bottom: 16px;
+  }
 `;
 
 const SearchWrapper = styled.div`
-  margin: 24px 0;
   width: 100%;
-
   `;
-  
-  const OptionWrapper = styled.div`
+
+const OptionWrapper = styled.div`
   display: flex;
   align-items: center;
   gap: 8px;
@@ -73,13 +78,17 @@ const StyledAutoComplete = styled(AutoComplete)`
     }
   `;
 
-interface PopulatedSOT extends SOT {
-  autocompleteDisplayTitle: string; 
+export interface PopulatedSOT extends SOT {
+  autocompleteDisplayTitle: string;
 }
 
 interface GroupedOption {
   label: React.ReactNode;
-  options: PopulatedSOT[];
+  options: ({
+    label: React.ReactNode;
+    value: string;
+    // item: PopulatedSOT;
+  })[];
 }
 
 const headerTitleMap: Record<string, string> = {
@@ -92,17 +101,23 @@ const headerTitleMap: Record<string, string> = {
 };
 
 const BlockHam: React.FC = () => {
+  const dispatch = useDispatch<AppDispatch>();
+  const { items: sot, itemsMap: sotMap, loading: sotLoading } = useSelector((state: RootState) => state.sot);
+  
   const [options, setOptions] = useState<GroupedOption[]>([]);
   const [loading, setLoading] = useState(false);
-  const [sot, setSot] = useState<PopulatedSOT[]>([]);
+  const [selectedSot, setSelectedSot] = useState<SOT | null>(null);
 
   useEffect(() => {
-    const fetchSOT = async () => {
-      const response = await api.blockchain.getSOT();
-      setSot(response);
-    };
-    fetchSOT();
-  }, []);
+    dispatch(fetchSOT());
+  }, [dispatch]);
+
+  useEffect(() => {
+    if (selectedSot) {
+      console.log(`selectedSot: ${selectedSot?._id}`);
+      console.log(sotMap);
+    }
+  }, [selectedSot]);
 
   const headerTitle = (field: string, items: PopulatedSOT[]) => {
     return (
@@ -113,8 +128,13 @@ const BlockHam: React.FC = () => {
     );
   };
 
-  const onSelect = (value: string) => {
-    console.log('Selected:', value);
+  const onSelect = (value: string, option: any) => {
+    const key = option?.key;
+    if (key) {
+      const id = key.split('-')[0];
+      console.log(`setting selectedSot to ${id} - ${sotMap[id]}`);
+      setSelectedSot(sotMap[id]);
+    }
   };
 
   const handleSearch = async (searchText: string) => {
@@ -127,11 +147,11 @@ const BlockHam: React.FC = () => {
     try {
       const sifter = new Sifter(sot);
       const searchableFields = [
-        'entity_id', 
-        'url', 
-        'proper_name', 
-        'entity_type', 
-        'contact_twitter', 
+        'entity_id',
+        'url',
+        'proper_name',
+        'entity_type',
+        'contact_twitter',
         'contact_telegram'
       ];
       const fieldDisplayMap: Record<string, (keyof PopulatedSOT)[]> = {
@@ -142,7 +162,7 @@ const BlockHam: React.FC = () => {
         'contact_twitter': ['contact_twitter'],
         'contact_telegram': ['contact_telegram'],
       };
-      
+
       // Search each field separately to get top 10 matches per field
       const groupedResults: Record<string, PopulatedSOT[]> = {};
 
@@ -163,12 +183,6 @@ const BlockHam: React.FC = () => {
             for (const dF of fieldDisplayMap[field]) {
               if (populatedSOT[dF] != null) {
                 populatedSOT.autocompleteDisplayTitle = populatedSOT[dF] as string;
-                if (populatedSOT.logo != null) {
-                  // clean the logo url; add https:// if it's missing
-                  if (!populatedSOT.logo.startsWith('http')) {
-                    populatedSOT.logo = 'https://' + populatedSOT.logo;
-                  }
-                }
                 break;
               }
             }
@@ -176,19 +190,19 @@ const BlockHam: React.FC = () => {
           });
         }
       }
-      console.log(groupedResults);
 
       // Convert to AutoComplete's format
       const groupedOptions: GroupedOption[] = Object.entries(groupedResults)
-        .filter(([_, items]) => items.length > 0) // Remove empty groups
+        .filter(([_, items]) => items.length > 0)
         .map(([field, items]) => ({
-          label: headerTitle(field, items),
+          label: headerTitle(field, items) as any,
           options: items.map(item => ({
-            ...item,
+            key: `${item._id}-${item.autocompleteDisplayTitle}`,
+            value: item.autocompleteDisplayTitle,
             label: (
               <OptionWrapper>
-                <Avatar 
-                  size="small" 
+                <Avatar
+                  size="small"
                   src={item.logo}
                   icon={!item.logo && <UserOutlined />}
                 />
@@ -202,7 +216,7 @@ const BlockHam: React.FC = () => {
                   )}
                 </OptionContent>
               </OptionWrapper>
-            )
+            ) as any
           }))
         }));
 
@@ -215,27 +229,34 @@ const BlockHam: React.FC = () => {
     }
   };
 
+  const handleSelectAssociatedSot = (newSot: SOT) => {
+    setSelectedSot(newSot);
+  };
+
   return (
-    <BlockHamWrapper>
-      <Title level={2}>BlockHam</Title>
-      <SearchWrapper>
-        <StyledAutoComplete
-          options={options}
-          onSelect={onSelect}
-          onSearch={handleSearch}
-          style={{ width: '100%' }}
-          listHeight={500}
-          dropdownMatchSelectWidth={true}
-        >
-          <Input.Search
-            placeholder="Search by name, address, or type..."
-            enterButton
-            size="large"
-            loading={loading}
-          />
-        </StyledAutoComplete>
-      </SearchWrapper>
-    </BlockHamWrapper>
+    <>
+      <BlockHamWrapper>
+        <Title level={2}>BlockHam</Title>
+        <SearchWrapper>
+          <StyledAutoComplete
+            options={options}
+            onSelect={onSelect as any}
+            onSearch={handleSearch}
+            style={{ width: '100%' }}
+            listHeight={500}
+          >
+            <Input.Search
+              placeholder="Search by name, address, or type..."
+              enterButton
+              size="large"
+              loading={loading || sotLoading}
+            />
+          </StyledAutoComplete>
+        </SearchWrapper>
+
+        <SOTEditor sot={selectedSot} onSelectAssociatedSot={handleSelectAssociatedSot} />
+      </BlockHamWrapper>
+    </>
   );
 };
 

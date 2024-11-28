@@ -108,6 +108,7 @@ export interface IBSApiResponse<T> {
 }
 
 export interface SOT {
+  _id: string;
   date_updated: string;
   user: string;
   revisit_site: boolean;
