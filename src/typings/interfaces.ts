@@ -109,25 +109,42 @@ export interface IBSApiResponse<T> {
 
 export interface SOT {
   _id: string;
+  entity_id: string;
+  url: string;
   date_updated: string;
+  logo: string;
+  year_founded: string;
+  proper_name: string;
+  
   user: string;
   revisit_site: boolean;
   kyc_req: boolean;
-  entity_id: string;
-  url: string;
-  proper_name: string;
   entity_type: string;
   dead: boolean;
   legal_info_url: string;
+  centralized: boolean;
+  description_merged: string;
+  associate_country_1: string;
+  
+  ceo?: string;
+  founders?: string;
+  
   contact_email: string;
+  contact_phone: string;
+  contact_address: string;
   contact_telegram: string;
   contact_twitter: string;
-  logo: string;
-  centralized: boolean;
-  year_founded: string;
+
   social_media_profile: string;
   social_media_profile_2: string;
   social_media_profile_3: string;
-  description_merged: string;
-  associate_country_1: string;
+  social_media_profile_4: string;
+  
+  entity_tag1?: string;
+  entity_tag2?: string;
+  entity_tag3?: string;
+  entity_tag4?: string;
+  entity_tag5?: string;
+  entity_tag6?: string;
+
 }

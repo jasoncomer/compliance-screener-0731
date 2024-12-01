@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Card, Form, Input, Button, Space, Typography, Divider, message, Avatar } from 'antd';
-import { UserOutlined, GlobalOutlined, TwitterOutlined, SendOutlined } from '@ant-design/icons';
+import { Card, Form, Input, Button, Space, Typography, Divider, message, Avatar, Modal, Row, Col, Tag } from 'antd';
+import { UserOutlined, GlobalOutlined, TwitterOutlined, SendOutlined, PlusOutlined } from '@ant-design/icons';
 import styled from 'styled-components';
 import { SOT } from '../typings/interfaces';
 import { api } from '../api/api';
@@ -60,6 +60,10 @@ const DetailValue = styled(Text)`
       text-decoration: underline;
     }
   }
+
+  &.address-line {
+    text-align: left;
+  }
 `;
 
 const HeaderSection = styled.div`
@@ -78,6 +82,19 @@ const HeaderInfo = styled.div`
 const StyledAvatar = styled(Avatar)`
   width: 64px;
   height: 64px;
+`;
+
+const TagsContainer = styled.div`
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+`;
+
+const TagInput = styled(Input)`
+  width: 100px;
+  margin-right: 8px;
+  vertical-align: top;
 `;
 
 interface SOTEditorProps {
@@ -104,30 +121,49 @@ const SOTEditor: React.FC<SOTEditorProps> = ({ sot, onSelectAssociatedSot }) => 
 
   const handleSave = async () => {
     try {
-      setLoading(true);
       const values = await form.validateFields();
-      const updatedSot = await api.blockchain.updateSOT(sot._id, values);
-      setIsEditing(false);
-      message.success('SOT updated successfully');
+      
+      Modal.confirm({
+        title: 'Save Changes',
+        content: 'Are you sure you want to save these changes?',
+        onOk: async () => {
+          try {
+            setLoading(true);
+            const updatedSot = await api.blockchain.updateSOT(sot._id, values);
+            setIsEditing(false);
+            message.success('SOT updated successfully');
+          } catch (error) {
+            console.error('Failed to update SOT:', error);
+            message.error('Failed to update SOT');
+          } finally {
+            setLoading(false);
+          }
+        },
+      });
     } catch (error) {
-      console.error('Failed to update SOT:', error);
-      message.error('Failed to update SOT');
-    } finally {
-      setLoading(false);
+      console.error('Validation failed:', error);
     }
   };
 
-  const handleDelete = async () => {
-    try {
-      setLoading(true);
-      await api.blockchain.deleteSOT(sot._id);
-      message.success('SOT deleted successfully');
-    } catch (error) {
-      console.error('Failed to delete SOT:', error);
-      message.error('Failed to delete SOT');
-    } finally {
-      setLoading(false);
-    }
+  const handleDelete = () => {
+    Modal.confirm({
+      title: 'Delete SOT',
+      content: 'Are you sure you want to delete this SOT? This action cannot be undone.',
+      okText: 'Delete',
+      okType: 'danger',
+      onOk: async () => {
+        try {
+          setLoading(true);
+          await api.blockchain.deleteSOT(sot._id);
+          message.success('SOT deleted successfully');
+        } catch (error) {
+          console.error('Failed to delete SOT:', error);
+          message.error('Failed to delete SOT');
+        } finally {
+          setLoading(false);
+        }
+      },
+    });
   };
 
   const renderContent = () => {
@@ -138,31 +174,67 @@ const SOTEditor: React.FC<SOTEditorProps> = ({ sot, onSelectAssociatedSot }) => 
           layout="vertical"
           initialValues={sot}
         >
-          <Form.Item name="entity_id" label="Entity ID">
-            <Input />
-          </Form.Item>
-          <Form.Item name="proper_name" label="Company Name">
-            <Input />
-          </Form.Item>
-          <Form.Item name="url" label="URL">
-            <Input />
-          </Form.Item>
-          <Form.Item name="entity_type" label="Entity Type">
-            <Input />
-          </Form.Item>
-          <Form.Item name="contact_twitter" label="Twitter">
-            <Input />
-          </Form.Item>
-          <Form.Item name="contact_telegram" label="Telegram">
-            <Input />
-          </Form.Item>
-          <Form.Item name="logo" label="Logo URL">
-            <Input />
-          </Form.Item>
-          <Form.Item name="associate_country_1" label="Country">
-            <Input />
-          </Form.Item>
-
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item name="proper_name" label="Company Name">
+                <Input />
+              </Form.Item>
+              <Form.Item name="entity_id" label="Entity ID">
+                <Input />
+              </Form.Item>
+              <Form.Item name="entity_type" label="Entity Type">
+                <Input />
+              </Form.Item>
+              <Form.Item name="ceo" label="CEO">
+                <Input />
+              </Form.Item>
+              <Form.Item name="founders" label="Founders">
+                <Input />
+              </Form.Item>
+              <Form.Item name="year_founded" label="Year Founded">
+                <Input />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="url" label="Website">
+                <Input />
+              </Form.Item>
+              <Form.Item name="contact_phone" label="Phone">
+                <Input />
+              </Form.Item>
+              <Form.Item name="contact_address" label="Address">
+                <Input />
+              </Form.Item>
+              <Form.Item name="contact_twitter" label="Twitter">
+                <Input />
+              </Form.Item>
+              <Form.Item name="contact_telegram" label="Telegram">
+                <Input />
+              </Form.Item>
+              <Form.Item name="associate_country_1" label="Country">
+                <Input />
+              </Form.Item>
+              <Form.Item name="logo" label="Logo URL">
+                <Input />
+              </Form.Item>
+              <Col span={24}>
+                <Form.Item label="Entity Tags">
+                  {Object.entries(sot)
+                    .filter(([key]) => key.startsWith('entity_tag'))
+                    .map(([key, value]) => (
+                      <Form.Item 
+                        key={key} 
+                        name={key} 
+                        style={{ display: 'inline-block', marginRight: 8 }}
+                      >
+                        <TagInput placeholder={`Tag ${key.replace('entity_tag', '')}`} />
+                      </Form.Item>
+                    ))}
+                </Form.Item>
+              </Col>
+            </Col>
+          </Row>
+          
           <ButtonGroup>
             <Button onClick={handleCancel}>Cancel</Button>
             <Button type="primary" onClick={handleSave} loading={loading}>
@@ -192,6 +264,27 @@ const SOTEditor: React.FC<SOTEditorProps> = ({ sot, onSelectAssociatedSot }) => 
             <DetailValue>{sot.entity_id}</DetailValue>
           </DetailItem>
 
+          {sot.ceo && (
+            <DetailItem>
+              <DetailLabel>CEO</DetailLabel>
+              <DetailValue>{sot.ceo}</DetailValue>
+            </DetailItem>
+          )}
+
+          {sot.founders && (
+            <DetailItem>
+              <DetailLabel>Founders</DetailLabel>
+              <DetailValue>{sot.founders.split(',').map(founder => <Tag key={founder}>{founder}</Tag>)}</DetailValue>
+            </DetailItem>
+          )}
+
+          {sot.year_founded && (
+            <DetailItem>
+              <DetailLabel>Year Founded</DetailLabel>
+              <DetailValue>{sot.year_founded}</DetailValue>
+            </DetailItem>
+          )}
+
           <DetailItem>
             <DetailLabel>Country</DetailLabel>
             <DetailValue>{sot.associate_country_1 || '-'}</DetailValue>
@@ -208,6 +301,20 @@ const SOTEditor: React.FC<SOTEditorProps> = ({ sot, onSelectAssociatedSot }) => 
               ) : '-'}
             </DetailValue>
           </DetailItem>
+
+          {sot.contact_phone && (
+            <DetailItem>
+              <DetailLabel>Phone</DetailLabel>
+              <DetailValue>{sot.contact_phone}</DetailValue>
+            </DetailItem>
+          )}
+
+          {sot.contact_address && (
+            <DetailItem>
+              <DetailLabel>Address</DetailLabel>
+              <DetailValue className='address-line'>{sot.contact_address}</DetailValue>
+            </DetailItem>
+          )}
 
           <DetailItem>
             <DetailLabel>Twitter</DetailLabel>
@@ -232,6 +339,31 @@ const SOTEditor: React.FC<SOTEditorProps> = ({ sot, onSelectAssociatedSot }) => 
               ) : '-'}
             </DetailValue>
           </DetailItem>
+
+          {Object.entries(sot)
+            .filter(([key, value]) => key.startsWith('entity_tag') && value)
+            .length > 0 && (
+              <DetailItem>
+                <DetailLabel>Tags</DetailLabel>
+                <TagsContainer>
+                  {Object.entries(sot)
+                    .filter(([key, value]) => key.startsWith('entity_tag') && value)
+                    .map(([key, value]) => (
+                      <Tag 
+                        key={key}
+                        color="blue"
+                        style={{ 
+                          marginBottom: 8,
+                          padding: '4px 8px',
+                          borderRadius: '16px'
+                        }}
+                      >
+                        {value}
+                      </Tag>
+                    ))}
+                </TagsContainer>
+              </DetailItem>
+            )}
         </DetailSection>
 
         <Divider />

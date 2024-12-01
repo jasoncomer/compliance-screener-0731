@@ -17,7 +17,7 @@ const BlockHamWrapper = styled.div`
   height: 100%;
   width: 100%;
   h2 {
-    margin-bottom: 16px;
+    margin: 0;
   }
 `;
 
