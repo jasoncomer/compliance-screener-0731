@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Card, Form, Input, Button, Space, Typography, Divider, message, Avatar, Modal, Row, Col, Tag } from 'antd';
-import { UserOutlined, GlobalOutlined, TwitterOutlined, SendOutlined, PlusOutlined } from '@ant-design/icons';
+import { UserOutlined, GlobalOutlined, TwitterOutlined, SendOutlined } from '@ant-design/icons';
 import styled from 'styled-components';
 import { SOT } from '../typings/interfaces';
 import { api } from '../api/api';
@@ -121,7 +121,7 @@ const SOTEditor: React.FC<SOTEditorProps> = ({ sot, onSelectAssociatedSot }) => 
 
   const handleSave = async () => {
     try {
-      const values = await form.validateFields();
+      // const values = await form.validateFields();
       
       Modal.confirm({
         title: 'Save Changes',
@@ -129,7 +129,7 @@ const SOTEditor: React.FC<SOTEditorProps> = ({ sot, onSelectAssociatedSot }) => 
         onOk: async () => {
           try {
             setLoading(true);
-            const updatedSot = await api.blockchain.updateSOT(sot._id, values);
+            // const updatedSot = await api.blockchain.updateSOT(sot._id, values);
             setIsEditing(false);
             message.success('SOT updated successfully');
           } catch (error) {
@@ -221,7 +221,7 @@ const SOTEditor: React.FC<SOTEditorProps> = ({ sot, onSelectAssociatedSot }) => 
                 <Form.Item label="Entity Tags">
                   {Object.entries(sot)
                     .filter(([key]) => key.startsWith('entity_tag'))
-                    .map(([key, value]) => (
+                    .map(([key]) => (
                       <Form.Item 
                         key={key} 
                         name={key} 

@@ -128,7 +128,7 @@ const BlockHam: React.FC = () => {
     );
   };
 
-  const onSelect = (value: string, option: any) => {
+  const onSelect = (_: string, option: any) => {
     const key = option?.key;
     if (key) {
       const id = key.split('-')[0];
