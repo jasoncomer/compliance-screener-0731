@@ -32,6 +32,7 @@ const Home: React.FC<RouteProps> = () => {
       <Sidebar />
       <Layout>
         {/* <Navbar /> */}
+        
         <Content style={contentStyle}>
           <Routes>
             <Route path="/cases" element={<Cases />} />
