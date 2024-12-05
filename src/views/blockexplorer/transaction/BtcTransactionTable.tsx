@@ -52,11 +52,9 @@ const BtcTransactionHeader: React.FC<BtcTransactionHeaderProps> = ({ txHash, blo
 
 interface BtcTransactionTableProps {
   transaction: BtcTransaction;
-  attributions: IAttributionMap;
-  referenceAttributions: ReferenceAttributionMap; 
 }
 
-const BtcTransactionTable: React.FC<BtcTransactionTableProps> = ({ transaction, attributions, referenceAttributions }) => {
+const BtcTransactionTable: React.FC<BtcTransactionTableProps> = ({ transaction }) => {
   if (!transaction) return null;
 
   return (
@@ -67,7 +65,7 @@ const BtcTransactionTable: React.FC<BtcTransactionTableProps> = ({ transaction, 
         date={new Date(transaction.timestamp * 1000).toLocaleString()}
       />
 
-      <BtcTransactionInputsOutputs transaction={transaction} attributions={attributions} referenceAttributions={referenceAttributions} />
+      <BtcTransactionInputsOutputs transaction={transaction} />
     </BsBlock>
   );
 };

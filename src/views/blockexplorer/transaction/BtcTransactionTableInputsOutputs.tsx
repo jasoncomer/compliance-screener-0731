@@ -1,15 +1,12 @@
-import React, { useEffect } from 'react';
-import { BtcTransaction } from '../../../typings/BtcTransaction';
+import React from 'react';
 import styled from 'styled-components';
+
 import BtcInputsOutputs from './BtcInputsOutputs';
 import { satsToBTC } from '../../../utils/crypto';
-import useAttribution from '../../../hooks/useAttribution';
-import { IAttributionMap, ReferenceAttributionMap } from '../../../typings/ReferenceAttribution';
+import { BtcTransaction } from '../../../typings/BtcTransaction';
 
 interface BtcTransactionInputsOutputsProps {
   transaction: BtcTransaction;
-  attributions: IAttributionMap;
-  referenceAttributions: ReferenceAttributionMap;
 }
 
 const TableWrapper = styled.div`
@@ -32,7 +29,7 @@ const TableWrapper = styled.div`
   }
 `;
 
-const BtcTransactionInputsOutputs: React.FC<BtcTransactionInputsOutputsProps> = ({ transaction, attributions, referenceAttributions }) => {
+const BtcTransactionInputsOutputs: React.FC<BtcTransactionInputsOutputsProps> = ({ transaction }) => {
   const { inputs: cpin, outputs: cpout } = transaction;
   const totalInput = cpin.reduce((acc, input) => acc + input.amt, 0);
   const totalOutput = cpout.reduce((acc, output) => acc + output.amt, 0);
@@ -45,7 +42,7 @@ const BtcTransactionInputsOutputs: React.FC<BtcTransactionInputsOutputsProps> = 
           <hr />
           <span>{satsToBTC(totalInput)} BTC</span>
         </div>
-        <BtcInputsOutputs data={cpin} type='inputs' attributions={attributions} referenceAttributions={referenceAttributions} />
+        <BtcInputsOutputs data={cpin} type='inputs' />
       </div>
 
       <div className='outputs'>
@@ -54,7 +51,7 @@ const BtcTransactionInputsOutputs: React.FC<BtcTransactionInputsOutputsProps> = 
           <hr />
           <span>{satsToBTC(totalOutput)} BTC</span>
         </div>
-        <BtcInputsOutputs data={cpout} type='outputs' attributions={attributions} referenceAttributions={referenceAttributions} />
+        <BtcInputsOutputs data={cpout} type='outputs' />
       </div>
 
     </TableWrapper>

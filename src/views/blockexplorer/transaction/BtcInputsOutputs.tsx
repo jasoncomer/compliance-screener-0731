@@ -1,16 +1,14 @@
-import React, { useState, useEffect } from 'react';
-import { BtcTransaction } from '../../../typings/BtcTransaction';
-import styled from 'styled-components';
-import { satsToBTC } from '../../../utils/crypto';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import useAttribution from '../../../hooks/useAttribution';
-import { IAttributionMap, ReferenceAttributionMap } from '../../../typings/ReferenceAttribution';
+import styled from 'styled-components';
+
+import { satsToBTC } from '../../../utils/crypto';
+import { BtcTransaction } from '../../../typings/BtcTransaction';
+import { useAttribution } from '../../../context/AttributionContext';
 
 interface BtcInputsOutputsProps {
   data: BtcTransaction['inputs'];
   type: 'inputs' | 'outputs';
-  attributions: IAttributionMap;
-  referenceAttributions: ReferenceAttributionMap;
 }
 
 const Wrapper = styled.div`
@@ -45,13 +43,17 @@ const ToggleButton = styled.button`
 
 interface BtcTxAddressProps {
   address: string;
-  attribution: string;
-  referenceAttribution: string;
 }
 
-const BtcTxAddress: React.FC<BtcTxAddressProps> = ({ address, attribution, referenceAttribution }) => {
+const BtcTxAddress: React.FC<BtcTxAddressProps> = ({ address }) => {
   const url = window.location.href;
   const currAddress = url.split('/').pop();
+  const { attributions, referenceAttributions } = useAttribution();
+
+  const attribution = attributions[address]?.entity;
+  const referenceAttribution = referenceAttributions[address]?.entity;
+
+  console.log(attribution, referenceAttribution);
 
   if (address === currAddress) {
     return <span>{address}</span>;
@@ -60,7 +62,7 @@ const BtcTxAddress: React.FC<BtcTxAddressProps> = ({ address, attribution, refer
   return <Link to={`/home/block-explorer/address/${address}`}>{attribution} {referenceAttribution ? `(${referenceAttribution})` : ''}</Link>;
 }
 
-const BtcInputsOutputs: React.FC<BtcInputsOutputsProps> = ({ data, attributions, referenceAttributions }) => {
+const BtcInputsOutputs: React.FC<BtcInputsOutputsProps> = ({ data }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const displayData = isExpanded ? data : data.slice(0, 5);
   const showToggle = data.length > 5;
@@ -73,7 +75,7 @@ const BtcInputsOutputs: React.FC<BtcInputsOutputsProps> = ({ data, attributions,
     <Wrapper>
       {displayData.map((input: BtcTransaction['inputs'][0], index: number) => (
         <Row key={index}>
-          <BtcTxAddress address={input.addr} attribution={attributions[input.addr]?.entity} referenceAttribution={referenceAttributions[input.addr]?.entity} />
+          <BtcTxAddress address={input.addr} />
           <span>{satsToBTC(input.amt)}</span>
         </Row>
       ))}
