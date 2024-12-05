@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useCallback, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { api } from '../../api/api';
 import { BsBlock } from '../../styles/Table';
@@ -8,6 +8,8 @@ import styled from 'styled-components';
 import BtcTransactionTable from './transaction/BtcTransactionTable';
 import { BtcTransaction } from '../../typings/BtcTransaction';
 import { satsToBTC } from '../../utils/crypto';
+import { IAttribution, IAttributionMap, IReferenceAttribution, ReferenceAttributionMap } from '../../typings/ReferenceAttribution';
+import useAttribution from '../../hooks/useAttribution';
 
 const SummaryWrapper = styled.div`
   display: flex;
@@ -28,10 +30,42 @@ const SummaryWrapper = styled.div`
   }
 `;
 
+
+
 const Address: React.FC = () => {
   const { address } = useParams();
   const [addrData, setAddrData] = React.useState<IBtcAddress>();
   const [txs, setTxs] = React.useState<BtcTransaction[]>([]);
+  const [attributions, setAttributions] = React.useState<IAttributionMap>({});
+  const [referenceAttributions, setReferenceAttributions] = React.useState<ReferenceAttributionMap>({});
+  const [isLoading, setIsLoading] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
+
+  const fetchAttributions = useCallback(async (addresses: string[]) => {
+    try {
+      setIsLoading(true);
+      setError(null);
+
+      const { data, referenceData } = await api.blockchain.getAttributions(addresses);
+
+      const newAttributions = data.reduce((acc: IAttributionMap, curr: IAttribution) => {
+        acc[curr.addr] = curr;
+        return acc;
+      }, {});
+
+      const newReferenceAttributions = referenceData.reduce((acc: ReferenceAttributionMap, curr: IReferenceAttribution) => {
+        acc[curr.addr] = curr;
+        return acc;
+      }, {});
+
+      setAttributions(newAttributions);
+      setReferenceAttributions(newReferenceAttributions);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch attributions');
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     const fetchAddress = async () => {
@@ -41,6 +75,12 @@ const Address: React.FC = () => {
         console.log(data);
         setAddrData(data);
         setTxs(txData);
+        const addresses = [
+          address,
+          ...txData.flatMap(tx => tx.inputs.map(i => i.addr)),
+          ...txData.flatMap(tx => tx.outputs.map(o => o.addr))
+        ];
+        fetchAttributions(addresses);
       } catch (error) {
         console.error('Error fetching transactions:', error);
       }
@@ -80,7 +120,7 @@ const Address: React.FC = () => {
         <BsBlock>
           <h3>Transactions ({txs.length.toLocaleString()})</h3>
           <hr />
-          {txs.map(tx => <BtcTransactionTable transaction={tx} />)}
+          {txs.map(tx => <BtcTransactionTable transaction={tx} attributions={attributions} referenceAttributions={referenceAttributions} />)}
         </BsBlock>
       </BsWrapper>
     </>

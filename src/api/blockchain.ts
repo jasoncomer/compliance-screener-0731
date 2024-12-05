@@ -1,7 +1,14 @@
 import { IBtcAddress, IBtcAddressSummary } from "../typings/BtcAddress";
 import { BtcTransaction } from "../typings/BtcTransaction";
 import { SOT } from "../typings/interfaces";
+import { IAttribution, IReferenceAttribution } from "../typings/ReferenceAttribution";
 import { axiosInstance } from "./api";
+
+
+const getAttributions = async (addresses: string[]): Promise<{ data: IAttribution[], referenceData: IReferenceAttribution[] }> => {
+  const res = await axiosInstance.post(`/blockchain/attributions`, { addresses });
+  return res.data;
+};
 
 const getAddressSummary = async (address: string): Promise<IBtcAddressSummary> => {
   const res = await axiosInstance.get(`/blockchain/address/${address}/summary`);
@@ -63,6 +70,7 @@ export const blockchain = {
   generateReport,
   getAddress,
   getAddressSummary,
+  getAttributions,
   getBlock,
   getTransaction,
   getSOT,
