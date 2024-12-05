@@ -4,7 +4,6 @@ import { BsBlock } from '../../../styles/Table';
 import BtcTransactionInputsOutputs from './BtcTransactionTableInputsOutputs';
 import styled from 'styled-components';
 import { Link } from 'react-router-dom';
-import { IAttributionMap, ReferenceAttributionMap } from '../../../typings/ReferenceAttribution';
 
 const HeaderWrapper = styled.div`
   display: flex;
