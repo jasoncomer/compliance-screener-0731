@@ -39,6 +39,7 @@ const Cases: React.FC<Props> = () => {
     setCases(prev => [...prev, data]);
   };
 
+  
   return (
     <>
       <CaseWrapper>

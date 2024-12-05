@@ -92,12 +92,12 @@ interface GroupedOption {
 }
 
 const headerTitleMap: Record<string, string> = {
-  'entity_id': 'Entity Name',
-  'url': 'URL',
   'proper_name': 'Company',
-  'entity_type': 'Type',
+  'url': 'URL',
+  'entity_id': 'Entity Id', // TODO: only for admin users
   'contact_twitter': 'Twitter',
   'contact_telegram': 'Telegram'
+  // 'entity_type': 'Type',
 };
 
 const BlockHam: React.FC = () => {

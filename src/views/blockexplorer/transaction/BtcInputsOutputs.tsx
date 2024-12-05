@@ -1,12 +1,16 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { BtcTransaction } from '../../../typings/BtcTransaction';
 import styled from 'styled-components';
 import { satsToBTC } from '../../../utils/crypto';
 import { Link } from 'react-router-dom';
+import useAttribution from '../../../hooks/useAttribution';
+import { IAttributionMap, ReferenceAttributionMap } from '../../../typings/ReferenceAttribution';
 
 interface BtcInputsOutputsProps {
   data: BtcTransaction['inputs'];
   type: 'inputs' | 'outputs';
+  attributions: IAttributionMap;
+  referenceAttributions: ReferenceAttributionMap;
 }
 
 const Wrapper = styled.div`
@@ -41,22 +45,23 @@ const ToggleButton = styled.button`
 
 interface BtcTxAddressProps {
   address: string;
+  attribution: string;
+  referenceAttribution: string;
 }
 
-const BtcTxAddress: React.FC<BtcTxAddressProps> = ({ address }) => {
-  // get current url
+const BtcTxAddress: React.FC<BtcTxAddressProps> = ({ address, attribution, referenceAttribution }) => {
   const url = window.location.href;
   const currAddress = url.split('/').pop();
+
   if (address === currAddress) {
     return <span>{address}</span>;
   }
 
-  return <Link to={`/home/block-explorer/address/${address}`}>{address}</Link>;
+  return <Link to={`/home/block-explorer/address/${address}`}>{attribution} {referenceAttribution ? `(${referenceAttribution})` : ''}</Link>;
 }
 
-const BtcInputsOutputs: React.FC<BtcInputsOutputsProps> = ({ data }) => {
+const BtcInputsOutputs: React.FC<BtcInputsOutputsProps> = ({ data, attributions, referenceAttributions }) => {
   const [isExpanded, setIsExpanded] = useState(false);
-
   const displayData = isExpanded ? data : data.slice(0, 5);
   const showToggle = data.length > 5;
 
@@ -68,7 +73,7 @@ const BtcInputsOutputs: React.FC<BtcInputsOutputsProps> = ({ data }) => {
     <Wrapper>
       {displayData.map((input: BtcTransaction['inputs'][0], index: number) => (
         <Row key={index}>
-          <BtcTxAddress address={input.addr} />
+          <BtcTxAddress address={input.addr} attribution={attributions[input.addr]?.entity} referenceAttribution={referenceAttributions[input.addr]?.entity} />
           <span>{satsToBTC(input.amt)}</span>
         </Row>
       ))}

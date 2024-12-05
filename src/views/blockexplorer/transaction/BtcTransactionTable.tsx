@@ -4,6 +4,7 @@ import { BsBlock } from '../../../styles/Table';
 import BtcTransactionInputsOutputs from './BtcTransactionTableInputsOutputs';
 import styled from 'styled-components';
 import { Link } from 'react-router-dom';
+import { IAttributionMap, ReferenceAttributionMap } from '../../../typings/ReferenceAttribution';
 
 const HeaderWrapper = styled.div`
   display: flex;
@@ -51,9 +52,11 @@ const BtcTransactionHeader: React.FC<BtcTransactionHeaderProps> = ({ txHash, blo
 
 interface BtcTransactionTableProps {
   transaction: BtcTransaction;
+  attributions: IAttributionMap;
+  referenceAttributions: ReferenceAttributionMap; 
 }
 
-const BtcTransactionTable: React.FC<BtcTransactionTableProps> = ({ transaction }) => {
+const BtcTransactionTable: React.FC<BtcTransactionTableProps> = ({ transaction, attributions, referenceAttributions }) => {
   if (!transaction) return null;
 
   return (
@@ -64,7 +67,7 @@ const BtcTransactionTable: React.FC<BtcTransactionTableProps> = ({ transaction }
         date={new Date(transaction.timestamp * 1000).toLocaleString()}
       />
 
-      <BtcTransactionInputsOutputs transaction={transaction} />
+      <BtcTransactionInputsOutputs transaction={transaction} attributions={attributions} referenceAttributions={referenceAttributions} />
     </BsBlock>
   );
 };
