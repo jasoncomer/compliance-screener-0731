@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { Link } from 'react-router-dom';
 import styled from 'styled-components';
 
-import { satsToBTC } from '../../../utils/crypto';
+import { satsToBTC, truncateAddress } from '../../../utils/crypto';
 import { BtcTransaction } from '../../../typings/BtcTransaction';
 import { useAttribution } from '../../../context/AttributionContext';
 
@@ -10,6 +10,8 @@ interface BtcInputsOutputsProps {
   data: BtcTransaction['inputs'];
   type: 'inputs' | 'outputs';
 }
+
+const Amount = styled.span``;
 
 const Wrapper = styled.div`
   display: flex;
@@ -53,13 +55,13 @@ const BtcTxAddress: React.FC<BtcTxAddressProps> = ({ address }) => {
   const attribution = attributions[address]?.entity;
   const referenceAttribution = referenceAttributions[address]?.entity;
 
-  console.log(attribution, referenceAttribution);
+  const truncatedAddress = truncateAddress(address);
 
   if (address === currAddress) {
-    return <span>{address}</span>;
+    return <span className="monospace">{truncatedAddress}</span>;
   }
-
-  return <Link to={`/home/block-explorer/address/${address}`}>{attribution} {referenceAttribution ? `(${referenceAttribution})` : ''}</Link>;
+  const bsAttribution = attribution ? attribution : truncatedAddress;
+  return <Link to={`/home/block-explorer/address/${address}`}>{bsAttribution} {referenceAttribution ? `(${referenceAttribution})` : ''}</Link>;
 }
 
 const BtcInputsOutputs: React.FC<BtcInputsOutputsProps> = ({ data }) => {
@@ -71,12 +73,17 @@ const BtcInputsOutputs: React.FC<BtcInputsOutputsProps> = ({ data }) => {
     setIsExpanded(!isExpanded);
   };
 
+  const renderAmt = useCallback((amt: number) => {
+    const sats = satsToBTC(amt);
+    return sats.toFixed(8);
+  }, []);
+
   return (
     <Wrapper>
       {displayData.map((input: BtcTransaction['inputs'][0], index: number) => (
         <Row key={index}>
           <BtcTxAddress address={input.addr} />
-          <span>{satsToBTC(input.amt)}</span>
+          <Amount>{renderAmt(input.amt)}</Amount>
         </Row>
       ))}
       {showToggle && (
