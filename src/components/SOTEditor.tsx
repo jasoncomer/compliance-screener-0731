@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Card, Form, Input, Button, Space, Typography, Divider, message, Avatar, Modal, Row, Col, Tag } from 'antd';
+import { Card, Form, Input, Button, Space, Typography, Divider, message, Avatar, Modal, Row, Col, Tag, Switch } from 'antd';
 import { UserOutlined, GlobalOutlined, TwitterOutlined, SendOutlined } from '@ant-design/icons';
 import styled from 'styled-components';
 import { SOT } from '../typings/interfaces';
@@ -27,7 +27,7 @@ const ButtonGroup = styled(Space)`
 const DetailSection = styled.div`
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 24px;
+  gap: 8px;
   margin-top: 24px;
 `;
 
@@ -122,7 +122,7 @@ const SOTEditor: React.FC<SOTEditorProps> = ({ sot, onSelectAssociatedSot }) => 
   const handleSave = async () => {
     try {
       // const values = await form.validateFields();
-      
+
       Modal.confirm({
         title: 'Save Changes',
         content: 'Are you sure you want to save these changes?',
@@ -194,7 +194,66 @@ const SOTEditor: React.FC<SOTEditorProps> = ({ sot, onSelectAssociatedSot }) => 
               <Form.Item name="year_founded" label="Year Founded">
                 <Input />
               </Form.Item>
+              <Form.Item name="social_media_profile" label="Social Media">
+                {Object.entries(sot)
+                  .filter(([key]) => key.startsWith('social_media_profile'))
+                  .map(([key]) => (
+                    <Form.Item
+                      key={key}
+                      name={key}
+                    >
+                      <Input />
+                    </Form.Item>
+                  ))}
+              </Form.Item>
+              <Form.Item
+                name="kyc_req"
+                label="KYC Required"
+              >
+                <Switch
+                  checked={sot.kyc_req}
+                  onChange={(checked) => form.setFieldsValue({ kyc_req: checked })}
+                  style={{ display: 'flex', marginLeft: 'auto' }}
+                />
+              </Form.Item>
+              <Form.Item
+                name="dead"
+                label="Dead"
+              >
+                <Switch
+                  checked={sot.dead}
+                  onChange={(checked) => form.setFieldsValue({ dead: checked })}
+                  style={{ display: 'flex', marginLeft: 'auto' }}
+                />
+              </Form.Item>
+              <Form.Item
+                name="centralized"
+                label="Centralized"
+              >
+                <Switch
+                  checked={sot.centralized}
+                  onChange={(checked) => form.setFieldsValue({ centralized: checked })}
+                  style={{ display: 'flex', marginLeft: 'auto' }}
+                />
+              </Form.Item>
+              <Form.Item name="revisit_site" label="Revisit Site">
+                <Switch
+                  checked={sot.revisit_site}
+                  onChange={(checked) => form.setFieldsValue({ revisit_site: checked })}
+                  style={{ display: 'flex', marginLeft: 'auto' }}
+                />
+              </Form.Item>
+              <Form.Item name="legal_info_url" label="Legal Info URL">
+                <Input />
+              </Form.Item>
+              <Form.Item name="user" label="User">
+                <Input />
+              </Form.Item>
+              <Form.Item name="date_updated" label="Date Updated">
+                <Input />
+              </Form.Item>
             </Col>
+
             <Col span={12}>
               <Form.Item name="url" label="Website">
                 <Input />
@@ -211,30 +270,34 @@ const SOTEditor: React.FC<SOTEditorProps> = ({ sot, onSelectAssociatedSot }) => 
               <Form.Item name="contact_telegram" label="Telegram">
                 <Input />
               </Form.Item>
+              <Form.Item name="contact_email" label="Email">
+                <Input />
+              </Form.Item>
               <Form.Item name="associate_country_1" label="Country">
                 <Input />
               </Form.Item>
               <Form.Item name="logo" label="Logo URL">
                 <Input />
               </Form.Item>
-              <Col span={24}>
-                <Form.Item label="Entity Tags">
+              <Form.Item label="Entity Tags">
+                <Row gutter={16}>
                   {Object.entries(sot)
                     .filter(([key]) => key.startsWith('entity_tag'))
-                    .map(([key]) => (
-                      <Form.Item 
-                        key={key} 
-                        name={key} 
-                        style={{ display: 'inline-block', marginRight: 8 }}
-                      >
-                        <TagInput placeholder={`Tag ${key.replace('entity_tag', '')}`} />
+                  .map(([key]) => (
+                    <Col span={12}>
+                      <Form.Item key={key} name={key}>
+                        <TagInput placeholder={`Tag ${key.replace('entity_tag', '')}`} style={{ width: '100%' }} />
                       </Form.Item>
+                    </Col>
                     ))}
-                </Form.Item>
-              </Col>
+                </Row>
+              </Form.Item>
+              <Form.Item name="description_merged" label="Description">
+                <Input.TextArea rows={8} />
+              </Form.Item>
             </Col>
           </Row>
-          
+
           <ButtonGroup>
             <Button onClick={handleCancel}>Cancel</Button>
             <Button type="primary" onClick={handleSave} loading={loading}>
@@ -340,6 +403,11 @@ const SOTEditor: React.FC<SOTEditorProps> = ({ sot, onSelectAssociatedSot }) => 
             </DetailValue>
           </DetailItem>
 
+          <DetailItem>
+            <DetailLabel>Email</DetailLabel>
+            <DetailValue>{sot.contact_email || '-'}</DetailValue>
+          </DetailItem>
+
           {Object.entries(sot)
             .filter(([key, value]) => key.startsWith('entity_tag') && value)
             .length > 0 && (
@@ -349,10 +417,35 @@ const SOTEditor: React.FC<SOTEditorProps> = ({ sot, onSelectAssociatedSot }) => 
                   {Object.entries(sot)
                     .filter(([key, value]) => key.startsWith('entity_tag') && value)
                     .map(([key, value]) => (
-                      <Tag 
+                      <Tag
                         key={key}
                         color="blue"
-                        style={{ 
+                        style={{
+                          marginBottom: 8,
+                          padding: '4px 8px',
+                          borderRadius: '16px'
+                        }}
+                      >
+                        {value}
+                      </Tag>
+                    ))}
+                </TagsContainer>
+              </DetailItem>
+            )}
+
+          {Object.entries(sot)
+            .filter(([key, value]) => key.startsWith('social_media_profile') && value)
+            .length > 0 && (
+              <DetailItem>
+                <DetailLabel>Social Media</DetailLabel>
+                <TagsContainer>
+                  {Object.entries(sot)
+                    .filter(([key, value]) => key.startsWith('social_media_profile') && value)
+                    .map(([key, value]) => (
+                      <Tag
+                        key={key}
+                        color="blue"
+                        style={{
                           marginBottom: 8,
                           padding: '4px 8px',
                           borderRadius: '16px'
@@ -385,11 +478,11 @@ const SOTEditor: React.FC<SOTEditorProps> = ({ sot, onSelectAssociatedSot }) => 
       <EditorWrapper>
         {renderContent()}
       </EditorWrapper>
-      
-      <AssociatedSOTs 
-          sot={sot} 
-          onSelectSot={onSelectAssociatedSot}
-        />
+
+      <AssociatedSOTs
+        sot={sot}
+        onSelectSot={onSelectAssociatedSot}
+      />
     </Container>
   );
 };
