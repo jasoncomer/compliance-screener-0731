@@ -130,11 +130,10 @@ const BlockHam: React.FC = () => {
 
   const onSelect = (_: string, option: any) => {
     const key = option?.key;
-    if (key) {
-      const id = key.split('-')[0];
-      console.log(`setting selectedSot to ${id} - ${sotMap[id]}`);
-      setSelectedSot(sotMap[id]);
-    }
+    if (!key) return;
+
+    const id = key.split('-')[0];
+    setSelectedSot(sotMap[id]);
   };
 
   const handleSearch = async (searchText: string) => {
@@ -254,7 +253,7 @@ const BlockHam: React.FC = () => {
           </StyledAutoComplete>
         </SearchWrapper>
 
-        <SOTEditor sot={selectedSot} onSelectAssociatedSot={handleSelectAssociatedSot} />
+        {selectedSot && <SOTEditor sot={selectedSot} onSelectAssociatedSot={handleSelectAssociatedSot} />}
       </BlockHamWrapper>
     </>
   );
