@@ -41,12 +41,13 @@ const Address: React.FC = () => {
     const fetchAddress = async () => {
       try {
         if (!address) return;
-        const { data, txData } = await api.blockchain.getAddress(address);
-        const { txs, totalTxs } = txData;
-        console.log(data);
+        const [{ data }, { txs, pagination }] = await Promise.all([
+          api.blockchain.getAddress(address),
+          api.blockchain.getAddressTransactions(address)
+        ]);
         setAddrData(data);
         setTxs(txs);
-        setTotalTxs(totalTxs);
+        setTotalTxs(pagination.totalTxs);
         const addresses = [
           address,
           ...txs.flatMap(tx => tx.inputs.map(i => i.addr)),
