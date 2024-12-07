@@ -13,7 +13,7 @@ import { SOT } from '../typings/interfaces';
 const { Title } = Typography;
 
 const BlockHamWrapper = styled.div`
-  padding: 24px;
+  padding: 2em;
   height: 100%;
   width: 100%;
   h2 {
@@ -112,13 +112,6 @@ const BlockHam: React.FC = () => {
     dispatch(fetchSOT());
   }, [dispatch]);
 
-  useEffect(() => {
-    if (selectedSot) {
-      console.log(`selectedSot: ${selectedSot?._id}`);
-      console.log(sotMap);
-    }
-  }, [selectedSot]);
-
   const headerTitle = (field: string, items: PopulatedSOT[]) => {
     return (
       <GroupHeader>
@@ -130,11 +123,10 @@ const BlockHam: React.FC = () => {
 
   const onSelect = (_: string, option: any) => {
     const key = option?.key;
-    if (key) {
-      const id = key.split('-')[0];
-      console.log(`setting selectedSot to ${id} - ${sotMap[id]}`);
-      setSelectedSot(sotMap[id]);
-    }
+    if (!key) return;
+
+    const id = key.split('-')[0];
+    setSelectedSot(sotMap[id]);
   };
 
   const handleSearch = async (searchText: string) => {
@@ -196,8 +188,8 @@ const BlockHam: React.FC = () => {
         .filter(([_, items]) => items.length > 0)
         .map(([field, items]) => ({
           label: headerTitle(field, items) as any,
-          options: items.map(item => ({
-            key: `${item._id}-${item.autocompleteDisplayTitle}`,
+          options: items.map((item, index) => ({
+            key: `${item._id}-${field}-${index}`,
             value: item.autocompleteDisplayTitle,
             label: (
               <OptionWrapper>
@@ -254,7 +246,7 @@ const BlockHam: React.FC = () => {
           </StyledAutoComplete>
         </SearchWrapper>
 
-        <SOTEditor sot={selectedSot} onSelectAssociatedSot={handleSelectAssociatedSot} />
+        {selectedSot && <SOTEditor sot={selectedSot} onSelectAssociatedSot={handleSelectAssociatedSot} />}
       </BlockHamWrapper>
     </>
   );

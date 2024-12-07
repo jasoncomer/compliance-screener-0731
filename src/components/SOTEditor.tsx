@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Card, Form, Input, Button, Space, Typography, Divider, message, Avatar, Modal, Row, Col, Tag } from 'antd';
-import { UserOutlined, GlobalOutlined, TwitterOutlined, SendOutlined } from '@ant-design/icons';
+import { Card, Form, Input, Button, Space, Typography, message, Avatar, Modal, Row, Col, Tag, Switch } from 'antd';
+import { UserOutlined, GlobalOutlined, TwitterOutlined, SendOutlined, GithubOutlined, LinkedinOutlined, FacebookOutlined, InstagramOutlined, YoutubeOutlined, RedditOutlined, MediumOutlined } from '@ant-design/icons';
 import styled from 'styled-components';
 import { SOT } from '../typings/interfaces';
 import { api } from '../api/api';
@@ -14,6 +14,7 @@ const Container = styled.div`
   display: flex;
   flex-direction: row;
   gap: 24px;
+  padding-bottom: 2em;
 `;
 
 const EditorWrapper = styled(Card)`
@@ -27,8 +28,9 @@ const ButtonGroup = styled(Space)`
 const DetailSection = styled.div`
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 24px;
-  margin-top: 24px;
+  gap: 8px;
+  padding-bottom: 2em;
+  text-align: left;
 `;
 
 const DetailItem = styled.div`
@@ -46,8 +48,9 @@ const DetailLabel = styled(Text)`
 const DetailValue = styled(Text)`
   font-size: 16px;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 8px;
+  text-align: left;
   
   .anticon {
     color: #1890ff;
@@ -70,13 +73,14 @@ const HeaderSection = styled.div`
   display: flex;
   align-items: center;
   gap: 16px;
-  margin-bottom: 24px;
+  margin-bottom: 1em;
   text-align: left;
 `;
 
 const HeaderInfo = styled.div`
   flex: 1;
   text-transform: capitalize;
+  text-align: left;
 `;
 
 const StyledAvatar = styled(Avatar)`
@@ -102,12 +106,27 @@ interface SOTEditorProps {
   onSelectAssociatedSot: (sot: SOT) => void;
 }
 
+const ToggleSwitch = ({ name, label }: { name: string; label: string }) => (
+  <Form.Item
+    name={name}
+    label={label}
+    valuePropName="checked"
+  >
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+      <span>{/* Empty span to maintain spacing */}</span>
+      <Switch />
+    </div>
+  </Form.Item>
+);
+
 const SOTEditor: React.FC<SOTEditorProps> = ({ sot, onSelectAssociatedSot }) => {
   const [form] = Form.useForm();
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  if (!sot) return null;
+  const isValidSOT = (sot: SOT | null): sot is SOT => {
+    return sot !== null;
+  };
 
   const handleEdit = () => {
     setIsEditing(true);
@@ -121,15 +140,15 @@ const SOTEditor: React.FC<SOTEditorProps> = ({ sot, onSelectAssociatedSot }) => 
 
   const handleSave = async () => {
     try {
-      // const values = await form.validateFields();
-      
+      const values = await form.validateFields();
+      if (!isValidSOT(sot)) return;
       Modal.confirm({
         title: 'Save Changes',
         content: 'Are you sure you want to save these changes?',
         onOk: async () => {
           try {
             setLoading(true);
-            // const updatedSot = await api.blockchain.updateSOT(sot._id, values);
+            await api.blockchain.updateSOT(sot._id, values);
             setIsEditing(false);
             message.success('SOT updated successfully');
           } catch (error) {
@@ -146,6 +165,8 @@ const SOTEditor: React.FC<SOTEditorProps> = ({ sot, onSelectAssociatedSot }) => 
   };
 
   const handleDelete = () => {
+    if (!isValidSOT(sot)) return;
+
     Modal.confirm({
       title: 'Delete SOT',
       content: 'Are you sure you want to delete this SOT? This action cannot be undone.',
@@ -166,7 +187,25 @@ const SOTEditor: React.FC<SOTEditorProps> = ({ sot, onSelectAssociatedSot }) => 
     });
   };
 
+  const getSocialMediaIcon = (url: string) => {
+    const urlLower = url.toLowerCase();
+
+    if (urlLower.includes('github')) return <GithubOutlined />;
+    if (urlLower.includes('twitter')) return <TwitterOutlined />;
+    if (urlLower.includes('linkedin')) return <LinkedinOutlined />;
+    if (urlLower.includes('facebook')) return <FacebookOutlined />;
+    if (urlLower.includes('instagram')) return <InstagramOutlined />;
+    if (urlLower.includes('youtube')) return <YoutubeOutlined />;
+    if (urlLower.includes('reddit')) return <RedditOutlined />;
+    if (urlLower.includes('medium')) return <MediumOutlined />;
+    if (urlLower.includes('telegram')) return <SendOutlined />;
+
+    return <GlobalOutlined />;
+  };
+
   const renderContent = () => {
+    if (!isValidSOT(sot)) return null;
+
     if (isEditing) {
       return (
         <Form
@@ -194,7 +233,35 @@ const SOTEditor: React.FC<SOTEditorProps> = ({ sot, onSelectAssociatedSot }) => 
               <Form.Item name="year_founded" label="Year Founded">
                 <Input />
               </Form.Item>
+              <Form.Item name="social_media_profile" label="Social Media">
+                {Object.entries(sot)
+                  .filter(([key]) => key.startsWith('social_media_profile'))
+                  .map(([key]) => (
+                    <Form.Item
+                      key={key}
+                      name={key}
+                    >
+                      <Input />
+                    </Form.Item>
+                  ))}
+              </Form.Item>
+              
+              <ToggleSwitch name="kyc_req" label="KYC Required" />
+              <ToggleSwitch name="dead" label="Dead" />
+              <ToggleSwitch name="centralized" label="Centralized" />
+              <ToggleSwitch name="revisit_site" label="Revisit Site" />
+
+              <Form.Item name="legal_info_url" label="Legal Info URL">
+                <Input />
+              </Form.Item>
+              <Form.Item name="user" label="User">
+                <Input />
+              </Form.Item>
+              <Form.Item name="date_updated" label="Date Updated">
+                <Input />
+              </Form.Item>
             </Col>
+
             <Col span={12}>
               <Form.Item name="url" label="Website">
                 <Input />
@@ -211,30 +278,34 @@ const SOTEditor: React.FC<SOTEditorProps> = ({ sot, onSelectAssociatedSot }) => 
               <Form.Item name="contact_telegram" label="Telegram">
                 <Input />
               </Form.Item>
+              <Form.Item name="contact_email" label="Email">
+                <Input />
+              </Form.Item>
               <Form.Item name="associate_country_1" label="Country">
                 <Input />
               </Form.Item>
               <Form.Item name="logo" label="Logo URL">
                 <Input />
               </Form.Item>
-              <Col span={24}>
-                <Form.Item label="Entity Tags">
+              <Form.Item label="Entity Tags">
+                <Row gutter={16}>
                   {Object.entries(sot)
                     .filter(([key]) => key.startsWith('entity_tag'))
                     .map(([key]) => (
-                      <Form.Item 
-                        key={key} 
-                        name={key} 
-                        style={{ display: 'inline-block', marginRight: 8 }}
-                      >
-                        <TagInput placeholder={`Tag ${key.replace('entity_tag', '')}`} />
-                      </Form.Item>
+                      <Col span={12}>
+                        <Form.Item key={key} name={key}>
+                          <TagInput placeholder={`Tag ${key.replace('entity_tag', '')}`} style={{ width: '100%' }} />
+                        </Form.Item>
+                      </Col>
                     ))}
-                </Form.Item>
-              </Col>
+                </Row>
+              </Form.Item>
+              <Form.Item name="description_merged" label="Description">
+                <Input.TextArea rows={8} />
+              </Form.Item>
             </Col>
           </Row>
-          
+
           <ButtonGroup>
             <Button onClick={handleCancel}>Cancel</Button>
             <Button type="primary" onClick={handleSave} loading={loading}>
@@ -264,32 +335,6 @@ const SOTEditor: React.FC<SOTEditorProps> = ({ sot, onSelectAssociatedSot }) => 
             <DetailValue>{sot.entity_id}</DetailValue>
           </DetailItem>
 
-          {sot.ceo && (
-            <DetailItem>
-              <DetailLabel>CEO</DetailLabel>
-              <DetailValue>{sot.ceo}</DetailValue>
-            </DetailItem>
-          )}
-
-          {sot.founders && (
-            <DetailItem>
-              <DetailLabel>Founders</DetailLabel>
-              <DetailValue>{sot.founders.split(',').map(founder => <Tag key={founder}>{founder}</Tag>)}</DetailValue>
-            </DetailItem>
-          )}
-
-          {sot.year_founded && (
-            <DetailItem>
-              <DetailLabel>Year Founded</DetailLabel>
-              <DetailValue>{sot.year_founded}</DetailValue>
-            </DetailItem>
-          )}
-
-          <DetailItem>
-            <DetailLabel>Country</DetailLabel>
-            <DetailValue>{sot.associate_country_1 || '-'}</DetailValue>
-          </DetailItem>
-
           <DetailItem>
             <DetailLabel>Website</DetailLabel>
             <DetailValue>
@@ -302,71 +347,153 @@ const SOTEditor: React.FC<SOTEditorProps> = ({ sot, onSelectAssociatedSot }) => 
             </DetailValue>
           </DetailItem>
 
-          {sot.contact_phone && (
-            <DetailItem>
-              <DetailLabel>Phone</DetailLabel>
-              <DetailValue>{sot.contact_phone}</DetailValue>
-            </DetailItem>
-          )}
-
-          {sot.contact_address && (
-            <DetailItem>
-              <DetailLabel>Address</DetailLabel>
-              <DetailValue className='address-line'>{sot.contact_address}</DetailValue>
-            </DetailItem>
-          )}
-
           <DetailItem>
-            <DetailLabel>Twitter</DetailLabel>
-            <DetailValue>
-              <TwitterOutlined />
-              {sot.contact_twitter ? (
-                <a href={`https://twitter.com/${sot.contact_twitter.replace('@', '')}`} target="_blank" rel="noopener noreferrer">
-                  {sot.contact_twitter}
-                </a>
-              ) : '-'}
+            <DetailLabel>Status</DetailLabel>
+            <DetailValue style={{ display: 'flex', gap: '16px' }}>
+              <span>
+                <Text>Active: </Text>
+                <Switch checked={!sot.dead} disabled />
+              </span>
+              <span>
+                <Text>Centralized: </Text>
+                <Switch checked={sot.centralized} disabled />
+              </span>
+              <span>
+                <Text>KYC Required: </Text>
+                <Switch checked={sot.kyc_req} disabled />
+              </span>
             </DetailValue>
           </DetailItem>
 
-          <DetailItem>
-            <DetailLabel>Telegram</DetailLabel>
-            <DetailValue>
-              <SendOutlined />
-              {sot.contact_telegram ? (
-                <a href={`https://t.me/${sot.contact_telegram.replace('@', '')}`} target="_blank" rel="noopener noreferrer">
-                  {sot.contact_telegram}
-                </a>
-              ) : '-'}
+          {(sot.ceo || sot.founders) && (
+            <DetailItem style={{ gridColumn: '1 / -1' }}>
+              <DetailLabel>Leadership</DetailLabel>
+              <DetailValue style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {sot.ceo && <span><strong>CEO:</strong> {sot.ceo}</span>}
+                {sot.founders && (
+                  <span>
+                    <strong>Founders:</strong> {sot.founders.split(',').map(founder =>
+                      <Tag key={founder}>{founder}</Tag>
+                    )}
+                  </span>
+                )}
+              </DetailValue>
+            </DetailItem>
+          )}
+
+          <DetailItem style={{ gridColumn: '1 / -1' }}>
+            <DetailLabel>Contact Information</DetailLabel>
+            <DetailValue style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {sot.contact_email && <span><strong>Email:</strong> {sot.contact_email}</span>}
+              {sot.contact_phone && <span><strong>Phone:</strong> {sot.contact_phone}</span>}
+              {sot.contact_address && <span><strong>Address:</strong> {sot.contact_address}</span>}
             </DetailValue>
           </DetailItem>
 
           {Object.entries(sot)
             .filter(([key, value]) => key.startsWith('entity_tag') && value)
             .length > 0 && (
-              <DetailItem>
+              <DetailItem style={{ gridColumn: '1 / -1' }}>
                 <DetailLabel>Tags</DetailLabel>
                 <TagsContainer>
                   {Object.entries(sot)
                     .filter(([key, value]) => key.startsWith('entity_tag') && value)
                     .map(([key, value]) => (
-                      <Tag 
-                        key={key}
-                        color="blue"
-                        style={{ 
-                          marginBottom: 8,
-                          padding: '4px 8px',
-                          borderRadius: '16px'
-                        }}
-                      >
+                      <Tag key={key} color="blue" style={{ marginBottom: 8, padding: '4px 8px', borderRadius: '16px' }}>
                         {value}
                       </Tag>
                     ))}
                 </TagsContainer>
               </DetailItem>
             )}
+
+          {sot.description_merged && (
+            <DetailItem style={{ gridColumn: '1 / -1' }}>
+              <DetailLabel>Description</DetailLabel>
+              <DetailValue>
+                <div style={{ whiteSpace: 'pre-wrap' }}>
+                  {sot.description_merged}
+                </div>
+              </DetailValue>
+            </DetailItem>
+          )}
+
+          <DetailItem style={{ gridColumn: '1 / -1' }}>
+            <DetailLabel>Additional Information</DetailLabel>
+            <DetailValue style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {sot.year_founded && <span><strong>Founded:</strong> {sot.year_founded}</span>}
+              {sot.associate_country_1 && <span><strong>Country:</strong> {sot.associate_country_1}</span>}
+              {sot.legal_info_url && (
+                <span>
+                  <strong>Legal Info:</strong>
+                  <a href={sot.legal_info_url} target="_blank" rel="noopener noreferrer">
+                    <GlobalOutlined /> View Legal Information
+                  </a>
+                </span>
+              )}
+            </DetailValue>
+          </DetailItem>
+
+          <DetailItem style={{ gridColumn: '1 / -1', fontSize: '0.9em', color: '#666' }}>
+            {sot.user && <div>Last modified by: {sot.user}</div>}
+            {sot.date_updated && <div>Updated: {new Date(sot.date_updated).toLocaleString()}</div>}
+            {sot.revisit_site && <div>Flagged for review</div>}
+          </DetailItem>
+
+          <DetailItem style={{ gridColumn: '1 / -1' }}>
+            <DetailLabel>Social Media Profiles</DetailLabel>
+            <DetailValue style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {/* Twitter */}
+              {sot.contact_twitter && (
+                <a
+                  href={`https://twitter.com/${sot.contact_twitter.replace('@', '')}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+                >
+                  <TwitterOutlined />
+                  <span>{sot.contact_twitter}</span>
+                </a>
+              )}
+
+              {/* Telegram */}
+              {sot.contact_telegram && (
+                <a
+                  href={`https://t.me/${sot.contact_telegram.replace('@', '')}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+                >
+                  <SendOutlined />
+                  <span>{sot.contact_telegram}</span>
+                </a>
+              )}
+
+              {/* Other social media profiles */}
+              {Object.entries(sot)
+                .filter(([key, value]) => key.startsWith('social_media_profile') && value)
+                .map(([key, value]) => {
+                  const icon = getSocialMediaIcon(value);
+                  const url = value.startsWith('http') ? value : `https://${value}`;
+
+                  return (
+                    <a
+                      key={key}
+                      href={url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+                    >
+                      {icon}
+                      <span>{value}</span>
+                    </a>
+                  );
+                })}
+            </DetailValue>
+          </DetailItem>
         </DetailSection>
 
-        <Divider />
+        {/* <Divider />
 
         <ButtonGroup>
           <Button type="primary" onClick={handleEdit}>
@@ -375,7 +502,7 @@ const SOTEditor: React.FC<SOTEditorProps> = ({ sot, onSelectAssociatedSot }) => 
           <Button danger onClick={handleDelete} loading={loading}>
             Delete
           </Button>
-        </ButtonGroup>
+        </ButtonGroup> */}
       </>
     );
   };
@@ -385,11 +512,11 @@ const SOTEditor: React.FC<SOTEditorProps> = ({ sot, onSelectAssociatedSot }) => 
       <EditorWrapper>
         {renderContent()}
       </EditorWrapper>
-      
-      <AssociatedSOTs 
-          sot={sot} 
-          onSelectSot={onSelectAssociatedSot}
-        />
+
+      <AssociatedSOTs
+        sot={sot}
+        onSelectSot={onSelectAssociatedSot}
+      />
     </Container>
   );
 };

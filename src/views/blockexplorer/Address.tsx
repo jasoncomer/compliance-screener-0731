@@ -9,6 +9,7 @@ import BtcTransactionTable from './transaction/BtcTransactionTable';
 import { BtcTransaction } from '../../typings/BtcTransaction';
 import { satsToBTC } from '../../utils/crypto';
 import { useAttribution } from '../../context/AttributionContext';
+import Pagination from '../../components/common/Pagination';
 
 const SummaryWrapper = styled.div`
   display: flex;
@@ -29,34 +30,54 @@ const SummaryWrapper = styled.div`
   }
 `;
 
-
 const Address: React.FC = () => {
   const { address } = useParams();
   const [addrData, setAddrData] = React.useState<IBtcAddress>();
   const [txs, setTxs] = React.useState<BtcTransaction[]>([]);
+  const [totalTxs, setTotalTxs] = React.useState<number>(0);
+  const [currentPage, setCurrentPage] = React.useState<number>(1);
+  const [isLoading, setIsLoading] = React.useState<boolean>(false);
+  const itemsPerPage = 20;
   const { fetchAttributions } = useAttribution();
+
+  const totalPages = Math.ceil(totalTxs / itemsPerPage);
 
   useEffect(() => {
     const fetchAddress = async () => {
       try {
         if (!address) return;
-        const { data, txData } = await api.blockchain.getAddress(address);
-        console.log(data);
+        setIsLoading(true);
+        const [{ data }, { txs, pagination }] = await Promise.all([
+          api.blockchain.getAddress(address),
+          api.blockchain.getAddressTransactions(address, {
+            page: currentPage,
+            limit: itemsPerPage
+          })
+        ]);
         setAddrData(data);
-        setTxs(txData);
+        setTxs(txs);
+        setTotalTxs(pagination.totalTxs);
         const addresses = [
           address,
-          ...txData.flatMap(tx => tx.inputs.map(i => i.addr)),
-          ...txData.flatMap(tx => tx.outputs.map(o => o.addr))
+          ...txs.flatMap(tx => tx.inputs.map(i => i.addr)),
+          ...txs.flatMap(tx => tx.outputs.map(o => o.addr))
         ];
         fetchAttributions(addresses);
       } catch (error) {
         console.error('Error fetching transactions:', error);
+      } finally {
+        setIsLoading(false);
       }
     };
 
     fetchAddress();
-  }, [address]);
+  }, [address, currentPage]);
+
+  const handlePageChange = (newPage: number) => {
+    if (newPage >= 1 && newPage <= totalPages) {
+      setCurrentPage(newPage);
+    }
+  };
 
   return (
     <>
@@ -80,16 +101,26 @@ const Address: React.FC = () => {
             </div>
 
             <div className='col'>
-              <span><strong>Total Received:</strong> {addrData?.script_type}</span>
-              <span><strong>Multisig:</strong> {addrData?.multisig}</span>
+              <span><strong>Script Type:</strong> {addrData?.script_type}</span>
             </div>
           </SummaryWrapper>
         </BsBlock>
 
         <BsBlock>
-          <h3>Transactions ({txs.length.toLocaleString()})</h3>
+          <h3>Transactions ({totalTxs.toLocaleString()})</h3>
           <hr />
-          {txs.map(tx => <BtcTransactionTable transaction={tx} />)}
+          {isLoading ? (
+            <div style={{ textAlign: 'center', padding: '2rem' }}>Loading...</div>
+          ) : (
+            <>
+              {txs.map(tx => <BtcTransactionTable key={tx._id} transaction={tx} />)}
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={handlePageChange}
+              />
+            </>
+          )}
         </BsBlock>
       </BsWrapper>
     </>

@@ -14,6 +14,7 @@ const Wrapper = styled.div`
   color: black;
   width: 100%;
   line-height: 1.5em;
+  font-family: monospace;
 `;
 
 const Search = styled(AntSearch)`

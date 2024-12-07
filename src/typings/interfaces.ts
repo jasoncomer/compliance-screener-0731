@@ -146,5 +146,4 @@ export interface SOT {
   entity_tag4?: string;
   entity_tag5?: string;
   entity_tag6?: string;
-
 }

@@ -3,6 +3,7 @@ import { BtcTransaction } from "../typings/BtcTransaction";
 import { SOT } from "../typings/interfaces";
 import { IAttribution, IReferenceAttribution } from "../typings/ReferenceAttribution";
 import { axiosInstance } from "./api";
+import { getAddressTransactions } from "./blockchain/address";
 
 
 const getAttributions = async (addresses: string[]): Promise<{ data: IAttribution[], referenceData: IReferenceAttribution[] }> => {
@@ -25,12 +26,18 @@ const getBlock = async (blockNumber: number) => {
   return res.data;
 };
 
+interface GetAddressResponseData {
+  data: IBtcAddress;
+  txData: {
+    totalTxs: number;
+    txs: BtcTransaction[];
+  };
+}
+
 const getAddress = async (address: string) => {
-  const res = await axiosInstance.get(`/blockchain/address/${address}`);
-  const txData = (res.data.txData as BtcTransaction[]).sort((a, b) => b.block - a.block);
+  const res = await axiosInstance.get<GetAddressResponseData>(`/blockchain/address/${address}`);
   return {
     data: res.data.data as IBtcAddress,
-    txData,
   };
 };
 
@@ -76,4 +83,5 @@ export const blockchain = {
   getSOT,
   updateSOT,
   deleteSOT,
+  getAddressTransactions,
 };
