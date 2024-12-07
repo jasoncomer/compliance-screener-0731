@@ -25,12 +25,23 @@ const getBlock = async (blockNumber: number) => {
   return res.data;
 };
 
+interface GetAddressResponseData {
+  data: IBtcAddress;
+  txData: {
+    totalTxs: number;
+    txs: BtcTransaction[];
+  };
+}
+
 const getAddress = async (address: string) => {
-  const res = await axiosInstance.get(`/blockchain/address/${address}`);
-  const txData = (res.data.txData as BtcTransaction[]).sort((a, b) => b.block - a.block);
+  const res = await axiosInstance.get<GetAddressResponseData>(`/blockchain/address/${address}`);
+  const txData = (res.data.txData.txs as BtcTransaction[]).sort((a, b) => b.block - a.block);
   return {
     data: res.data.data as IBtcAddress,
-    txData,
+    txData: {
+      totalTxs: res.data.txData.totalTxs,
+      txs: txData,
+    },
   };
 };
 

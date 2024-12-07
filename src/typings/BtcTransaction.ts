@@ -1,4 +1,5 @@
 export interface BtcTransaction {
+  _id: string;
   txid: string;
   block: number;
   inamt: number;

@@ -34,6 +34,7 @@ const Address: React.FC = () => {
   const { address } = useParams();
   const [addrData, setAddrData] = React.useState<IBtcAddress>();
   const [txs, setTxs] = React.useState<BtcTransaction[]>([]);
+  const [totalTxs, setTotalTxs] = React.useState<number>(0);
   const { fetchAttributions } = useAttribution();
 
   useEffect(() => {
@@ -41,13 +42,15 @@ const Address: React.FC = () => {
       try {
         if (!address) return;
         const { data, txData } = await api.blockchain.getAddress(address);
+        const { txs, totalTxs } = txData;
         console.log(data);
         setAddrData(data);
-        setTxs(txData);
+        setTxs(txs);
+        setTotalTxs(totalTxs);
         const addresses = [
           address,
-          ...txData.flatMap(tx => tx.inputs.map(i => i.addr)),
-          ...txData.flatMap(tx => tx.outputs.map(o => o.addr))
+          ...txs.flatMap(tx => tx.inputs.map(i => i.addr)),
+          ...txs.flatMap(tx => tx.outputs.map(o => o.addr))
         ];
         fetchAttributions(addresses);
       } catch (error) {
@@ -80,16 +83,15 @@ const Address: React.FC = () => {
             </div>
 
             <div className='col'>
-              <span><strong>Total Received:</strong> {addrData?.script_type}</span>
-              <span><strong>Multisig:</strong> {addrData?.multisig}</span>
+              <span><strong>Script Type:</strong> {addrData?.script_type}</span>
             </div>
           </SummaryWrapper>
         </BsBlock>
 
         <BsBlock>
-          <h3>Transactions ({txs.length.toLocaleString()})</h3>
+          <h3>Transactions ({totalTxs.toLocaleString()})</h3>
           <hr />
-          {txs.map(tx => <BtcTransactionTable transaction={tx} />)}
+          {txs.map(tx => <BtcTransactionTable key={tx._id} transaction={tx} />)}
         </BsBlock>
       </BsWrapper>
     </>
