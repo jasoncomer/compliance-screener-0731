@@ -13,7 +13,7 @@ import { SOT } from '../typings/interfaces';
 const { Title } = Typography;
 
 const BlockHamWrapper = styled.div`
-  padding: 24px;
+  padding: 2em;
   height: 100%;
   width: 100%;
   h2 {

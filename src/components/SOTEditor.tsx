@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Card, Form, Input, Button, Space, Typography, Divider, message, Avatar, Modal, Row, Col, Tag, Switch } from 'antd';
+import { Card, Form, Input, Button, Space, Typography, message, Avatar, Modal, Row, Col, Tag, Switch } from 'antd';
 import { UserOutlined, GlobalOutlined, TwitterOutlined, SendOutlined, GithubOutlined, LinkedinOutlined, FacebookOutlined, InstagramOutlined, YoutubeOutlined, RedditOutlined, MediumOutlined } from '@ant-design/icons';
 import styled from 'styled-components';
 import { SOT } from '../typings/interfaces';
@@ -14,6 +14,7 @@ const Container = styled.div`
   display: flex;
   flex-direction: row;
   gap: 24px;
+  padding-bottom: 2em;
 `;
 
 const EditorWrapper = styled(Card)`
@@ -28,7 +29,7 @@ const DetailSection = styled.div`
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 8px;
-  margin-top: 24px;
+  padding-bottom: 2em;
   text-align: left;
 `;
 
@@ -72,7 +73,7 @@ const HeaderSection = styled.div`
   display: flex;
   align-items: center;
   gap: 16px;
-  margin-bottom: 24px;
+  margin-bottom: 1em;
   text-align: left;
 `;
 
@@ -492,7 +493,7 @@ const SOTEditor: React.FC<SOTEditorProps> = ({ sot, onSelectAssociatedSot }) => 
           </DetailItem>
         </DetailSection>
 
-        <Divider />
+        {/* <Divider />
 
         <ButtonGroup>
           <Button type="primary" onClick={handleEdit}>
@@ -501,7 +502,7 @@ const SOTEditor: React.FC<SOTEditorProps> = ({ sot, onSelectAssociatedSot }) => 
           <Button danger onClick={handleDelete} loading={loading}>
             Delete
           </Button>
-        </ButtonGroup>
+        </ButtonGroup> */}
       </>
     );
   };
