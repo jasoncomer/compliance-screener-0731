@@ -9,6 +9,7 @@ import BtcTransactionTable from './transaction/BtcTransactionTable';
 import { BtcTransaction } from '../../typings/BtcTransaction';
 import { satsToBTC } from '../../utils/crypto';
 import { useAttribution } from '../../context/AttributionContext';
+import Pagination from '../../components/common/Pagination';
 
 const SummaryWrapper = styled.div`
   display: flex;
@@ -29,21 +30,29 @@ const SummaryWrapper = styled.div`
   }
 `;
 
-
 const Address: React.FC = () => {
   const { address } = useParams();
   const [addrData, setAddrData] = React.useState<IBtcAddress>();
   const [txs, setTxs] = React.useState<BtcTransaction[]>([]);
   const [totalTxs, setTotalTxs] = React.useState<number>(0);
+  const [currentPage, setCurrentPage] = React.useState<number>(1);
+  const [isLoading, setIsLoading] = React.useState<boolean>(false);
+  const itemsPerPage = 20;
   const { fetchAttributions } = useAttribution();
+
+  const totalPages = Math.ceil(totalTxs / itemsPerPage);
 
   useEffect(() => {
     const fetchAddress = async () => {
       try {
         if (!address) return;
+        setIsLoading(true);
         const [{ data }, { txs, pagination }] = await Promise.all([
           api.blockchain.getAddress(address),
-          api.blockchain.getAddressTransactions(address)
+          api.blockchain.getAddressTransactions(address, {
+            page: currentPage,
+            limit: itemsPerPage
+          })
         ]);
         setAddrData(data);
         setTxs(txs);
@@ -56,11 +65,19 @@ const Address: React.FC = () => {
         fetchAttributions(addresses);
       } catch (error) {
         console.error('Error fetching transactions:', error);
+      } finally {
+        setIsLoading(false);
       }
     };
 
     fetchAddress();
-  }, [address]);
+  }, [address, currentPage]);
+
+  const handlePageChange = (newPage: number) => {
+    if (newPage >= 1 && newPage <= totalPages) {
+      setCurrentPage(newPage);
+    }
+  };
 
   return (
     <>
@@ -92,7 +109,18 @@ const Address: React.FC = () => {
         <BsBlock>
           <h3>Transactions ({totalTxs.toLocaleString()})</h3>
           <hr />
-          {txs.map(tx => <BtcTransactionTable key={tx._id} transaction={tx} />)}
+          {isLoading ? (
+            <div style={{ textAlign: 'center', padding: '2rem' }}>Loading...</div>
+          ) : (
+            <>
+              {txs.map(tx => <BtcTransactionTable key={tx._id} transaction={tx} />)}
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={handlePageChange}
+              />
+            </>
+          )}
         </BsBlock>
       </BsWrapper>
     </>

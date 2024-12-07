@@ -11,7 +11,7 @@ interface GetAddressTransactionsResponseData {
   }
 }
 
-export const getAddressTransactions = async (address: string) => {
-  const res = await axiosInstance.get<GetAddressTransactionsResponseData>(`/blockchain/address/${address}/transactions`);
+export const getAddressTransactions = async (address: string, params: { page: number, limit: number }) => {
+  const res = await axiosInstance.get<GetAddressTransactionsResponseData>(`/blockchain/address/${address}/transactions?page=${params.page}&limit=${params.limit}`);
   return res.data;
 };
