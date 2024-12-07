@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { Card, Form, Input, Button, Space, Typography, Divider, message, Avatar, Modal, Row, Col, Tag, Switch } from 'antd';
 import { UserOutlined, GlobalOutlined, TwitterOutlined, SendOutlined, GithubOutlined, LinkedinOutlined, FacebookOutlined, InstagramOutlined, YoutubeOutlined, RedditOutlined, MediumOutlined } from '@ant-design/icons';
 import styled from 'styled-components';
@@ -123,14 +123,6 @@ const SOTEditor: React.FC<SOTEditorProps> = ({ sot, onSelectAssociatedSot }) => 
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    console.log('sot', sot);
-  }, [sot]);
-
-  useEffect(() => {
-    console.log('form', form.getFieldsValue());
-  }, [form]);
-
   const isValidSOT = (sot: SOT | null): sot is SOT => {
     return sot !== null;
   };
@@ -155,8 +147,7 @@ const SOTEditor: React.FC<SOTEditorProps> = ({ sot, onSelectAssociatedSot }) => 
         onOk: async () => {
           try {
             setLoading(true);
-            const updatedSot = await api.blockchain.updateSOT(sot._id, values);
-            console.log('updatedSot', updatedSot);
+            await api.blockchain.updateSOT(sot._id, values);
             setIsEditing(false);
             message.success('SOT updated successfully');
           } catch (error) {

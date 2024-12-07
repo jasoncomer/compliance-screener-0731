@@ -112,13 +112,6 @@ const BlockHam: React.FC = () => {
     dispatch(fetchSOT());
   }, [dispatch]);
 
-  useEffect(() => {
-    if (selectedSot) {
-      console.log(`selectedSot: ${selectedSot?._id}`);
-      console.log(sotMap);
-    }
-  }, [selectedSot]);
-
   const headerTitle = (field: string, items: PopulatedSOT[]) => {
     return (
       <GroupHeader>
@@ -195,8 +188,8 @@ const BlockHam: React.FC = () => {
         .filter(([_, items]) => items.length > 0)
         .map(([field, items]) => ({
           label: headerTitle(field, items) as any,
-          options: items.map(item => ({
-            key: `${item._id}-${item.autocompleteDisplayTitle}`,
+          options: items.map((item, index) => ({
+            key: `${item._id}-${field}-${index}`,
             value: item.autocompleteDisplayTitle,
             label: (
               <OptionWrapper>
