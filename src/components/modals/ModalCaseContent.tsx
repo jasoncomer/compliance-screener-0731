@@ -99,9 +99,9 @@ const ModalCaseContent: React.FC<ModalCaseContentProps> = ({ userCase, open, clo
       api.blockchain.getAddressSummary(addrTmp)
         .then(data => setSummary(data))
         .catch(console.error);
-      api.blockchain.getAddress(addrTmp)
+      api.blockchain.getAddressTransactions(addrTmp, { page: 1, limit: 100 })
         .then(data => {
-          const txs = data.txData.map((tx) => ({
+          const txs = data.txs.map((tx) => ({
             ...tx,
             amount: satsToBTC(getTransactionAmountOfAddress(tx, addrTmp)),
             date: new Date(tx.timestamp * 1000).toLocaleString(),

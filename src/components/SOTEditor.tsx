@@ -128,10 +128,10 @@ const SOTEditor: React.FC<SOTEditorProps> = ({ sot, onSelectAssociatedSot }) => 
     return sot !== null;
   };
 
-  const handleEdit = () => {
-    setIsEditing(true);
-    form.setFieldsValue(sot);
-  };
+  // const handleEdit = () => {
+  //   setIsEditing(true);
+  //   form.setFieldsValue(sot);
+  // };
 
   const handleCancel = () => {
     setIsEditing(false);
@@ -164,28 +164,28 @@ const SOTEditor: React.FC<SOTEditorProps> = ({ sot, onSelectAssociatedSot }) => 
     }
   };
 
-  const handleDelete = () => {
-    if (!isValidSOT(sot)) return;
+  // const handleDelete = () => {
+  //   if (!isValidSOT(sot)) return;
 
-    Modal.confirm({
-      title: 'Delete SOT',
-      content: 'Are you sure you want to delete this SOT? This action cannot be undone.',
-      okText: 'Delete',
-      okType: 'danger',
-      onOk: async () => {
-        try {
-          setLoading(true);
-          await api.blockchain.deleteSOT(sot._id);
-          message.success('SOT deleted successfully');
-        } catch (error) {
-          console.error('Failed to delete SOT:', error);
-          message.error('Failed to delete SOT');
-        } finally {
-          setLoading(false);
-        }
-      },
-    });
-  };
+  //   Modal.confirm({
+  //     title: 'Delete SOT',
+  //     content: 'Are you sure you want to delete this SOT? This action cannot be undone.',
+  //     okText: 'Delete',
+  //     okType: 'danger',
+  //     onOk: async () => {
+  //       try {
+  //         setLoading(true);
+  //         await api.blockchain.deleteSOT(sot._id);
+  //         message.success('SOT deleted successfully');
+  //       } catch (error) {
+  //         console.error('Failed to delete SOT:', error);
+  //         message.error('Failed to delete SOT');
+  //       } finally {
+  //         setLoading(false);
+  //       }
+  //     },
+  //   });
+  // };
 
   const getSocialMediaIcon = (url: string) => {
     const urlLower = url.toLowerCase();
