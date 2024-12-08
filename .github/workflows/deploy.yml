@@ -1,4 +1,4 @@
-name: Deploy to EC2
+name: Deploy Blockscout App
 
 on:
   push:
@@ -8,23 +8,28 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
+    
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v3
 
-    - name: Make deploy script executable
-      run: chmod +x deploy.sh
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'  # or your preferred Node.js version
 
-    - name: Set up SSH
-      run: |
-          mkdir -p ~/.ssh
-          echo -n "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+      - name: Install dependencies
+        run: npm install
 
-    - name: Deploy to EC2
-      run: |
-        ssh ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} "mkdir -p ${{ secrets.EC2_PATH }}"
-        scp -r ./* ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:${{ secrets.EC2_PATH }}
-        ssh ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} "cd ${{ secrets.EC2_PATH }} && ./deploy.sh"
+      - name: Build React app
+        run: npm run build
+        
+      - name: Deploy to server
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.BS_APP_SERVER_HOST }}
+          username: ${{ secrets.BS_APP_SERVER_USERNAME }}
+          key: ${{ secrets.BS_APP_SERVER_SSH_KEY }}
+          source: "build/*"
+          target: "/var/www/html"
+          strip_components: 1
