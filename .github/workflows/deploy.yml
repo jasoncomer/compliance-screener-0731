@@ -30,6 +30,6 @@ jobs:
           host: ${{ secrets.BS_APP_SERVER_HOST }}
           username: ${{ secrets.BS_APP_SERVER_USERNAME }}
           key: ${{ secrets.BS_APP_SERVER_SSH_KEY }}
-          source: "build/*"
+          source: "dist/*"
           target: "/var/www/html"
           strip_components: 1
