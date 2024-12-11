@@ -2,9 +2,13 @@ import { ECaseStatus } from "./enums";
 
 export interface IUser {
   name: string;
+  surname: string;
   email: string;
   password: string;
   plan: 'free' | 'premium';
+  isVerified: boolean;
+  isDeleted: boolean;
+  status: 'active' | 'inactive';
 
   _id?: string;
   createdAt?: string;
