@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import Sider from 'antd/es/layout/Sider';
 import styled from 'styled-components';
 import { Button, Tooltip } from 'antd';
-import { AlertFilled, AlertOutlined, FolderOpenOutlined, FolderOutlined, GlobalOutlined, LogoutOutlined, SearchOutlined, SettingFilled, SettingOutlined } from '@ant-design/icons';
+import { AlertFilled, AlertOutlined, FolderOpenOutlined, FolderOutlined, GlobalOutlined, LogoutOutlined, SearchOutlined, SettingFilled, SettingOutlined, UserOutlined, UserSwitchOutlined } from '@ant-design/icons';
 import { colors } from '../styles/variables';
 import { useNavigate, useParams } from 'react-router-dom';
 
@@ -68,7 +68,7 @@ const ButtonDiv = styled.div`
   }
 `;
 
-type Section = 'alerts' | 'cases' | 'explorer' | 'settings' | 'block-explorer' | 'blockham';
+type Section = 'alerts' | 'cases' | 'explorer' | 'settings' | 'block-explorer' | 'blockham' | 'admin';
 
 const Sidebar = () => {
   const nav = useNavigate();
@@ -158,8 +158,18 @@ const Sidebar = () => {
               </Tooltip>
             )}
 
+            {activeSection === 'admin' ? (
+              <Tooltip placement="bottom" title={'Admin'} mouseEnterDelay={1}>
+                <UserSwitchOutlined className='active' style={{ marginTop: 'auto' }} />
+              </Tooltip>
+            ) : (
+              <Tooltip placement="bottom" title={'Admin'} mouseEnterDelay={1}>
+                <UserOutlined onClick={() => handleSectionChange('admin')} style={{ marginTop: 'auto' }} />
+              </Tooltip>
+            )}
+
             <Tooltip placement="bottom" title={'Log Out'} mouseEnterDelay={1}>
-              <LogoutOutlined style={{ marginTop: 'auto' }} />
+              <LogoutOutlined />
             </Tooltip>
           </>
         ) : (
@@ -246,13 +256,31 @@ const Sidebar = () => {
               )}
 
             </ButtonDiv>
-            <Button
-              ghost
-              block
-              onClick={handleLogout}
-              icon={<LogoutOutlined style={{ marginTop: 'auto' }} />}
-              style={{ marginTop: 'auto' }}
-            >Log Out</Button>
+
+            <ButtonDiv style={{ marginTop: 'auto' }}>
+              {activeSection === 'admin' ? (
+                <Button
+                  ghost
+                  block
+                  className='active'
+                  icon={<UserSwitchOutlined className='active' />}
+                >Admin</Button>
+              ) : (
+                <Button
+                  ghost
+                  block
+                  onClick={() => handleSectionChange('admin')}
+                  icon={<UserOutlined />}
+                >Admin</Button>
+              )}
+              <Button
+                ghost
+                block
+                onClick={handleLogout}
+                icon={<LogoutOutlined style={{ marginTop: 'auto' }} />}
+              >Log Out</Button>
+            </ButtonDiv>
+
           </>
         )}
       </SiderContent>
