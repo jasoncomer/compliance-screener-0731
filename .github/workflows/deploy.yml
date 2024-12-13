@@ -54,3 +54,29 @@ jobs:
           script: |
             sudo chown -R www-data:www-data /var/www/html
             sudo chmod -R 755 /var/www/html
+
+      - name: Notify Slack - Deployment Success
+        if: success()
+        uses: 8398a7/action-slack@v3
+        with:
+          status: custom
+          fields: workflow,job,commit,repo,ref,author,took
+          custom_payload: |
+            {
+              text: "[Blockscout App] Deployment Successful ✅\nRepository: ${{ github.repository }}\nBranch: ${{ github.ref_name }}"
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+      - name: Notify Slack - Deployment Failure
+        if: failure()
+        uses: 8398a7/action-slack@v3
+        with:
+          status: custom
+          fields: workflow,job,commit,repo,ref,author,took
+          custom_payload: |
+            {
+              text: "[Blockscout App] Deployment Failed ❌\nRepository: ${{ github.repository }}\nBranch: ${{ github.ref_name }}"
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
