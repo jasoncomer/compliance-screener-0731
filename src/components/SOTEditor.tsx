@@ -8,7 +8,6 @@ import AssociatedSOTs from './AssociatedSOTs';
 import { getEntityTypeLabel } from '../utils/display-labels';
 import { EEntityType } from '../typings/SOT';
 
-
 const { Title, Text } = Typography;
 
 const Container = styled.div`
@@ -96,12 +95,6 @@ const TagsContainer = styled.div`
   flex-direction: row;
   flex-wrap: wrap;
   justify-content: flex-start;
-`;
-
-const TagInput = styled(Input)`
-  width: 100px;
-  margin-right: 8px;
-  vertical-align: top;
 `;
 
 interface SOTEditorProps {
