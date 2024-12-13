@@ -66,7 +66,7 @@ jobs:
               text: "[Blockscout App] Deployment Successful ✅\nRepository: ${{ github.repository }}\nBranch: ${{ github.ref_name }}"
             }
         env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_DEPLOYMENTS_WEBHOOK_URL }}
 
       - name: Notify Slack - Deployment Failure
         if: failure()
@@ -79,4 +79,4 @@ jobs:
               text: "[Blockscout App] Deployment Failed ❌\nRepository: ${{ github.repository }}\nBranch: ${{ github.ref_name }}"
             }
         env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_DEPLOYMENTS_WEBHOOK_URL }}
