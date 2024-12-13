@@ -140,11 +140,11 @@ const Sidebar = () => {
               </Tooltip>
             )}
             {activeSection === 'blockham' ? (
-              <Tooltip placement="bottom" title={'BlockHam'} mouseEnterDelay={1}>
+              <Tooltip placement="bottom" title={'Entity Explorer'} mouseEnterDelay={1}>
                 <GlobalOutlined className='active' />
               </Tooltip>
             ) : (
-              <Tooltip placement="bottom" title={'BlockHam'} mouseEnterDelay={1}>
+              <Tooltip placement="bottom" title={'Entity Explorer'} mouseEnterDelay={1}>
                 <GlobalOutlined onClick={() => handleSectionChange('blockham')} />
               </Tooltip>
             )}
@@ -233,13 +233,13 @@ const Sidebar = () => {
                   ghost
                   block
                   className='active'
-                  icon={<GlobalOutlined className='active' />}>BlockHam</Button>
+                  icon={<GlobalOutlined className='active' />}>Entity Explorer</Button>
               ) : (
                 <Button
                   ghost
                   block
                   onClick={() => handleSectionChange('blockham')}
-                  icon={<GlobalOutlined />}>BlockHam</Button>
+                  icon={<GlobalOutlined />}>Entity Explorer</Button>
               )}
               {activeSection === 'settings' ? (
                 <Button

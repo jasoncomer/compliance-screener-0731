@@ -5,6 +5,8 @@ import { UserOutlined } from '@ant-design/icons';
 import { SOT } from '../typings/interfaces';
 import { useSelector } from 'react-redux';
 import { RootState } from '../store/store';
+import { getEntityTypeLabel } from '../utils/display-labels';
+import { EEntityType } from '../typings/SOT';
 
 const { Title } = Typography;
 
@@ -60,22 +62,10 @@ interface AssociatedSOTsProps {
 const AssociatedSOTs: React.FC<AssociatedSOTsProps> = ({ sot, onSelectSot }) => {
   const { itemsMap } = useSelector((state: RootState) => state.sot);
 
-  if (!sot) return null;
+  if (!sot || !sot.parent_id || sot.parent_id === '') return null;
 
-  const getAssociatedIds = (currentSot: SOT): string[] => {
-    const associatedIds = new Set<string>();
-    const currentEntityId = currentSot?.entity_id.split('_')[0];
-    Object.values(itemsMap).forEach(item => {
-        if (item.entity_id?.startsWith(currentEntityId)) {
-            associatedIds.add(item._id);
-        }
-    });
-
-    return Array.from(associatedIds);
-  };
-
-  const associatedSots = getAssociatedIds(sot)
-    .map(id => itemsMap[id])
+  const associatedSots = Object.values(itemsMap)
+    .filter(item => item.parent_id === sot.parent_id)
     .filter(Boolean);
 
   if (associatedSots.length === 0) return null;
@@ -100,7 +90,7 @@ const AssociatedSOTs: React.FC<AssociatedSOTsProps> = ({ sot, onSelectSot }) => 
                   {associatedSot.proper_name || associatedSot.entity_id}
                 </div>
                 <div className="entity-type">
-                  {associatedSot.entity_type}
+                  {getEntityTypeLabel(associatedSot.entity_type as EEntityType)}
                   {associatedSot.associate_country_1 && 
                     ` • ${associatedSot.associate_country_1}`
                   }

@@ -9,6 +9,8 @@ import SOTEditor from '../components/SOTEditor';
 import { AppDispatch, RootState } from '../store/store';
 import { fetchSOT } from '../store/slices/sotSlice';
 import { SOT } from '../typings/interfaces';
+import { EEntityType } from '../typings/SOT';
+import { getEntityTypeLabel } from '../utils/display-labels';
 
 const { Title } = Typography;
 
@@ -16,6 +18,7 @@ const BlockHamWrapper = styled.div`
   padding: 2em;
   height: 100%;
   width: 100%;
+  overflow: auto;
   h2 {
     margin: 0;
   }
@@ -202,7 +205,7 @@ const BlockHam: React.FC = () => {
                   <div>{item.autocompleteDisplayTitle}</div>
                   {item.associate_country_1 && (
                     <small style={{ color: '#666' }}>
-                      {item.entity_type && `${item.entity_type} • `}
+                      {item.entity_type && `${getEntityTypeLabel(item.entity_type as EEntityType)} • `}
                       {item.associate_country_1}
                     </small>
                   )}
@@ -228,7 +231,7 @@ const BlockHam: React.FC = () => {
   return (
     <>
       <BlockHamWrapper>
-        <Title level={2}>BlockHam</Title>
+        <Title level={2}>Entity Explorer</Title>
         <SearchWrapper>
           <StyledAutoComplete
             options={options}

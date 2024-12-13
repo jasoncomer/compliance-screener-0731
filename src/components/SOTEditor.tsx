@@ -5,6 +5,8 @@ import styled from 'styled-components';
 import { SOT } from '../typings/interfaces';
 import { api } from '../api/api';
 import AssociatedSOTs from './AssociatedSOTs';
+import { getEntityTypeLabel } from '../utils/display-labels';
+import { EEntityType } from '../typings/SOT';
 
 
 const { Title, Text } = Typography;
@@ -15,6 +17,7 @@ const Container = styled.div`
   flex-direction: row;
   gap: 24px;
   padding-bottom: 2em;
+  margin-top: 3em;
 `;
 
 const EditorWrapper = styled(Card)`
@@ -123,7 +126,7 @@ const SOTEditor: React.FC<SOTEditorProps> = ({ sot, onSelectAssociatedSot }) => 
   const [form] = Form.useForm();
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
-
+  console.log(sot);
   const isValidSOT = (sot: SOT | null): sot is SOT => {
     return sot !== null;
   };
@@ -227,23 +230,30 @@ const SOTEditor: React.FC<SOTEditorProps> = ({ sot, onSelectAssociatedSot }) => 
               <Form.Item name="ceo" label="CEO">
                 <Input />
               </Form.Item>
-              <Form.Item name="founders" label="Founders">
+              <Form.Item name="key_personnel" label="Key Personnel">
+                <Input placeholder="Comma-separated list of key personnel" />
+              </Form.Item>
+              <Form.Item name="ticker" label="Ticker">
+                <Input placeholder="Comma-separated list of tickers" />
+              </Form.Item>
+              <Form.Item name="parent_id" label="Parent ID">
                 <Input />
               </Form.Item>
               <Form.Item name="year_founded" label="Year Founded">
                 <Input />
               </Form.Item>
+              <Form.Item name="ens_address" label="ENS Address">
+                <Input />
+              </Form.Item>
               <Form.Item name="social_media_profile" label="Social Media">
-                {Object.entries(sot)
-                  .filter(([key]) => key.startsWith('social_media_profile'))
-                  .map(([key]) => (
-                    <Form.Item
-                      key={key}
-                      name={key}
-                    >
-                      <Input />
-                    </Form.Item>
-                  ))}
+                {[1, 2, 3, 4].map((num) => (
+                  <Form.Item
+                    key={`social_media_profile${num === 1 ? '' : '_' + num}`}
+                    name={`social_media_profile${num === 1 ? '' : '_' + num}`}
+                  >
+                    <Input placeholder={`Social Media Profile ${num}`} />
+                  </Form.Item>
+                ))}
               </Form.Item>
               
               <ToggleSwitch name="kyc_req" label="KYC Required" />
@@ -281,27 +291,42 @@ const SOTEditor: React.FC<SOTEditorProps> = ({ sot, onSelectAssociatedSot }) => 
               <Form.Item name="contact_email" label="Email">
                 <Input />
               </Form.Item>
-              <Form.Item name="associate_country_1" label="Country">
-                <Input />
+              
+              {/* Associated Countries */}
+              <Form.Item label="Associated Countries">
+                <Row gutter={16}>
+                  {[1, 2, 3, 4, 5, 6].map((num) => (
+                    <Col span={12} key={`country_${num}`}>
+                      <Form.Item name={`associate_country_${num}`}>
+                        <Input placeholder={`Country ${num}`} />
+                      </Form.Item>
+                    </Col>
+                  ))}
+                </Row>
               </Form.Item>
+
               <Form.Item name="logo" label="Logo URL">
                 <Input />
               </Form.Item>
+
               <Form.Item label="Entity Tags">
                 <Row gutter={16}>
-                  {Object.entries(sot)
-                    .filter(([key]) => key.startsWith('entity_tag'))
-                    .map(([key]) => (
-                      <Col span={12}>
-                        <Form.Item key={key} name={key}>
-                          <TagInput placeholder={`Tag ${key.replace('entity_tag', '')}`} style={{ width: '100%' }} />
-                        </Form.Item>
-                      </Col>
-                    ))}
+                  {[1, 2, 3, 4, 5, 6, 7].map((num) => (
+                    <Col span={12} key={`tag_${num}`}>
+                      <Form.Item name={`entity_tag${num}`}>
+                        <Input placeholder={`Tag ${num}`} />
+                      </Form.Item>
+                    </Col>
+                  ))}
                 </Row>
               </Form.Item>
+
               <Form.Item name="description_merged" label="Description">
-                <Input.TextArea rows={8} />
+                <Input.TextArea rows={6} />
+              </Form.Item>
+
+              <Form.Item name="note" label="Notes">
+                <Input.TextArea rows={4} />
               </Form.Item>
             </Col>
           </Row>
@@ -325,7 +350,7 @@ const SOTEditor: React.FC<SOTEditorProps> = ({ sot, onSelectAssociatedSot }) => 
           />
           <HeaderInfo>
             <Title level={4} style={{ margin: 0 }}>{sot.proper_name || sot.entity_id}</Title>
-            <Text type="secondary">{sot.entity_type}</Text>
+            <Text type="secondary">{getEntityTypeLabel(sot.entity_type as EEntityType)}</Text>
           </HeaderInfo>
         </HeaderSection>
 
@@ -365,21 +390,19 @@ const SOTEditor: React.FC<SOTEditorProps> = ({ sot, onSelectAssociatedSot }) => 
             </DetailValue>
           </DetailItem>
 
-          {(sot.ceo || sot.founders) && (
-            <DetailItem style={{ gridColumn: '1 / -1' }}>
-              <DetailLabel>Leadership</DetailLabel>
-              <DetailValue style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {sot.ceo && <span><strong>CEO:</strong> {sot.ceo}</span>}
-                {sot.founders && (
-                  <span>
-                    <strong>Founders:</strong> {sot.founders.split(',').map(founder =>
-                      <Tag key={founder}>{founder}</Tag>
-                    )}
-                  </span>
-                )}
-              </DetailValue>
-            </DetailItem>
-          )}
+          <DetailItem style={{ gridColumn: '1 / -1' }}>
+            <DetailLabel>Leadership</DetailLabel>
+            <DetailValue style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {sot.ceo && <span><strong>CEO:</strong> {sot.ceo}</span>}
+              {sot.key_personnel && (
+                <span>
+                  <strong>Key Personnel:</strong> {sot.key_personnel.split(',').map(person =>
+                    <Tag key={person.trim()}>{person.trim()}</Tag>
+                  )}
+                </span>
+              )}
+            </DetailValue>
+          </DetailItem>
 
           <DetailItem style={{ gridColumn: '1 / -1' }}>
             <DetailLabel>Contact Information</DetailLabel>
@@ -387,9 +410,11 @@ const SOTEditor: React.FC<SOTEditorProps> = ({ sot, onSelectAssociatedSot }) => 
               {sot.contact_email && <span><strong>Email:</strong> {sot.contact_email}</span>}
               {sot.contact_phone && <span><strong>Phone:</strong> {sot.contact_phone}</span>}
               {sot.contact_address && <span><strong>Address:</strong> {sot.contact_address}</span>}
+              {sot.ens_address && <span><strong>ENS Address:</strong> {sot.ens_address}</span>}
             </DetailValue>
           </DetailItem>
 
+          {/* Entity Tags */}
           {Object.entries(sot)
             .filter(([key, value]) => key.startsWith('entity_tag') && value)
             .length > 0 && (
@@ -407,13 +432,23 @@ const SOTEditor: React.FC<SOTEditorProps> = ({ sot, onSelectAssociatedSot }) => 
               </DetailItem>
             )}
 
-          {sot.description_merged && (
+          {/* Description and Notes */}
+          {(sot.description_merged || sot.note) && (
             <DetailItem style={{ gridColumn: '1 / -1' }}>
-              <DetailLabel>Description</DetailLabel>
+              <DetailLabel>Description & Notes</DetailLabel>
               <DetailValue>
-                <div style={{ whiteSpace: 'pre-wrap' }}>
-                  {sot.description_merged}
-                </div>
+                {sot.description_merged && (
+                  <div style={{ whiteSpace: 'pre-wrap', marginBottom: '16px' }}>
+                    <strong>Description:</strong><br />
+                    {sot.description_merged}
+                  </div>
+                )}
+                {sot.note && (
+                  <div style={{ whiteSpace: 'pre-wrap' }}>
+                    <strong>Notes:</strong><br />
+                    {sot.note}
+                  </div>
+                )}
               </DetailValue>
             </DetailItem>
           )}
@@ -422,7 +457,23 @@ const SOTEditor: React.FC<SOTEditorProps> = ({ sot, onSelectAssociatedSot }) => 
             <DetailLabel>Additional Information</DetailLabel>
             <DetailValue style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               {sot.year_founded && <span><strong>Founded:</strong> {sot.year_founded}</span>}
-              {sot.associate_country_1 && <span><strong>Country:</strong> {sot.associate_country_1}</span>}
+              {sot.ticker && <span><strong>Ticker:</strong> {sot.ticker.split(',').map(t => 
+                <Tag key={t.trim()}>{t.trim()}</Tag>
+              )}</span>}
+              {sot.parent_id && <span><strong>Parent ID:</strong> {sot.parent_id}</span>}
+              
+              {/* Associated Countries */}
+              <span>
+                <strong>Associated Countries:</strong>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '4px' }}>
+                  {Object.entries(sot)
+                    .filter(([key, value]) => key.startsWith('associate_country_') && value)
+                    .map(([key, value]) => (
+                      <Tag key={key}>{value}</Tag>
+                    ))}
+                </div>
+              </span>
+
               {sot.legal_info_url && (
                 <span>
                   <strong>Legal Info:</strong>
