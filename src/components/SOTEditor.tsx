@@ -148,7 +148,7 @@ const SOTEditor: React.FC<SOTEditorProps> = ({ sot, onSelectAssociatedSot }) => 
         onOk: async () => {
           try {
             setLoading(true);
-            await api.blockchain.updateSOT(sot._id, values);
+            await api.sot.updateSOT(sot._id, values);
             setIsEditing(false);
             message.success('SOT updated successfully');
           } catch (error) {
