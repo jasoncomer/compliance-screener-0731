@@ -1,3 +1,4 @@
+import { ISOTSyncLog } from "../typings/SOT";
 import { axiosInstance } from "./api";
 
 const updateMongoDb = async () => {
@@ -5,6 +6,12 @@ const updateMongoDb = async () => {
   return res.data;
 };
 
+const loadLastUpdate = async () => {
+  const res = await axiosInstance.get('/sot/last-update');
+  return res.data as ISOTSyncLog;
+};
+
 export const sot = {
-  updateMongoDb
+  updateMongoDb,
+  loadLastUpdate
 };
