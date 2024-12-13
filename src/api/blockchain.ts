@@ -46,33 +46,6 @@ const generateReport = async (address: string) => {
   return res.data;
 };
 
-const getSOT = async () => {
-  const res = await axiosInstance.get(`/blockchain/sot`, { timeout: 20000 });
-  
-  // TODO: fix the logo url for all SOTs in the sheet
-  const sot = (res.data as SOT[]).map(item => {
-    if (item.logo && !item.logo.startsWith('https://')) {
-      item.logo = 'https://' + item.logo;
-    }
-    return item;
-  });
-  return sot;
-};
-
-export const updateSOT = async (id: string, data: Partial<SOT>): Promise<SOT> => {
-  const response = await axiosInstance.put(`/blockchain/sot/${id}`, {
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(data),
-  });
-  return response.data;
-};
-
-export const deleteSOT = async (id: string): Promise<void> => {
-  await axiosInstance.delete(`/blockchain/sot/${id}`);
-};
-
 export const blockchain = {
   generateReport,
   getAddress,
@@ -80,8 +53,5 @@ export const blockchain = {
   getAttributions,
   getBlock,
   getTransaction,
-  getSOT,
-  updateSOT,
-  deleteSOT,
   getAddressTransactions,
 };

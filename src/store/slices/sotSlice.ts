@@ -19,7 +19,7 @@ const initialState: SOTState = {
 export const fetchSOT = createAsyncThunk(
   'sot/fetchSOT',
   async () => {
-    const response = await api.blockchain.getSOT();
+    const response = await api.sot.getSOT();
     return response;
   }
 );
