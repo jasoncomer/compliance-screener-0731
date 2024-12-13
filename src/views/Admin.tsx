@@ -123,7 +123,7 @@ const Admin: FC = () => {
     const loadingMessage = message.loading('Updating MongoDB with latest Source of Truth data...', 0);
     
     try {
-      const response = await sot.updateMongoDb();
+      await sot.updateMongoDb();
       message.success('Job completed successfully');
       loadJobHistory(); // Reload history after successful job
     } catch (err) {
