@@ -66,13 +66,12 @@ jobs:
           fields: workflow,job,commit,repo,ref,author,took
           custom_payload: |
             {
-              text: "[Blockscout App] Deployment Successful ✅\nRepository: ${{ github.repository }}\nBranch: ${{ github.ref_name }}"
+              text: "*[Blockscout App] Deployment Successful* :white_check_mark:\n>*Repository:* `${{ github.repository }}`\n>*Branch:* `${{ github.ref_name }}`"
             }
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_DEPLOYMENTS_WEBHOOK_URL }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-
+    
       - name: Notify Slack - Deployment Failure
         if: failure()
         uses: 8398a7/action-slack@v3
@@ -81,7 +80,7 @@ jobs:
           fields: workflow,job,commit,repo,ref,author,took
           custom_payload: |
             {
-              text: "[Blockscout App] Deployment Failed ❌\nRepository: ${{ github.repository }}\nBranch: ${{ github.ref_name }}"
+              text: "*[Blockscout App] Deployment Failed* :x:\n>*Repository:* `${{ github.repository }}`\n>*Branch:* `${{ github.ref_name }}`"
             }
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_DEPLOYMENTS_WEBHOOK_URL }}
