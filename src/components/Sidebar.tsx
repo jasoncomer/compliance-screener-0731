@@ -5,6 +5,7 @@ import { Button, Tooltip } from 'antd';
 import { AlertFilled, AlertOutlined, FolderOpenOutlined, FolderOutlined, GlobalOutlined, LogoutOutlined, SearchOutlined, SettingFilled, SettingOutlined, UserOutlined, UserSwitchOutlined } from '@ant-design/icons';
 import { colors } from '../styles/variables';
 import { useNavigate, useParams } from 'react-router-dom';
+import { useAppContext } from '../context/AppContext';
 
 const SiderWrapper = styled(Sider)`
   display: flex;
@@ -75,6 +76,7 @@ const Sidebar = () => {
   const params = useParams();
   const [collapsed, setCollapsed] = useState(false);
   const section = useMemo(() => params['*'], [params]);
+  const { clearAppData } = useAppContext();
 
   const [activeSection, setActiveSection] = useState<Section>(section as Section);
 
@@ -88,6 +90,7 @@ const Sidebar = () => {
   }
 
   const handleLogout = () => {
+    clearAppData();
     nav('/');
   }
 
@@ -168,8 +171,8 @@ const Sidebar = () => {
               </Tooltip>
             )}
 
-            <Tooltip placement="bottom" title={'Log Out'} mouseEnterDelay={1}>
-              <LogoutOutlined />
+            <Tooltip placement="bottom" title={'Log Out'} mouseEnterDelay={1} >
+              <LogoutOutlined style={{ marginTop: 'auto' }} onClick={handleLogout} />
             </Tooltip>
           </>
         ) : (
@@ -273,6 +276,7 @@ const Sidebar = () => {
                   icon={<UserOutlined />}
                 >Admin</Button>
               )}
+
               <Button
                 ghost
                 block

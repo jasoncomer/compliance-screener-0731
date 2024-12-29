@@ -4,8 +4,7 @@ import { Button, notification } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import { api, setAuthToken } from '../api/api';
 import { useAppContext } from '../context/AppContext';
-import { config } from '../config/config';
-
+import { storage } from '../utils/storage';
 
 import type { NotificationArgsProps } from 'antd';
 
@@ -19,7 +18,6 @@ const Login = () => {
   const [password, setPassword] = useState('');
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { accessToken, refreshToken, user } = config.localstorageKeys;
 
   const openNotification = (placement: NotificationPlacement) => {
     notifApi.error({
@@ -32,28 +30,29 @@ const Login = () => {
 
   const handleLogin = async () => {
     setIsLoading(true);
-    await api.users.authenticateUser(email, password)
-      .then(res => {
-        if (res.success) {
-          localStorage.setItem(accessToken, res.data.accessToken);
-          localStorage.setItem(refreshToken, res.data.refreshToken);
-          localStorage.setItem(user, JSON.stringify(res.data.user));
-          setAuthToken(res.data.accessToken);
-          setUser(res.data.user);
-          nav('/home/cases');
-        }
-      })
-      .catch((err) => {
-        openNotification('topRight');
-        console.error(err);
-      })
-      .finally(() => {
-        setIsLoading(false);
-      });
+    try {
+      const res = await api.users.authenticateUser(email, password);
+      if (res.success) {
+        // Store auth data
+        storage.auth.setTokens(res.data.accessToken, res.data.refreshToken);
+        storage.auth.setUser(res.data.user);
+        
+        // Update app state
+        setAuthToken(res.data.accessToken);
+        setUser(res.data.user);
+        
+        nav('/home/cases');
+      }
+    } catch (err) {
+      openNotification('topRight');
+      console.error(err);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const navRegister = () => {
-    window.location.href = '/register';
+    nav('/register');
   };
 
   return (
