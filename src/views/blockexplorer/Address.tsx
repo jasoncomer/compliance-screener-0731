@@ -39,7 +39,15 @@ const Address: React.FC = () => {
   const [isLoading, setIsLoading] = React.useState<boolean>(false);
   const itemsPerPage = 20;
   const { fetchAttributions } = useAttribution();
-
+  const [summary, setSummary] = React.useState<{
+    balance: number;
+    total_received: number;
+    total_spent: number;
+  }>({
+    balance: 0,
+    total_received: 0,
+    total_spent: 0
+  });
   const totalPages = Math.ceil(totalTxs / itemsPerPage);
 
   useEffect(() => {
@@ -57,12 +65,20 @@ const Address: React.FC = () => {
         setAddrData(data);
         setTxs(txs);
         setTotalTxs(pagination.totalTxs);
-        const addresses = [
+        const uniqueAddresses = new Set([
           address,
           ...txs.flatMap(tx => tx.inputs.map(i => i.addr)),
           ...txs.flatMap(tx => tx.outputs.map(o => o.addr))
-        ];
-        fetchAttributions(addresses);
+        ]);
+        fetchAttributions(Array.from(uniqueAddresses));
+        
+        // get total received and spent and balance
+        const tmpSummary = await api.blockchain.getAddressSummary(address);
+        setSummary({
+          balance: tmpSummary.balance,
+          total_received: tmpSummary.total_received,
+          total_spent: tmpSummary.total_spent
+        });
       } catch (error) {
         console.error('Error fetching transactions:', error);
       } finally {
@@ -95,13 +111,15 @@ const Address: React.FC = () => {
           <hr />
           <SummaryWrapper>
             <div className='col'>
-              <span><strong>Balance:</strong> {satsToBTC(addrData?.balance || 0)} BTC</span>
+              <span><strong>Balance:</strong> {satsToBTC(summary?.balance || 0)} BTC</span>
               <span><strong>First block:</strong> {addrData?.first_block?.toLocaleString()}</span>
               <span><strong>Last block:</strong> {addrData?.last_block?.toLocaleString()}</span>
             </div>
 
             <div className='col'>
               <span><strong>Script Type:</strong> {addrData?.script_type}</span>
+              <span><strong>Total received:</strong> {satsToBTC(summary?.total_received || 0)} BTC</span>
+              <span><strong>Total spent:</strong> {satsToBTC(summary?.total_spent || 0)} BTC</span>
             </div>
           </SummaryWrapper>
         </BsBlock>

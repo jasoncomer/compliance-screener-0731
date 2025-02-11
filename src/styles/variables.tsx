@@ -10,4 +10,9 @@ export const colors = {
   dark: '#000',
   white: '#fff',
   black: '#000',
+  attribution: '#e87d4f',
+  attributionLight: '#a34015',
+  attributionHover: '#c74d1a',
+  attributionReference: '#8d23b1',
+  attributionReferenceHover: '#cf45fe',
 };

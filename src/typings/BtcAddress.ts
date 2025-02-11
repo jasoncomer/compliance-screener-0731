@@ -8,9 +8,7 @@ export interface IBtcAddress {
 }
 
 export interface IBtcAddressSummary {
-  address: string;
-  totalReceived: number;
-  totalSent: number;
+  total_received: number;
+  total_spent: number;
   balance: number;
-  txCount: number;
 }

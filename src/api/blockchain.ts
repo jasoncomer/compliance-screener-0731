@@ -12,7 +12,7 @@ const getAttributions = async (addresses: string[]): Promise<{ data: IAttributio
 
 const getAddressSummary = async (address: string): Promise<IBtcAddressSummary> => {
   const res = await axiosInstance.get(`/blockchain/address/${address}/summary`);
-  return res.data;
+  return res.data[0];
 };
 
 const getTransaction = async (txHash: string) => {

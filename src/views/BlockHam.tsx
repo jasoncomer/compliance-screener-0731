@@ -142,18 +142,18 @@ const BlockHam: React.FC = () => {
     try {
       const sifter = new Sifter(sot);
       const searchableFields = [
-        'entity_id',
-        'url',
+        // 'entity_id',
+        // 'entity_type',
         'proper_name',
-        'entity_type',
+        'url',
         'contact_twitter',
         'contact_telegram'
       ];
       const fieldDisplayMap: Record<string, (keyof PopulatedSOT)[]> = {
-        'entity_id': ['entity_id'],
-        'url': ['url'],
+        // 'entity_id': ['entity_id'],
+        // 'entity_type': ['entity_type'],
         'proper_name': ['proper_name'],
-        'entity_type': ['entity_type'],
+        'url': ['url'],
         'contact_twitter': ['contact_twitter'],
         'contact_telegram': ['contact_telegram'],
       };

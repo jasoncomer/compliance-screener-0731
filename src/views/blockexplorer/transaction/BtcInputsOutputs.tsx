@@ -1,6 +1,7 @@
 import React, { useCallback, useState } from 'react';
 import { Link } from 'react-router-dom';
 import styled from 'styled-components';
+import { colors } from '../../../styles/variables';
 
 import { satsToBTC, truncateAddress } from '../../../utils/crypto';
 import { BtcTransaction } from '../../../typings/BtcTransaction';
@@ -21,6 +22,13 @@ const Wrapper = styled.div`
     display: flex;
     justify-content: space-between;
     flex-direction: row;
+  }
+  .attributed {
+    color: ${colors.attribution};
+    font-weight: bold;
+    &:hover {
+      color: ${colors.attributionHover};
+    }
   }
 `;
 
@@ -52,7 +60,7 @@ const BtcTxAddress: React.FC<BtcTxAddressProps> = ({ address }) => {
   const currAddress = url.split('/').pop();
   const { attributions, referenceAttributions } = useAttribution();
 
-  const attribution = attributions[address]?.entity;
+  const attribution = attributions[address]?.attribution;
   const referenceAttribution = referenceAttributions[address]?.entity;
 
   const truncatedAddress = truncateAddress(address);
@@ -61,7 +69,14 @@ const BtcTxAddress: React.FC<BtcTxAddressProps> = ({ address }) => {
     return <span className="monospace">{truncatedAddress}</span>;
   }
   const bsAttribution = attribution ? attribution : truncatedAddress;
-  return <Link to={`/home/block-explorer/address/${address}`}>{bsAttribution} {referenceAttribution ? `(${referenceAttribution})` : ''}</Link>;
+  
+  // css
+  let className = attribution ? 'attributed' : '';
+  if (referenceAttribution) {
+    className = 'attributed reference';
+  }
+
+  return <Link className={className} to={`/home/block-explorer/address/${address}`}>{bsAttribution} {referenceAttribution ? `(${referenceAttribution})` : ''}</Link>;
 }
 
 const BtcInputsOutputs: React.FC<BtcInputsOutputsProps> = ({ data }) => {

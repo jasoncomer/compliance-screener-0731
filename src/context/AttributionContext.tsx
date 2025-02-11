@@ -32,7 +32,7 @@ export const AttributionProvider: React.FC<{ children: React.ReactNode }> = ({ c
       }, {});
 
       const newReferenceAttributions = referenceData.reduce((acc: ReferenceAttributionMap, curr: IReferenceAttribution) => {
-        acc[curr.addr] = curr;
+        acc[curr.address] = curr;
         return acc;
       }, {});
 

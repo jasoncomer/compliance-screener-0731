@@ -1,6 +1,6 @@
 export interface IAttribution {
   addr: string;
-  entity: string;
+  attribution: string;
   cospend_id: string;
 }
 
@@ -9,11 +9,11 @@ export interface IAttributionMap {
 }
 
 export interface IReferenceAttribution {
-  addr: string;
+  address: string;
   entity: string;
-  bo: string;
+  beneficial_owner: string;
   custodian: string;
-  sdn: string;
+  sdn_name: string;
 }
 
 export interface ReferenceAttributionMap {

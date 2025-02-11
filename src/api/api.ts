@@ -8,7 +8,7 @@ const BASE_URL = process.env.NODE_ENV === 'production' ? 'https://api.blockscout
 
 export const axiosInstance: AxiosInstance = axios.create({
   baseURL: BASE_URL,
-  timeout: 5000,
+  timeout: 60000,
 });
 
 export const setAuthToken = (token: string) => {
