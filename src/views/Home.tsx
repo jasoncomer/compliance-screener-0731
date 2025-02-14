@@ -7,6 +7,7 @@ import BlockHam from './BlockHam';
 import Cases from './Cases';
 import Explorer from './Explorer';
 import Settings from './Settings';
+import RiskScoring from './RiskScoring';
 
 import { setAuthToken } from '../api/api';
 import Sidebar from '../components/Sidebar';
@@ -33,6 +34,7 @@ const Home: React.FC<RouteProps> = () => {
             <Route path="/explorer" element={<Explorer />} />
             <Route path="/blockham" element={<BlockHam />} />
             <Route path="/block-explorer/*" element={<BlockExplorer />} />
+            <Route path="/risk-scoring" element={<RiskScoring />} />
           </Routes>
         </Content>
       </Layout>

@@ -7,7 +7,7 @@ import { useEffect, useState } from "react";
 import Login from './views/Login';
 import Register from "./views/Register";
 import Home from "./views/Home";
-import { ConfigProvider, ThemeConfig, Spin } from "antd";
+import { ConfigProvider, ThemeConfig, Spin, message } from "antd";
 import { colors } from './styles/variables';
 import { useAppContext } from "./context/AppContext";
 import { config } from "./config/config";
@@ -16,6 +16,7 @@ import { setAuthToken } from "./api/api";
 function App() {
   const { user, setUser } = useAppContext();
   const [isLoading, setIsLoading] = useState(true);
+  const [messageApi, contextHolder] = message.useMessage();
 
   const theme: ThemeConfig = {
     token: {
@@ -24,17 +25,41 @@ function App() {
   };
 
   useEffect(() => {
-    const { accessToken, user: userKey } = config.localstorageKeys;
-    const storedToken = localStorage.getItem(accessToken);
-    const storedUser = localStorage.getItem(userKey);
+    const loadUser = async () => {
+      try {
+        const { accessToken, user: userKey } = config.localstorageKeys;
+        const storedToken = localStorage.getItem(accessToken);
+        const storedUser = localStorage.getItem(userKey);
 
-    if (storedToken && storedUser) {
-      setAuthToken(storedToken);
-      setUser(JSON.parse(storedUser));
-    }
-    
-    setIsLoading(false);
-  }, [setUser]);
+        if (!storedToken || !storedUser) {
+          setIsLoading(false);
+          return;
+        }
+
+        try {
+          const parsedUser = JSON.parse(storedUser);
+          
+          // Set the auth token first
+          await setAuthToken(storedToken);
+          
+          // Then set the user
+          setUser(parsedUser);
+          
+        } catch (parseError) {
+          // Handle invalid stored data
+          localStorage.removeItem(accessToken);
+          localStorage.removeItem(userKey);
+          messageApi.error('Session data corrupted. Please login again.');
+        }
+      } catch (error) {
+        messageApi.error('Error loading user session');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadUser();
+  }, [setUser, messageApi]);
 
   if (isLoading) {
     return (
@@ -46,6 +71,7 @@ function App() {
 
   return (
     <ConfigProvider theme={theme}>
+      {contextHolder}
       <Routes>
         <Route path="/" element={user ? <Navigate to="/home/cases" /> : <Login />} />
         <Route path="/login" element={user ? <Navigate to="/home/cases" /> : <Login />} />

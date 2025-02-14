@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import Sider from 'antd/es/layout/Sider';
 import styled from 'styled-components';
 import { Button, Tooltip } from 'antd';
-import { AlertFilled, AlertOutlined, FolderOpenOutlined, FolderOutlined, GlobalOutlined, LogoutOutlined, SearchOutlined, SettingFilled, SettingOutlined, UserOutlined, UserSwitchOutlined } from '@ant-design/icons';
+import { AlertFilled, AlertOutlined, FolderOpenOutlined, FolderOutlined, GlobalOutlined, LogoutOutlined, SafetyOutlined, SearchOutlined, SettingFilled, SettingOutlined, UserOutlined, UserSwitchOutlined } from '@ant-design/icons';
 import { colors } from '../styles/variables';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAppContext } from '../context/AppContext';
@@ -69,7 +69,7 @@ const ButtonDiv = styled.div`
   }
 `;
 
-type Section = 'alerts' | 'cases' | 'explorer' | 'settings' | 'block-explorer' | 'blockham' | 'admin';
+type Section = 'alerts' | 'cases' | 'explorer' | 'settings' | 'block-explorer' | 'blockham' | 'admin' | 'risk-scoring';
 
 const Sidebar = () => {
   const nav = useNavigate();
@@ -160,7 +160,15 @@ const Sidebar = () => {
                 <SettingOutlined onClick={() => handleSectionChange('settings')} />
               </Tooltip>
             )}
-
+            {activeSection === 'risk-scoring' ? (
+              <Tooltip placement="bottom" title={'Risk Scoring'} mouseEnterDelay={1}>
+                <SafetyOutlined className='active' />
+              </Tooltip>
+            ) : (
+              <Tooltip placement="bottom" title={'Risk Scoring'} mouseEnterDelay={1}>
+                <SafetyOutlined onClick={() => handleSectionChange('risk-scoring')} />
+              </Tooltip>
+            )}
             {activeSection === 'admin' ? (
               <Tooltip placement="bottom" title={'Admin'} mouseEnterDelay={1}>
                 <UserSwitchOutlined className='active' style={{ marginTop: 'auto' }} />
@@ -256,6 +264,19 @@ const Sidebar = () => {
                   block
                   onClick={() => handleSectionChange('settings')}
                   icon={<SettingOutlined />}>Settings</Button>
+              )}
+              {activeSection === 'risk-scoring' ? (
+                <Button
+                  ghost
+                  block
+                  className='active'
+                  icon={<SafetyOutlined className='active' />}>Risk Scoring</Button>
+              ) : (
+                <Button
+                  ghost
+                  block
+                  onClick={() => handleSectionChange('risk-scoring')}
+                  icon={<SafetyOutlined />}>Risk Scoring</Button>
               )}
 
             </ButtonDiv>
