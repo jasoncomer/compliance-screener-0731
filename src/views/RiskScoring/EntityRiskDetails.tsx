@@ -31,8 +31,8 @@ interface EntityRiskDetailsProps {
 }
 
 const EntityRiskDetails: React.FC<EntityRiskDetailsProps> = ({ riskScores }) => {
-  const { entityInfo } = riskScores;
-  if (!entityInfo) return null;
+  const { sot } = riskScores;
+  if (!sot) return null;
 
   const ContactItem = ({ icon, value, link }: { icon: React.ReactNode; value?: string; link?: string }) => {
     if (!value) return null;
@@ -53,48 +53,48 @@ const EntityRiskDetails: React.FC<EntityRiskDetailsProps> = ({ riskScores }) => 
             <Grid item xs={12} md={3}>
               <Box display="flex" flexDirection="column" alignItems="center">
                 <Avatar
-                  src={entityInfo.logo}
-                  alt={entityInfo.proper_name}
+                  src={sot.logo}
+                  alt={sot.proper_name}
                   sx={{ width: 100, height: 100, mb: 2 }}
                 />
                 <Typography variant="h6" gutterBottom>
-                  {entityInfo.proper_name || entityInfo.entity_id}
+                  {sot.proper_name || sot.entity_id}
                 </Typography>
                 <Typography color="textSecondary">
-                  {entityInfo.entity_type}
+                  {sot.entity_type}
                 </Typography>
               </Box>
             </Grid>
             <Grid item xs={12} md={5}>
               <Typography variant="h6" gutterBottom>Contact Information</Typography>
-              <ContactItem icon={<WebIcon />} value={entityInfo.url} link={entityInfo.url} />
-              <ContactItem icon={<EmailIcon />} value={entityInfo.contact_email} link={`mailto:${entityInfo.contact_email}`} />
-              <ContactItem icon={<PhoneIcon />} value={entityInfo.contact_phone} />
-              <ContactItem icon={<LocationIcon />} value={entityInfo.contact_address} />
+              <ContactItem icon={<WebIcon />} value={sot.url} link={sot.url} />
+              <ContactItem icon={<EmailIcon />} value={sot.contact_email} link={`mailto:${sot.contact_email}`} />
+              <ContactItem icon={<PhoneIcon />} value={sot.contact_phone} />
+              <ContactItem icon={<LocationIcon />} value={sot.contact_address} />
               <ContactItem
                 icon={<TwitterIcon />}
-                value={entityInfo.contact_twitter}
-                link={`https://twitter.com/${entityInfo.contact_twitter}`}
+                value={sot.contact_twitter}
+                link={`https://twitter.com/${sot.contact_twitter}`}
               />
               <ContactItem
                 icon={<TelegramIcon />}
-                value={entityInfo.contact_telegram}
-                link={`https://t.me/${entityInfo.contact_telegram}`}
+                value={sot.contact_telegram}
+                link={`https://t.me/${sot.contact_telegram}`}
               />
             </Grid>
             <Grid item xs={12} md={4}>
               <Typography variant="h6" gutterBottom>Entity Details</Typography>
               <Box mb={2}>
                 <Typography color="textSecondary" gutterBottom>Founded</Typography>
-                <Typography>{entityInfo.year_founded || 'Unknown'}</Typography>
+                <Typography>{sot.year_founded || 'Unknown'}</Typography>
               </Box>
               <Box mb={2}>
                 <Typography color="textSecondary" gutterBottom>Key Personnel</Typography>
-                <Typography>{entityInfo.key_personnel || 'Not available'}</Typography>
+                <Typography>{sot.key_personnel || 'Not available'}</Typography>
               </Box>
               <Box mb={2}>
                 <Typography color="textSecondary" gutterBottom>CEO</Typography>
-                <Typography>{entityInfo.ceo || 'Not available'}</Typography>
+                <Typography>{sot.ceo || 'Not available'}</Typography>
               </Box>
             </Grid>
           </Grid>
@@ -115,13 +115,11 @@ const EntityRiskDetails: React.FC<EntityRiskDetailsProps> = ({ riskScores }) => 
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {riskComponents.entityRisk.map((modifier, index) => (
+                    {riskScores.entityRisk.factors.map((modifier, index) => (
                       <TableRow key={index}>
-                        <TableCell>{modifier.type}</TableCell>
+                        <TableCell>{modifier.id}</TableCell>
                         <TableCell align="right">
-                          {typeof modifier.impact === 'number'
-                            ? (modifier.impact > 0 ? '+' : '') + modifier.impact
-                            : modifier.impact}
+                          {typeof modifier.score === 'number' ? (modifier.score * 100) + '%' : modifier.score}
                         </TableCell>
                       </TableRow>
                     ))}
@@ -138,7 +136,7 @@ const EntityRiskDetails: React.FC<EntityRiskDetailsProps> = ({ riskScores }) => 
               <Box mb={2}>
                 <Typography color="textSecondary" gutterBottom>Entity Tags</Typography>
                 <Grid container spacing={1}>
-                  {entityInfo.entity_tags?.map((tag, index) => (
+                  {sot.entity_tags?.map((tag, index) => (
                     <Grid item key={index}>
                       <Chip
                         label={tag}
@@ -152,7 +150,7 @@ const EntityRiskDetails: React.FC<EntityRiskDetailsProps> = ({ riskScores }) => 
               <Box mb={2}>
                 <Typography color="textSecondary" gutterBottom>Associated Countries</Typography>
                 <Grid container spacing={1}>
-                  {entityInfo.associated_countries?.map((country, index) => (
+                  {sot.associated_countries?.map((country, index) => (
                     <Grid item key={index}>
                       <Chip
                         label={country}
@@ -168,19 +166,19 @@ const EntityRiskDetails: React.FC<EntityRiskDetailsProps> = ({ riskScores }) => 
                 <Grid container spacing={1}>
                   <Grid item>
                     <Chip
-                      label={entityInfo.centralized ? 'Centralized' : 'Decentralized'}
-                      color={entityInfo.centralized ? 'primary' : 'secondary'}
+                      label={sot.centralized ? 'Centralized' : 'Decentralized'}
+                      color={sot.centralized ? 'primary' : 'secondary'}
                       size="small"
                     />
                   </Grid>
                   <Grid item>
                     <Chip
-                      label={entityInfo.kyc_req ? 'KYC Required' : 'No KYC'}
-                      color={entityInfo.kyc_req ? 'success' : 'error'}
+                      label={sot.kyc_req ? 'KYC Required' : 'No KYC'}
+                      color={sot.kyc_req ? 'success' : 'error'}
                       size="small"
                     />
                   </Grid>
-                  {entityInfo.dead && (
+                  {sot.dead && (
                     <Grid item>
                       <Chip
                         label="Inactive/Dead"
