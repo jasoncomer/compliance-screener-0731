@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Card, Row, Col, Spin, Alert } from 'antd';
+import { Spin, Alert } from 'antd';
 import { calculateRiskScore } from '../api/riskScoring';
 import { RiskScoringResponse } from '../types/riskScoring'
 import RiskDetailsTable from './RiskScoring/RiskDetailsTable';
