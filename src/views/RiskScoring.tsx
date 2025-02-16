@@ -39,7 +39,14 @@ const RiskScoring: React.FC = () => {
   };
 
   return (
-    <div style={{ padding: '24px' }}>
+    <div style={{ 
+      padding: '24px',
+      height: '100%',
+      overflowY: 'auto',
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '24px'
+    }}>
       <SearchBar
         address={address}
         loading={loading}
@@ -53,19 +60,18 @@ const RiskScoring: React.FC = () => {
           description={error}
           type="error"
           showIcon
-          style={{ marginBottom: '24px' }}
         />
       )}
 
       {loading && (
-        <div style={{ textAlign: 'center', padding: '50px' }}>
+        <div style={{ textAlign: 'center', padding: '50px', flex: '1' }}>
           <Spin size="large" />
           <Paragraph style={{ marginTop: '20px' }}>Analyzing blockchain address...</Paragraph>
         </div>
       )}
 
       {riskScores && !loading && (
-        <>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
           <Row gutter={[16, 16]}>
             <Col span={6}>
               <Card>
@@ -138,7 +144,7 @@ const RiskScoring: React.FC = () => {
           </Row>
 
           <RiskDetailsTable riskScores={riskScores} />
-        </>
+        </div>
       )}
     </div>
   );
