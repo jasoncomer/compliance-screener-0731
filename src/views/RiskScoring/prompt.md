@@ -20,3 +20,9 @@ The Risk Scoring system is a comprehensive tool designed to evaluate the risk as
 
 1. **Geographic location**: Operations in high-risk jurisdiction
 2. **Regulatory compliance**: Partial compliance with regulations
+
+
+#### Address vs transaction risk
+Currently, the user can input an address. Create a new feature that would support a transaction id.
+
+Many of the same UI elements will overlap, the distinction however is that, if an address is input, the system will show a summary of the risk factors associated with the address. If a transaction id is input, the system will show a detailed analysis of the transaction and the risk factors associated with it.

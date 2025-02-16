@@ -1,3 +1,5 @@
+import { RiskDetail } from "../../types/riskScoring";
+
 export interface RiskScores {
   transactionRisk: number;
   entityRisk: number;
@@ -10,13 +12,34 @@ export interface RiskScores {
   };
   historicalData: HistoricalData[];
   entityInfo?: EntityInfo;
+  transactionInfo?: TransactionInfo;
+  analysisType: 'address' | 'transaction';
 }
 
-export interface RiskDetail {
-  factor: string;
+export interface TransactionInfo {
+  txHash: string;
+  from: string;
+  to: string;
+  value: string;
+  timestamp: string;
+  blockNumber: number;
+  gasUsed: number;
+  gasPrice: string;
+  status: 'success' | 'failed';
+  riskFactors: {
+    amount: RiskFactor;
+    sender: RiskFactor;
+    receiver: RiskFactor;
+    pattern: RiskFactor;
+    timing: RiskFactor;
+  };
+}
+
+export interface RiskFactor {
   score: number;
-  description: string;
   severity: 'high' | 'medium' | 'low';
+  description: string;
+  details?: string[];
 }
 
 export interface HistoricalData {
