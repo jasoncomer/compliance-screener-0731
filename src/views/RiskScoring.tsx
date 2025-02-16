@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { Card, Row, Col, Statistic, Spin, Progress, Alert } from 'antd';
+import { Card, Row, Col, Spin, Alert } from 'antd';
 import { calculateRiskScore } from '../api/riskScoring';
 import { RiskScoringResponse } from '../types/riskScoring'
 import RiskDetailsTable from './RiskScoring/RiskDetailsTable';
 import SearchBar from './RiskScoring/SearchBar';
+import RiskScoreCards from './RiskScoring/RiskScoreCards';
 import Paragraph from 'antd/es/typography/Paragraph';
-
 
 const RiskScoring: React.FC = () => {
   const [address, setAddress] = useState('');
@@ -72,77 +72,7 @@ const RiskScoring: React.FC = () => {
 
       {riskScores && !loading && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-          <Row gutter={[16, 16]}>
-            <Col span={6}>
-              <Card>
-                <Statistic
-                  title="Overall Risk Score"
-                  value={riskScores.overallRisk * 100 || 0}
-                  suffix="/100"
-                  valueStyle={{
-                    color: getRiskColor(riskScores.overallRisk * 100 || 0)
-                  }}
-                />
-                <Progress 
-                  percent={riskScores.overallRisk * 100 || 0} 
-                  status={(riskScores.overallRisk * 100 || 0) > 70 ? 'exception' : 'normal'}
-                  strokeColor={getRiskColor(riskScores.overallRisk * 100 || 0)}
-                />
-              </Card>
-            </Col>
-            <Col span={6}>
-              <Card>
-                <Statistic
-                  title="Transaction Risk"
-                  value={riskScores.transactionRisk.aggregateScore * 100 || 0}
-                  suffix="/100"
-                  valueStyle={{
-                    color: getRiskColor(riskScores.transactionRisk.aggregateScore * 100 || 0)
-                  }}
-                />
-                <Progress 
-                  percent={riskScores.transactionRisk.aggregateScore * 100 || 0}
-                  status={riskScores.transactionRisk.aggregateScore * 100 || 0 > 70 ? 'exception' : 'normal'}
-                  strokeColor={getRiskColor(riskScores.transactionRisk.aggregateScore * 100 || 0)}
-                />
-              </Card>
-            </Col>
-            <Col span={6}>
-              <Card>
-                <Statistic
-                  title="Entity Risk"
-                  value={riskScores.entityRisk.aggregateScore * 100 || 0}
-                  suffix="/100"
-                  valueStyle={{
-                    color: getRiskColor(riskScores.entityRisk.aggregateScore * 100 || 0)
-                  }}
-                />
-                <Progress 
-                  percent={riskScores.entityRisk.aggregateScore * 100 || 0}
-                  status={riskScores.entityRisk.aggregateScore * 100 || 0 > 70 ? 'exception' : 'normal'}
-                  strokeColor={getRiskColor(riskScores.entityRisk.aggregateScore * 100 || 0)}
-                />
-              </Card>
-            </Col>
-            <Col span={6}>
-              <Card>
-                <Statistic
-                  title="Jurisdiction Risk"
-                  value={riskScores.jurisdictionRisk.aggregateScore * 100 || 0}
-                  suffix="/100"
-                  valueStyle={{
-                    color: getRiskColor(riskScores.jurisdictionRisk.aggregateScore * 100 || 0)
-                  }}
-                />
-                <Progress 
-                  percent={riskScores.jurisdictionRisk.aggregateScore * 100 || 0}
-                  status={riskScores.jurisdictionRisk.aggregateScore * 100 || 0 > 70 ? 'exception' : 'normal'}
-                  strokeColor={getRiskColor(riskScores.jurisdictionRisk.aggregateScore * 100 || 0)}
-                />
-              </Card>
-            </Col>
-          </Row>
-
+          <RiskScoreCards riskScores={riskScores} getRiskColor={getRiskColor} />
           <RiskDetailsTable riskScores={riskScores} />
         </div>
       )}
