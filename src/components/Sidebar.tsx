@@ -151,15 +151,6 @@ const Sidebar = () => {
                 <GlobalOutlined onClick={() => handleSectionChange('blockham')} />
               </Tooltip>
             )}
-            {activeSection === 'settings' ? (
-              <Tooltip placement="bottom" title={'Settings'} mouseEnterDelay={1}>
-                <SettingFilled className='active' />
-              </Tooltip>
-            ) : (
-              <Tooltip placement="bottom" title={'Settings'} mouseEnterDelay={1}>
-                <SettingOutlined onClick={() => handleSectionChange('settings')} />
-              </Tooltip>
-            )}
             {activeSection === 'risk-scoring' ? (
               <Tooltip placement="bottom" title={'Risk Scoring'} mouseEnterDelay={1}>
                 <SafetyOutlined className='active' />
@@ -167,6 +158,15 @@ const Sidebar = () => {
             ) : (
               <Tooltip placement="bottom" title={'Risk Scoring'} mouseEnterDelay={1}>
                 <SafetyOutlined onClick={() => handleSectionChange('risk-scoring')} />
+              </Tooltip>
+            )}
+            {activeSection === 'settings' ? (
+              <Tooltip placement="bottom" title={'Settings'} mouseEnterDelay={1}>
+                <SettingFilled className='active' />
+              </Tooltip>
+            ) : (
+              <Tooltip placement="bottom" title={'Settings'} mouseEnterDelay={1}>
+                <SettingOutlined onClick={() => handleSectionChange('settings')} />
               </Tooltip>
             )}
             {activeSection === 'admin' ? (
@@ -252,19 +252,6 @@ const Sidebar = () => {
                   onClick={() => handleSectionChange('blockham')}
                   icon={<GlobalOutlined />}>Entity Explorer</Button>
               )}
-              {activeSection === 'settings' ? (
-                <Button
-                  ghost
-                  block
-                  className='active'
-                  icon={<SettingFilled className='active' />}>Settings</Button>
-              ) : (
-                <Button
-                  ghost
-                  block
-                  onClick={() => handleSectionChange('settings')}
-                  icon={<SettingOutlined />}>Settings</Button>
-              )}
               {activeSection === 'risk-scoring' ? (
                 <Button
                   ghost
@@ -277,6 +264,19 @@ const Sidebar = () => {
                   block
                   onClick={() => handleSectionChange('risk-scoring')}
                   icon={<SafetyOutlined />}>Risk Scoring</Button>
+              )}
+              {activeSection === 'settings' ? (
+                <Button
+                  ghost
+                  block
+                  className='active'
+                  icon={<SettingFilled className='active' />}>Settings</Button>
+              ) : (
+                <Button
+                  ghost
+                  block
+                  onClick={() => handleSectionChange('settings')}
+                  icon={<SettingOutlined />}>Settings</Button>
               )}
 
             </ButtonDiv>

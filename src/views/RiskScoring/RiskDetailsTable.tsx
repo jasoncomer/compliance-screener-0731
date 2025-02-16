@@ -5,7 +5,8 @@ import { getRiskIcon } from './utils';
 import JurisdictionMap from './JurisdictionMap';
 import EntityDetails from './EntityDetails';
 import { RiskDetail } from '../../types/riskScoring';
-import TransactionDetails from './TransactionDetails';
+// import TransactionDetails from './TransactionDetails';
+
 const { TabPane } = Tabs;
 const { Text } = Typography;
 
