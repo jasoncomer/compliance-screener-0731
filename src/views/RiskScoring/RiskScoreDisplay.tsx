@@ -1,6 +1,5 @@
 import React from 'react';
-import { RiskScores } from '../../types/newRiskScoring';
-import { RiskDetail } from '../../types/riskScoring';
+import { RiskScoringResponse, RiskFactor } from '../../types/riskScoring';
 import {
   Box,
   Card,
@@ -13,7 +12,7 @@ import {
 } from '@mui/material';
 
 interface RiskScoreDisplayProps {
-  riskScores: RiskScores;
+  riskScores: RiskScoringResponse;
   loading?: boolean;
 }
 
@@ -45,7 +44,7 @@ const RiskScoreDisplay: React.FC<RiskScoreDisplayProps> = ({ riskScores, loading
     return 'low';
   };
 
-  const RiskSection = ({ title, risk, details }: { title: string; risk: number; details: RiskDetail[] }) => (
+  const RiskSection = ({ title, risk, details }: { title: string; risk: number; details: RiskFactor[] }) => (
     <Card variant="outlined" sx={{ mb: 2 }}>
       <CardContent>
         <Typography variant="h6" gutterBottom>
@@ -67,7 +66,7 @@ const RiskScoreDisplay: React.FC<RiskScoreDisplayProps> = ({ riskScores, loading
           {details.map((detail, index) => (
             <Grid item key={index}>
               <Chip
-                label={`${detail.factor}: ${Math.round(detail.score)}`}
+                label={`${detail.id}: ${Math.round(detail.score)}`}
                 sx={{
                   bgcolor: getSeverityColor(detail.severity),
                   color: 'white'
@@ -90,7 +89,7 @@ const RiskScoreDisplay: React.FC<RiskScoreDisplayProps> = ({ riskScores, loading
           <Box display="flex" alignItems="center" justifyContent="center" my={3}>
             <CircularProgress
               variant="determinate"
-              value={riskScores.overallRisk || 0}
+              value={riskScores.overallRisk * 100 || 0}
               size={100}
               thickness={5}
               sx={{
@@ -98,7 +97,7 @@ const RiskScoreDisplay: React.FC<RiskScoreDisplayProps> = ({ riskScores, loading
               }}
             />
             <Typography variant="h2" sx={{ position: 'absolute' }}>
-              {Math.round(riskScores.overallRisk || 0)}
+              {Math.round(riskScores.overallRisk * 100 || 0)}
             </Typography>
           </Box>
         </CardContent>
@@ -108,22 +107,22 @@ const RiskScoreDisplay: React.FC<RiskScoreDisplayProps> = ({ riskScores, loading
         <Grid item xs={12} md={4}>
           <RiskSection
             title="Entity Risk"
-            risk={riskScores.entityRisk}
-            details={riskScores.details.entity}
+            risk={riskScores.entityRisk.aggregateScore}
+            details={riskScores.entityRisk.factors}
           />
         </Grid>
         <Grid item xs={12} md={4}>
           <RiskSection
             title="Jurisdiction Risk"
-            risk={riskScores.jurisdictionRisk || 0}
-            details={riskScores.details.jurisdiction}
+            risk={riskScores.jurisdictionRisk.aggregateScore}
+            details={riskScores.jurisdictionRisk.factors}
           />
         </Grid>
         <Grid item xs={12} md={4}>
           <RiskSection
             title="Transaction Risk"
-            risk={riskScores.transactionRisk}
-            details={riskScores.details.transaction}
+            risk={riskScores.transactionRisk.aggregateScore}
+            details={riskScores.transactionRisk.factors}
           />
         </Grid>
       </Grid>

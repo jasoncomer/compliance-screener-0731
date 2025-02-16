@@ -1,7 +1,7 @@
 import React from 'react';
 import { Card, Typography, Descriptions, Tag, Space, Progress } from 'antd';
 import { ClockCircleOutlined, CheckCircleOutlined, CloseCircleOutlined } from '@ant-design/icons';
-import { TransactionInfo, RiskFactor } from './types';
+import { TransactionInfo, RiskFactor } from '../../types/riskScoring';
 import { getRiskColor } from './utils';
 import styled from 'styled-components';
 
@@ -25,10 +25,10 @@ const RiskFactorSection: React.FC<{ title: string; factor: RiskFactor }> = ({ ti
     <Space align="center">
       <Text strong>{title}</Text>
       <Progress 
-        percent={factor.score} 
+        percent={factor.score * 100} 
         size="small" 
-        status={factor.score > 70 ? 'exception' : 'normal'}
-        strokeColor={getRiskColor(factor.score)}
+        status={factor.score * 100 > 70 ? 'exception' : 'normal'}
+        strokeColor={getRiskColor(factor.score * 100)}
       />
     </Space>
     <Text type="secondary" style={{ display: 'block', marginTop: '4px' }}>
@@ -36,7 +36,7 @@ const RiskFactorSection: React.FC<{ title: string; factor: RiskFactor }> = ({ ti
     </Text>
     {factor.details && (
       <DetailsList>
-        {factor.details.map((detail, index) => (
+        {factor.details.map((detail: string, index: number) => (
           <li key={index}>
             <Text type="secondary">{detail}</Text>
           </li>

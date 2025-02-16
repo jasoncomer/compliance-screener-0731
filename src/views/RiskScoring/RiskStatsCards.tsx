@@ -1,10 +1,10 @@
 import React from 'react';
 import { Row, Col, Card, Statistic, Progress } from 'antd';
-import { RiskScores } from './types';
+import { RiskScoringResponse } from '../../types/riskScoring';
 import { getRiskColor } from './utils';
 
 interface RiskStatsCardsProps {
-  riskScores: RiskScores;
+  riskScores: RiskScoringResponse;
 }
 
 const RiskStatsCards: React.FC<RiskStatsCardsProps> = ({ riskScores }) => {
@@ -14,15 +14,15 @@ const RiskStatsCards: React.FC<RiskStatsCardsProps> = ({ riskScores }) => {
         <Card>
           <Statistic
             title="Overall Risk Score"
-            value={riskScores.overallRisk}
+            value={riskScores.overallRisk * 100}
             suffix="/100"
             valueStyle={{
               color: getRiskColor(riskScores.overallRisk)
             }}
           />
           <Progress 
-            percent={riskScores.overallRisk} 
-            status={riskScores.overallRisk > 70 ? 'exception' : 'normal'}
+            percent={riskScores.overallRisk * 100} 
+            status={riskScores.overallRisk * 100 > 70 ? 'exception' : 'normal'}
             strokeColor={getRiskColor(riskScores.overallRisk)}
           />
         </Card>
@@ -31,16 +31,16 @@ const RiskStatsCards: React.FC<RiskStatsCardsProps> = ({ riskScores }) => {
         <Card>
           <Statistic
             title="Transaction Risk"
-            value={riskScores.transactionRisk}
+            value={riskScores.transactionRisk.aggregateScore * 100}
             suffix="/100"
             valueStyle={{
-              color: getRiskColor(riskScores.transactionRisk)
+              color: getRiskColor(riskScores.transactionRisk.aggregateScore)
             }}
           />
           <Progress 
-            percent={riskScores.transactionRisk}
-            status={riskScores.transactionRisk > 70 ? 'exception' : 'normal'}
-            strokeColor={getRiskColor(riskScores.transactionRisk)}
+            percent={riskScores.transactionRisk.aggregateScore * 100}
+            status={riskScores.transactionRisk.aggregateScore * 100 > 70 ? 'exception' : 'normal'}
+            strokeColor={getRiskColor(riskScores.transactionRisk.aggregateScore)}
           />
         </Card>
       </Col>
@@ -48,16 +48,16 @@ const RiskStatsCards: React.FC<RiskStatsCardsProps> = ({ riskScores }) => {
         <Card>
           <Statistic
             title="Entity Risk"
-            value={riskScores.entityRisk}
+            value={riskScores.entityRisk.aggregateScore * 100}
             suffix="/100"
             valueStyle={{
-              color: getRiskColor(riskScores.entityRisk)
+              color: getRiskColor(riskScores.entityRisk.aggregateScore)
             }}
           />
           <Progress 
-            percent={riskScores.entityRisk}
-            status={riskScores.entityRisk > 70 ? 'exception' : 'normal'}
-            strokeColor={getRiskColor(riskScores.entityRisk)}
+            percent={riskScores.entityRisk.aggregateScore * 100}
+            status={riskScores.entityRisk.aggregateScore * 100 > 70 ? 'exception' : 'normal'}
+            strokeColor={getRiskColor(riskScores.entityRisk.aggregateScore)}
           />
         </Card>
       </Col>
@@ -65,16 +65,16 @@ const RiskStatsCards: React.FC<RiskStatsCardsProps> = ({ riskScores }) => {
         <Card>
           <Statistic
             title="Jurisdiction Risk"
-            value={riskScores.jurisdictionRisk}
+            value={riskScores.jurisdictionRisk.aggregateScore * 100}
             suffix="/100"
             valueStyle={{
-              color: getRiskColor(riskScores.jurisdictionRisk)
+              color: getRiskColor(riskScores.jurisdictionRisk.aggregateScore)
             }}
           />
           <Progress 
-            percent={riskScores.jurisdictionRisk}
-            status={riskScores.jurisdictionRisk > 70 ? 'exception' : 'normal'}
-            strokeColor={getRiskColor(riskScores.jurisdictionRisk)}
+            percent={riskScores.jurisdictionRisk.aggregateScore * 100}
+            status={riskScores.jurisdictionRisk.aggregateScore * 100 > 70 ? 'exception' : 'normal'}
+            strokeColor={getRiskColor(riskScores.jurisdictionRisk.aggregateScore)}
           />
         </Card>
       </Col>

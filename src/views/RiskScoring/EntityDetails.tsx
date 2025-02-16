@@ -1,8 +1,8 @@
 import React from 'react';
-import { Card, Typography, Switch, Tag, Avatar, Space } from 'antd';
+import { Card, Typography, Switch, Tag, Avatar } from 'antd';
 import { UserOutlined, GlobalOutlined, TwitterOutlined, SendOutlined, GithubOutlined, LinkedinOutlined, FacebookOutlined, InstagramOutlined, YoutubeOutlined, RedditOutlined } from '@ant-design/icons';
 import styled from 'styled-components';
-import { EntityInfo } from './types';
+import { SOTV2 } from '../../typings/interfaces';
 
 const { Title, Text } = Typography;
 
@@ -59,10 +59,10 @@ const TagsContainer = styled.div`
 `;
 
 interface EntityDetailsProps {
-  entityInfo: EntityInfo;
+  sot: SOTV2;
 }
 
-const EntityDetails: React.FC<EntityDetailsProps> = ({ entityInfo }) => {
+const EntityDetails: React.FC<EntityDetailsProps> = ({ sot }) => {
   const getSocialMediaIcon = (url: string) => {
     const urlLower = url.toLowerCase();
     if (urlLower.includes('github')) return <GithubOutlined />;
@@ -79,12 +79,12 @@ const EntityDetails: React.FC<EntityDetailsProps> = ({ entityInfo }) => {
     <Card style={{ marginTop: '24px' }}>
       <HeaderSection>
         <StyledAvatar
-          src={entityInfo.logo}
-          icon={!entityInfo.logo && <UserOutlined />}
+          src={sot.logo}
+          icon={!sot.logo && <UserOutlined />}
         />
         <HeaderInfo>
-          <Title level={4} style={{ margin: 0 }}>{entityInfo.proper_name || entityInfo.entity_id}</Title>
-          <Text type="secondary">{entityInfo.entity_type}</Text>
+          <Title level={4} style={{ margin: 0 }}>{sot.proper_name || sot.entity_id}</Title>
+          <Text type="secondary">{sot.entity_type}</Text>
         </HeaderInfo>
       </HeaderSection>
 
@@ -94,42 +94,42 @@ const EntityDetails: React.FC<EntityDetailsProps> = ({ entityInfo }) => {
           <DetailValue style={{ display: 'flex', gap: '16px' }}>
             <span>
               <Text>Active: </Text>
-              <Switch checked={!entityInfo.dead} disabled />
+              <Switch checked={!sot.dead} disabled />
             </span>
             <span>
               <Text>Centralized: </Text>
-              <Switch checked={entityInfo.centralized} disabled />
+              <Switch checked={sot.centralized} disabled />
             </span>
             <span>
               <Text>KYC Required: </Text>
-              <Switch checked={entityInfo.kyc_req} disabled />
+              <Switch checked={sot.kyc_req} disabled />
             </span>
           </DetailValue>
         </DetailItem>
 
-        {entityInfo.url && (
+        {sot.url && (
           <DetailItem>
             <DetailLabel>Website</DetailLabel>
             <DetailValue>
               <GlobalOutlined />
-              <a href={entityInfo.url.startsWith('http') ? entityInfo.url : `https://${entityInfo.url}`} 
+              <a href={sot.url.startsWith('http') ? sot.url : `https://${sot.url}`} 
                  target="_blank" 
                  rel="noopener noreferrer">
-                {entityInfo.url}
+                {sot.url}
               </a>
             </DetailValue>
           </DetailItem>
         )}
 
-        {(entityInfo.ceo || entityInfo.key_personnel) && (
+        {(sot.ceo || sot.key_personnel) && (
           <DetailItem style={{ gridColumn: '1 / -1' }}>
             <DetailLabel>Leadership</DetailLabel>
             <DetailValue style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              {entityInfo.ceo && <span><strong>CEO:</strong> {entityInfo.ceo}</span>}
-              {entityInfo.key_personnel && (
+              {sot.ceo && <span><strong>CEO:</strong> {sot.ceo}</span>}
+              {sot.key_personnel && (
                 <span>
                   <strong>Key Personnel:</strong>{' '}
-                  {entityInfo.key_personnel.split(',').map(person =>
+                  {sot.key_personnel.split(',').map(person =>
                     <Tag key={person.trim()}>{person.trim()}</Tag>
                   )}
                 </span>
@@ -138,22 +138,22 @@ const EntityDetails: React.FC<EntityDetailsProps> = ({ entityInfo }) => {
           </DetailItem>
         )}
 
-        {(entityInfo.contact_email || entityInfo.contact_phone || entityInfo.contact_address) && (
+        {(sot.contact_email || sot.contact_phone || sot.contact_address) && (
           <DetailItem style={{ gridColumn: '1 / -1' }}>
             <DetailLabel>Contact Information</DetailLabel>
             <DetailValue style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              {entityInfo.contact_email && <span><strong>Email:</strong> {entityInfo.contact_email}</span>}
-              {entityInfo.contact_phone && <span><strong>Phone:</strong> {entityInfo.contact_phone}</span>}
-              {entityInfo.contact_address && <span><strong>Address:</strong> {entityInfo.contact_address}</span>}
+              {sot.contact_email && <span><strong>Email:</strong> {sot.contact_email}</span>}
+              {sot.contact_phone && <span><strong>Phone:</strong> {sot.contact_phone}</span>}
+              {sot.contact_address && <span><strong>Address:</strong> {sot.contact_address}</span>}
             </DetailValue>
           </DetailItem>
         )}
 
-        {entityInfo.entity_tags && entityInfo.entity_tags.length > 0 && (
+        {sot.entity_tags && sot.entity_tags.length > 0 && (
           <DetailItem style={{ gridColumn: '1 / -1' }}>
             <DetailLabel>Tags</DetailLabel>
             <TagsContainer>
-              {entityInfo.entity_tags.map((tag, index) => (
+              {sot.entity_tags.map((tag, index) => (
                 <Tag key={index} color="blue" style={{ padding: '4px 8px', borderRadius: '16px' }}>
                   {tag}
                 </Tag>
@@ -162,50 +162,49 @@ const EntityDetails: React.FC<EntityDetailsProps> = ({ entityInfo }) => {
           </DetailItem>
         )}
 
-        {entityInfo.description_merged && (
+        {sot.description_merged && (
           <DetailItem style={{ gridColumn: '1 / -1' }}>
             <DetailLabel>Description</DetailLabel>
             <DetailValue style={{ whiteSpace: 'pre-wrap' }}>
-              {entityInfo.description_merged}
+              {sot.description_merged}
             </DetailValue>
           </DetailItem>
         )}
 
-        {entityInfo.associated_countries && entityInfo.associated_countries.length > 0 && (
+        {sot.associated_countries && sot.associated_countries.length > 0 && (
           <DetailItem style={{ gridColumn: '1 / -1' }}>
             <DetailLabel>Associated Countries</DetailLabel>
             <TagsContainer>
-              {entityInfo.associated_countries.map((country, index) => (
+              {sot.associated_countries.map((country, index) => (
                 <Tag key={index}>{country}</Tag>
               ))}
             </TagsContainer>
           </DetailItem>
         )}
 
-        {(entityInfo.contact_twitter || entityInfo.contact_telegram || 
-          (entityInfo.social_media_profiles && entityInfo.social_media_profiles.length > 0)) && (
+        {(sot.contact_twitter || sot.contact_telegram || (sot.social_media_profiles && sot.social_media_profiles.length > 0)) && (
           <DetailItem style={{ gridColumn: '1 / -1' }}>
             <DetailLabel>Social Media</DetailLabel>
             <DetailValue style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              {entityInfo.contact_twitter && (
-                <a href={`https://twitter.com/${entityInfo.contact_twitter.replace('@', '')}`}
+              {sot.contact_twitter && (
+                <a href={`https://twitter.com/${sot.contact_twitter.replace('@', '')}`}
                    target="_blank"
                    rel="noopener noreferrer"
                    style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <TwitterOutlined />
-                  <span>{entityInfo.contact_twitter}</span>
+                  <span>{sot.contact_twitter}</span>
                 </a>
               )}
-              {entityInfo.contact_telegram && (
-                <a href={`https://t.me/${entityInfo.contact_telegram.replace('@', '')}`}
+              {sot.contact_telegram && (
+                <a href={`https://t.me/${sot.contact_telegram.replace('@', '')}`}
                    target="_blank"
                    rel="noopener noreferrer"
                    style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <SendOutlined />
-                  <span>{entityInfo.contact_telegram}</span>
+                  <span>{sot.contact_telegram}</span>
                 </a>
               )}
-              {entityInfo.social_media_profiles && entityInfo.social_media_profiles.map((profile, index) => {
+              {sot.social_media_profiles && sot.social_media_profiles.map((profile, index) => {
                 const icon = getSocialMediaIcon(profile);
                 const url = profile.startsWith('http') ? profile : `https://${profile}`;
                 return (

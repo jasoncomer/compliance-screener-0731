@@ -158,3 +158,9 @@ export interface SOT {
   key_personnel: string; // can be an array (parse use comma as separator)
   ceo: string;
 }
+
+export interface SOTV2 extends SOT {
+  entity_tags: string[];
+  associated_countries: string[];
+  social_media_profiles: string[];
+}

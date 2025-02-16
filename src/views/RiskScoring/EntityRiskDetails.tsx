@@ -1,5 +1,5 @@
 import React from 'react';
-import { EntityInfo, RiskScores } from '../../types/riskScoring';
+import { RiskScoringResponse } from '../../types/riskScoring';
 import {
   Box,
   Card,
@@ -27,11 +27,11 @@ import {
 } from '@mui/icons-material';
 
 interface EntityRiskDetailsProps {
-  riskScores: RiskScores;
+  riskScores: RiskScoringResponse;
 }
 
 const EntityRiskDetails: React.FC<EntityRiskDetailsProps> = ({ riskScores }) => {
-  const { entityInfo, riskComponents } = riskScores;
+  const { entityInfo } = riskScores;
   if (!entityInfo) return null;
 
   const ContactItem = ({ icon, value, link }: { icon: React.ReactNode; value?: string; link?: string }) => {
@@ -115,7 +115,7 @@ const EntityRiskDetails: React.FC<EntityRiskDetailsProps> = ({ riskScores }) => 
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {riskComponents.entityRiskDetails.riskModifiers.map((modifier, index) => (
+                    {riskComponents.entityRisk.map((modifier, index) => (
                       <TableRow key={index}>
                         <TableCell>{modifier.type}</TableCell>
                         <TableCell align="right">

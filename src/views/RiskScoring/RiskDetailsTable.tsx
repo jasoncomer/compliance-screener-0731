@@ -1,26 +1,26 @@
 import React from 'react';
 import { Card, Table, Tabs, Space, Typography, Progress } from 'antd';
-import { RiskScores } from '../../types/newRiskScoring';
+import { RiskScoringResponse, RiskFactor } from '../../types/riskScoring';
 import { getRiskIcon } from './utils';
 import JurisdictionMap from './JurisdictionMap';
 import EntityDetails from './EntityDetails';
-import { RiskDetail } from '../../types/riskScoring';
+
 // import TransactionDetails from './TransactionDetails';
 
 const { TabPane } = Tabs;
 const { Text } = Typography;
 
 interface RiskDetailsTableProps {
-  riskScores: RiskScores;
+  riskScores: RiskScoringResponse;
 }
 
 const RiskDetailsTable: React.FC<RiskDetailsTableProps> = ({ riskScores }) => {
   const columns = [
     {
       title: 'Risk Factor',
-      dataIndex: 'factor',
-      key: 'factor',
-      render: (text: string, record: RiskDetail) => (
+      dataIndex: 'id',
+      key: 'id',
+      render: (text: string, record: RiskFactor) => (
         <Space>
           {getRiskIcon(record.severity)}
           <Text>{text}</Text>
@@ -33,10 +33,10 @@ const RiskDetailsTable: React.FC<RiskDetailsTableProps> = ({ riskScores }) => {
       key: 'score',
       render: (score: number) => (
         <Progress 
-          percent={score} 
+          percent={score * 100} 
           size="small" 
-          status={score > 70 ? 'exception' : 'normal'} 
-          strokeColor={score > 70 ? '#cf1322' : score > 40 ? '#faad14' : '#3f8600'}
+          status={score * 100 > 70 ? 'exception' : 'normal'} 
+          strokeColor={score * 100 > 70 ? '#cf1322' : score * 100 > 40 ? '#faad14' : '#3f8600'}
         />
       ),
     },
@@ -57,7 +57,7 @@ const RiskDetailsTable: React.FC<RiskDetailsTableProps> = ({ riskScores }) => {
       <Tabs defaultActiveKey="transaction">
         <TabPane tab="Transaction Risk Factors" key="transaction">
           <Table 
-            dataSource={riskScores.details.transaction}
+            dataSource={riskScores.transactionRisk.factors}
             columns={columns}
             pagination={false}
           />
@@ -65,22 +65,22 @@ const RiskDetailsTable: React.FC<RiskDetailsTableProps> = ({ riskScores }) => {
         </TabPane>
         <TabPane tab="Entity Risk Factors" key="entity">
           <Table 
-            dataSource={riskScores.details.entity}
+            dataSource={riskScores.entityRisk.factors}
             columns={columns}
             pagination={false}
           />
-          {riskScores.entityInfo && (
-            <EntityDetails entityInfo={riskScores.entityInfo} />
+          {riskScores.sot && (
+            <EntityDetails sot={riskScores.sot} />
           )}
         </TabPane>
         <TabPane tab="Jurisdiction Risk Factors" key="jurisdiction">
           <Table 
-            dataSource={riskScores.details.jurisdiction}
+            dataSource={riskScores.jurisdictionRisk.factors}
             columns={columns}
             pagination={false}
           />
           <JurisdictionMap 
-            countries={riskScores.entityInfo?.associated_countries} 
+            countries={riskScores.sot?.associated_countries} 
           />
         </TabPane>
       </Tabs>

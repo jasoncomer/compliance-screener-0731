@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Card, Row, Col, Statistic, Spin, Progress, Alert } from 'antd';
 import { calculateRiskScore } from '../api/riskScoring';
-import { RiskScores } from '../types/newRiskScoring'
+import { RiskScoringResponse } from '../types/riskScoring'
 import RiskDetailsTable from './RiskScoring/RiskDetailsTable';
 import SearchBar from './RiskScoring/SearchBar';
 import Paragraph from 'antd/es/typography/Paragraph';
@@ -9,7 +9,7 @@ import Paragraph from 'antd/es/typography/Paragraph';
 
 const RiskScoring: React.FC = () => {
   const [address, setAddress] = useState('');
-  const [riskScores, setRiskScores] = useState<RiskScores | null>(null);
+  const [riskScores, setRiskScores] = useState<RiskScoringResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -71,16 +71,16 @@ const RiskScoring: React.FC = () => {
               <Card>
                 <Statistic
                   title="Overall Risk Score"
-                  value={riskScores.overallRisk || 0}
+                  value={riskScores.overallRisk * 100 || 0}
                   suffix="/100"
                   valueStyle={{
-                    color: getRiskColor(riskScores.overallRisk || 0)
+                    color: getRiskColor(riskScores.overallRisk * 100 || 0)
                   }}
                 />
                 <Progress 
-                  percent={riskScores.overallRisk || 0} 
-                  status={(riskScores.overallRisk || 0) > 70 ? 'exception' : 'normal'}
-                  strokeColor={getRiskColor(riskScores.overallRisk || 0)}
+                  percent={riskScores.overallRisk * 100 || 0} 
+                  status={(riskScores.overallRisk * 100 || 0) > 70 ? 'exception' : 'normal'}
+                  strokeColor={getRiskColor(riskScores.overallRisk * 100 || 0)}
                 />
               </Card>
             </Col>
@@ -88,16 +88,16 @@ const RiskScoring: React.FC = () => {
               <Card>
                 <Statistic
                   title="Transaction Risk"
-                  value={riskScores.transactionRisk}
+                  value={riskScores.transactionRisk.aggregateScore * 100 || 0}
                   suffix="/100"
                   valueStyle={{
-                    color: getRiskColor(riskScores.transactionRisk)
+                    color: getRiskColor(riskScores.transactionRisk.aggregateScore * 100 || 0)
                   }}
                 />
                 <Progress 
-                  percent={riskScores.transactionRisk}
-                  status={riskScores.transactionRisk > 70 ? 'exception' : 'normal'}
-                  strokeColor={getRiskColor(riskScores.transactionRisk)}
+                  percent={riskScores.transactionRisk.aggregateScore * 100 || 0}
+                  status={riskScores.transactionRisk.aggregateScore * 100 || 0 > 70 ? 'exception' : 'normal'}
+                  strokeColor={getRiskColor(riskScores.transactionRisk.aggregateScore * 100 || 0)}
                 />
               </Card>
             </Col>
@@ -105,16 +105,16 @@ const RiskScoring: React.FC = () => {
               <Card>
                 <Statistic
                   title="Entity Risk"
-                  value={riskScores.entityRisk}
+                  value={riskScores.entityRisk.aggregateScore * 100 || 0}
                   suffix="/100"
                   valueStyle={{
-                    color: getRiskColor(riskScores.entityRisk)
+                    color: getRiskColor(riskScores.entityRisk.aggregateScore * 100 || 0)
                   }}
                 />
                 <Progress 
-                  percent={riskScores.entityRisk}
-                  status={riskScores.entityRisk > 70 ? 'exception' : 'normal'}
-                  strokeColor={getRiskColor(riskScores.entityRisk)}
+                  percent={riskScores.entityRisk.aggregateScore * 100 || 0}
+                  status={riskScores.entityRisk.aggregateScore * 100 || 0 > 70 ? 'exception' : 'normal'}
+                  strokeColor={getRiskColor(riskScores.entityRisk.aggregateScore * 100 || 0)}
                 />
               </Card>
             </Col>
@@ -122,16 +122,16 @@ const RiskScoring: React.FC = () => {
               <Card>
                 <Statistic
                   title="Jurisdiction Risk"
-                  value={riskScores.jurisdictionRisk || 0}
+                  value={riskScores.jurisdictionRisk.aggregateScore * 100 || 0}
                   suffix="/100"
                   valueStyle={{
-                    color: getRiskColor(riskScores.jurisdictionRisk || 0)
+                    color: getRiskColor(riskScores.jurisdictionRisk.aggregateScore * 100 || 0)
                   }}
                 />
                 <Progress 
-                  percent={riskScores.jurisdictionRisk || 0}
-                  status={(riskScores.jurisdictionRisk || 0) > 70 ? 'exception' : 'normal'}
-                  strokeColor={getRiskColor(riskScores.jurisdictionRisk || 0)}
+                  percent={riskScores.jurisdictionRisk.aggregateScore * 100 || 0}
+                  status={riskScores.jurisdictionRisk.aggregateScore * 100 || 0 > 70 ? 'exception' : 'normal'}
+                  strokeColor={getRiskColor(riskScores.jurisdictionRisk.aggregateScore * 100 || 0)}
                 />
               </Card>
             </Col>
