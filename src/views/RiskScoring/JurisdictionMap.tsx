@@ -1,7 +1,6 @@
 import React from 'react';
 import { Card, Typography, Empty } from 'antd';
 import { ComposableMap, Geographies, Geography, Marker } from 'react-simple-maps';
-import { Feature, GeometryObject } from 'geojson';
 import styled from 'styled-components';
 
 const { Text } = Typography;

@@ -1,13 +1,13 @@
 import { axiosInstance } from './api';
-import { RiskScores } from '../types/riskScoring';
+import { RiskScoringResponse } from '../types/riskScoring';
 
 interface RiskScoringRequest {
   identifier: string;
   type: 'address' | 'transaction';
 }
 
-export const calculateRiskScore = async (identifier: string, type: 'address' | 'transaction'): Promise<RiskScores> => {
-  const response = await axiosInstance.post<{ success: boolean; data: RiskScores }>('/risk-scoring/calculate', {
+export const calculateRiskScore = async (identifier: string, type: 'address' | 'transaction'): Promise<RiskScoringResponse> => {
+  const response = await axiosInstance.post<{ success: boolean; data: RiskScoringResponse }>('/risk-scoring/calculate', {
     identifier,
     type
   } as RiskScoringRequest);
