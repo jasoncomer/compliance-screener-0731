@@ -12,6 +12,18 @@ import { Theme } from '../context/ThemeContext';
 const SiderWrapper = styled(Sider)`
   display: flex;
   flex-direction: column;
+
+  .ant-layout-sider-trigger {
+    background: transparent;
+    border-right: 1px solid ${props => props.theme === 'dark' ? '#303030' : '#f0f0f0'};
+    color: ${colors.primary};
+    transition: all 0.3s;
+
+    &:hover {
+      background: ${props => props.theme === 'dark' ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.04)'};
+      color: ${colors.primary};
+    }
+  }
 `;
 
 const SiderContent = styled.div<{ $collapsed: boolean; $theme: Theme }>`

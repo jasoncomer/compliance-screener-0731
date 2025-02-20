@@ -1,4 +1,4 @@
-import { TableProps, Tag, Table, Button, Tabs as AntTabs } from 'antd';
+import { TableProps, Tag, Table, Button as AntButton, Tabs as AntTabs } from 'antd';
 import { ICase } from '../typings/interfaces';
 import { FC, useState } from 'react';
 import styled from 'styled-components';
@@ -12,6 +12,11 @@ const Tabs = styled(AntTabs)`
     margin-bottom: 0;
   }
 `;
+
+const Button = styled(AntButton)`
+  box-shadow: none;
+`;
+
 interface Props {
   cases: ICase[];
   setIsModalOpen: React.Dispatch<React.SetStateAction<boolean>>;
