@@ -1,7 +1,7 @@
 import React from 'react';
 import { AlertOutlined } from '@ant-design/icons';
 import ViewWrapper from '../components/ViewWrapper';
-import { Typography, Table, Tag, Space } from 'antd';
+import { Typography, Table, Tag } from 'antd';
 
 const { Paragraph } = Typography;
 
