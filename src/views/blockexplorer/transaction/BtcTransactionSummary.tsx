@@ -3,9 +3,11 @@ import { BsBlock } from '../../../styles/Table';
 import { BtcTransaction } from '../../../typings/BtcTransaction';
 import styled from 'styled-components';
 import { satsToBTC } from '../../../utils/crypto';
+import { Theme } from '../../../context/ThemeContext';
 
 interface BtcTransactionSummaryProps {
-  transaction: BtcTransaction
+  transaction: BtcTransaction;
+  theme?: { theme: Theme };
 }
 
 const SummaryWrapper = styled.div`
@@ -27,9 +29,9 @@ const SummaryWrapper = styled.div`
   }
 `;
 
-const BtcTransactionSummary: React.FC<BtcTransactionSummaryProps> = ({ transaction }) => {
+const BtcTransactionSummary: React.FC<BtcTransactionSummaryProps> = ({ transaction, theme }) => {
   return (
-    <BsBlock>
+    <BsBlock theme={theme}>
       <h3>Summary</h3>
       <hr />
       <SummaryWrapper>

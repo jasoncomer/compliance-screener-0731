@@ -10,6 +10,7 @@ import { BtcTransaction } from '../../typings/BtcTransaction';
 import { satsToBTC } from '../../utils/crypto';
 import { useAttribution } from '../../context/AttributionContext';
 import Pagination from '../../components/common/Pagination';
+import { useTheme } from '../../context/ThemeContext';
 
 const SummaryWrapper = styled.div`
   display: flex;
@@ -32,6 +33,7 @@ const SummaryWrapper = styled.div`
 
 const Address: React.FC = () => {
   const { address } = useParams();
+  const { theme } = useTheme();
   const [addrData, setAddrData] = React.useState<IBtcAddress>();
   const [txs, setTxs] = React.useState<BtcTransaction[]>([]);
   const [totalTxs, setTotalTxs] = React.useState<number>(0);
@@ -98,7 +100,7 @@ const Address: React.FC = () => {
   return (
     <>
       <BsWrapper>
-        <BsBlock>
+        <BsBlock theme={{ theme }}>
           <h3>Address</h3>
           <hr />
           <div>
@@ -106,7 +108,7 @@ const Address: React.FC = () => {
           </div>
         </BsBlock>
 
-        <BsBlock>
+        <BsBlock theme={{ theme }}>
           <h3>Summary</h3>
           <hr />
           <SummaryWrapper>
@@ -124,14 +126,14 @@ const Address: React.FC = () => {
           </SummaryWrapper>
         </BsBlock>
 
-        <BsBlock>
+        <BsBlock theme={{ theme }}>
           <h3>Transactions ({totalTxs.toLocaleString()})</h3>
           <hr />
           {isLoading ? (
             <div style={{ textAlign: 'center', padding: '2rem' }}>Loading...</div>
           ) : (
             <>
-              {txs.map(tx => <BtcTransactionTable key={tx._id} transaction={tx} />)}
+              {txs.map(tx => <BtcTransactionTable key={tx._id} transaction={tx} theme={{ theme }} />)}
               <Pagination
                 currentPage={currentPage}
                 totalPages={totalPages}

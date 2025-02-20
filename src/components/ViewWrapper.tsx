@@ -1,6 +1,7 @@
 import React, { ReactNode } from 'react';
 import { Space, Typography } from 'antd';
 import styled from 'styled-components';
+import { useTheme } from '../context/ThemeContext';
 
 const { Title } = Typography;
 
@@ -18,8 +19,13 @@ const TitleWrapper = styled(Space)`
   align-items: center;
 
   .anticon {
-    font-size: 24px; // Match the h2 size
+    font-size: 24px;
     margin-right: 8px;
+    color: ${props => props.theme.theme === 'dark' ? '#ffffff' : '#000000'};
+  }
+
+  .ant-typography {
+    color: ${props => props.theme.theme === 'dark' ? '#ffffff' : '#000000'} !important;
   }
 `;
 
@@ -30,9 +36,11 @@ interface ViewWrapperProps {
 }
 
 const ViewWrapper: React.FC<ViewWrapperProps> = ({ icon, title, children }) => {
+  const { theme } = useTheme();
+  
   return (
     <ViewContainer>
-      <TitleWrapper>
+      <TitleWrapper theme={{ theme }}>
         {icon && icon}
         <Title level={2} style={{ margin: 0 }}>{title}</Title>
       </TitleWrapper>

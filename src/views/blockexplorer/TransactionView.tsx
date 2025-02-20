@@ -6,13 +6,14 @@ import BtcTransactionSummary from './transaction/BtcTransactionSummary';
 import BtcTransactionTable from './transaction/BtcTransactionTable';
 import { BsWrapper } from '../../styles/ocmmon';
 import { api } from '../../api/api';
-
+import { useTheme } from '../../context/ThemeContext';
 
 interface TransactionProps {
 }
 
 const TransactionView: React.FC<TransactionProps> = () => {
   const { txid } = useParams();
+  const { theme } = useTheme();
   const [transaction, setTransaction] = React.useState<BtcTransaction>();
 
   useEffect(() => {
@@ -34,7 +35,7 @@ const TransactionView: React.FC<TransactionProps> = () => {
     <BsWrapper>
       <h1>Transaction</h1>
 
-      <BsBlock>
+      <BsBlock theme={{ theme }}>
         <h3>Transaction Hash</h3>
         <hr />
         <div>
@@ -42,9 +43,9 @@ const TransactionView: React.FC<TransactionProps> = () => {
         </div>
       </BsBlock>
 
-      <BtcTransactionSummary transaction={transaction} />
+      <BtcTransactionSummary transaction={transaction} theme={{ theme }} />
       
-      <BtcTransactionTable transaction={transaction} />
+      <BtcTransactionTable transaction={transaction} theme={{ theme }} />
     </BsWrapper>
   );
 };
