@@ -3,6 +3,7 @@ import { Layout } from 'antd';
 import { Route, RouteProps, Routes } from 'react-router-dom';
 
 import Admin from './Admin';
+import Alerts from './Alerts';
 import BlockHam from './BlockHam';
 import Cases from './Cases';
 import Explorer from './Explorer';
@@ -29,6 +30,7 @@ const Home: React.FC<RouteProps> = () => {
         <Content>
           <Routes>
             <Route path="/admin" element={<Admin />} />
+            <Route path="/alerts" element={<Alerts />} />
             <Route path="/cases" element={<Cases />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/explorer" element={<Explorer />} />

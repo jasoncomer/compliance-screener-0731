@@ -1,23 +1,15 @@
 import { Route, Routes, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
-import { Input } from 'antd';
 import React from 'react';
+import { GlobalOutlined } from '@ant-design/icons';
+import Input from '../../components/common/Input';
 
+import ViewWrapper from '../../components/ViewWrapper';
 import { determineInputType } from '../../utils/crypto';
 import TransactionView from './TransactionView';
 import Address from './Address';
 
-const { Search: AntSearch } = Input;
-
-const Wrapper = styled.div`
-  padding: 20px;
-  color: black;
-  width: 100%;
-  line-height: 1.5em;
-  font-family: monospace;
-`;
-
-const Search = styled(AntSearch)`
+const Search = styled(Input)`
   margin-bottom: 20px;
   width: 600px;
 `;
@@ -43,17 +35,24 @@ const BlockExplorer: React.FC = () => {
   const searchPlaceholder = 'Search by block number, tx hash or address';
 
   return (
-    <Wrapper>
-      <h3>Block Explorer</h3>
-
-      <Search placeholder={searchPlaceholder} onSearch={onSearch} value={searchValue} onChange={(e) => setSearchValue(e.target.value)} />
+    <ViewWrapper
+      icon={<GlobalOutlined />}
+      title="Block Explorer"
+    >
+      <Search 
+        placeholder={searchPlaceholder} 
+        value={searchValue} 
+        onChange={(e) => setSearchValue(e.target.value)}
+        onPressEnter={() => onSearch(searchValue)}
+        style={{ width: '400px' }}
+      />
 
       <Routes>
         <Route path="/transaction/:txid" element={<TransactionView />} />
         <Route path="/block/:block" element={<div>Block</div>} />
         <Route path="/address/:address" element={<Address />} />
       </Routes>
-    </Wrapper>
+    </ViewWrapper>
   );
 };
 

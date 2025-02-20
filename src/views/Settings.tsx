@@ -1,22 +1,15 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
+import { Switch } from 'antd';
+import { SettingOutlined } from '@ant-design/icons';
 import { useAppContext } from '../context/AppContext';
 import { useTheme } from '../context/ThemeContext';
-import { Switch } from 'antd';
+import ViewWrapper from '../components/ViewWrapper';
 
 const Container = styled.div`
   width: 100%;
-  max-width: 800px;
   margin: 0 auto;
   background-color: transparent;
-`;
-
-const Title = styled.h1`
-  font-size: 32px;
-  font-weight: bold;
-  margin-bottom: 32px;
-  color: ${props => props.theme.theme === 'dark' ? '#ffffff' : '#2c3e50'};
-  height: 40px;
 `;
 
 const Card = styled.div`
@@ -131,66 +124,68 @@ const Settings: React.FC = () => {
   const { user } = useAppContext();
   const { theme, toggleTheme } = useTheme();
   const [notifications, setNotifications] = useState(true);
-  
   const enabled = true;
 
   return (
-    <Container theme={{ theme }}>
-      <Title theme={{ theme }}>Settings</Title>
-      
-      <Card theme={{ theme }}>
-        <SubTitle theme={{ theme }}>User Information</SubTitle>
-        <InfoList>
-          <InfoItem theme={{ theme }}>
-            <Label theme={{ theme }}>Name</Label>
-            <Value theme={{ theme }} className='capitalize'>{user?.name || 'N/A'} {user?.surname || 'N/A'}</Value>
-          </InfoItem>
-          <InfoItem theme={{ theme }}>
-            <Label theme={{ theme }}>Email</Label>
-            <Value theme={{ theme }}>{user?.email || 'N/A'}</Value>
-          </InfoItem>
-          <InfoItem theme={{ theme }}>
-            <Label theme={{ theme }}>Email Verified</Label>
-            <Value theme={{ theme }}>{user?.isVerified ? 'Yes' : 'No'}</Value>
-          </InfoItem>
-          <InfoItem theme={{ theme }}>
-            <Label theme={{ theme }}>Account Created</Label>
-            <Value theme={{ theme }}>
-              {user?.createdAt 
-                ? new Date(user.createdAt).toLocaleDateString('en-US', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric'
-                  })
-                : 'N/A'}
-            </Value>
-          </InfoItem>
-        </InfoList>
-        {enabled && <Button>Edit Profile</Button>}
-      </Card>
+    <ViewWrapper
+      icon={<SettingOutlined />}
+      title="Settings"
+    >
+      <Container theme={{ theme }}>
+        <Card theme={{ theme }}>
+          <SubTitle theme={{ theme }}>User Information</SubTitle>
+          <InfoList>
+            <InfoItem theme={{ theme }}>
+              <Label theme={{ theme }}>Name</Label>
+              <Value theme={{ theme }} className='capitalize'>{user?.name || 'N/A'} {user?.surname || 'N/A'}</Value>
+            </InfoItem>
+            <InfoItem theme={{ theme }}>
+              <Label theme={{ theme }}>Email</Label>
+              <Value theme={{ theme }}>{user?.email || 'N/A'}</Value>
+            </InfoItem>
+            <InfoItem theme={{ theme }}>
+              <Label theme={{ theme }}>Email Verified</Label>
+              <Value theme={{ theme }}>{user?.isVerified ? 'Yes' : 'No'}</Value>
+            </InfoItem>
+            <InfoItem theme={{ theme }}>
+              <Label theme={{ theme }}>Account Created</Label>
+              <Value theme={{ theme }}>
+                {user?.createdAt 
+                  ? new Date(user.createdAt).toLocaleDateString('en-US', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric'
+                    })
+                  : 'N/A'}
+              </Value>
+            </InfoItem>
+          </InfoList>
+          {enabled && <Button>Edit Profile</Button>}
+        </Card>
 
-      <Card theme={{ theme }}>
-        <SubTitle theme={{ theme }}>Preferences</SubTitle>
-        <PreferencesGrid>
-          <PreferenceToggle theme={{ theme }}>
-            <Label theme={{ theme }} style={{ margin: 0 }}>Email Notifications</Label>
-            <Switch
-              checked={notifications}
-              onChange={() => setNotifications(!notifications)}
-            />
-          </PreferenceToggle>
-          <PreferenceToggle theme={{ theme }}>
-            <Label theme={{ theme }} style={{ margin: 0 }}>Dark Mode</Label>
-            <Switch
-              checked={theme === 'dark'}
-              onChange={toggleTheme}
-              checkedChildren="🌙"
-              unCheckedChildren="☀️"
-            />
-          </PreferenceToggle>
-        </PreferencesGrid>
-      </Card>
-    </Container>
+        <Card theme={{ theme }}>
+          <SubTitle theme={{ theme }}>Preferences</SubTitle>
+          <PreferencesGrid>
+            <PreferenceToggle theme={{ theme }}>
+              <Label theme={{ theme }} style={{ margin: 0 }}>Email Notifications</Label>
+              <Switch
+                checked={notifications}
+                onChange={() => setNotifications(!notifications)}
+              />
+            </PreferenceToggle>
+            <PreferenceToggle theme={{ theme }}>
+              <Label theme={{ theme }} style={{ margin: 0 }}>Dark Mode</Label>
+              <Switch
+                checked={theme === 'dark'}
+                onChange={toggleTheme}
+                checkedChildren="🌙"
+                unCheckedChildren="☀️"
+              />
+            </PreferenceToggle>
+          </PreferencesGrid>
+        </Card>
+      </Container>
+    </ViewWrapper>
   );
 };
 

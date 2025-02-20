@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import styled from 'styled-components';
+import { FolderOutlined } from '@ant-design/icons';
+import ViewWrapper from '../components/ViewWrapper';
 import CasesTable from '../components/CasesTable';
 import ModalAddCase from '../components/modals/ModalAddCase';
 import { ICase } from '../typings/interfaces';
@@ -7,18 +8,6 @@ import { api } from '../api/api';
 import { useAppContext } from '../context/AppContext';
 
 interface Props { }
-
-const CaseWrapper = styled.div`
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
-  width: 800px;
-  max-width: 90%;
-  height: 500px;
-  margin: calc(50vh - 250px) auto;
-  border-radius: 8px;
-  padding: 2em;
-`;
 
 const Cases: React.FC<Props> = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -39,20 +28,20 @@ const Cases: React.FC<Props> = () => {
     setCases(prev => [...prev, data]);
   };
 
-  
   return (
-    <>
-      <CaseWrapper>
-        <CasesTable cases={cases} setIsModalOpen={setIsModalOpen} />
-      </CaseWrapper>
+    <ViewWrapper
+      icon={<FolderOutlined />}
+      title="Cases"
+    >
+      <CasesTable cases={cases} setIsModalOpen={setIsModalOpen} />
 
       <ModalAddCase
         isModalOpen={isModalOpen}
         setIsModalOpen={setIsModalOpen}
         cases={cases}
         setCase={handleCase}
-        />
-    </>
+      />
+    </ViewWrapper>
   );
 };
 

@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import styled from 'styled-components';
-import { Typography, AutoComplete, Input, Avatar } from 'antd';
-import { UserOutlined } from '@ant-design/icons';
+import { AutoComplete, Avatar, Input } from 'antd';
+import { UserOutlined, DatabaseOutlined } from '@ant-design/icons';
 import Sifter from 'sifter';
 import { useDispatch, useSelector } from 'react-redux';
+import styled from 'styled-components';
 
+import ViewWrapper from '../components/ViewWrapper';
 import SOTEditor from '../components/SOTEditor';
 import { AppDispatch, RootState } from '../store/store';
 import { fetchSOT } from '../store/slices/sotSlice';
@@ -12,21 +13,10 @@ import { SOT } from '../typings/interfaces';
 import { EEntityType } from '../typings/SOT';
 import { getEntityTypeLabel } from '../utils/display-labels';
 
-const { Title } = Typography;
-
-const BlockHamWrapper = styled.div`
-  padding: 2em;
-  height: 100%;
-  width: 100%;
-  overflow: auto;
-  h2 {
-    margin: 0;
-  }
-`;
 
 const SearchWrapper = styled.div`
   width: 100%;
-  `;
+`;
 
 const OptionWrapper = styled.div`
   display: flex;
@@ -40,46 +30,27 @@ const OptionContent = styled.div`
 
 const GroupHeader = styled.div`
   padding: 12px 12px 8px;
-  background-color: #fafafa;
-  border-bottom: 1px solid #f0f0f0;
+  background-color: ${({ theme }) => theme.theme === 'dark' ? '#4b4b4b' : '#fafafa'};
+  border-bottom: 1px solid ${({ theme }) => theme.theme === 'dark' ? '#303030' : '#f0f0f0'};
   margin-top: 4px;
   
   .header-title {
     font-size: 14px;
     font-weight: 600;
-    color: #666;
+    color: ${({ theme }) => theme.theme === 'dark' ? '#ffffff' : '#666666'};
     text-transform: uppercase;
     letter-spacing: 0.5px;
   }
 
   .result-count {
     font-size: 12px;
-    color: #999;
+    color: ${({ theme }) => theme.theme === 'dark' ? '#a0a0a0' : '#999999'};
     margin-left: 8px;
   }
 `;
 
 const StyledAutoComplete = styled(AutoComplete)`
-    .ant-select-dropdown {
-      padding: 0;
-      
-      .ant-select-item-group {
-        padding: 0;
-      }
-
-      .ant-select-item-option {
-        padding: 8px 12px;
-        
-        &:hover {
-          background-color: #f5f5f5;
-        }
-        
-        &-active {
-          background-color: #e6f7ff;
-        }
-      }
-    }
-  `;
+`;
 
 export interface PopulatedSOT extends SOT {
   autocompleteDisplayTitle: string;
@@ -229,29 +200,29 @@ const BlockHam: React.FC = () => {
   };
 
   return (
-    <>
-      <BlockHamWrapper>
-        <Title level={2}>Entity Explorer</Title>
-        <SearchWrapper>
-          <StyledAutoComplete
-            options={options}
-            onSelect={onSelect as any}
+    <ViewWrapper
+      icon={<DatabaseOutlined />}
+      title="Entity Explorer"
+    >
+      <SearchWrapper>
+        <StyledAutoComplete
+          options={options}
+          onSelect={onSelect as any}
+          onSearch={handleSearch}
+          style={{ width: '100%' }}
+          listHeight={500}
+        >
+          <Input.Search
+            placeholder="Search by name, address, or type..."
             onSearch={handleSearch}
-            style={{ width: '100%' }}
-            listHeight={500}
-          >
-            <Input.Search
-              placeholder="Search by name, address, or type..."
-              enterButton
-              size="large"
-              loading={loading || sotLoading}
-            />
-          </StyledAutoComplete>
-        </SearchWrapper>
+            loading={loading || sotLoading}
+            style={{ width: '400px' }}
+          />
+        </StyledAutoComplete>
+      </SearchWrapper>
 
-        {selectedSot && <SOTEditor sot={selectedSot} onSelectAssociatedSot={handleSelectAssociatedSot} />}
-      </BlockHamWrapper>
-    </>
+      {selectedSot && <SOTEditor sot={selectedSot} onSelectAssociatedSot={handleSelectAssociatedSot} />}
+    </ViewWrapper>
   );
 };
 

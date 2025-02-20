@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { Spin, Alert } from 'antd';
+import { SafetyOutlined } from '@ant-design/icons';
 import { calculateRiskScore } from '../api/riskScoring';
-import { RiskScoringResponse } from '../types/riskScoring'
+import { RiskScoringResponse } from '../types/riskScoring';
+import ViewWrapper from '../components/ViewWrapper';
 import RiskDetailsTable from './RiskScoring/RiskDetailsTable';
 import SearchBar from './RiskScoring/SearchBar';
 import RiskScoreCards from './RiskScoring/RiskScoreCards';
@@ -39,14 +41,15 @@ const RiskScoring: React.FC = () => {
   };
 
   return (
-    <div style={{ 
-      padding: '24px',
-      height: '100%',
-      overflowY: 'auto',
-      display: 'flex',
-      flexDirection: 'column',
-      gap: '24px'
-    }}>
+    <ViewWrapper
+      icon={<SafetyOutlined />}
+      title="Risk Scoring Dashboard"
+    >
+      <Paragraph>
+        Analyze the risk profile of any blockchain address based on transaction patterns,
+        entity information, and jurisdiction data.
+      </Paragraph>
+
       <SearchBar
         address={address}
         loading={loading}
@@ -76,7 +79,7 @@ const RiskScoring: React.FC = () => {
           <RiskDetailsTable riskScores={riskScores} />
         </div>
       )}
-    </div>
+    </ViewWrapper>
   );
 };
 

@@ -4,6 +4,7 @@ import {
   Navigate
 } from "react-router-dom";
 import { useEffect, useState } from "react";
+import { ThemeProvider as StyledThemeProvider } from 'styled-components';
 import Login from './views/Login';
 import Register from "./views/Register";
 import Home from "./views/Home";
@@ -69,14 +70,16 @@ function App() {
 
   return (
     <ConfigProvider theme={currentTheme}>
-      {contextHolder}
-      <Routes>
-        <Route path="/" element={user ? <Navigate to="/home/cases" /> : <Login />} />
-        <Route path="/login" element={user ? <Navigate to="/home/cases" /> : <Login />} />
-        <Route path="/register" element={user ? <Navigate to="/home/cases" /> : <Register />} />
-        <Route path="/home/*" element={user ? <Home /> : <Navigate to="/login" />} />
-        <Route path="*" element={<Navigate to="/" />} />
-      </Routes>
+      <StyledThemeProvider theme={{ theme }}>
+        {contextHolder}
+        <Routes>
+          <Route path="/" element={user ? <Navigate to="/home/cases" /> : <Login />} />
+          <Route path="/login" element={user ? <Navigate to="/home/cases" /> : <Login />} />
+          <Route path="/register" element={user ? <Navigate to="/home/cases" /> : <Register />} />
+          <Route path="/home/*" element={user ? <Home /> : <Navigate to="/login" />} />
+          <Route path="*" element={<Navigate to="/" />} />
+        </Routes>
+      </StyledThemeProvider>
     </ConfigProvider>
   )
 }

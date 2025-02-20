@@ -15,8 +15,6 @@ const TransactionView: React.FC<TransactionProps> = () => {
   const { txid } = useParams();
   const [transaction, setTransaction] = React.useState<BtcTransaction>();
 
-  console.log('[Transaction] txid:', txid);
-
   useEffect(() => {
     const fetchTransaction = async () => {
       if (!txid || typeof txid != 'string') return;

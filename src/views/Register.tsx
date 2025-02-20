@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { BtnDiv, FormWrapper, Input } from '../styles/Common';
+import { BtnDiv, FormWrapper } from '../styles/Common';
 import { Button, notification } from 'antd';
 import { api } from '../api/api';
+import Input from '../components/common/Input';
 
 import type { NotificationArgsProps } from 'antd';
 

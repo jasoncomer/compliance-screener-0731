@@ -1,29 +1,37 @@
-import { Alert, Button, Input, Spin } from 'antd';
+import { Alert, Spin } from 'antd';
 import React, { useEffect, useState } from 'react';
 import { GraphCanvas, GraphEdge, GraphNode, LayoutTypes } from 'reagraph';
 import { IApiResponse } from '../typings/interfaces';
 import styled from 'styled-components';
+import { SearchOutlined } from '@ant-design/icons';
+
+import ViewWrapper from '../components/ViewWrapper';
 import AccountSummary from '../components/AccountSummary';
 import { satsToBTC } from '../utils/crypto';
 import GraphButtons from '../components/GraphButtons';
 import { truncateStringMiddle } from '../utils/generic';
 import NodeContextMenu from '../components/explorer/NodeContextMenu';
+import Input from '../components/common/Input';
 // import { api } from '../api/api';
 
 interface Props { }
 
 const SpinnerWrapper = styled.div`
-  position: relative;
-  top: calc(50% - 90px);
-  left: calc(50% - 20px);
-  height: 40px;
-  width: 40px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 200px;
+`;
+
+const SearchContainer = styled.div`
+  display: flex;
+  gap: 16px;
+  margin-bottom: 24px;
 `;
 
 const Explorer: React.FC<Props> = () => {
   const [addresses, setAddresses] = useState<string[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
-
   const [data, setData] = useState<IApiResponse[]>();
   const [error, setError] = useState<string>('');
 
@@ -38,49 +46,41 @@ const Explorer: React.FC<Props> = () => {
     const nextIndex = (currentIndex + 1) % layouts.length;
     const nextLayout = layouts[nextIndex];
     setLayout(nextLayout);
-
   }
 
   const fetchData = () => {
-    console.log('fetchData', addresses);
     if (!addresses.length) return;
 
-    // setLoading(true);
-
+    setLoading(true);
     const promises = addresses.map((address) => {
       return fetch(`https://api.blockcypher.com/v1/btc/main/addrs/${address}/full`)
         .then((res) => res.json())
         .then((data) => {
-          console.log(data);
           if (data.error) {
-            return setError(data.error);
+            setError(data.error);
+            return null;
           }
           return data;
         })
         .catch((err) => {
           console.error(err);
           setError(err.message);
-        })
-        .finally(() => {
-          setLoading(false);
+          return null;
         });
     });
 
-    Promise.all(promises).then((dataArr) => {
-      const allData = dataArr.map((data) => data as IApiResponse).filter((data) => data !== null);
-      setData(allData);
-    });
+    Promise.all(promises)
+      .then((dataArr) => {
+        const allData = dataArr.filter((data) => data !== null) as IApiResponse[];
+        setData(allData);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
   };
 
   useEffect(() => {
     if (!data?.length) return;
-    console.log('addresses', addresses);
-    fetchData();
-  }, [addresses]);
-
-  useEffect(() => {
-    if (!data?.length) return;
-
 
     const nodes: GraphNode[] = [];
     const edges: GraphEdge[] = [];
@@ -128,77 +128,80 @@ const Explorer: React.FC<Props> = () => {
 
     setNodes(uniqueNodes);
     setEdges(edges);
-  }, [data, addresses]);
+  }, [data]);
 
   const onKeyDownHandler = (e: { keyCode: number; }) => {
-    console.log('key', e);
     if (e.keyCode === 13) {
       fetchData();
     }
   };
 
-  if (loading) {
-    return (
-      <SpinnerWrapper>
-        <Spin size="large" />
-      </SpinnerWrapper>
-    );
-  }
-
-  if (!data) {
-    return (
-      <>
-        {error && <div style={{ position: 'absolute', top: '3em', left: 'calc(250px + 3em)' }}>
-          <Alert
-            closable
-            message="Error Fetching Data"
-            showIcon
-            description={error}
-            type="error"
-          />
-        </div>}
-        <div style={{ display: 'flex', margin: 'auto', gap: '1em', width: '450px' }}>
-          <Input
-            width={400}
-            type="text"
-            value={addresses}
-            placeholder='Enter a Bitcoin or Ethereum address'
-            onChange={(e) => setAddresses([e.target.value])}
-            onKeyUp={onKeyDownHandler}
-          />
-          <Button type='primary' onClick={fetchData}>Explore</Button>
-        </div>
-      </>
-    );
-  }
-
   const onExpandAddress = (address: string) => {
-    console.log('expand address', address);
     setAddresses([...addresses, address]);
   }
 
   return (
-    <div style={{ position: 'fixed', width: '100%', height: '100%' }}>
-      <GraphButtons onClick={toggleLayout} />
+    <ViewWrapper
+      icon={<SearchOutlined />}
+      title="Transaction Explorer"
+    >
+      <SearchContainer>
+        <Input
+          placeholder='Enter a Bitcoin or Ethereum address'
+          value={addresses[0] || ''}
+          style={{ width: '400px' }}
+          onChange={(e) => setAddresses([e.target.value])}
+          onPressEnter={() => fetchData()}
+          onSearch={fetchData}
+          enterButton="Explore"
+          onKeyDown={onKeyDownHandler}
+        />
+      </SearchContainer>
 
-      <AccountSummary data={data[0]} />
+      {error && (
+        <Alert
+          message="Error Fetching Data"
+          description={error}
+          type="error"
+          showIcon
+          closable
+          onClose={() => setError('')}
+          style={{ marginBottom: 24 }}
+        />
+      )}
 
-      <GraphCanvas
-        labelType='all'
-        nodes={nodes}
-        edges={edges}
-        layoutType={layout}
-        edgeLabelPosition="natural"
-        draggable
-        layoutOverrides={{
-          nodeLevelRatio: 5,
-        }}
-        onNodeContextMenu={(_, nodeId) => {
-          console.log('nodeId', nodeId);
-        }}
-        contextMenu={({ data, onClose }) => <NodeContextMenu data={data} onClose={onClose} onExpandAddress={onExpandAddress} />}
-      />
-    </div>
+      {loading ? (
+        <SpinnerWrapper>
+          <Spin size="large" />
+        </SpinnerWrapper>
+      ) : data ? (
+        <>
+          <GraphButtons onClick={toggleLayout} />
+          <AccountSummary data={data[0]} />
+          <GraphCanvas
+            labelType='all'
+            nodes={nodes}
+            edges={edges}
+            layoutType={layout}
+            edgeLabelPosition="natural"
+            draggable
+            layoutOverrides={{
+              nodeLevelRatio: 5,
+            }}
+            onNodeContextMenu={(_, nodeId) => {
+              console.log('nodeId', nodeId);
+            }}
+            contextMenu={({ data, onClose }) => (
+              <NodeContextMenu 
+                data={data} 
+                onClose={onClose} 
+                onExpandAddress={onExpandAddress} 
+              />
+            )}
+          />
+        </>
+      ) : null}
+    </ViewWrapper>
   );
 };
 

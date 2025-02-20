@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { BtnDiv, FormWrapper, Input } from '../styles/Common';
+import { BtnDiv, FormWrapper } from '../styles/Common';
 import { Button, notification } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import { api, setAuthToken } from '../api/api';
 import { useAppContext } from '../context/AppContext';
 import { storage } from '../utils/storage';
+import Input from '../components/common/Input';
 
 import type { NotificationArgsProps } from 'antd';
 

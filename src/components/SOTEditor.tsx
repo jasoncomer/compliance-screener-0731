@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Card, Form, Input, Button, Space, Typography, message, Avatar, Modal, Row, Col, Tag, Switch } from 'antd';
+import { Card, Form, Button, Space, Typography, message, Avatar, Modal, Row, Col, Tag, Switch } from 'antd';
 import { UserOutlined, GlobalOutlined, TwitterOutlined, SendOutlined, GithubOutlined, LinkedinOutlined, FacebookOutlined, InstagramOutlined, YoutubeOutlined, RedditOutlined, MediumOutlined } from '@ant-design/icons';
 import styled from 'styled-components';
 import { SOT } from '../typings/interfaces';
@@ -7,6 +7,7 @@ import { api } from '../api/api';
 import AssociatedSOTs from './AssociatedSOTs';
 import { getEntityTypeLabel } from '../utils/display-labels';
 import { EEntityType } from '../typings/SOT';
+import Input from './common/Input';
 
 const { Title, Text } = Typography;
 
@@ -282,7 +283,7 @@ const SOTEditor: React.FC<SOTEditorProps> = ({ sot, onSelectAssociatedSot }) => 
                 <Input />
               </Form.Item>
               <Form.Item name="contact_email" label="Email">
-                <Input />
+                <Input type="email" />
               </Form.Item>
               
               {/* Associated Countries */}
@@ -315,11 +316,11 @@ const SOTEditor: React.FC<SOTEditorProps> = ({ sot, onSelectAssociatedSot }) => 
               </Form.Item>
 
               <Form.Item name="description_merged" label="Description">
-                <Input.TextArea rows={6} />
+                <Input multiline rows={6} />
               </Form.Item>
 
               <Form.Item name="note" label="Notes">
-                <Input.TextArea rows={4} />
+                <Input multiline rows={4} />
               </Form.Item>
             </Col>
           </Row>
