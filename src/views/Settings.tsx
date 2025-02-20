@@ -1,27 +1,29 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
 import { useAppContext } from '../context/AppContext';
+import { useTheme } from '../context/ThemeContext';
+import { Switch } from 'antd';
 
 const Container = styled.div`
   width: 100%;
   max-width: 800px;
   margin: 0 auto;
-  background-color: #f8f9fa;
+  background-color: transparent;
 `;
 
 const Title = styled.h1`
   font-size: 32px;
   font-weight: bold;
   margin-bottom: 32px;
-  color: #2c3e50;
+  color: ${props => props.theme.theme === 'dark' ? '#ffffff' : '#2c3e50'};
   height: 40px;
 `;
 
 const Card = styled.div`
   padding: 2em;
-  background: white;
+  background: ${props => props.theme.theme === 'dark' ? '#1f1f1f' : 'white'};
   border-radius: 12px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 4px 6px ${props => props.theme.theme === 'dark' ? 'rgba(0, 0, 0, 0.2)' : 'rgba(0, 0, 0, 0.05)'};
   margin-bottom: 2em;
 `;
 
@@ -29,7 +31,7 @@ const SubTitle = styled.h2`
   font-size: 22px;
   font-weight: 600;
   margin: 0em 0 1em 0;
-  color: #34495e;
+  color: ${props => props.theme.theme === 'dark' ? '#ffffff' : '#34495e'};
   display: flex;
   align-items: center;
   gap: 8px;
@@ -40,7 +42,7 @@ const SubTitle = styled.h2`
     content: '';
     flex: 1;
     height: 1px;
-    background: #e0e0e0;
+    background: ${props => props.theme.theme === 'dark' ? '#303030' : '#e0e0e0'};
     margin-left: 8px;
   }
 `;
@@ -55,7 +57,7 @@ const InfoList = styled.div`
 const InfoItem = styled.div`
   display: flex;
   align-items: center;
-  background: #f8f9fa;
+  background: ${props => props.theme.theme === 'dark' ? '#141414' : '#f8f9fa'};
   padding: 12px 16px;
   border-radius: 8px;
   transition: all 0.2s ease;
@@ -63,13 +65,13 @@ const InfoItem = styled.div`
 
   &:hover {
     transform: translateY(-2px);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 2px 8px ${props => props.theme.theme === 'dark' ? 'rgba(0, 0, 0, 0.3)' : 'rgba(0, 0, 0, 0.05)'};
   }
 `;
 
 const Label = styled.span`
   font-size: 14px;
-  color: #7f8c8d;
+  color: ${props => props.theme.theme === 'dark' ? '#a0a0a0' : '#7f8c8d'};
   text-transform: uppercase;
   letter-spacing: 0.5px;
   width: 200px;
@@ -80,7 +82,7 @@ const Label = styled.span`
 const Value = styled.p`
   font-size: 16px;
   font-weight: 500;
-  color: #2c3e50;
+  color: ${props => props.theme.theme === 'dark' ? '#ffffff' : '#2c3e50'};
   margin: 0;
   line-height: 1.5;
   &.capitalize {
@@ -116,7 +118,7 @@ const PreferenceToggle = styled.div`
   align-items: center;
   justify-content: space-between;
   padding: 12px 16px;
-  background: #f8f9fa;
+  background: ${props => props.theme.theme === 'dark' ? '#141414' : '#f8f9fa'};
   border-radius: 8px;
 
   label {
@@ -127,32 +129,33 @@ const PreferenceToggle = styled.div`
 
 const Settings: React.FC = () => {
   const { user } = useAppContext();
+  const { theme, toggleTheme } = useTheme();
   const [notifications, setNotifications] = useState(true);
   
-  const enabled = false;
+  const enabled = true;
 
   return (
-    <Container>
-      <Title>Settings</Title>
+    <Container theme={{ theme }}>
+      <Title theme={{ theme }}>Settings</Title>
       
-      <Card>
-        <SubTitle>User Information</SubTitle>
+      <Card theme={{ theme }}>
+        <SubTitle theme={{ theme }}>User Information</SubTitle>
         <InfoList>
-          <InfoItem>
-            <Label>Name</Label>
-            <Value className='capitalize'>{user?.name || 'N/A'} {user?.surname || 'N/A'}</Value>
+          <InfoItem theme={{ theme }}>
+            <Label theme={{ theme }}>Name</Label>
+            <Value theme={{ theme }} className='capitalize'>{user?.name || 'N/A'} {user?.surname || 'N/A'}</Value>
           </InfoItem>
-          <InfoItem>
-            <Label>Email</Label>
-            <Value>{user?.email || 'N/A'}</Value>
+          <InfoItem theme={{ theme }}>
+            <Label theme={{ theme }}>Email</Label>
+            <Value theme={{ theme }}>{user?.email || 'N/A'}</Value>
           </InfoItem>
-          <InfoItem>
-            <Label>Email Verified</Label>
-            <Value>{user?.isVerified ? 'Yes' : 'No'}</Value>
+          <InfoItem theme={{ theme }}>
+            <Label theme={{ theme }}>Email Verified</Label>
+            <Value theme={{ theme }}>{user?.isVerified ? 'Yes' : 'No'}</Value>
           </InfoItem>
-          <InfoItem>
-            <Label>Account Created</Label>
-            <Value>
+          <InfoItem theme={{ theme }}>
+            <Label theme={{ theme }}>Account Created</Label>
+            <Value theme={{ theme }}>
               {user?.createdAt 
                 ? new Date(user.createdAt).toLocaleDateString('en-US', {
                     year: 'numeric',
@@ -166,27 +169,27 @@ const Settings: React.FC = () => {
         {enabled && <Button>Edit Profile</Button>}
       </Card>
 
-      {enabled && <Card>
-        <SubTitle>Preferences</SubTitle>
+      <Card theme={{ theme }}>
+        <SubTitle theme={{ theme }}>Preferences</SubTitle>
         <PreferencesGrid>
-          <PreferenceToggle>
-            <Label style={{ margin: 0 }}>Email Notifications</Label>
-            <input
-              type="checkbox"
+          <PreferenceToggle theme={{ theme }}>
+            <Label theme={{ theme }} style={{ margin: 0 }}>Email Notifications</Label>
+            <Switch
               checked={notifications}
               onChange={() => setNotifications(!notifications)}
             />
           </PreferenceToggle>
-          <PreferenceToggle>
-            <Label style={{ margin: 0 }}>Dark Mode</Label>
-            <input
-              type="checkbox"
-              checked={false}
-              onChange={() => {}}
+          <PreferenceToggle theme={{ theme }}>
+            <Label theme={{ theme }} style={{ margin: 0 }}>Dark Mode</Label>
+            <Switch
+              checked={theme === 'dark'}
+              onChange={toggleTheme}
+              checkedChildren="🌙"
+              unCheckedChildren="☀️"
             />
           </PreferenceToggle>
         </PreferencesGrid>
-      </Card>}
+      </Card>
     </Container>
   );
 };

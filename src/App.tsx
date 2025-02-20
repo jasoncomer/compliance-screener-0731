@@ -7,22 +7,20 @@ import { useEffect, useState } from "react";
 import Login from './views/Login';
 import Register from "./views/Register";
 import Home from "./views/Home";
-import { ConfigProvider, ThemeConfig, Spin, message } from "antd";
-import { colors } from './styles/variables';
+import { ConfigProvider, Spin, message } from "antd";
 import { useAppContext } from "./context/AppContext";
 import { config } from "./config/config";
 import { setAuthToken } from "./api/api";
+import { useTheme } from "./context/ThemeContext";
+import { lightTheme, darkTheme } from "./styles/theme";
 
 function App() {
   const { user, setUser } = useAppContext();
+  const { theme } = useTheme();
   const [isLoading, setIsLoading] = useState(true);
   const [messageApi, contextHolder] = message.useMessage();
 
-  const theme: ThemeConfig = {
-    token: {
-      colorPrimary: colors.primary,
-    }
-  };
+  const currentTheme = theme === 'light' ? lightTheme : darkTheme;
 
   useEffect(() => {
     const loadUser = async () => {
@@ -70,7 +68,7 @@ function App() {
   }
 
   return (
-    <ConfigProvider theme={theme}>
+    <ConfigProvider theme={currentTheme}>
       {contextHolder}
       <Routes>
         <Route path="/" element={user ? <Navigate to="/home/cases" /> : <Login />} />

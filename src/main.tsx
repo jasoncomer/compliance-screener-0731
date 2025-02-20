@@ -7,6 +7,7 @@ import App from './App'
 import './index.css'
 import { AppProvider } from './context/AppContext.tsx';
 import { AttributionProvider } from './context/AttributionContext.tsx'
+import { ThemeProvider } from './context/ThemeContext.tsx'
 
 const container = document.getElementById('root');
 if (!container) throw new Error('Failed to find the root element');
@@ -18,7 +19,9 @@ root.render(
       <BrowserRouter>
         <AppProvider>
           <AttributionProvider>
-            <App />
+            <ThemeProvider>
+              <App />
+            </ThemeProvider>
           </AttributionProvider>
         </AppProvider>
       </BrowserRouter>
