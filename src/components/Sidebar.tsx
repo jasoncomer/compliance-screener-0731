@@ -1,19 +1,20 @@
 import { useMemo, useState } from 'react';
 import Sider from 'antd/es/layout/Sider';
 import styled from 'styled-components';
-import { Button, Tooltip, Switch } from 'antd';
+import { Button, Tooltip } from 'antd';
 import { AlertFilled, AlertOutlined, FolderOpenOutlined, FolderOutlined, GlobalOutlined, LogoutOutlined, SafetyOutlined, SearchOutlined, SettingFilled, SettingOutlined, UserOutlined, UserSwitchOutlined } from '@ant-design/icons';
 import { colors } from '../styles/variables';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAppContext } from '../context/AppContext';
 import { useTheme } from '../context/ThemeContext';
+import { Theme } from '../context/ThemeContext';
 
 const SiderWrapper = styled(Sider)`
   display: flex;
   flex-direction: column;
 `;
 
-const SiderContent = styled.div<{ $collapsed: boolean }>`
+const SiderContent = styled.div<{ $collapsed: boolean; $theme: Theme }>`
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -40,17 +41,19 @@ const SiderContent = styled.div<{ $collapsed: boolean }>`
   button {
     width: 100%;
     text-align: left;
-    color: ${colors.primary}80 !important;
+    color: ${props => props.$theme === 'dark' ? `${colors.primary}80` : colors.primary} !important;
 
     &.active {
       color: ${colors.primary} !important;
       border-color: ${colors.primary} !important;
+      background: ${props => props.$theme === 'dark' ? 'transparent' : `${colors.primary}10`};
     }
     
     &:focus,
     &:hover {
       color: ${colors.primary} !important;
       border-color: ${colors.primary} !important;
+      background: ${props => props.$theme === 'dark' ? 'transparent' : `${colors.primary}10`};
     }
 
     .anticon {
@@ -75,13 +78,6 @@ const ButtonDiv = styled.div`
   }
 `;
 
-const ThemeToggle = styled.div`
-  margin-top: auto;
-  padding: 8px;
-  display: flex;
-  justify-content: center;
-`;
-
 type Section = 'alerts' | 'cases' | 'explorer' | 'settings' | 'block-explorer' | 'blockham' | 'admin' | 'risk-scoring';
 
 const Sidebar = () => {
@@ -90,7 +86,7 @@ const Sidebar = () => {
   const [collapsed, setCollapsed] = useState(false);
   const section = useMemo(() => params['*'], [params]);
   const { clearAppData } = useAppContext();
-  const { theme, toggleTheme } = useTheme();
+  const { theme } = useTheme();
 
   const [activeSection, setActiveSection] = useState<Section>(section as Section);
 
@@ -116,7 +112,7 @@ const Sidebar = () => {
       width={250}
       theme="dark"
     >
-      <SiderContent $collapsed={collapsed}>
+      <SiderContent $collapsed={collapsed} $theme={theme}>
         <img src='https://framerusercontent.com/images/3djlle6W5wE61QQGlOQuLh5QvQ.jpg' />
         {collapsed ? (
           <>
@@ -193,18 +189,6 @@ const Sidebar = () => {
                 <UserOutlined onClick={() => handleSectionChange('admin')} style={{ marginTop: 'auto' }} />
               </Tooltip>
             )}
-
-            <ThemeToggle>
-              <Tooltip placement="right" title={theme === 'light' ? 'Dark Mode' : 'Light Mode'}>
-                <Switch
-                  checked={theme === 'dark'}
-                  onChange={toggleTheme}
-                  checkedChildren="🌙"
-                  unCheckedChildren="☀️"
-                  size="small"
-                />
-              </Tooltip>
-            </ThemeToggle>
 
             <Tooltip placement="right" title="Log Out">
               <LogoutOutlined onClick={handleLogout} />
@@ -307,15 +291,6 @@ const Sidebar = () => {
               )}
 
             </ButtonDiv>
-
-            <ThemeToggle>
-              <Switch
-                checked={theme === 'dark'}
-                onChange={toggleTheme}
-                checkedChildren="Dark Mode"
-                unCheckedChildren="Light Mode"
-              />
-            </ThemeToggle>
 
             <ButtonDiv style={{ marginTop: 'auto' }}>
               {activeSection === 'admin' ? (
