@@ -14,6 +14,15 @@ import { config } from "./config/config";
 import { setAuthToken } from "./api/api";
 import { useTheme } from "./context/ThemeContext";
 import { lightTheme, darkTheme } from "./styles/theme";
+import Explorer from './views/Explorer';
+import ComplianceScreener from './views/ComplianceScreener';
+import Admin from './views/Admin';
+import Alerts from './views/Alerts';
+import Cases from './views/Cases';
+import BlockHam from './views/BlockHam';
+import BlockExplorer from './views/blockexplorer/BlockExplorer';
+import RiskScoring from './views/RiskScoring';
+import Settings from './views/Settings';
 
 function App() {
   const { user, setUser } = useAppContext();
@@ -73,10 +82,21 @@ function App() {
       <StyledThemeProvider theme={{ theme }}>
         {contextHolder}
         <Routes>
-          <Route path="/" element={user ? <Navigate to="/home/cases" /> : <Login />} />
-          <Route path="/login" element={user ? <Navigate to="/home/cases" /> : <Login />} />
-          <Route path="/register" element={user ? <Navigate to="/home/cases" /> : <Register />} />
-          <Route path="/home/*" element={user ? <Home /> : <Navigate to="/login" />} />
+          <Route path="/" element={<Navigate to="/home/compliance-screener" replace />} />
+          <Route path="/login" element={<Home />} />
+          <Route path="/register" element={user ? <Navigate to="/home/compliance-screener" replace /> : <Register />} />
+          <Route path="/home" element={<Home />}>
+            <Route index element={<ComplianceScreener />} />
+            <Route path="compliance-screener" element={<ComplianceScreener />} />
+            <Route path="admin" element={<Admin />} />
+            <Route path="alerts" element={<Alerts />} />
+            <Route path="cases" element={<Cases />} />
+            <Route path="explorer" element={<Explorer />} />
+            <Route path="blockham" element={<BlockHam />} />
+            <Route path="block-explorer/*" element={<BlockExplorer />} />
+            <Route path="risk-scoring" element={<RiskScoring />} />
+            <Route path="settings" element={<Settings />} />
+          </Route>
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </StyledThemeProvider>

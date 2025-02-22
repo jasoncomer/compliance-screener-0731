@@ -42,7 +42,7 @@ const RiskScoring: React.FC = () => {
 
   return (
     <ViewWrapper
-      icon={<SafetyOutlined />}
+      icon={<SafetyOutlined style={{ fontSize: '28px', color: '#C74D1B', fontWeight: 'bold' }} />}
       title="Risk Scoring Dashboard"
     >
       <Paragraph>

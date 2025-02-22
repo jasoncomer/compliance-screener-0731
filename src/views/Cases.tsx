@@ -30,7 +30,7 @@ const Cases: React.FC<Props> = () => {
 
   return (
     <ViewWrapper
-      icon={<FolderOutlined />}
+      icon={<FolderOutlined style={{ fontSize: '28px', color: '#C74D1B', fontWeight: 'bold' }} />}
       title="Cases"
     >
       <CasesTable cases={cases} setIsModalOpen={setIsModalOpen} />

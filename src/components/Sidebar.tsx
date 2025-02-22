@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import Sider from 'antd/es/layout/Sider';
 import styled from 'styled-components';
 import { Button, Tooltip } from 'antd';
-import { AlertFilled, AlertOutlined, FolderOpenOutlined, FolderOutlined, GlobalOutlined, LogoutOutlined, SafetyOutlined, SearchOutlined, SettingFilled, SettingOutlined, UserOutlined, UserSwitchOutlined } from '@ant-design/icons';
+import { AlertFilled, AlertOutlined, FolderOpenOutlined, FolderOutlined, GlobalOutlined, LogoutOutlined, SafetyOutlined, SearchOutlined, SettingFilled, SettingOutlined, UserOutlined, UserSwitchOutlined, AuditOutlined } from '@ant-design/icons';
 import { colors } from '../styles/variables';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAppContext } from '../context/AppContext';
@@ -31,7 +31,7 @@ const SiderContent = styled.div<{ $collapsed: boolean; $theme: Theme }>`
   flex-direction: column;
   height: 100%;
   color: white;
-  padding: ${props => props.$collapsed ? '0.5em' : '1em'};
+  padding: ${props => props.$collapsed ? '1em' : '1em'};
   justify-content: center;
   align-items: center;
   font-size: 2em;
@@ -90,7 +90,7 @@ const ButtonDiv = styled.div`
   }
 `;
 
-type Section = 'alerts' | 'cases' | 'explorer' | 'settings' | 'block-explorer' | 'blockham' | 'admin' | 'risk-scoring';
+type Section = 'alerts' | 'cases' | 'explorer' | 'compliance-screener' | 'settings' | 'block-explorer' | 'blockham' | 'admin' | 'risk-scoring';
 
 const Sidebar = () => {
   const nav = useNavigate();
@@ -163,6 +163,15 @@ const Sidebar = () => {
             ) : (
               <Tooltip placement="bottom" title={'Alerts'} mouseEnterDelay={1}>
                 <AlertOutlined onClick={() => handleSectionChange('alerts')} />
+              </Tooltip>
+            )}
+            {activeSection === 'compliance-screener' ? (
+              <Tooltip placement="bottom" title={'Compliance Screener'} mouseEnterDelay={1}>
+                <AuditOutlined className='active' />
+              </Tooltip>
+            ) : (
+              <Tooltip placement="bottom" title={'Compliance Screener'} mouseEnterDelay={1}>
+                <AuditOutlined onClick={() => handleSectionChange('compliance-screener')} />
               </Tooltip>
             )}
             {activeSection === 'blockham' ? (
@@ -261,6 +270,19 @@ const Sidebar = () => {
                   block
                   onClick={() => handleSectionChange('alerts')}
                   icon={<AlertOutlined />}>Alerts</Button>
+              )}
+              {activeSection === 'compliance-screener' ? (
+                <Button
+                  ghost
+                  block
+                  className='active'
+                  icon={<AuditOutlined className='active' />}>Compliance Screener</Button>
+              ) : (
+                <Button
+                  ghost
+                  block
+                  onClick={() => handleSectionChange('compliance-screener')}
+                  icon={<AuditOutlined />}>Compliance Screener</Button>
               )}
               {activeSection === 'blockham' ? (
                 <Button

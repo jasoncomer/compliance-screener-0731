@@ -36,7 +36,7 @@ const BlockExplorer: React.FC = () => {
 
   return (
     <ViewWrapper
-      icon={<GlobalOutlined />}
+      icon={<GlobalOutlined style={{ fontSize: '28px', color: '#C74D1B', fontWeight: 'bold' }} />}
       title="Block Explorer"
     >
       <Search 
