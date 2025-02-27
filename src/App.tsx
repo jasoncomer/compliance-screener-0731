@@ -23,6 +23,7 @@ import BlockHam from './views/BlockHam';
 import BlockExplorer from './views/blockexplorer/BlockExplorer';
 import RiskScoring from './views/RiskScoring';
 import Settings from './views/Settings';
+import FlowTrace from './views/FlowTrace';
 
 function App() {
   const { user, setUser } = useAppContext();
@@ -95,6 +96,7 @@ function App() {
             <Route path="blockham" element={<BlockHam />} />
             <Route path="block-explorer/*" element={<BlockExplorer />} />
             <Route path="risk-scoring" element={<RiskScoring />} />
+            <Route path="flow-trace" element={<FlowTrace />} />
             <Route path="settings" element={<Settings />} />
           </Route>
           <Route path="*" element={<Navigate to="/" />} />

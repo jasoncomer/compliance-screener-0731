@@ -57,6 +57,7 @@ const Home: React.FC = () => {
               <TabPane tab="Alerts" key="alerts" />
               <TabPane tab="Cases" key="cases" />
               <TabPane tab="VASP Entity Explorer" key="blockham" />
+              <TabPane tab="Flow Trace" key="flow-trace" />
             </Tabs>
           </div>
           <div style={{ display: 'flex', gap: '16px' }}>

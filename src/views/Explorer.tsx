@@ -3,8 +3,10 @@ import { Input, Button } from 'antd';
 import { GraphCanvas, GraphNode, GraphEdge, LayoutTypes } from 'reagraph';
 import ViewWrapper from '../components/ViewWrapper';
 import { SwapOutlined } from '@ant-design/icons';
+import { useTheme } from '../context/ThemeContext';
 
 const Explorer: React.FC = () => {
+  const { theme } = useTheme();
   const [address, setAddress] = useState('');
   const [graphNodes, setGraphNodes] = useState<GraphNode[]>([]);
   const [graphEdges, setGraphEdges] = useState<GraphEdge[]>([]);
@@ -57,14 +59,16 @@ const Explorer: React.FC = () => {
         {/* Graph Visualization */}
         <div style={{ flex: 1, position: 'relative' }}>
           {graphNodes.length > 0 ? (
-            <GraphCanvas 
-              nodes={graphNodes} 
-              edges={graphEdges} 
-              layoutType={layout} 
-              onNodeClick={(node) => handleNodeClick(node)}
-            />
+            <div style={{ backgroundColor: theme === 'light' ? '#fff' : '#1f1f1f', height: '100%' }}>
+              <GraphCanvas 
+                nodes={graphNodes} 
+                edges={graphEdges} 
+                layoutType={layout} 
+                onNodeClick={(node) => handleNodeClick(node)}
+              />
+            </div>
           ) : (
-            <div style={{ position: 'absolute', top: '50%', width: '100%', textAlign: 'center', transform: 'translateY(-50%)' }}>
+            <div style={{ position: 'absolute', top: '50%', width: '100%', textAlign: 'center', transform: 'translateY(-50%)', color: theme === 'light' ? '#000' : '#fff' }}>
               Graph visualization will appear here
             </div>
           )}
