@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { BtnDiv, FormWrapper } from '../styles/Common';
 import { Button, notification } from 'antd';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { api, setAuthToken } from '../api/api';
 import { useAppContext } from '../context/AppContext';
 import { storage } from '../utils/storage';
@@ -13,6 +13,7 @@ type NotificationPlacement = NotificationArgsProps['placement'];
 
 const Login = () => {
   const nav = useNavigate();
+  const location = useLocation();
   const { setUser } = useAppContext();
   const [notifApi, contextHolder] = notification.useNotification();
 
@@ -42,7 +43,9 @@ const Login = () => {
         setAuthToken(res.data.accessToken);
         setUser(res.data.user);
         
-        nav('/home/cases');
+        // Navigate to the saved location or default route
+        const from = (location.state as any)?.from?.pathname || '/home/cases';
+        nav(from, { replace: true });
       }
     } catch (err) {
       openNotification('topRight');

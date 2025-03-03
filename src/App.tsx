@@ -24,6 +24,7 @@ import BlockExplorer from './views/blockexplorer/BlockExplorer';
 import RiskScoring from './views/RiskScoring';
 import Settings from './views/Settings';
 import FlowTrace from './views/FlowTrace';
+import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
   const { user, setUser } = useAppContext();
@@ -84,9 +85,13 @@ function App() {
         {contextHolder}
         <Routes>
           <Route path="/" element={<Navigate to="/home/compliance-screener" replace />} />
-          <Route path="/login" element={<Home />} />
+          <Route path="/login" element={<Login />} />
           <Route path="/register" element={user ? <Navigate to="/home/compliance-screener" replace /> : <Register />} />
-          <Route path="/home" element={<Home />}>
+          <Route path="/home" element={
+            <ProtectedRoute>
+              <Home />
+            </ProtectedRoute>
+          }>
             <Route index element={<ComplianceScreener />} />
             <Route path="compliance-screener" element={<ComplianceScreener />} />
             <Route path="admin" element={<Admin />} />

@@ -1,24 +1,23 @@
 import React, { useEffect } from 'react';
-import { Layout, Tabs } from 'antd';
-import { Route, Routes, Outlet, useNavigate, useLocation, Navigate } from 'react-router-dom';
-
-import Admin from './Admin';
-import Alerts from './Alerts';
-import BlockHam from './BlockHam';
-import Cases from './Cases';
-import Explorer from './Explorer';
-import Settings from './Settings';
-import RiskScoring from './RiskScoring';
-import ComplianceScreener from './ComplianceScreener';
-import BlockExplorer from './blockexplorer/BlockExplorer';
+import { Layout, Tabs, Dropdown } from 'antd';
+import { UserOutlined, LogoutOutlined, SettingOutlined, TeamOutlined } from '@ant-design/icons';
+import { Outlet, useNavigate, useLocation } from 'react-router-dom';
+import { useAppContext } from '../context/AppContext';
 import { setAuthToken } from '../api/api';
 import { useTheme } from '../context/ThemeContext';
-
-const { Content, Header } = Layout;
-const { TabPane } = Tabs;
+import {
+  StyledLayout,
+  StyledHeader,
+  HeaderSection,
+  Logo,
+  StyledContent,
+  UserMenuButton,
+  TabsContainer
+} from '../styles/Layout';
 
 const Home: React.FC = () => {
   const { theme } = useTheme();
+  const { user, clearAppData } = useAppContext();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -42,34 +41,80 @@ const Home: React.FC = () => {
     navigate(`/home/${key}`);
   };
 
+  const handleLogout = () => {
+    clearAppData();
+    navigate('/login');
+  };
+
   return (
-    <Layout style={{ minHeight: '100vh' }}>
+    <StyledLayout>
       <Layout>
-        <Header style={{ position: 'sticky', top: 0, zIndex: 1000, background: theme === 'light' ? '#fff' : '#141414', padding: '0 24px', height: '80px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-            <img src="https://framerusercontent.com/images/3djlle6W5wE61QQGlOQuLh5QvQ.jpg" alt="Logo" style={{ height: '80px', marginTop: 0 }} />
-            <Tabs activeKey={activeKey} onChange={handleTabChange} style={{ alignSelf: 'flex-end' }}
-              tabBarStyle={{ background: theme === 'light' ? '#fff' : '#141414' }}>
-              <TabPane tab="Compliance Screener" key="compliance-screener" />
-              <TabPane tab="Explorer" key="explorer" />
-              <TabPane tab="Block Explorer" key="block-explorer" />
-              <TabPane tab="Risk Scoring" key="risk-scoring" />
-              <TabPane tab="Alerts" key="alerts" />
-              <TabPane tab="Cases" key="cases" />
-              <TabPane tab="VASP Entity Explorer" key="blockham" />
-              <TabPane tab="Flow Trace" key="flow-trace" />
-            </Tabs>
-          </div>
-          <div style={{ display: 'flex', gap: '16px' }}>
-            <a onClick={() => navigate('/home/admin')} style={{ color: '#C74D1B', cursor: 'pointer' }}>Admin</a>
-            <a onClick={() => navigate('/home/settings')} style={{ color: '#C74D1B', cursor: 'pointer' }}>Settings</a>
-          </div>
-        </Header>
-        <Content style={{ background: theme === 'light' ? '#fff' : '#141414', padding: '24px' }}>
+        <StyledHeader $theme={theme}>
+          <HeaderSection>
+            <Logo
+              src="https://framerusercontent.com/images/3djlle6W5wE61QQGlOQuLh5QvQ.jpg"
+              alt="Logo"
+              $theme={theme}
+            />
+            <TabsContainer $theme={theme}>
+              <Tabs
+                activeKey={activeKey}
+                onChange={handleTabChange}
+                items={[
+                  { key: 'compliance-screener', label: 'Compliance Screener' },
+                  { key: 'explorer', label: 'Explorer' },
+                  { key: 'block-explorer', label: 'Block Explorer' },
+                  { key: 'risk-scoring', label: 'Risk Scoring' },
+                  { key: 'alerts', label: 'Alerts' },
+                  { key: 'cases', label: 'Cases' },
+                  { key: 'blockham', label: 'VASP Entity Explorer' },
+                  { key: 'flow-trace', label: 'Flow Trace' },
+                ]}
+              />
+            </TabsContainer>
+          </HeaderSection>
+          <HeaderSection>
+            <Dropdown
+              menu={{
+                items: [
+                  {
+                    key: 'admin',
+                    label: 'Admin Panel',
+                    icon: <TeamOutlined />,
+                    onClick: () => navigate('/home/admin')
+                  },
+                  {
+                    key: 'settings',
+                    label: 'Settings',
+                    icon: <SettingOutlined />,
+                    onClick: () => navigate('/home/settings')
+                  },
+                  {
+                    type: 'divider'
+                  },
+                  {
+                    key: 'logout',
+                    label: 'Logout',
+                    icon: <LogoutOutlined />,
+                    onClick: handleLogout
+                  }
+                ]
+              }}
+              placement="bottomRight"
+              trigger={['click']}
+            >
+              <UserMenuButton $theme={theme}>
+                <UserOutlined />
+                <span>{user?.name || 'User'}</span>
+              </UserMenuButton>
+            </Dropdown>
+          </HeaderSection>
+        </StyledHeader>
+        <StyledContent $theme={theme}>
           <Outlet />
-        </Content>
+        </StyledContent>
       </Layout>
-    </Layout>
+    </StyledLayout>
   );
 };
 
