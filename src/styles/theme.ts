@@ -1,7 +1,8 @@
-import { ThemeConfig } from 'antd';
+import { ThemeConfig, theme } from 'antd';
 import { colors, lightTokens, darkTokens } from './variables';
 
 export const lightTheme: ThemeConfig = {
+  algorithm: theme.defaultAlgorithm,
   token: {
     colorPrimary: colors.primary,
     colorBgBase: lightTokens.colorBgBase,
@@ -20,10 +21,12 @@ export const lightTheme: ThemeConfig = {
     Card: {
       colorBgContainer: lightTokens.cardBg,
     },
+   
   },
 };
 
 export const darkTheme: ThemeConfig = {
+  algorithm: theme.darkAlgorithm,
   token: {
     colorPrimary: colors.primary,
     colorBgBase: darkTokens.colorBgBase,

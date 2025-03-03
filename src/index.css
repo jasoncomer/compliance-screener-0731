@@ -47,3 +47,36 @@ h1 {
   outline: none !important;
   box-shadow: none !important;
 }
+
+/* Remove white outline from all antd form controls on focus */
+.ant-select-focused .ant-select-selector,
+.ant-select-selector:focus,
+.ant-select-selector:active,
+.ant-select:not(.ant-select-disabled):hover .ant-select-selector {
+  box-shadow: none !important;
+}
+
+.ant-input:focus,
+.ant-input-focused,
+.ant-input-affix-wrapper-focused,
+.ant-select-focused .ant-select-selector {
+  border-color: #e87e4f !important;
+}
+
+pre {
+  background-color: #1f1f1f;
+  color: #e0e0e0;
+  padding: 1em;
+  border-radius: 6px;
+  overflow-x: auto;
+  font-family: monospace;
+  border: 1px solid #303030;
+}
+
+@media (prefers-color-scheme: light) {
+  pre {
+    background-color: #f5f5f5;
+    color: #1f1f1f;
+    border: 1px solid #e0e0e0;
+  }
+}

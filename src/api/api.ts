@@ -3,6 +3,7 @@ import { users } from './auth';
 import { cases } from './cases';
 import { blockchain } from './blockchain';
 import { sot } from './sot';
+import { compliance } from './compliance';
 
 const BASE_URL = process.env.NODE_ENV === 'production' ? 'https://api.blockscout.ai/api/v1' : 'http://localhost:8000/api/v1';
 
@@ -12,14 +13,19 @@ export const axiosInstance: AxiosInstance = axios.create({
 });
 
 export const setAuthToken = (token: string) => {
-  axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-}
+  if (token) {
+    axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+  } else {
+    delete axiosInstance.defaults.headers.common['Authorization'];
+  }
+};
 
 export const api = {
-  blockchain,
-  cases,
   users,
+  cases,
+  blockchain,
   sot,
+  compliance
 };
 
 // Add request interceptor to include auth token

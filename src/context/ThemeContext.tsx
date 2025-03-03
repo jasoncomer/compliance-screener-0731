@@ -7,6 +7,8 @@ interface ThemeContextType {
   toggleTheme: () => void;
 }
 
+const THEME_STORAGE_KEY = 'bs-theme';
+
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export const useTheme = () => {
@@ -19,14 +21,14 @@ export const useTheme = () => {
 
 export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [theme, setTheme] = useState<Theme>(() => {
-    const saved = localStorage.getItem('bs-theme');
+    const saved = localStorage.getItem(THEME_STORAGE_KEY);
     return (saved as Theme) || 'dark'; // Default to dark theme
   });
 
   const toggleTheme = () => {
     const newTheme = theme === 'light' ? 'dark' : 'light';
     setTheme(newTheme);
-    localStorage.setItem('theme', newTheme);
+    localStorage.setItem(THEME_STORAGE_KEY, newTheme);
   };
 
   return (

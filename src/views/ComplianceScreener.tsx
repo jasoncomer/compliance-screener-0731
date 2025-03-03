@@ -1,12 +1,28 @@
-import React, { useState } from 'react';
-import { Table, Button, Select, message, Modal, Popover } from 'antd';
+import React, { useState, useEffect } from 'react';
+import { Table, Button, Select, message, Modal, Popover, Space, Tooltip, Tag } from 'antd';
 import { useTheme } from '../context/ThemeContext';
 import ViewWrapper from '../components/ViewWrapper';
-import { AuditOutlined } from '@ant-design/icons';
+import { AuditOutlined, SettingOutlined, DatabaseOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { colors } from '../styles/variables';
+import styled from 'styled-components';
+import AddressManagement from '../components/AddressManagement';
+import { api } from '../api/api';
+import type { MonitoredAddress } from '../types/addresses';
 
 const { Option } = Select;
+
+const HeaderActions = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+`;
+
+const StyledSpace = styled(Space)`
+  display: flex;
+  align-items: center;
+`;
 
 // Define the type for a transaction record
 interface TransactionRecord {
@@ -159,11 +175,25 @@ const statusOptions = ['Needs Reviewed', 'Approved', 'Special Handling', 'Closed
 const ComplianceScreener: React.FC = () => {
   const { theme } = useTheme();
   const navigate = useNavigate();
-
   const [data, setData] = useState<TransactionRecord[]>(initialData);
   const [denom, setDenom] = useState<string>('USD');
   const [modalVisible, setModalVisible] = useState<boolean>(false);
   const [selectedEntity, setSelectedEntity] = useState<TransactionRecord | null>(null);
+  const [addressManagementVisible, setAddressManagementVisible] = useState(false);
+  const [monitoredAddresses, setMonitoredAddresses] = useState<MonitoredAddress[]>([]);
+
+  // Load monitored addresses
+  useEffect(() => {
+    const loadAddresses = async () => {
+      try {
+        const addresses = await api.compliance.getAddresses();
+        setMonitoredAddresses(addresses);
+      } catch (error) {
+        console.error('Failed to load monitored addresses:', error);
+      }
+    };
+    loadAddresses();
+  }, []);
 
   const conversionRates: { [key: string]: number } = { USD: 1, GBP: 0.75, MXN: 20 };
   const currencySymbols: { [key: string]: string } = { USD: '$', GBP: '£', MXN: 'MXN ' };
@@ -319,17 +349,31 @@ const ComplianceScreener: React.FC = () => {
   return (
     <ViewWrapper title="Compliance Screener" icon={<AuditOutlined style={{ fontSize: '28px', color: colors.attributionHover, fontWeight: 'bold' }} />}>
       <div style={{ padding: '16px' }}>
-        <p style={{ margin: 0, color: theme === 'light' ? colors.black : colors.white }}>
-          This page monitors client defined wallets for incoming transactions and calculates risk scoring. Review and update the status as needed.
-        </p>
-        <div style={{ paddingTop: '8px', paddingBottom: '8px' }}>
-          <span style={{ marginRight: '8px', color: theme === 'light' ? colors.black : colors.white }}>Display Amount in:</span>
-          <Select value={denom} onChange={(value) => setDenom(value)} style={{ width: 120 }}>
-            <Option value="USD">USD</Option>
-            <Option value="GBP">GBP</Option>
-            <Option value="MXN">MXN</Option>
-          </Select>
-        </div>
+        <HeaderActions>
+          <StyledSpace>
+            <p style={{ margin: 0, color: theme === 'light' ? colors.black : colors.white }}>
+              This page monitors client defined wallets for incoming transactions and calculates risk scoring.
+            </p>
+            <Tooltip title="Number of addresses being monitored">
+              <Tag color={colors.attributionHover}>
+                <DatabaseOutlined /> {monitoredAddresses.length} Addresses
+              </Tag>
+            </Tooltip>
+          </StyledSpace>
+          <Space>
+            <Button 
+              icon={<SettingOutlined />}
+              onClick={() => setAddressManagementVisible(true)}
+            >
+              Manage Monitored Addresses
+            </Button>
+            <Select value={denom} onChange={(value) => setDenom(value)} style={{ width: 120 }}>
+              <Option value="USD">USD</Option>
+              <Option value="GBP">GBP</Option>
+              <Option value="MXN">MXN</Option>
+            </Select>
+          </Space>
+        </HeaderActions>
         <Table
           className="compliance-table"
           dataSource={data}
@@ -338,18 +382,6 @@ const ComplianceScreener: React.FC = () => {
           sticky={{ offsetHeader: 80 }}
           style={{ background: theme === 'light' ? colors.white : colors.gray[700], color: theme === 'light' ? colors.black : colors.white }}
         />
-        <style>{`
-          .compliance-table .ant-table-tbody > tr:nth-child(even) > td {
-            background: ${theme === 'light' ? colors.gray[100] : colors.gray[600]} !important;
-          }
-          .compliance-table .ant-table-tbody > tr:nth-child(odd) > td {
-            background: ${theme === 'light' ? colors.white : colors.gray[700]} !important;
-          }
-          .status-dropdown .ant-select-item-option-selected {
-            background-color: ${theme === 'light' ? colors.white : colors.gray[800]} !important;
-            color: ${colors.attributionHover} !important;
-          }
-        `}</style>
         <Modal
           title={`Entity Explorer: ${selectedEntity ? selectedEntity.counterpartyEntity : ''}`}
           visible={modalVisible}
@@ -364,6 +396,22 @@ const ComplianceScreener: React.FC = () => {
               <p><strong>Risk Score:</strong> {selectedEntity.riskScore}</p>
             </div>
           ) : null}
+        </Modal>
+        {/* Address Management Modal */}
+        <Modal
+          title="Address Management"
+          open={addressManagementVisible}
+          onCancel={() => setAddressManagementVisible(false)}
+          width={1200}
+          footer={null}
+        >
+          <AddressManagement 
+            onClose={() => {
+              setAddressManagementVisible(false);
+              // Refresh monitored addresses after changes
+              api.compliance.getAddresses().then(setMonitoredAddresses);
+            }}
+          />
         </Modal>
       </div>
     </ViewWrapper>
