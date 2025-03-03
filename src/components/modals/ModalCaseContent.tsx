@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { Modal, Typography, Button, Table } from 'antd';
 import { ICase } from '../../typings/interfaces';

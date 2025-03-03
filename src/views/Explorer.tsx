@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Input, Button } from 'antd';
 import { GraphCanvas, GraphNode, GraphEdge, LayoutTypes } from 'reagraph';
 import ViewWrapper from '../components/ViewWrapper';
@@ -12,6 +12,10 @@ const Explorer: React.FC = () => {
   const [graphNodes, setGraphNodes] = useState<GraphNode[]>([]);
   const [graphEdges, setGraphEdges] = useState<GraphEdge[]>([]);
   const [layout, setLayout] = useState<LayoutTypes>('treeLr2d');
+
+  useEffect(() => {
+    setLayout('treeLr2d');
+  }, [theme]);
 
   // Function to load the initial node
   const loadNode = () => {

@@ -238,7 +238,7 @@ const ComplianceScreener: React.FC = () => {
       sorter: (a: TransactionRecord, b: TransactionRecord) => a.counterpartyAddress.localeCompare(b.counterpartyAddress),
       // Simple text filter
       onFilter: (value: any, record: TransactionRecord) => record.counterpartyAddress.includes(String(value)),
-      render: (text: string, record: TransactionRecord) => (
+      render: (text: string) => (
         <Popover
           content={(
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
@@ -313,7 +313,7 @@ const ComplianceScreener: React.FC = () => {
       sorter: (a: TransactionRecord, b: TransactionRecord) => a.status.localeCompare(b.status),
       filters: statusOptions.map(option => ({ text: option, value: option })),
       onFilter: (value: any, record: TransactionRecord) => record.status === String(value),
-      render: (text: string, record: TransactionRecord) => (
+      render: (_: any, record: TransactionRecord) => (
         <Select
           defaultValue={record.status}
           dropdownClassName="status-dropdown"

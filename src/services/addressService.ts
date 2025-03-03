@@ -108,6 +108,7 @@ export class AddressService {
 
   static async deleteAddress(id: string): Promise<void> {
     // TODO: Implement API call to delete address
+    console.log('deleteAddress', id);
   }
 
   static async bulkUpload(addresses: AddressUploadFormat[]): Promise<AddressUploadResponse> {

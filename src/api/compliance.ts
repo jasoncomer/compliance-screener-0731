@@ -1,4 +1,3 @@
-import { axiosInstance } from './api';
 import type { MonitoredAddress, AddressUploadFormat, AddressUploadResponse } from '../types/addresses';
 
 // Local storage keys

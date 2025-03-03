@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Input, Button, Select } from 'antd';
 import { GraphCanvas, GraphNode, GraphEdge, LayoutTypes } from 'reagraph';
 import ViewWrapper from '../components/ViewWrapper';
@@ -13,6 +13,10 @@ const FlowTrace: React.FC = () => {
   const [nodes, setNodes] = useState<GraphNode[]>([]);
   const [edges, setEdges] = useState<GraphEdge[]>([]);
   const [layout, setLayout] = useState<LayoutTypes>('treeLr2d');
+
+  useEffect(() => {
+    setLayout('treeLr2d');
+  }, [theme]);
 
   const traceFunds = () => {
     if (!query) {
