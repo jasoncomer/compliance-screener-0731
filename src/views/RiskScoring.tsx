@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Spin, Alert } from 'antd';
 import { SafetyOutlined } from '@ant-design/icons';
+import { colors } from '../styles/variables';
 import { calculateRiskScore } from '../api/riskScoring';
 import { RiskScoringResponse } from '../types/riskScoring';
 import ViewWrapper from '../components/ViewWrapper';
@@ -35,14 +36,14 @@ const RiskScoring: React.FC = () => {
   };
 
   const getRiskColor = (score: number) => {
-    if (score > 70) return '#cf1322';
-    if (score > 40) return '#faad14';
-    return '#3f8600';
+    if (score > 70) return colors.danger;
+    if (score > 40) return colors.warning;
+    return colors.success;
   };
 
   return (
     <ViewWrapper
-      icon={<SafetyOutlined style={{ fontSize: '28px', color: '#C74D1B', fontWeight: 'bold' }} />}
+      icon={<SafetyOutlined style={{ fontSize: '28px', color: colors.attributionHover, fontWeight: 'bold' }} />}
       title="Risk Scoring Dashboard"
     >
       <Paragraph>

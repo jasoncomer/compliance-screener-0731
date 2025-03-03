@@ -4,6 +4,7 @@ import { GraphCanvas, GraphNode, GraphEdge, LayoutTypes } from 'reagraph';
 import ViewWrapper from '../components/ViewWrapper';
 import { FundOutlined } from '@ant-design/icons';
 import { useTheme } from '../context/ThemeContext';
+import { colors } from '../styles/variables';
 
 const FlowTrace: React.FC = () => {
   const { theme } = useTheme();
@@ -33,7 +34,7 @@ const FlowTrace: React.FC = () => {
   };
 
   return (
-    <ViewWrapper title="Flow Trace" icon={<FundOutlined style={{ fontSize: '28px', color: '#C74D1B', fontWeight: 'bold' }} />}>
+    <ViewWrapper title="Flow Trace" icon={<FundOutlined style={{ fontSize: '28px', color: colors.attributionHover, fontWeight: 'bold' }} />}>
       <div style={{ marginBottom: 20, display: 'flex', alignItems: 'center' }}>
         <Select
           value={blockchain}
@@ -58,7 +59,7 @@ const FlowTrace: React.FC = () => {
         />
         <Button type="primary" onClick={traceFunds}>Trace Funds</Button>
       </div>
-      <div style={{ height: '500px', backgroundColor: theme === 'light' ? '#fff' : '#1f1f1f', padding: 10 }}>
+      <div style={{ height: '500px', backgroundColor: theme === 'light' ? colors.white : colors.gray[800], padding: 10 }}>
         {nodes.length > 0 ? (
           <GraphCanvas 
             nodes={nodes} 
@@ -67,7 +68,7 @@ const FlowTrace: React.FC = () => {
             onNodeClick={(node) => console.log('Clicked node:', node)}
           />
         ) : (
-          <div style={{ textAlign: 'center', marginTop: '40px', color: theme === 'light' ? '#000' : '#fff' }}>
+          <div style={{ textAlign: 'center', marginTop: '40px', color: theme === 'light' ? colors.black : colors.white }}>
             Fund tracing graph will appear here.
           </div>
         )}

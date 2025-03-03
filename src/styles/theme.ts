@@ -1,24 +1,24 @@
 import { ThemeConfig } from 'antd';
-import { colors } from './variables';
+import { colors, lightTokens, darkTokens } from './variables';
 
 export const lightTheme: ThemeConfig = {
   token: {
     colorPrimary: colors.primary,
-    colorBgBase: '#ffffff',
-    colorTextBase: '#000000',
-    colorBgContainer: '#ffffff',
-    colorBgElevated: '#ffffff',
-    colorBgLayout: '#f0f2f5',
-    colorBorder: '#d9d9d9',
-    colorSplit: '#f0f0f0',
+    colorBgBase: lightTokens.colorBgBase,
+    colorTextBase: lightTokens.colorTextBase,
+    colorBgContainer: lightTokens.colorBgContainer,
+    colorBgElevated: lightTokens.colorBgElevated,
+    colorBgLayout: lightTokens.colorBgLayout,
+    colorBorder: lightTokens.colorBorder,
+    colorSplit: lightTokens.colorSplit,
   },
   components: {
     Layout: {
-      siderBg: '#ffffff',
-      headerBg: '#ffffff',
+      siderBg: lightTokens.siderBg,
+      headerBg: lightTokens.headerBg,
     },
     Card: {
-      colorBgContainer: '#ffffff',
+      colorBgContainer: lightTokens.cardBg,
     },
   },
 };
@@ -26,21 +26,21 @@ export const lightTheme: ThemeConfig = {
 export const darkTheme: ThemeConfig = {
   token: {
     colorPrimary: colors.primary,
-    colorBgBase: '#141414',
-    colorTextBase: '#ffffff',
-    colorBgContainer: '#1f1f1f',
-    colorBgElevated: '#1f1f1f',
-    colorBgLayout: '#000000',
-    colorBorder: '#434343',
-    colorSplit: '#303030',
+    colorBgBase: darkTokens.colorBgBase,
+    colorTextBase: darkTokens.colorTextBase,
+    colorBgContainer: darkTokens.colorBgContainer,
+    colorBgElevated: darkTokens.colorBgElevated,
+    colorBgLayout: darkTokens.colorBgLayout,
+    colorBorder: darkTokens.colorBorder,
+    colorSplit: darkTokens.colorSplit,
   },
   components: {
     Layout: {
-      siderBg: '#141414',
-      headerBg: '#141414',
+      siderBg: darkTokens.siderBg,
+      headerBg: darkTokens.headerBg,
     },
     Card: {
-      colorBgContainer: '#1f1f1f',
+      colorBgContainer: darkTokens.cardBg,
     },
   },
 }; 

@@ -4,6 +4,7 @@ import { useTheme } from '../context/ThemeContext';
 import ViewWrapper from '../components/ViewWrapper';
 import { AuditOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
+import { colors } from '../styles/variables';
 
 const { Option } = Select;
 
@@ -211,9 +212,9 @@ const ComplianceScreener: React.FC = () => {
         <Popover
           content={(
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <div style={{ cursor: 'pointer', color: '#C74D1B' }} onClick={() => navigate('/home/explorer')}>Explorer</div>
-              <div style={{ cursor: 'pointer', color: '#C74D1B' }} onClick={() => navigate('/home/block-explorer')}>Block Explorer</div>
-              <div style={{ cursor: 'pointer', color: '#C74D1B' }} onClick={() => navigate('/home/risk-scoring')}>Risk Scoring</div>
+              <div style={{ cursor: 'pointer', color: colors.attributionHover }} onClick={() => navigate('/home/explorer')}>Explorer</div>
+              <div style={{ cursor: 'pointer', color: colors.attributionHover }} onClick={() => navigate('/home/block-explorer')}>Block Explorer</div>
+              <div style={{ cursor: 'pointer', color: colors.attributionHover }} onClick={() => navigate('/home/risk-scoring')}>Risk Scoring</div>
             </div>
           )}
           title={`View ${text} in:`}
@@ -230,7 +231,7 @@ const ComplianceScreener: React.FC = () => {
       sorter: (a: TransactionRecord, b: TransactionRecord) => a.counterpartyEntity.localeCompare(b.counterpartyEntity),
       onFilter: (value: any, record: TransactionRecord) => record.counterpartyEntity.includes(String(value)),
       render: (text: string, record: TransactionRecord) => (
-        <a onClick={() => handleOpenEntity(record)} style={{ cursor: 'pointer', color: '#C74D1B', fontWeight: 'bold' }}>{text}</a>
+        <a onClick={() => handleOpenEntity(record)} style={{ cursor: 'pointer', color: colors.attributionHover, fontWeight: 'bold' }}>{text}</a>
       )
     },
     {
@@ -310,19 +311,19 @@ const ComplianceScreener: React.FC = () => {
       title: 'Action',
       key: 'action',
       render: (_: any, record: TransactionRecord) => (
-        <Button type="link" onClick={() => handleUpdate(record.id)} style={{ color: '#C74D1B', fontWeight: 'bold' }}>Update</Button>
+        <Button type="link" onClick={() => handleUpdate(record.id)} style={{ color: colors.attributionHover, fontWeight: 'bold' }}>Update</Button>
       )
     }
   ];
 
   return (
-    <ViewWrapper title="Compliance Screener" icon={<AuditOutlined style={{ fontSize: '28px', color: '#C74D1B', fontWeight: 'bold' }} />}>
+    <ViewWrapper title="Compliance Screener" icon={<AuditOutlined style={{ fontSize: '28px', color: colors.attributionHover, fontWeight: 'bold' }} />}>
       <div style={{ padding: '16px' }}>
-        <p style={{ margin: 0, color: theme === 'light' ? '#000' : '#fff' }}>
+        <p style={{ margin: 0, color: theme === 'light' ? colors.black : colors.white }}>
           This page monitors client defined wallets for incoming transactions and calculates risk scoring. Review and update the status as needed.
         </p>
         <div style={{ paddingTop: '8px', paddingBottom: '8px' }}>
-          <span style={{ marginRight: '8px', color: theme === 'light' ? '#000' : '#fff' }}>Display Amount in:</span>
+          <span style={{ marginRight: '8px', color: theme === 'light' ? colors.black : colors.white }}>Display Amount in:</span>
           <Select value={denom} onChange={(value) => setDenom(value)} style={{ width: 120 }}>
             <Option value="USD">USD</Option>
             <Option value="GBP">GBP</Option>
@@ -335,18 +336,18 @@ const ComplianceScreener: React.FC = () => {
           columns={columns}
           rowKey="id"
           sticky={{ offsetHeader: 80 }}
-          style={{ background: theme === 'light' ? '#fff' : '#444', color: theme === 'light' ? '#000' : '#fff' }}
+          style={{ background: theme === 'light' ? colors.white : colors.gray[700], color: theme === 'light' ? colors.black : colors.white }}
         />
         <style>{`
           .compliance-table .ant-table-tbody > tr:nth-child(even) > td {
-            background: ${theme === 'light' ? '#f5f5f5' : '#555'} !important;
+            background: ${theme === 'light' ? colors.gray[100] : colors.gray[600]} !important;
           }
           .compliance-table .ant-table-tbody > tr:nth-child(odd) > td {
-            background: ${theme === 'light' ? '#fff' : '#444'} !important;
+            background: ${theme === 'light' ? colors.white : colors.gray[700]} !important;
           }
           .status-dropdown .ant-select-item-option-selected {
-            background-color: ${theme === 'light' ? '#fff0e6' : '#2a2a2a'} !important;
-            color: #C74D1B !important;
+            background-color: ${theme === 'light' ? colors.white : colors.gray[800]} !important;
+            color: ${colors.attributionHover} !important;
           }
         `}</style>
         <Modal
@@ -356,7 +357,7 @@ const ComplianceScreener: React.FC = () => {
           footer={null}
         >
           {selectedEntity ? (
-            <div style={{ color: theme === 'light' ? '#000' : '#fff' }}>
+            <div style={{ color: theme === 'light' ? colors.black : colors.white }}>
               <p><strong>Entity:</strong> {selectedEntity.counterpartyEntity}</p>
               <p><strong>Address:</strong> {selectedEntity.counterpartyAddress}</p>
               <p><strong>Blockchain:</strong> {selectedEntity.blockchain}</p>

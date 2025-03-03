@@ -3,6 +3,7 @@ import { AlertOutlined } from '@ant-design/icons';
 import ViewWrapper from '../components/ViewWrapper';
 import { Typography, Table, Tag, Input, Select, Space, Button, Collapse } from 'antd';
 import AlertConfig from './AlertConfig';
+import { colors } from '../styles/variables';
 
 const { Paragraph } = Typography;
 const { Option } = Select;
@@ -133,7 +134,7 @@ const Alerts: React.FC = () => {
 
   return (
     <ViewWrapper
-      icon={<AlertOutlined style={{ fontSize: '28px', color: '#C74D1B', fontWeight: 'bold' }} />}
+      icon={<AlertOutlined style={{ fontSize: '28px', color: colors.attributionHover, fontWeight: 'bold' }} />}
       title="Alerts"
     >
       <Paragraph>
@@ -143,7 +144,7 @@ const Alerts: React.FC = () => {
 
       {/* Alert Configuration Section */}
       <Collapse defaultActiveKey={[]} expandIconPosition="right">
-        <Collapse.Panel header="Alert Configuration" key="1" style={{ border: '1px solid #C74D1B', backgroundColor: '#0D0D0D', color: '#F8F5F2' }} className="no-collapse-padding">
+        <Collapse.Panel header="Alert Configuration" key="1" style={{ border: `1px solid ${colors.attributionHover}`, backgroundColor: colors.gray[900], color: colors.gray[50] }} className="no-collapse-padding">
           <AlertConfig />
         </Collapse.Panel>
       </Collapse>

@@ -12,6 +12,7 @@ import { fetchSOT } from '../store/slices/sotSlice';
 import { SOT } from '../typings/interfaces';
 import { EEntityType } from '../typings/SOT';
 import { getEntityTypeLabel } from '../utils/display-labels';
+import { colors } from '../styles/variables';
 
 
 const SearchWrapper = styled.div`
@@ -30,21 +31,21 @@ const OptionContent = styled.div`
 
 const GroupHeader = styled.div`
   padding: 12px 12px 8px;
-  background-color: ${({ theme }) => theme.theme === 'dark' ? '#4b4b4b' : '#fafafa'};
-  border-bottom: 1px solid ${({ theme }) => theme.theme === 'dark' ? '#303030' : '#f0f0f0'};
+  background-color: ${({ theme }) => theme.theme === 'dark' ? colors.gray[700] : colors.gray[50]};
+  border-bottom: 1px solid ${({ theme }) => theme.theme === 'dark' ? colors.gray[700] : colors.gray[200]};
   margin-top: 4px;
   
   .header-title {
     font-size: 14px;
     font-weight: 600;
-    color: ${({ theme }) => theme.theme === 'dark' ? '#ffffff' : '#666666'};
+    color: ${({ theme }) => theme.theme === 'dark' ? colors.white : colors.gray[600]};
     text-transform: uppercase;
     letter-spacing: 0.5px;
   }
 
   .result-count {
     font-size: 12px;
-    color: ${({ theme }) => theme.theme === 'dark' ? '#a0a0a0' : '#999999'};
+    color: ${({ theme }) => theme.theme === 'dark' ? colors.gray[400] : colors.gray[500]};
     margin-left: 8px;
   }
 `;
@@ -175,7 +176,7 @@ const BlockHam: React.FC = () => {
                 <OptionContent>
                   <div>{item.autocompleteDisplayTitle}</div>
                   {item.associate_country_1 && (
-                    <small style={{ color: '#666' }}>
+                    <small style={{ color: colors.gray[600] }}>
                       {item.entity_type && `${getEntityTypeLabel(item.entity_type as EEntityType)} • `}
                       {item.associate_country_1}
                     </small>
@@ -201,7 +202,7 @@ const BlockHam: React.FC = () => {
 
   return (
     <ViewWrapper
-      icon={<DatabaseOutlined style={{ fontSize: '28px', color: '#C74D1B', fontWeight: 'bold' }} />}
+      icon={<DatabaseOutlined style={{ fontSize: '28px', color: colors.attributionHover, fontWeight: 'bold' }} />}
       title="Entity Explorer"
     >
       <SearchWrapper>

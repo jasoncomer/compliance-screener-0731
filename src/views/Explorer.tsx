@@ -4,6 +4,7 @@ import { GraphCanvas, GraphNode, GraphEdge, LayoutTypes } from 'reagraph';
 import ViewWrapper from '../components/ViewWrapper';
 import { SwapOutlined } from '@ant-design/icons';
 import { useTheme } from '../context/ThemeContext';
+import { colors } from '../styles/variables';
 
 const Explorer: React.FC = () => {
   const { theme } = useTheme();
@@ -44,10 +45,10 @@ const Explorer: React.FC = () => {
   };
 
   return (
-    <ViewWrapper title="Explorer" icon={<SwapOutlined style={{ fontSize: '28px', color: '#C74D1B', fontWeight: 'bold' }} />}>
+    <ViewWrapper title="Explorer" icon={<SwapOutlined style={{ fontSize: '28px', color: colors.attributionHover, fontWeight: 'bold' }} />}>
       <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
         {/* Search Bar */}
-        <div style={{ padding: '20px', borderBottom: '1px solid #ccc', display: 'flex', alignItems: 'center' }}>
+        <div style={{ padding: '20px', borderBottom: `1px solid ${colors.gray[400]}`, display: 'flex', alignItems: 'center' }}>
           <Input 
             placeholder="Enter Address" 
             value={address} 
@@ -59,7 +60,7 @@ const Explorer: React.FC = () => {
         {/* Graph Visualization */}
         <div style={{ flex: 1, position: 'relative' }}>
           {graphNodes.length > 0 ? (
-            <div style={{ backgroundColor: theme === 'light' ? '#fff' : '#1f1f1f', height: '100%' }}>
+            <div style={{ backgroundColor: theme === 'light' ? colors.white : colors.gray[800], height: '100%' }}>
               <GraphCanvas 
                 nodes={graphNodes} 
                 edges={graphEdges} 
@@ -68,7 +69,7 @@ const Explorer: React.FC = () => {
               />
             </div>
           ) : (
-            <div style={{ position: 'absolute', top: '50%', width: '100%', textAlign: 'center', transform: 'translateY(-50%)', color: theme === 'light' ? '#000' : '#fff' }}>
+            <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', color: theme === 'light' ? colors.black : colors.white }}>
               Graph visualization will appear here
             </div>
           )}
