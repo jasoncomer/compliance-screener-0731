@@ -1,0 +1,1 @@
+export type SettingSection = 'profile' | 'preferences' | 'members' | 'notifications' | 'security'; 

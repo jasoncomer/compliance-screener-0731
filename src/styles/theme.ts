@@ -21,7 +21,9 @@ export const lightTheme: ThemeConfig = {
     Card: {
       colorBgContainer: lightTokens.cardBg,
     },
-   
+    Button: {
+      controlHeight: 40,
+    },
   },
 };
 
@@ -44,6 +46,9 @@ export const darkTheme: ThemeConfig = {
     },
     Card: {
       colorBgContainer: darkTokens.cardBg,
+    },
+    Button: {
+      controlHeight: 40,
     },
   },
 }; 

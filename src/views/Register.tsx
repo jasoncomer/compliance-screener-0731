@@ -50,7 +50,7 @@ const Register = () => {
         // save to local storage
         localStorage.setItem('accessToken', accessToken);
         localStorage.setItem('user', JSON.stringify(user));
-        window.location.href = '/home/cases';
+        window.location.href = '/welcome';
       })
       .catch((err) => {
         console.error(err);

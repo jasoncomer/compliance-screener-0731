@@ -25,6 +25,7 @@ import RiskScoring from './views/RiskScoring';
 import Settings from './views/Settings';
 import FlowTrace from './views/FlowTrace';
 import ProtectedRoute from './components/ProtectedRoute';
+import Welcome from './views/Welcome/index';
 
 function App() {
   const { user, setUser } = useAppContext();
@@ -87,6 +88,11 @@ function App() {
           <Route path="/" element={<Navigate to="/home/compliance-screener" replace />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={user ? <Navigate to="/home/compliance-screener" replace /> : <Register />} />
+          <Route path="/welcome" element={
+            <ProtectedRoute>
+              <Welcome />
+            </ProtectedRoute>
+          } />
           <Route path="/home" element={
             <ProtectedRoute>
               <Home />

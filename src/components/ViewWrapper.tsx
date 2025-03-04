@@ -1,36 +1,65 @@
 import React, { ReactNode } from 'react';
 import { useTheme } from '../context/ThemeContext';
+import styled from 'styled-components';
 
+const ViewContainer = styled.div<{ $theme: 'light' | 'dark'; $fullWidth?: boolean }>`
+  margin-top: 0;
+  padding: ${props => props.$fullWidth ? '0' : '24px'};
+  padding-top: 0;
+  background: ${props => props.$theme === 'light' ? '#fff' : '#141414'};
+  border-radius: 4px;
+  width: 100%;
+  height: 100%;
+`;
+
+const TitleContainer = styled.div`
+  display: flex;
+  align-items: center;
+  margin-bottom: 16px;
+  margin-top: 0;
+  padding: 24px 24px 0;
+
+  .icon {
+    margin-right: 8px;
+  }
+
+  h2 {
+    margin: 0;
+    font-size: 28px;
+  }
+`;
 
 interface ViewWrapperProps {
   icon?: ReactNode;
   title: string;
   children: ReactNode;
   className?: string;
+  fullWidth?: boolean;
 }
 
-const ViewWrapper: React.FC<ViewWrapperProps> = ({ icon, title, children, className }) => {
+const ViewWrapper: React.FC<ViewWrapperProps> = ({ 
+  icon, 
+  title, 
+  children, 
+  className,
+  fullWidth = false
+}) => {
   const { theme } = useTheme();
   
   return (
-    <div
+    <ViewContainer 
       className={`view-wrapper ${className || ''}`}
-      style={{
-        marginTop: 0,
-        padding: '24px',
-        paddingTop: 0,
-        background: theme === 'light' ? '#fff' : '#141414',
-        borderRadius: '4px'
-      }}
+      $theme={theme}
+      $fullWidth={fullWidth}
     >
       {title && (
-        <div style={{ display: 'flex', alignItems: 'center', marginBottom: '16px', marginTop: 0 }}>
-          {icon && <span style={{ marginRight: '8px' }}>{icon}</span>}
-          <h2 style={{ marginTop: 0, marginBottom: 0, fontSize: '28px' }}>{title}</h2>
-        </div>
+        <TitleContainer>
+          {icon && <span className="icon">{icon}</span>}
+          <h2>{title}</h2>
+        </TitleContainer>
       )}
       {children}
-    </div>
+    </ViewContainer>
   );
 };
 
