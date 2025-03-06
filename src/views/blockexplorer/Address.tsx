@@ -31,6 +31,50 @@ const SummaryWrapper = styled.div`
   }
 `;
 
+const AddressInfoWrapper = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  
+  .address-row {
+    display: flex;
+    align-items: center;
+    word-break: break-all;
+    
+    .address-value {
+      font-family: monospace;
+      font-size: 1rem;
+      font-weight: 500;
+    }
+  }
+  
+  .attribution-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 16px;
+    margin-top: 8px;
+    
+    .attribution-item {
+      display: flex;
+      flex-direction: column;
+      padding: 12px;
+      background-color: ${props => props.theme.theme === 'dark' ? '#2a2a2a' : '#f5f5f5'};
+      border-radius: 4px;
+      
+      .label {
+        font-size: 0.85rem;
+        color: ${props => props.theme.theme === 'dark' ? '#a0a0a0' : '#666666'};
+        margin-bottom: 4px;
+      }
+      
+      .value {
+        font-weight: 500;
+        font-size: 1rem;
+      }
+    }
+  }
+`;
+
 const Address: React.FC = () => {
   const { address } = useParams();
   const { theme } = useTheme();
@@ -40,7 +84,7 @@ const Address: React.FC = () => {
   const [currentPage, setCurrentPage] = React.useState<number>(1);
   const [isLoading, setIsLoading] = React.useState<boolean>(false);
   const itemsPerPage = 20;
-  const { fetchAttributions } = useAttribution();
+  const { fetchAttributions, attributions } = useAttribution();
   const [summary, setSummary] = React.useState<{
     balance: number;
     total_received: number;
@@ -73,7 +117,7 @@ const Address: React.FC = () => {
           ...txs.flatMap(tx => tx.outputs.map(o => o.addr))
         ]);
         fetchAttributions(Array.from(uniqueAddresses));
-        
+
         // get total received and spent and balance
         const tmpSummary = await api.blockchain.getAddressSummary(address);
         setSummary({
@@ -97,15 +141,49 @@ const Address: React.FC = () => {
     }
   };
 
+  // Check if attribution data exists for this address
+  const hasAttributionData = address && (
+    attributions[address]?.entity ||
+    attributions[address]?.bo ||
+    attributions[address]?.custodian
+  );
+
   return (
     <>
       <BsWrapper>
         <BsBlock theme={{ theme }}>
           <h3>Address</h3>
           <hr />
-          <div>
-            {address}
-          </div>
+          <AddressInfoWrapper theme={{ theme }}>
+            <div className="address-row">
+              <div className="address-value">{address}</div>
+            </div>
+
+            {hasAttributionData && (
+              <div className="attribution-grid">
+                {attributions[address]?.entity && (
+                  <div className="attribution-item">
+                    <div className="label">Entity</div>
+                    <div className="value">{attributions[address].entity}</div>
+                  </div>
+                )}
+
+                {attributions[address]?.bo && (attributions[address]?.bo !== attributions[address]?.entity) && (
+                  <div className="attribution-item">
+                    <div className="label">Beneficial Owner</div>
+                    <div className="value">{attributions[address].bo}</div>
+                  </div>
+                )}
+
+                {attributions[address]?.custodian && (
+                  <div className="attribution-item">
+                    <div className="label">Custodian</div>
+                    <div className="value">{attributions[address].custodian}</div>
+                  </div>
+                )}
+              </div>
+            )}
+          </AddressInfoWrapper>
         </BsBlock>
 
         <BsBlock theme={{ theme }}>

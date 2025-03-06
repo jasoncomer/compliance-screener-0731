@@ -30,7 +30,7 @@ export const HeaderSection = styled.div`
 `;
 
 export const Logo = styled.img<{ $theme: Theme }>`
-  height: 40px;
+  height: 50px;
   margin-top: 0;
   filter: ${props => props.$theme === 'dark' ? 'brightness(0.9)' : 'none'};
 `;

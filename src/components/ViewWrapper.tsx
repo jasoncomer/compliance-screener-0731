@@ -4,7 +4,6 @@ import styled from 'styled-components';
 
 const ViewContainer = styled.div<{ $theme: 'light' | 'dark'; $fullWidth?: boolean }>`
   margin-top: 0;
-  padding: ${props => props.$fullWidth ? '0' : '24px'};
   padding-top: 0;
   background: ${props => props.$theme === 'light' ? '#fff' : '#141414'};
   border-radius: 4px;
@@ -17,7 +16,6 @@ const TitleContainer = styled.div`
   align-items: center;
   margin-bottom: 16px;
   margin-top: 0;
-  padding: 24px 24px 0;
 
   .icon {
     margin-right: 8px;

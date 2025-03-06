@@ -3,7 +3,6 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Spin, Modal, message } from 'antd';
 import { TeamOutlined, UserAddOutlined, ArrowRightOutlined } from '@ant-design/icons';
 import { useTheme } from '../../context/ThemeContext';
-import ViewWrapper from '../../components/ViewWrapper';
 import OptionCard from './components/OptionCard';
 import CreateOrgForm from './components/CreateOrgForm';
 import JoinOrgForm from './components/JoinOrgForm';

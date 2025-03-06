@@ -1,5 +1,6 @@
 import styled, { css, keyframes } from 'styled-components';
 import { Card } from 'antd';
+import { colors } from '../../styles/variables';
 
 const transitionLength = '0.5s';
 
@@ -81,9 +82,7 @@ export const WelcomeHeader = styled.div`
     font-size: 32px;
     margin: 0 0 16px 0;
     font-weight: 600;
-    background: linear-gradient(120deg, #2980b9, #3498db);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
+    color: ${colors.primary};
   }
 
   p {
@@ -116,7 +115,7 @@ export const ActionButtons = styled.div`
 export const OptionCard = styled.div<{ selected?: boolean; theme: 'dark' | 'light' }>`
   padding: 32px;
   border: 2px solid ${props => props.selected
-    ? props.theme === 'dark' ? '#3498db' : '#2980b9'
+    ? props.theme === 'dark' ? colors.primary : colors.primaryDark
     : props.theme === 'dark' ? '#2d2d2d' : '#e0e0e0'
   };
   border-radius: 12px;
@@ -126,7 +125,7 @@ export const OptionCard = styled.div<{ selected?: boolean; theme: 'dark' | 'ligh
   background: ${props => props.theme === 'dark' ? '#1f1f1f' : 'white'};
 
   &:hover {
-    border-color: ${props => props.theme === 'dark' ? '#3498db' : '#2980b9'};
+    border-color: ${props => props.theme === 'dark' ? colors.primary : colors.primaryDark};
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   }
@@ -141,7 +140,7 @@ export const OptionCard = styled.div<{ selected?: boolean; theme: 'dark' | 'ligh
 
     .anticon {
       font-size: 24px;
-      color: ${props => props.theme === 'dark' ? '#3498db' : '#2980b9'};
+      color: ${props => props.theme === 'dark' ? colors.primary : colors.primaryDark};
     }
   }
 
@@ -168,6 +167,17 @@ export const FormContainer = styled.div`
   .ant-btn-link {
     margin: -8px 0 24px -8px;
     padding: 8px;
+    color: ${props => props.theme.theme === 'dark' ? colors.primary : colors.primaryDark};
+    transition: all ${transitionLength} ease;
+    border-radius: 6px;
+
+    &:hover {
+      color: ${props => props.theme.theme === 'dark' ? colors.primaryDark : colors.primary};
+      background: ${props => props.theme.theme === 'dark' 
+        ? `${colors.primary}15` 
+        : `${colors.primaryDark}15`
+      };
+    }
   }
 
   .ant-form-item-label > label {

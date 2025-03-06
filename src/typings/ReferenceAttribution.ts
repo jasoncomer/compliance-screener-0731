@@ -1,7 +1,8 @@
 export interface IAttribution {
   addr: string;
-  attribution: string;
-  cospend_id: string;
+  entity: string;
+  bo: string;
+  custodian: string;
 }
 
 export interface IAttributionMap {

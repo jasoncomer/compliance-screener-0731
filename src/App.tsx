@@ -14,7 +14,6 @@ import { config } from "./config/config";
 import { setAuthToken } from "./api/api";
 import { useTheme } from "./context/ThemeContext";
 import { lightTheme, darkTheme } from "./styles/theme";
-import Explorer from './views/Explorer';
 import ComplianceScreener from './views/ComplianceScreener';
 import Admin from './views/Admin';
 import Alerts from './views/Alerts';
@@ -103,7 +102,6 @@ function App() {
             <Route path="admin" element={<Admin />} />
             <Route path="alerts" element={<Alerts />} />
             <Route path="cases" element={<Cases />} />
-            <Route path="explorer" element={<Explorer />} />
             <Route path="blockham" element={<BlockHam />} />
             <Route path="block-explorer/*" element={<BlockExplorer />} />
             <Route path="risk-scoring" element={<RiskScoring />} />

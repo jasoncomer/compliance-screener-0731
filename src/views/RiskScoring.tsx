@@ -75,7 +75,7 @@ const RiskScoring: React.FC = () => {
       )}
 
       {riskScores && !loading && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
           <RiskScoreCards riskScores={riskScores} getRiskColor={getRiskColor} />
           <RiskDetailsTable riskScores={riskScores} />
         </div>

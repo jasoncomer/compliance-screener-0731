@@ -65,9 +65,9 @@ const MembersSection: React.FC<MembersSectionProps> = ({
     {
       title: 'Member',
       dataIndex: ['user', 'name'],
-      render: (name: string, record: IMember) => (
+      render: (_: string, record: IMember) => (
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span>{name}</span>
+          <span>{record.user?.name || record.email || 'Unknown'}</span>
           {record.status === 'pending' && (
             <Tag color="orange">Pending</Tag>
           )}
@@ -77,6 +77,7 @@ const MembersSection: React.FC<MembersSectionProps> = ({
     {
       title: 'Email',
       dataIndex: ['user', 'email'],
+      render: (_: string, record: IMember) => record.user?.email || record.email || 'N/A',
     },
     {
       title: 'Role',
@@ -85,8 +86,13 @@ const MembersSection: React.FC<MembersSectionProps> = ({
         <Select
           value={role}
           style={{ width: 120 }}
-          onChange={(newRole: MemberRole) => onUpdateMemberRole?.(record.user._id!, newRole)}
-          disabled={record.user._id === currentUser?._id}
+          onChange={(newRole: MemberRole) => {
+            const memberId = record.user?._id;
+            if (memberId) {
+              onUpdateMemberRole?.(memberId, newRole);
+            }
+          }}
+          disabled={!record.user?._id || record.user._id === currentUser?._id}
         >
           <Select.Option value="manager">Manager</Select.Option>
           <Select.Option value="team_member">Team Member</Select.Option>
@@ -105,8 +111,13 @@ const MembersSection: React.FC<MembersSectionProps> = ({
         <Button 
           danger
           type="link"
-          disabled={record.user._id === currentUser?._id}
-          onClick={() => onRemoveMember?.(record.user._id!)}
+          disabled={!record.user?._id || record.user._id === currentUser?._id}
+          onClick={() => {
+            const memberId = record.user?._id;
+            if (memberId) {
+              onRemoveMember?.(memberId);
+            }
+          }}
         >
           Remove
         </Button>
@@ -193,7 +204,7 @@ const MembersSection: React.FC<MembersSectionProps> = ({
       <Table
         dataSource={members}
         columns={columns}
-        rowKey={(record) => record.user._id!}
+        rowKey={(record) => record.user?._id || record.email || record.joinedAt}
         style={{ marginTop: '24px' }}
       />
 

@@ -4,6 +4,7 @@ import { cases } from './cases';
 import { blockchain } from './blockchain';
 import { sot } from './sot';
 import { compliance } from './compliance';
+import { organizations } from './organizations';
 
 const BASE_URL = process.env.NODE_ENV === 'production' ? 'https://api.blockscout.ai/api/v1' : 'http://localhost:8000/api/v1';
 
@@ -25,7 +26,8 @@ export const api = {
   cases,
   blockchain,
   sot,
-  compliance
+  compliance,
+  organizations
 };
 
 // Add request interceptor to include auth token

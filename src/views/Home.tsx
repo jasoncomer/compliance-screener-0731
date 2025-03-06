@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { Layout, Tabs, Dropdown } from 'antd';
 import { UserOutlined, LogoutOutlined, SettingOutlined, TeamOutlined } from '@ant-design/icons';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
+import BSLogo from '../assets/darkmode_logo.png';
 import { useAppContext } from '../context/AppContext';
 import { setAuthToken } from '../api/api';
 import { useTheme } from '../context/ThemeContext';
@@ -52,7 +53,7 @@ const Home: React.FC = () => {
         <StyledHeader $theme={theme}>
           <HeaderSection>
             <Logo
-              src="https://framerusercontent.com/images/3djlle6W5wE61QQGlOQuLh5QvQ.jpg"
+              src={BSLogo}
               alt="Logo"
               $theme={theme}
             />
@@ -62,7 +63,6 @@ const Home: React.FC = () => {
                 onChange={handleTabChange}
                 items={[
                   { key: 'compliance-screener', label: 'Compliance Screener' },
-                  { key: 'explorer', label: 'Explorer' },
                   { key: 'block-explorer', label: 'Block Explorer' },
                   { key: 'risk-scoring', label: 'Risk Scoring' },
                   { key: 'alerts', label: 'Alerts' },

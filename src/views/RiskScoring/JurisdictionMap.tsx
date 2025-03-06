@@ -1,7 +1,10 @@
 import React from 'react';
 import { Card, Typography, Empty } from 'antd';
 import { ComposableMap, Geographies, Geography, Marker } from 'react-simple-maps';
+import { UserOutlined, GlobalOutlined } from '@ant-design/icons';
 import styled from 'styled-components';
+import globeSvg from '../../assets/globe.svg';
+import { colors } from '../../styles/variables';
 
 const { Text } = Typography;
 
@@ -20,6 +23,12 @@ const StyledCard = styled(Card)`
   .ant-card-body {
     padding: 24px;
   }
+`;
+
+const Globe = styled.img`
+  width: 60px;
+  height: 60px;
+  fill: ${colors.primary};
 `;
 
 // Map of country names to their approximate center coordinates [longitude, latitude]
@@ -50,8 +59,10 @@ const JurisdictionMap: React.FC<JurisdictionMapProps> = ({ countries }) => {
     return (
       <StyledCard>
         <Empty
+          image={<GlobalOutlined style={{ fontSize: 40, color: colors.primary }} />}
+          imageStyle={{ height: 40 }}
           description={
-            <Text type="secondary">
+            <Text type="secondary" style={{ color: colors.primary }}>
               No jurisdiction information available for this entity.
               Risk assessment is based on available transaction patterns and entity data.
             </Text>

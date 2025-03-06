@@ -3,26 +3,63 @@ import { IUser } from './interfaces';
 export type MemberRole = 'manager' | 'team_member';
 
 export interface IMember {
-  user: IUser;
+  user?: IUser | null; // Optional for pending invitations
+  email?: string; // Email for pending invitations
   role: MemberRole;
   status: 'pending' | 'active' | 'removed';
   joinedAt: string;
   invitedBy: string; // User ID who invited this member
 }
 
+export interface IOrganizationSettings {
+  maxMembers: number;
+  allowedDomains: string[];
+}
+
 export interface IOrganization {
-  id: string;
+  _id: string;
   name: string;
   description?: string;
+  settings: IOrganizationSettings;
+  ownerId: string;
   createdAt: string;
   updatedAt: string;
-  ownerId: string; // User ID of the organization owner
-  members: IMember[];
-  settings: {
-    maxMembers: number;
-    allowedDomains?: string[]; // Email domains that are allowed to join
-    inviteCode?: string; // Optional invite code for direct joins
-  };
+}
+
+export interface IOrganizationCreate {
+  name: string;
+  description?: string;
+  settings?: Partial<IOrganizationSettings>;
+}
+
+export interface IOrganizationUpdate {
+  name?: string;
+  description?: string;
+  settings?: Partial<IOrganizationSettings>;
+}
+
+export type OrganizationRole = 'owner' | 'manager' | 'team_member';
+
+export interface IOrganizationMember {
+  _id: string;
+  organizationId: string;
+  userId: string;
+  email: string;
+  role: OrganizationRole;
+  status: 'active' | 'pending';
+  invitedBy: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface IOrganizationInvite {
+  emails: string[];
+  role?: OrganizationRole;
+}
+
+export interface IOrganizationJoin {
+  code: string;
+  email: string;
 }
 
 export interface IInvitation {

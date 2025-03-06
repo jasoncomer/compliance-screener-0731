@@ -60,7 +60,7 @@ const BtcTxAddress: React.FC<BtcTxAddressProps> = ({ address }) => {
   const currAddress = url.split('/').pop();
   const { attributions, referenceAttributions } = useAttribution();
 
-  const attribution = attributions[address]?.attribution;
+  const attribution = attributions[address]?.entity;
   const referenceAttribution = referenceAttributions[address]?.entity;
 
   const truncatedAddress = truncateAddress(address);
@@ -68,15 +68,30 @@ const BtcTxAddress: React.FC<BtcTxAddressProps> = ({ address }) => {
   if (address === currAddress) {
     return <span className="monospace">{truncatedAddress}</span>;
   }
+  
+  // Split reference attribution by "." if it exists
+  const splitReferenceAttribution = referenceAttribution ? referenceAttribution.split('.')[0] : '';
+  
+  // Check if attribution and reference attribution match after splitting
+  const attributionsMatch = attribution && splitReferenceAttribution && 
+    attribution.toLowerCase() === splitReferenceAttribution.toLowerCase();
+  
   const bsAttribution = attribution ? attribution : truncatedAddress;
   
   // css
   let className = attribution ? 'attributed' : '';
-  if (referenceAttribution) {
+  if (referenceAttribution && !attributionsMatch) {
     className = 'attributed reference';
   }
 
-  return <Link className={className} to={`/home/block-explorer/address/${address}`}>{bsAttribution} {referenceAttribution ? `(${referenceAttribution})` : ''}</Link>;
+  return (
+    <Link 
+      className={className} 
+      to={`/home/block-explorer/address/${address}`}
+    >
+      {bsAttribution} {(referenceAttribution && !attributionsMatch) ? `(${splitReferenceAttribution})` : ''}
+    </Link>
+  );
 }
 
 const BtcInputsOutputs: React.FC<BtcInputsOutputsProps> = ({ data }) => {
