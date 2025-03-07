@@ -133,7 +133,7 @@ const Address: React.FC = () => {
     };
 
     fetchAddress();
-  }, [address, currentPage]);
+  }, [address, currentPage, fetchAttributions]);
 
   const handlePageChange = (newPage: number) => {
     if (newPage >= 1 && newPage <= totalPages) {

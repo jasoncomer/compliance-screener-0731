@@ -3,6 +3,7 @@ import { IUser } from './interfaces';
 export type MemberRole = 'manager' | 'team_member';
 
 export interface IMember {
+  _id: string;
   user?: IUser | null; // Optional for pending invitations
   email?: string; // Email for pending invitations
   role: MemberRole;

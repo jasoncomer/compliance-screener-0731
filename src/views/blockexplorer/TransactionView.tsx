@@ -8,10 +8,7 @@ import { BsWrapper } from '../../styles/ocmmon';
 import { api } from '../../api/api';
 import { useTheme } from '../../context/ThemeContext';
 
-interface TransactionProps {
-}
-
-const TransactionView: React.FC<TransactionProps> = () => {
+const TransactionView: React.FC = () => {
   const { txid } = useParams();
   const { theme } = useTheme();
   const [transaction, setTransaction] = React.useState<BtcTransaction>();

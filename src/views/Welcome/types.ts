@@ -1,5 +1,3 @@
-import { IOrganization } from '../../typings/organization';
-
 export type WelcomeOption = 'create' | 'join' | 'skip';
 
 export interface WelcomeProps {

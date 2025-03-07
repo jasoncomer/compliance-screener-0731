@@ -63,6 +63,7 @@ const Welcome: React.FC = () => {
     try {
       // TODO: API implementation
       // await api.organization.create(values);
+      console.log('values', values);
       message.success('Organization created successfully!');
       navigate('/home/compliance-screener');
     } catch (err: any) {
@@ -74,6 +75,7 @@ const Welcome: React.FC = () => {
     try {
       // TODO: API implementation
       // await api.organization.joinWithCode(values.code);
+      console.log('values', values);
       message.success('Successfully joined the organization!');
       navigate('/home/compliance-screener');
     } catch (err: any) {

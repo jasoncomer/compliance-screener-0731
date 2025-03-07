@@ -1,9 +1,7 @@
 import React, { useState } from 'react';
-import { Card, Form, Button, Result, Spin } from 'antd';
+import { Card, Form, Button, Result, Spin, Input } from 'antd';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import styled from 'styled-components';
-import { useTheme } from '../../../context/ThemeContext';
-import Input from '../../../components/common/Input';
 import ViewWrapper from '../../../components/ViewWrapper';
 import { TeamOutlined } from '@ant-design/icons';
 
@@ -13,7 +11,6 @@ const StyledCard = styled(Card)`
 `;
 
 const JoinOrganization: React.FC = () => {
-  const { theme } = useTheme();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [loading, setLoading] = useState(false);
@@ -27,6 +24,7 @@ const JoinOrganization: React.FC = () => {
   const handleJoinWithCode = async (values: { code: string }) => {
     setLoading(true);
     setError(undefined);
+    console.log('values', values);
     
     try {
       // API call will be implemented later

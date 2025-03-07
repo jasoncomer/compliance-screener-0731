@@ -1,9 +1,8 @@
 import React from 'react';
 import { Card, Typography, Empty } from 'antd';
 import { ComposableMap, Geographies, Geography, Marker } from 'react-simple-maps';
-import { UserOutlined, GlobalOutlined } from '@ant-design/icons';
+import { GlobalOutlined } from '@ant-design/icons';
 import styled from 'styled-components';
-import globeSvg from '../../assets/globe.svg';
 import { colors } from '../../styles/variables';
 
 const { Text } = Typography;
@@ -23,12 +22,6 @@ const StyledCard = styled(Card)`
   .ant-card-body {
     padding: 24px;
   }
-`;
-
-const Globe = styled.img`
-  width: 60px;
-  height: 60px;
-  fill: ${colors.primary};
 `;
 
 // Map of country names to their approximate center coordinates [longitude, latitude]

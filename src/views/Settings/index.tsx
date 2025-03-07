@@ -1,5 +1,4 @@
-import React, { useState } from 'react';
-import styled from 'styled-components';
+import { useState } from 'react';
 import { Switch } from 'antd';
 import { 
   SettingOutlined, 
@@ -51,11 +50,14 @@ const Settings = () => {
   const handleRemoveMember = async (memberId: string) => {
     // TODO: Implement with API
     console.log('Remove member:', memberId);
+    if (!organization) return;
+    setMembers(prev => prev.filter(member => member._id !== memberId));
   };
 
   const handleUpdateMemberRole = async (memberId: string, newRole: 'manager' | 'team_member') => {
     // TODO: Implement with API
     console.log('Update member role:', memberId, newRole);
+    if (!organization) return;
   };
 
   const handleGenerateInviteCode = async () => {
@@ -66,11 +68,15 @@ const Settings = () => {
   const handleRevokeInvitation = async (invitationId: string) => {
     // TODO: Implement with API
     console.log('Revoke invitation:', invitationId);
+    if (!organization) return;
+    setPendingInvitations(prev => prev.filter(invitation => invitation.id !== invitationId));
   };
 
   const handleUpdateOrganization = async (data: Partial<IOrganization>) => {
     // TODO: Implement with API
     console.log('Update organization:', data);
+    if (!organization) return;
+    setOrganization({ ...organization, ...data });
   };
 
   const renderPreferencesSection = () => (

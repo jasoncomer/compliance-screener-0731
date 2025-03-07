@@ -7,9 +7,7 @@ import { ICase } from '../typings/interfaces';
 import { api } from '../api/api';
 import { useAppContext } from '../context/AppContext';
 
-interface Props { }
-
-const Cases: React.FC<Props> = () => {
+const Cases: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const { cases, setCases } = useAppContext();
 

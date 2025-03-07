@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Form, InputNumber, Button, Typography, message, Radio, Input, Select, AutoComplete } from 'antd';
 
 const { Title, Paragraph } = Typography;
@@ -34,7 +34,7 @@ const AlertConfig: React.FC = () => {
     setEntityOptions(options);
   };
 
-  const onValuesChange = (_: any, allValues: any) => {
+  const onValuesChange = useCallback((_: any, allValues: any) => {
     const { targetType, target, blockchain, amount, direction, severity, counterpartyRelation, counterpartyEntity } = allValues;
 
     if (target && blockchain && (amount !== undefined || anyAmount) && direction && severity) {
@@ -59,19 +59,19 @@ const AlertConfig: React.FC = () => {
     } else {
       setPreviewSentence('');
     }
-  };
+  }, [anyAmount]);
 
   useEffect(() => {
     // Initialize preview sentence on mount
     const values = form.getFieldsValue();
     onValuesChange(null, values);
-  }, [form]);
+  }, [form, onValuesChange]);
 
   useEffect(() => {
     // Update preview sentence when anyAmount changes
     const values = form.getFieldsValue();
     onValuesChange(null, values);
-  }, [anyAmount, form]);
+  }, [anyAmount, form, onValuesChange]);
 
   return (
     <div style={{ padding: '0px 20px 20px 20px' }}>
