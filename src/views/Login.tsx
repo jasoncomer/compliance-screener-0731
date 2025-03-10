@@ -84,7 +84,7 @@ const Login = () => {
           placeholder='Password'
         />
         <BtnDiv>
-          <Button type='default' ghost onClick={navRegister}>Register</Button>
+          <Button type='primary' ghost onClick={navRegister}>Register</Button>
           <Button type="primary" htmlType="submit" loading={isLoading}>Login</Button>
         </BtnDiv>
       </form>

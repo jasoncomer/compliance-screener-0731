@@ -165,7 +165,7 @@ const Alerts: React.FC = () => {
           <Option value="medium">Medium</Option>
           <Option value="low">Low</Option>
         </Select>
-        <Button type="default" onClick={resetAllFilters}>Reset Filters</Button>
+        <Button type="default" style={{ height: 32 }} onClick={resetAllFilters}>Reset Filters</Button>
       </Space>
       <Table
         dataSource={filteredAllAlerts}
@@ -190,7 +190,7 @@ const Alerts: React.FC = () => {
           <Option value="medium">Medium</Option>
           <Option value="low">Low</Option>
         </Select>
-        <Button type="default" onClick={resetTriggeredFilters}>Reset Filters</Button>
+        <Button type="default" style={{ height: 32 }} onClick={resetTriggeredFilters}>Reset Filters</Button>
       </Space>
       <Table
         dataSource={filteredTriggeredAlerts}

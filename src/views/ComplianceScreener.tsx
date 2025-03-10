@@ -367,7 +367,7 @@ const ComplianceScreener: React.FC = () => {
             >
               Manage Monitored Addresses
             </Button>
-            <Select value={denom} onChange={(value) => setDenom(value)} style={{ width: 120 }}>
+            <Select value={denom} size='large' onChange={(value) => setDenom(value)} style={{ width: 120 }}>
               <Option value="USD">USD</Option>
               <Option value="GBP">GBP</Option>
               <Option value="MXN">MXN</Option>
