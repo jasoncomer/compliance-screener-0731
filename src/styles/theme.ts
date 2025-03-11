@@ -48,7 +48,7 @@ export const darkTheme: ThemeConfig = {
       colorBgContainer: darkTokens.cardBg,
     },
     Button: {
-      controlHeight: 40,
+      controlHeight:40,
     },
   },
 }; 

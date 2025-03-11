@@ -20,7 +20,6 @@ export const StyledHeader = styled(AntHeader)<{ $theme: Theme }>`
   align-items: center;
   justify-content: space-between;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-  // border-bottom: 1px solid ${props => props.$theme === 'light' ? 'rgba(0, 0, 0, 0.06)' : 'rgba(255, 255, 255, 0.08)'};
 `;
 
 export const HeaderSection = styled.div`

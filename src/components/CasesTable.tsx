@@ -10,7 +10,6 @@ import ModalCaseContent from './modals/ModalCaseContent';
 const Tabs = styled(AntTabs)`
   .ant-tabs-nav {
     margin-bottom: 0;
-
   }
 `;
 
@@ -94,7 +93,7 @@ const CasesTable: FC<Props> = ({ cases, setIsModalOpen }) => {
         defaultActiveKey="1"
         type="card"
         size={'large'}
-        tabBarExtraContent={<Button type="primary" size="middle" onClick={() => setIsModalOpen(prev => !prev)}>Add Case</Button>}
+        tabBarExtraContent={<Button type="primary" onClick={() => setIsModalOpen(prev => !prev)}>Add Case</Button>}
         items={CardTabItems.map((item) => {
           let localCases = cases;
           switch (item.key) {
@@ -114,7 +113,6 @@ const CasesTable: FC<Props> = ({ cases, setIsModalOpen }) => {
                 key={item.key}
                 columns={columns}
                 dataSource={localCases}
-              
               />
             )
           }
