@@ -116,7 +116,7 @@ export interface SOT {
   date_updated: string;
   user: string;
   revisit_site: boolean;
-  kyc_req: boolean;
+  no_kyc_req: boolean;
   entity_id: string;
   url: string;
   proper_name: string;

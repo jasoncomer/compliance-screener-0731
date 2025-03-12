@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Card, Form, Button, Space, Typography, message, Avatar, Modal, Row, Col, Tag, Switch } from 'antd';
-import { UserOutlined, GlobalOutlined, TwitterOutlined, SendOutlined, GithubOutlined, LinkedinOutlined, FacebookOutlined, InstagramOutlined, YoutubeOutlined, RedditOutlined, MediumOutlined } from '@ant-design/icons';
+import { UserOutlined, GlobalOutlined, TwitterOutlined, SendOutlined, GithubOutlined, LinkedinOutlined, FacebookOutlined, InstagramOutlined, YoutubeOutlined, RedditOutlined, MediumOutlined, WarningOutlined } from '@ant-design/icons';
 import styled from 'styled-components';
 import { SOT } from '../typings/interfaces';
 import { api } from '../api/api';
@@ -8,6 +8,7 @@ import AssociatedSOTs from './AssociatedSOTs';
 import { getEntityTypeLabel } from '../utils/display-labels';
 import { EEntityType } from '../typings/SOT';
 import Input from './common/Input';
+import { colors } from '../styles/variables';
 
 const { Title, Text } = Typography;
 
@@ -96,6 +97,26 @@ const TagsContainer = styled.div`
   flex-direction: row;
   flex-wrap: wrap;
   justify-content: flex-start;
+`;
+
+const SanctionedPill = styled.div`
+  display: inline-flex;
+  align-items: center;
+  background-color: ${colors.danger};
+  color: white;
+  padding: 6px 12px;
+  border-radius: 16px;
+  font-size: 12px;
+  font-weight: bold;
+  margin-top: 8px;
+  margin-bottom: 12px;
+  width: auto;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  
+  .anticon {
+    margin-right: 6px;
+    font-size: 14px;
+  }
 `;
 
 interface SOTEditorProps {
@@ -203,6 +224,17 @@ const SOTEditor: React.FC<SOTEditorProps> = ({ sot, onSelectAssociatedSot }) => 
   const renderContent = () => {
     if (!isValidSOT(sot)) return null;
 
+    // Check if entity is an individual person
+    const isIndividualPerson = sot.entity_type?.toLowerCase() === EEntityType.INDIVIDUAL_PERSON;
+    
+    // Check if entity is OFAC sanctioned
+    const isOfacSanctioned = Object.entries(sot)
+      .filter(([key, value]) => key.startsWith('entity_tag') && value)
+      .some(([_, value]) => 
+        String(value).toLowerCase().includes('ofac') && 
+        String(value).toLowerCase().includes('sanction')
+      );
+
     if (isEditing) {
       return (
         <Form
@@ -250,7 +282,7 @@ const SOTEditor: React.FC<SOTEditorProps> = ({ sot, onSelectAssociatedSot }) => 
                 ))}
               </Form.Item>
               
-              <ToggleSwitch name="kyc_req" label="KYC Required" />
+              <ToggleSwitch name="no_kyc_req" label="No KYC Required" />
               <ToggleSwitch name="dead" label="Dead" />
               <ToggleSwitch name="centralized" label="Centralized" />
               <ToggleSwitch name="revisit_site" label="Revisit Site" />
@@ -344,7 +376,41 @@ const SOTEditor: React.FC<SOTEditorProps> = ({ sot, onSelectAssociatedSot }) => 
           />
           <HeaderInfo>
             <Title level={4} style={{ margin: 0 }}>{sot.proper_name || sot.entity_id}</Title>
-            <Text type="secondary">{getEntityTypeLabel(sot.entity_type as EEntityType)}</Text>
+            <div style={{ display: 'block', marginBottom: '4px' }}>
+              <Text type="secondary">{getEntityTypeLabel(sot.entity_type as EEntityType)}</Text>
+            </div>
+            {isOfacSanctioned && (
+              <SanctionedPill>
+                <WarningOutlined />
+                THIS ENTITY IS SANCTIONED BY OFAC
+              </SanctionedPill>
+            )}
+            <div style={{ marginTop: '4px', display: 'flex', flexWrap: 'wrap', gap: '16px' }}>
+              {sot.dead && (
+                <span>
+                  <Text>Status: </Text>
+                  <Text strong style={{ color: colors.danger }}>
+                    Inactive
+                  </Text>
+                </span>
+              )}
+              {!sot.centralized && (
+                <span>
+                  <Text>Architecture: </Text>
+                  <Text strong style={{ color: colors.secondary }}>
+                    Decentralized
+                  </Text>
+                </span>
+              )}
+              {!isIndividualPerson && sot.no_kyc_req && (
+                <span>
+                  <Text>KYC: </Text>
+                  <Text strong style={{ color: colors.danger }}>
+                    Not Required
+                  </Text>
+                </span>
+              )}
+            </div>
           </HeaderInfo>
         </HeaderSection>
 
@@ -363,24 +429,6 @@ const SOTEditor: React.FC<SOTEditorProps> = ({ sot, onSelectAssociatedSot }) => 
                   {sot.url}
                 </a>
               ) : '-'}
-            </DetailValue>
-          </DetailItem>
-
-          <DetailItem>
-            <DetailLabel>Status</DetailLabel>
-            <DetailValue style={{ display: 'flex', gap: '16px' }}>
-              <span>
-                <Text>Active: </Text>
-                <Switch checked={!sot.dead} disabled />
-              </span>
-              <span>
-                <Text>Centralized: </Text>
-                <Switch checked={sot.centralized} disabled />
-              </span>
-              <span>
-                <Text>KYC Required: </Text>
-                <Switch checked={sot.kyc_req} disabled />
-              </span>
             </DetailValue>
           </DetailItem>
 
@@ -433,7 +481,6 @@ const SOTEditor: React.FC<SOTEditorProps> = ({ sot, onSelectAssociatedSot }) => 
               <DetailValue>
                 {sot.description_merged && (
                   <div style={{ whiteSpace: 'pre-wrap', marginBottom: '16px' }}>
-                    <strong>Description:</strong><br />
                     {sot.description_merged}
                   </div>
                 )}
@@ -470,7 +517,7 @@ const SOTEditor: React.FC<SOTEditorProps> = ({ sot, onSelectAssociatedSot }) => 
 
               {sot.legal_info_url && (
                 <span>
-                  <strong>Legal Info:</strong>
+                  <strong>Legal Info: </strong>
                   <a href={sot.legal_info_url} target="_blank" rel="noopener noreferrer">
                     <GlobalOutlined /> View Legal Information
                   </a>

@@ -42,7 +42,7 @@ interface RiskDataPoint {
 
 // Entity metadata
 interface EntityMetadata {
-  kyc_required: boolean;
+  no_kyc_req: boolean;
   centralized: boolean;
   active: boolean;
   year_founded?: string;
@@ -55,6 +55,10 @@ interface EntityMetadata {
       telegram?: string;
     };
   };
+  social_media_profiles?: string[];
+  entity_tags?: string[];
+  associated_countries?: string[];
+  dead?: boolean;
 }
 
 // Entity information
@@ -127,7 +131,7 @@ interface EntityInfo {
   social_media_profiles?: string[];
   entity_tags?: string[];
   associated_countries?: string[];
-  kyc_req?: boolean;
+  no_kyc_req?: boolean;
   centralized?: boolean;
   dead?: boolean;
 }
