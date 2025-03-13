@@ -422,41 +422,45 @@ const SOTEditor: React.FC<SOTEditorProps> = ({ sot, onSelectAssociatedSot }) => 
             </DetailValue>
           </DetailItem>
 
-          <DetailItem>
-            <DetailLabel>Website</DetailLabel>
-            <DetailValue>
-              <GlobalOutlined />
-              {sot.url ? (
+          {sot.url && (
+            <DetailItem>
+              <DetailLabel>Website</DetailLabel>
+              <DetailValue>
+                <GlobalOutlined />
                 <a href={sot.url.startsWith('http') ? sot.url : `https://${sot.url}`} target="_blank" rel="noopener noreferrer">
                   {sot.url}
                 </a>
-              ) : '-'}
-            </DetailValue>
-          </DetailItem>
+              </DetailValue>
+            </DetailItem>
+          )}
 
-          <DetailItem style={{ gridColumn: '1 / -1' }}>
-            <DetailLabel>Leadership</DetailLabel>
-            <DetailValue style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              {sot.ceo && <span><strong>CEO:</strong> {sot.ceo}</span>}
-              {sot.key_personnel && (
-                <span>
-                  <strong>Key Personnel:</strong> {sot.key_personnel.split(',').map(person =>
-                    <Tag key={person.trim()}>{person.trim()}</Tag>
-                  )}
-                </span>
-              )}
-            </DetailValue>
-          </DetailItem>
+          {(sot.ceo || sot.key_personnel) && (
+            <DetailItem style={{ gridColumn: '1 / -1' }}>
+              <DetailLabel>Leadership</DetailLabel>
+              <DetailValue style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {sot.ceo && <span><strong>CEO:</strong> {sot.ceo}</span>}
+                {sot.key_personnel && (
+                  <span>
+                    <strong>Key Personnel:</strong> {sot.key_personnel.split(',').map(person =>
+                      <Tag key={person.trim()}>{person.trim()}</Tag>
+                    )}
+                  </span>
+                )}
+              </DetailValue>
+            </DetailItem>
+          )}
 
-          <DetailItem style={{ gridColumn: '1 / -1' }}>
-            <DetailLabel>Contact Information</DetailLabel>
-            <DetailValue style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              {sot.contact_email && <span><strong>Email:</strong> {sot.contact_email}</span>}
-              {sot.contact_phone && <span><strong>Phone:</strong> {sot.contact_phone}</span>}
-              {sot.contact_address && <span><strong>Address:</strong> {sot.contact_address}</span>}
-              {sot.ens_address && <span><strong>ENS Address:</strong> {sot.ens_address}</span>}
-            </DetailValue>
-          </DetailItem>
+          {(sot.contact_email || sot.contact_phone || sot.contact_address || sot.ens_address) && (
+            <DetailItem style={{ gridColumn: '1 / -1' }}>
+              <DetailLabel>Contact Information</DetailLabel>
+              <DetailValue style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {sot.contact_email && <span><strong>Email:</strong> {sot.contact_email}</span>}
+                {sot.contact_phone && <span><strong>Phone:</strong> {sot.contact_phone}</span>}
+                {sot.contact_address && <span><strong>Address:</strong> {sot.contact_address}</span>}
+                {sot.ens_address && <span><strong>ENS Address:</strong> {sot.ens_address}</span>}
+              </DetailValue>
+            </DetailItem>
+          )}
 
           {/* Entity Tags */}
           {Object.entries(sot)
@@ -482,7 +486,7 @@ const SOTEditor: React.FC<SOTEditorProps> = ({ sot, onSelectAssociatedSot }) => 
               <DetailLabel>Description & Notes</DetailLabel>
               <DetailValue>
                 {sot.description_merged && (
-                  <div style={{ whiteSpace: 'pre-wrap', marginBottom: '16px' }}>
+                  <div style={{ whiteSpace: 'pre-wrap', marginBottom: '16px', marginTop: '8px', maxWidth: '40%' }}>
                     {sot.description_merged}
                   </div>
                 )}
@@ -496,95 +500,108 @@ const SOTEditor: React.FC<SOTEditorProps> = ({ sot, onSelectAssociatedSot }) => 
             </DetailItem>
           )}
 
-          <DetailItem style={{ gridColumn: '1 / -1' }}>
-            <DetailLabel>Additional Information</DetailLabel>
-            <DetailValue style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              {sot.year_founded && <span><strong>Founded:</strong> {sot.year_founded}</span>}
-              {sot.ticker && <span><strong>Ticker:</strong> {sot.ticker.split(',').map(t => 
-                <Tag key={t.trim()}>{t.trim()}</Tag>
-              )}</span>}
-              {sot.parent_id && <span><strong>Parent ID:</strong> {sot.parent_id}</span>}
-              
-              {/* Associated Countries */}
-              <span>
-                <strong>Associated Countries:</strong>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '4px' }}>
-                  {Object.entries(sot)
-                    .filter(([key, value]) => key.startsWith('associate_country_') && value)
-                    .map(([key, value]) => (
-                      <Tag key={key}>{value}</Tag>
-                    ))}
-                </div>
-              </span>
+          {(sot.year_founded || sot.ticker || sot.parent_id || 
+            Object.entries(sot).some(([key, value]) => key.startsWith('associate_country_') && value) ||
+            sot.legal_info_url) && (
+            <DetailItem style={{ gridColumn: '1 / -1' }}>
+              <DetailLabel style={{ marginBottom: '8px' }}>Additional Information</DetailLabel>
+              <DetailValue style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {sot.year_founded && <span><strong>Founded:</strong> {sot.year_founded}</span>}
+                {sot.ticker && <span><strong>Ticker:</strong> {sot.ticker.split(',').map(t => 
+                  <Tag key={t.trim()}>{t.trim()}</Tag>
+                )}</span>}
+                {sot.parent_id && <span><strong>Parent ID:</strong> {sot.parent_id}</span>}
+                
+                {/* Associated Countries */}
+                {Object.entries(sot)
+                  .filter(([key, value]) => key.startsWith('associate_country_') && value)
+                  .length > 0 && (
+                  <span>
+                    <strong>Associated Countries:</strong>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '4px' }}>
+                      {Object.entries(sot)
+                        .filter(([key, value]) => key.startsWith('associate_country_') && value)
+                        .map(([key, value]) => (
+                          <Tag key={key}>{value}</Tag>
+                        ))}
+                    </div>
+                  </span>
+                )}
 
-              {sot.legal_info_url && (
-                <span>
-                  <strong>Legal Info: </strong>
-                  <a href={sot.legal_info_url} target="_blank" rel="noopener noreferrer">
-                    <GlobalOutlined /> View Legal Information
-                  </a>
-                </span>
-              )}
-            </DetailValue>
-          </DetailItem>
-
-          <DetailItem style={{ gridColumn: '1 / -1', fontSize: '0.9em', color: '#666' }}>
-            {sot.user && <div>Last modified by: {sot.user}</div>}
-            {sot.date_updated && <div>Updated: {new Date(sot.date_updated).toLocaleString()}</div>}
-            {sot.revisit_site && <div>Flagged for review</div>}
-          </DetailItem>
-
-          <DetailItem style={{ gridColumn: '1 / -1' }}>
-            <DetailLabel>Social Media Profiles</DetailLabel>
-            <DetailValue style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              {/* Twitter */}
-              {sot.contact_twitter && (
-                <a
-                  href={`https://twitter.com/${sot.contact_twitter.replace('@', '')}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
-                >
-                  <TwitterOutlined />
-                  <span>{sot.contact_twitter}</span>
-                </a>
-              )}
-
-              {/* Telegram */}
-              {sot.contact_telegram && (
-                <a
-                  href={`https://t.me/${sot.contact_telegram.replace('@', '')}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
-                >
-                  <SendOutlined />
-                  <span>{sot.contact_telegram}</span>
-                </a>
-              )}
-
-              {/* Other social media profiles */}
-              {Object.entries(sot)
-                .filter(([key, value]) => key.startsWith('social_media_profile') && value)
-                .map(([key, value]) => {
-                  const icon = getSocialMediaIcon(value);
-                  const url = value.startsWith('http') ? value : `https://${value}`;
-
-                  return (
-                    <a
-                      key={key}
-                      href={url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
-                    >
-                      {icon}
-                      <span>{value}</span>
+                {sot.legal_info_url && (
+                  <span>
+                    <strong>Legal Info: </strong>
+                    <a href={sot.legal_info_url} target="_blank" rel="noopener noreferrer">
+                      <GlobalOutlined /> View Legal Information
                     </a>
-                  );
-                })}
-            </DetailValue>
-          </DetailItem>
+                  </span>
+                )}
+              </DetailValue>
+            </DetailItem>
+          )}
+
+          {(sot.user || sot.date_updated || sot.revisit_site) && (
+            <DetailItem style={{ gridColumn: '1 / -1', fontSize: '0.9em', color: '#666' }}>
+              {sot.user && <div>Last modified by: {sot.user}</div>}
+              {sot.date_updated && <div>Updated: {new Date(sot.date_updated).toLocaleString()}</div>}
+              {sot.revisit_site && <div>Flagged for review</div>}
+            </DetailItem>
+          )}
+
+          {(sot.contact_twitter || sot.contact_telegram || 
+            Object.entries(sot).some(([key, value]) => key.startsWith('social_media_profile') && value)) && (
+            <DetailItem style={{ gridColumn: '1 / -1' }}>
+              <DetailLabel>Social Media Profiles</DetailLabel>
+              <DetailValue style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {/* Twitter */}
+                {sot.contact_twitter && (
+                  <a
+                    href={`https://twitter.com/${sot.contact_twitter.replace('@', '')}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+                  >
+                    <TwitterOutlined />
+                    <span>{sot.contact_twitter}</span>
+                  </a>
+                )}
+
+                {/* Telegram */}
+                {sot.contact_telegram && (
+                  <a
+                    href={`https://t.me/${sot.contact_telegram.replace('@', '')}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+                  >
+                    <SendOutlined />
+                    <span>{sot.contact_telegram}</span>
+                  </a>
+                )}
+
+                {/* Other social media profiles */}
+                {Object.entries(sot)
+                  .filter(([key, value]) => key.startsWith('social_media_profile') && value)
+                  .map(([key, value]) => {
+                    const icon = getSocialMediaIcon(value);
+                    const url = value.startsWith('http') ? value : `https://${value}`;
+
+                    return (
+                      <a
+                        key={key}
+                        href={url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+                      >
+                        {icon}
+                        <span>{value}</span>
+                      </a>
+                    );
+                  })}
+              </DetailValue>
+            </DetailItem>
+          )}
         </DetailSection>
 
         {/* <Divider />

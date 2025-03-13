@@ -31,7 +31,6 @@ const DetailValue = styled(Text)`
   display: flex;
   align-items: flex-start;
   gap: 8px;
-  
   .anticon {
     color: #1890ff;
   }
@@ -138,7 +137,7 @@ const EntityDetails: React.FC<EntityDetailsProps> = ({ sot }) => {
               THIS ENTITY IS SANCTIONED BY OFAC
             </SanctionedPill>
           )}
-          {sot.no_kyc_req && !isIndividualPerson && (
+          {sot.no_kyc_req && (
             <KYCPill>
               KYC: NOT REQUIRED
             </KYCPill>
