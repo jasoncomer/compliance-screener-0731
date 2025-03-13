@@ -379,18 +379,19 @@ const SOTEditor: React.FC<SOTEditorProps> = ({ sot, onSelectAssociatedSot }) => 
             <div style={{ display: 'block', marginBottom: '4px' }}>
               <Text type="secondary">{getEntityTypeLabel(sot.entity_type as EEntityType)}</Text>
             </div>
-            {isOfacSanctioned && (
+            
+            
+            {isOfacSanctioned && sot.no_kyc_req && (
               <SanctionedPill>
                 <WarningOutlined />
                 THIS ENTITY IS SANCTIONED BY OFAC
               </SanctionedPill>
             )}
-            <div style={{ marginTop: '4px', display: 'flex', flexWrap: 'wrap', gap: '16px' }}>
+            <div style={{ marginTop: '4px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
               {sot.dead && (
                 <span>
-                  <Text>Status: </Text>
                   <Text strong style={{ color: colors.danger }}>
-                    Inactive
+                    Entity likely inactive or does not support Crypto
                   </Text>
                 </span>
               )}
@@ -398,15 +399,14 @@ const SOTEditor: React.FC<SOTEditorProps> = ({ sot, onSelectAssociatedSot }) => 
                 <span>
                   <Text>Architecture: </Text>
                   <Text strong style={{ color: colors.secondary }}>
-                    Decentralized
+                    Decentralized Entity
                   </Text>
                 </span>
               )}
-              {!isIndividualPerson && sot.no_kyc_req && (
+              {sot.no_kyc_req && (
                 <span>
-                  <Text>KYC: </Text>
-                  <Text strong style={{ color: colors.danger }}>
-                    Not Required
+                  <Text strong style={{ color: colors.primary }}>
+                    NO KYC REQUIRED
                   </Text>
                 </span>
               )}
@@ -417,7 +417,9 @@ const SOTEditor: React.FC<SOTEditorProps> = ({ sot, onSelectAssociatedSot }) => 
         <DetailSection>
           <DetailItem>
             <DetailLabel>Entity ID</DetailLabel>
-            <DetailValue>{sot.entity_id}</DetailValue>
+            <DetailValue style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              <span>{sot.entity_id}</span>
+            </DetailValue>
           </DetailItem>
 
           <DetailItem>

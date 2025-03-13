@@ -80,6 +80,21 @@ const SanctionedPill = styled.div`
   }
 `;
 
+const KYCPill = styled.div`
+  display: inline-flex;
+  align-items: center;
+  background-color: ${colors.danger};
+  color: white;
+  padding: 6px 12px;
+  border-radius: 16px;
+  font-size: 12px;
+  font-weight: bold;
+  margin-top: 0;
+  margin-bottom: 12px;
+  width: auto;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+`;
+
 interface EntityDetailsProps {
   sot: SOTV2;
 }
@@ -123,6 +138,11 @@ const EntityDetails: React.FC<EntityDetailsProps> = ({ sot }) => {
               THIS ENTITY IS SANCTIONED BY OFAC
             </SanctionedPill>
           )}
+          {sot.no_kyc_req && !isIndividualPerson && (
+            <KYCPill>
+              KYC: NOT REQUIRED
+            </KYCPill>
+          )}
           <div style={{ marginTop: '8px', display: 'flex', flexWrap: 'wrap', gap: '16px' }}>
             {sot.dead && (
               <span>
@@ -164,6 +184,13 @@ const EntityDetails: React.FC<EntityDetailsProps> = ({ sot }) => {
             </DetailValue>
           </DetailItem>
         )}
+
+        <DetailItem>
+          <DetailLabel>Entity ID</DetailLabel>
+          <DetailValue style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            <span>{sot.entity_id}</span>
+          </DetailValue>
+        </DetailItem>
 
         {(sot.ceo || sot.key_personnel) && (
           <DetailItem style={{ gridColumn: '1 / -1' }}>
