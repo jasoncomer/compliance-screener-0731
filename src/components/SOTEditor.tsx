@@ -387,7 +387,7 @@ const SOTEditor: React.FC<SOTEditorProps> = ({ sot, onSelectAssociatedSot }) => 
                 THIS ENTITY IS SANCTIONED BY OFAC
               </SanctionedPill>
             )}
-            <div style={{ marginTop: '4px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div style={{ marginTop: '4px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
               {sot.dead && (
                 <span>
                   <Text strong style={{ color: colors.danger }}>
@@ -397,15 +397,14 @@ const SOTEditor: React.FC<SOTEditorProps> = ({ sot, onSelectAssociatedSot }) => 
               )}
               {!sot.centralized && (
                 <span>
-                  <Text>Architecture: </Text>
-                  <Text strong style={{ color: colors.secondary }}>
+                  <Text strong style={{ color: colors.secondary , marginBottom: '0'}}>
                     Decentralized Entity
                   </Text>
                 </span>
               )}
               {sot.no_kyc_req && (
                 <span>
-                  <Text strong style={{ color: colors.primary }}>
+                  <Text strong style={{ color: colors.primary , marginTop: '0'}}>
                     NO KYC REQUIRED
                   </Text>
                 </span>
