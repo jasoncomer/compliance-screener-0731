@@ -173,8 +173,8 @@ const EntityRiskDetails: React.FC<EntityRiskDetailsProps> = ({ riskScores }) => 
                   </Grid>
                   <Grid item>
                     <Chip
-                      label={sot.kyc_req ? 'KYC Required' : 'No KYC'}
-                      color={sot.kyc_req ? 'success' : 'error'}
+                      label={sot.no_kyc_req ? 'No KYC' : 'KYC Required'}
+                      color={sot.no_kyc_req ? 'error' : 'success'}
                       size="small"
                     />
                   </Grid>

@@ -1,8 +1,10 @@
 import React from 'react';
 import { Card, Typography, Switch, Tag, Avatar } from 'antd';
-import { UserOutlined, GlobalOutlined, TwitterOutlined, SendOutlined, GithubOutlined, LinkedinOutlined, FacebookOutlined, InstagramOutlined, YoutubeOutlined, RedditOutlined } from '@ant-design/icons';
+import { UserOutlined, GlobalOutlined, TwitterOutlined, SendOutlined, GithubOutlined, LinkedinOutlined, FacebookOutlined, InstagramOutlined, YoutubeOutlined, RedditOutlined, WarningOutlined } from '@ant-design/icons';
 import styled from 'styled-components';
 import { SOTV2 } from '../../typings/interfaces';
+import { colors } from '../../styles/variables';
+import { EEntityType } from '../../typings/SOT';
 
 const { Title, Text } = Typography;
 
@@ -29,7 +31,6 @@ const DetailValue = styled(Text)`
   display: flex;
   align-items: flex-start;
   gap: 8px;
-  
   .anticon {
     color: #1890ff;
   }
@@ -58,6 +59,41 @@ const TagsContainer = styled.div`
   margin-top: 8px;
 `;
 
+const SanctionedPill = styled.div`
+  display: inline-flex;
+  align-items: center;
+  background-color: ${colors.danger};
+  color: white;
+  padding: 6px 12px;
+  border-radius: 16px;
+  font-size: 12px;
+  font-weight: bold;
+  margin-top: 8px;
+  margin-bottom: 12px;
+  width: auto;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  
+  .anticon {
+    margin-right: 6px;
+    font-size: 14px;
+  }
+`;
+
+const KYCPill = styled.div`
+  display: inline-flex;
+  align-items: center;
+  background-color: ${colors.danger};
+  color: white;
+  padding: 6px 12px;
+  border-radius: 16px;
+  font-size: 12px;
+  font-weight: bold;
+  margin-top: 0;
+  margin-bottom: 12px;
+  width: auto;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+`;
+
 interface EntityDetailsProps {
   sot: SOTV2;
 }
@@ -75,6 +111,14 @@ const EntityDetails: React.FC<EntityDetailsProps> = ({ sot }) => {
     return <GlobalOutlined />;
   };
 
+  // Check if entity is an individual person
+  const isIndividualPerson = sot.entity_type?.toLowerCase() === EEntityType.INDIVIDUAL_PERSON;
+  
+  // Check if entity is OFAC sanctioned
+  const isOfacSanctioned = sot.entity_tags?.some(tag => 
+    tag.toLowerCase().includes('ofac') && tag.toLowerCase().includes('sanction')
+  );
+
   return (
     <Card style={{ marginTop: '24px' }}>
       <HeaderSection>
@@ -84,29 +128,48 @@ const EntityDetails: React.FC<EntityDetailsProps> = ({ sot }) => {
         />
         <HeaderInfo>
           <Title level={4} style={{ margin: 0 }}>{sot.proper_name || sot.entity_id}</Title>
-          <Text type="secondary">{sot.entity_type}</Text>
+          <div style={{ display: 'block', marginBottom: '8px' }}>
+            <Text type="secondary">{sot.entity_type}</Text>
+          </div>
+          {isOfacSanctioned && (
+            <SanctionedPill>
+              <WarningOutlined />
+              THIS ENTITY IS SANCTIONED BY OFAC
+            </SanctionedPill>
+          )}
+          {sot.no_kyc_req && (
+            <KYCPill>
+              KYC: NOT REQUIRED
+            </KYCPill>
+          )}
+          <div style={{ marginTop: '8px', display: 'flex', flexWrap: 'wrap', gap: '16px' }}>
+            {sot.dead && (
+              <span>
+                <Text>Status: </Text>
+                <Text strong style={{ color: colors.danger }}>
+                  Inactive
+                </Text>
+              </span>
+            )}
+            <span>
+              <Text>Architecture: </Text>
+              <Text strong style={{ color: sot.centralized ? colors.primary : colors.secondary }}>
+                {sot.centralized ? 'Centralized' : 'Decentralized'}
+              </Text>
+            </span>
+            {!isIndividualPerson && (
+              <span>
+                <Text>KYC: </Text>
+                <Text strong style={{ color: sot.no_kyc_req ? colors.danger : colors.success }}>
+                  {sot.no_kyc_req ? 'Not Required' : 'Required'}
+                </Text>
+              </span>
+            )}
+          </div>
         </HeaderInfo>
       </HeaderSection>
 
       <DetailSection>
-        <DetailItem>
-          <DetailLabel>Status</DetailLabel>
-          <DetailValue style={{ display: 'flex', gap: '16px' }}>
-            <span>
-              <Text>Active: </Text>
-              <Switch checked={!sot.dead} disabled />
-            </span>
-            <span>
-              <Text>Centralized: </Text>
-              <Switch checked={sot.centralized} disabled />
-            </span>
-            <span>
-              <Text>KYC Required: </Text>
-              <Switch checked={sot.kyc_req} disabled />
-            </span>
-          </DetailValue>
-        </DetailItem>
-
         {sot.url && (
           <DetailItem>
             <DetailLabel>Website</DetailLabel>
@@ -120,6 +183,13 @@ const EntityDetails: React.FC<EntityDetailsProps> = ({ sot }) => {
             </DetailValue>
           </DetailItem>
         )}
+
+        <DetailItem>
+          <DetailLabel>Entity ID</DetailLabel>
+          <DetailValue style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            <span>{sot.entity_id}</span>
+          </DetailValue>
+        </DetailItem>
 
         {(sot.ceo || sot.key_personnel) && (
           <DetailItem style={{ gridColumn: '1 / -1' }}>
