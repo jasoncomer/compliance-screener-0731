@@ -15,6 +15,8 @@ const Tabs = styled(AntTabs)`
 
 const Button = styled(AntButton)`
   box-shadow: none;
+  margin-bottom: 5px;
+  height: 32px;
 `;
 
 interface Props {

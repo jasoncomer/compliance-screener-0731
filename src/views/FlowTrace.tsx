@@ -61,7 +61,7 @@ const FlowTrace: React.FC = () => {
           onChange={(e) => setQuery(e.target.value)}
           style={{ width: 300, marginRight: 10 }}
         />
-        <Button type="primary" onClick={traceFunds}>Trace Funds</Button>
+        <Button type="primary" style={{ height: 32 }} onClick={traceFunds}>Trace Funds</Button>
       </div>
       <div style={{ height: '500px', backgroundColor: theme === 'light' ? colors.white : colors.gray[800], padding: 10 }}>
         {nodes.length > 0 ? (
