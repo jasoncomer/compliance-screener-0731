@@ -458,12 +458,12 @@ const SOTEditor: React.FC<SOTEditorProps> = ({ sot, onSelectAssociatedSot }) => 
           {/* Left Column */}
           <DetailColumn>
             {/* Entity ID */}
-            <DetailItem>
-              <DetailLabel>Entity ID</DetailLabel>
+          <DetailItem>
+            <DetailLabel>Entity ID</DetailLabel>
               <DetailValue>
-                <span>{sot.entity_id}</span>
-              </DetailValue>
-            </DetailItem>
+              <span>{sot.entity_id}</span>
+            </DetailValue>
+          </DetailItem>
 
             {/* Leadership */}
             {(sot.ceo || sot.key_personnel) && (
@@ -597,78 +597,78 @@ const SOTEditor: React.FC<SOTEditorProps> = ({ sot, onSelectAssociatedSot }) => 
           {/* Right Column */}
           <DetailColumn>
             {/* Website */}
-            <DetailItem>
-              <DetailLabel>Website</DetailLabel>
-              <DetailValue>
-                {sot.url ? (
-                  (() => {
-                    // Collect all website URLs
-                    const websiteUrls = [];
-                    
-                    // Add main URL if exists
-                    if (sot.url) {
-                      websiteUrls.push(sot.url);
-                    }
-                    
-                    // Check for additional URLs in other fields
-                    Object.entries(sot)
-                      .filter(([key, value]) => 
-                        (key.startsWith('url_') || key.startsWith('website_') || key.startsWith('alternate_url_')) && 
-                        value && 
-                        typeof value === 'string')
-                      .forEach(([_, value]) => {
-                        websiteUrls.push(value);
-                      });
-                    
-                    // Determine if we need a scrollable container
-                    const needsScroll = websiteUrls.length > 5;
-                    
-                    // Create URL components array
-                    const urlComponents = websiteUrls.map((url, index) => (
-                      <a 
-                        key={index}
-                        href={url.startsWith('http') ? url : `https://${url}`} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
-                      >
-                        <GlobalOutlined />
-                        <span>{url}</span>
-                      </a>
-                    ));
-                    
-                    // Render links in scrollable container if needed
-                    if (needsScroll) {
-                      return (
-                        <div>
-                          <Text type="secondary" style={{ marginBottom: '8px', display: 'block' }}>
-                            {websiteUrls.length} websites available (scroll to view all)
-                          </Text>
-                          <ScrollableWebsiteLinks>
-                            {urlComponents}
-                          </ScrollableWebsiteLinks>
-                        </div>
-                      );
-                    }
-
-                    // Otherwise render normally
-                    return urlComponents.length === 1 ? (
-                      <>
-                        <GlobalOutlined />
-                        <a href={websiteUrls[0].startsWith('http') ? websiteUrls[0] : `https://${websiteUrls[0]}`} target="_blank" rel="noopener noreferrer">
-                          {websiteUrls[0]}
-                        </a>
-                      </>
-                    ) : (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                        {urlComponents}
+          <DetailItem>
+            <DetailLabel>Website</DetailLabel>
+            <DetailValue>
+              {sot.url ? (
+                (() => {
+                  // Collect all website URLs
+                  const websiteUrls = [];
+                  
+                  // Add main URL if exists
+                  if (sot.url) {
+                    websiteUrls.push(sot.url);
+                  }
+                  
+                  // Check for additional URLs in other fields
+                  Object.entries(sot)
+                    .filter(([key, value]) => 
+                      (key.startsWith('url_') || key.startsWith('website_') || key.startsWith('alternate_url_')) && 
+                      value && 
+                      typeof value === 'string')
+                    .forEach(([_, value]) => {
+                      websiteUrls.push(value);
+                    });
+                  
+                  // Determine if we need a scrollable container
+                  const needsScroll = websiteUrls.length > 5;
+                  
+                  // Create URL components array
+                  const urlComponents = websiteUrls.map((url, index) => (
+                    <a 
+                      key={index}
+                      href={url.startsWith('http') ? url : `https://${url}`} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+                    >
+                      <GlobalOutlined />
+                      <span>{url}</span>
+                    </a>
+                  ));
+                  
+                  // Render links in scrollable container if needed
+                  if (needsScroll) {
+                    return (
+                      <div>
+                        <Text type="secondary" style={{ marginBottom: '8px', display: 'block' }}>
+                          {websiteUrls.length} websites available (scroll to view all)
+                        </Text>
+                        <ScrollableWebsiteLinks>
+                          {urlComponents}
+                        </ScrollableWebsiteLinks>
                       </div>
                     );
-                  })()
-                ) : (
-                  <Text type="secondary">No website available</Text>
-                )}
-              </DetailValue>
+                  }
+                  
+                  // Otherwise render normally
+                  return urlComponents.length === 1 ? (
+                    <>
+                      <GlobalOutlined />
+                      <a href={websiteUrls[0].startsWith('http') ? websiteUrls[0] : `https://${websiteUrls[0]}`} target="_blank" rel="noopener noreferrer">
+                        {websiteUrls[0]}
+                      </a>
+                    </>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      {urlComponents}
+                    </div>
+                  );
+                })()
+              ) : (
+                <Text type="secondary">No website available</Text>
+              )}
+            </DetailValue>
             </DetailItem>
             
             {/* Social Media Profiles */}
@@ -759,7 +759,7 @@ const SOTEditor: React.FC<SOTEditorProps> = ({ sot, onSelectAssociatedSot }) => 
                         </div>
                       );
                     }
-
+                    
                     // Otherwise render normally
                     return (
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
