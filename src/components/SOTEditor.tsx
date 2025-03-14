@@ -30,11 +30,24 @@ const ButtonGroup = styled(Space)`
 `;
 
 const DetailSection = styled.div`
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 8px;
+  display: flex;
+  gap: 24px;
   padding-bottom: 2em;
   text-align: left;
+`;
+
+const DetailColumn = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  
+  &:first-child {
+    flex: 3;
+  }
+  
+  &:last-child {
+    flex: 2;
+  }
 `;
 
 const DetailItem = styled.div`
@@ -119,6 +132,62 @@ const SanctionedPill = styled.div`
   }
 `;
 
+// Add styled component for scrollable social media links container
+const ScrollableSocialLinks = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 200px;
+  overflow-y: auto;
+  padding-right: 10px;
+  
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  &::-webkit-scrollbar-track {
+    background: ${colors.gray[100]};
+    border-radius: 3px;
+  }
+  
+  &::-webkit-scrollbar-thumb {
+    background: ${colors.gray[300]};
+    border-radius: 3px;
+    
+    &:hover {
+      background: ${colors.gray[400]};
+    }
+  }
+`;
+
+// Add styled component for scrollable website links container
+const ScrollableWebsiteLinks = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 200px;
+  overflow-y: auto;
+  padding-right: 10px;
+  
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  &::-webkit-scrollbar-track {
+    background: ${colors.gray[100]};
+    border-radius: 3px;
+  }
+  
+  &::-webkit-scrollbar-thumb {
+    background: ${colors.gray[300]};
+    border-radius: 3px;
+    
+    &:hover {
+      background: ${colors.gray[400]};
+    }
+  }
+`;
+
 interface SOTEditorProps {
   sot: SOT | null;
   onSelectAssociatedSot: (sot: SOT) => void;
@@ -145,11 +214,6 @@ const SOTEditor: React.FC<SOTEditorProps> = ({ sot, onSelectAssociatedSot }) => 
   const isValidSOT = (sot: SOT | null): sot is SOT => {
     return sot !== null;
   };
-
-  // const handleEdit = () => {
-  //   setIsEditing(true);
-  //   form.setFieldsValue(sot);
-  // };
 
   const handleCancel = () => {
     setIsEditing(false);
@@ -181,29 +245,6 @@ const SOTEditor: React.FC<SOTEditorProps> = ({ sot, onSelectAssociatedSot }) => 
       console.error('Validation failed:', error);
     }
   };
-
-  // const handleDelete = () => {
-  //   if (!isValidSOT(sot)) return;
-
-  //   Modal.confirm({
-  //     title: 'Delete SOT',
-  //     content: 'Are you sure you want to delete this SOT? This action cannot be undone.',
-  //     okText: 'Delete',
-  //     okType: 'danger',
-  //     onOk: async () => {
-  //       try {
-  //         setLoading(true);
-  //         await api.blockchain.deleteSOT(sot._id);
-  //         message.success('SOT deleted successfully');
-  //       } catch (error) {
-  //         console.error('Failed to delete SOT:', error);
-  //         message.error('Failed to delete SOT');
-  //       } finally {
-  //         setLoading(false);
-  //       }
-  //     },
-  //   });
-  // };
 
   const getSocialMediaIcon = (url: string) => {
     const urlLower = url.toLowerCase();
@@ -414,205 +455,323 @@ const SOTEditor: React.FC<SOTEditorProps> = ({ sot, onSelectAssociatedSot }) => 
         </HeaderSection>
 
         <DetailSection>
-          <DetailItem>
-            <DetailLabel>Entity ID</DetailLabel>
-            <DetailValue style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <span>{sot.entity_id}</span>
-            </DetailValue>
-          </DetailItem>
-
-          {sot.url && (
+          {/* Left Column */}
+          <DetailColumn>
+            {/* Entity ID */}
             <DetailItem>
-              <DetailLabel>Website</DetailLabel>
+              <DetailLabel>Entity ID</DetailLabel>
               <DetailValue>
-                <GlobalOutlined />
-                <a href={sot.url.startsWith('http') ? sot.url : `https://${sot.url}`} target="_blank" rel="noopener noreferrer">
-                  {sot.url}
-                </a>
+                <span>{sot.entity_id}</span>
               </DetailValue>
             </DetailItem>
-          )}
 
-          {(sot.ceo || sot.key_personnel) && (
-            <DetailItem style={{ gridColumn: '1 / -1' }}>
-              <DetailLabel>Leadership</DetailLabel>
-              <DetailValue style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {sot.ceo && <span><strong>CEO:</strong> {sot.ceo}</span>}
-                {sot.key_personnel && (
-                  <span>
-                    <strong>Key Personnel:</strong> {sot.key_personnel.split(',').map(person =>
-                      <Tag key={person.trim()}>{person.trim()}</Tag>
-                    )}
-                  </span>
-                )}
-              </DetailValue>
-            </DetailItem>
-          )}
-
-          {(sot.contact_email || sot.contact_phone || sot.contact_address || sot.ens_address) && (
-            <DetailItem style={{ gridColumn: '1 / -1' }}>
-              <DetailLabel>Contact Information</DetailLabel>
-              <DetailValue style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {sot.contact_email && <span><strong>Email:</strong> {sot.contact_email}</span>}
-                {sot.contact_phone && <span><strong>Phone:</strong> {sot.contact_phone}</span>}
-                {sot.contact_address && <span><strong>Address:</strong> {sot.contact_address}</span>}
-                {sot.ens_address && <span><strong>ENS Address:</strong> {sot.ens_address}</span>}
-              </DetailValue>
-            </DetailItem>
-          )}
-
-          {/* Entity Tags */}
-          {Object.entries(sot)
-            .filter(([key, value]) => key.startsWith('entity_tag') && value)
-            .length > 0 && (
-              <DetailItem style={{ gridColumn: '1 / -1' }}>
-                <DetailLabel>Tags</DetailLabel>
-                <TagsContainer>
-                  {Object.entries(sot)
-                    .filter(([key, value]) => key.startsWith('entity_tag') && value)
-                    .map(([key, value]) => (
-                      <Tag key={key} color="blue" style={{ marginBottom: 8, padding: '4px 8px', borderRadius: '16px' }}>
-                        {value}
-                      </Tag>
-                    ))}
-                </TagsContainer>
+            {/* Leadership */}
+            {(sot.ceo || sot.key_personnel) && (
+              <DetailItem>
+                <DetailLabel>Leadership</DetailLabel>
+                <DetailValue style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {sot.ceo && <span><strong>CEO:</strong> {sot.ceo}</span>}
+                  {sot.key_personnel && (
+                    <span>
+                      <strong>Key Personnel:</strong>{' '}
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginTop: '4px' }}>
+                        {sot.key_personnel.split(',').map(person =>
+                          <Tag key={person.trim()}>{person.trim()}</Tag>
+                        )}
+                      </div>
+                    </span>
+                  )}
+                </DetailValue>
               </DetailItem>
             )}
 
-          {/* Description and Notes */}
-          {(sot.description_merged || sot.note) && (
-            <DetailItem style={{ gridColumn: '1 / -1' }}>
-              <DetailLabel>Description & Notes</DetailLabel>
-              <DetailValue>
-                {sot.description_merged && (
-                  <div style={{ whiteSpace: 'pre-wrap', marginBottom: '16px', marginTop: '8px', maxWidth: '40%' }}>
-                    {sot.description_merged}
-                  </div>
-                )}
-                {sot.note && (
-                  <div style={{ whiteSpace: 'pre-wrap' }}>
-                    <strong>Notes:</strong><br />
-                    {sot.note}
-                  </div>
-                )}
-              </DetailValue>
-            </DetailItem>
-          )}
+            {/* Contact Information */}
+            {(sot.contact_email || sot.contact_phone || sot.contact_address || sot.ens_address) && (
+              <DetailItem>
+                <DetailLabel>Contact Information</DetailLabel>
+                <DetailValue style={{ display: 'flex', flexDirection: 'column', width: '80%' , gap: '8px' }}>
+                  {sot.contact_email && <span><strong>Email:</strong> {sot.contact_email}</span>}
+                  {sot.contact_phone && <span><strong>Phone:</strong> {sot.contact_phone}</span>}
+                  {sot.contact_address && <span><strong>Address:</strong> {sot.contact_address}</span>}
+                  {sot.ens_address && <span><strong>ENS Address:</strong> {sot.ens_address}</span>}
+                </DetailValue>
+              </DetailItem>
+            )}
 
-          {(sot.year_founded || sot.ticker || sot.parent_id || 
-            Object.entries(sot).some(([key, value]) => key.startsWith('associate_country_') && value) ||
-            sot.legal_info_url) && (
-            <DetailItem style={{ gridColumn: '1 / -1' }}>
-              <DetailLabel style={{ marginBottom: '8px' }}>Additional Information</DetailLabel>
-              <DetailValue style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {sot.year_founded && <span><strong>Founded:</strong> {sot.year_founded}</span>}
-                {sot.ticker && <span><strong>Ticker:</strong> {sot.ticker.split(',').map(t => 
-                  <Tag key={t.trim()}>{t.trim()}</Tag>
-                )}</span>}
-                {sot.parent_id && <span><strong>Parent ID:</strong> {sot.parent_id}</span>}
-                
-                {/* Associated Countries */}
-                {Object.entries(sot)
-                  .filter(([key, value]) => key.startsWith('associate_country_') && value)
-                  .length > 0 && (
-                  <span>
-                    <strong>Associated Countries:</strong>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '4px' }}>
-                      {Object.entries(sot)
-                        .filter(([key, value]) => key.startsWith('associate_country_') && value)
-                        .map(([key, value]) => (
-                          <Tag key={key}>{value}</Tag>
-                        ))}
+            {/* Entity Tags */}
+            {Object.entries(sot)
+              .filter(([key, value]) => key.startsWith('entity_tag') && value)
+              .length > 0 && (
+                <DetailItem>
+                  <DetailLabel>Tags</DetailLabel>
+                  <TagsContainer>
+                    {Object.entries(sot)
+                      .filter(([key, value]) => key.startsWith('entity_tag') && value)
+                      .map(([key, value]) => (
+                        <Tag key={key} color="blue" style={{ marginBottom: 8, padding: '4px 8px', borderRadius: '16px' }}>
+                          {value}
+                        </Tag>
+                      ))}
+                  </TagsContainer>
+                </DetailItem>
+              )}
+
+            {/* Description and Notes */}
+            {(sot.description_merged || sot.note) && (
+              <DetailItem>
+                <DetailLabel>Description & Notes</DetailLabel>
+                <DetailValue>
+                  {sot.description_merged && (
+                    <div style={{ whiteSpace: 'pre-wrap', width: '80%', marginBottom: '16px' }}>
+                      {sot.description_merged}
                     </div>
-                  </span>
-                )}
+                  )}
+                  {sot.note && (
+                    <div style={{ whiteSpace: 'pre-wrap' }}>
+                      <strong>Notes:</strong><br />
+                      {sot.note}
+                    </div>
+                  )}
+                </DetailValue>
+              </DetailItem>
+            )}
 
-                {sot.legal_info_url && (
-                  <span>
-                    <strong>Legal Info: </strong>
-                    <a href={sot.legal_info_url} target="_blank" rel="noopener noreferrer">
-                      <GlobalOutlined /> View Legal Information
-                    </a>
-                  </span>
-                )}
-              </DetailValue>
-            </DetailItem>
-          )}
+            {/* Additional Information */}
+            {(sot.year_founded || sot.ticker || sot.parent_id || 
+              Object.entries(sot).some(([key, value]) => key.startsWith('associate_country_') && value) ||
+              sot.legal_info_url) && (
+              <DetailItem>
+                <DetailLabel>Additional Information</DetailLabel>
+                <DetailValue style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {sot.year_founded && <span><strong>Founded:</strong> {sot.year_founded}</span>}
+                  {sot.ticker && (
+                    <span>
+                      <strong>Ticker:</strong> 
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginTop: '4px' }}>
+                        {sot.ticker.split(',').map(t => 
+                          <Tag key={t.trim()}>{t.trim()}</Tag>
+                        )}
+                      </div>
+                    </span>
+                  )}
+                  {sot.parent_id && <span><strong>Parent ID:</strong> {sot.parent_id}</span>}
+                  
+                  {/* Associated Countries */}
+                  {Object.entries(sot)
+                    .filter(([key, value]) => key.startsWith('associate_country_') && value)
+                    .length > 0 && (
+                    <span>
+                      <strong>Associated Countries:</strong>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginTop: '4px' }}>
+                        {Object.entries(sot)
+                          .filter(([key, value]) => key.startsWith('associate_country_') && value)
+                          .map(([key, value]) => (
+                            <Tag key={key}>{value}</Tag>
+                          ))}
+                      </div>
+                    </span>
+                  )}
 
-          {(sot.user || sot.date_updated || sot.revisit_site) && (
-            <DetailItem style={{ gridColumn: '1 / -1', fontSize: '0.9em', color: '#666' }}>
-              {sot.user && <div>Last modified by: {sot.user}</div>}
-              {sot.date_updated && <div>Updated: {new Date(sot.date_updated).toLocaleString()}</div>}
-              {sot.revisit_site && <div>Flagged for review</div>}
-            </DetailItem>
-          )}
+                  {sot.legal_info_url && (
+                    <span style={{ marginTop: '48px', display: 'block' }}>
+                      <strong>Legal Info: </strong>
+                      <a href={sot.legal_info_url} target="_blank" rel="noopener noreferrer">
+                        <GlobalOutlined /> View Legal Information
+                      </a>
+                    </span>
+                  )}
+                </DetailValue>
+              </DetailItem>
+            )}
 
-          {(sot.contact_twitter || sot.contact_telegram || 
-            Object.entries(sot).some(([key, value]) => key.startsWith('social_media_profile') && value)) && (
-            <DetailItem style={{ gridColumn: '1 / -1' }}>
-              <DetailLabel>Social Media Profiles</DetailLabel>
-              <DetailValue style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {/* Twitter */}
-                {sot.contact_twitter && (
-                  <a
-                    href={`https://twitter.com/${sot.contact_twitter.replace('@', '')}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
-                  >
-                    <TwitterOutlined />
-                    <span>{sot.contact_twitter}</span>
-                  </a>
-                )}
+            {/* Metadata - moved to bottom of left column */}
+            {(sot.user || sot.date_updated || sot.revisit_site) && (
+              <DetailItem style={{ fontSize: '0.9em', color: '#666', marginTop: '12px' }}>
+                {sot.user && <div>Last modified by: {sot.user}</div>}
+                {sot.date_updated && <div>Updated: {new Date(sot.date_updated).toLocaleString()}</div>}
+                {sot.revisit_site && <div>Flagged for review</div>}
+              </DetailItem>
+            )}
+          </DetailColumn>
 
-                {/* Telegram */}
-                {sot.contact_telegram && (
-                  <a
-                    href={`https://t.me/${sot.contact_telegram.replace('@', '')}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
-                  >
-                    <SendOutlined />
-                    <span>{sot.contact_telegram}</span>
-                  </a>
-                )}
-
-                {/* Other social media profiles */}
-                {Object.entries(sot)
-                  .filter(([key, value]) => key.startsWith('social_media_profile') && value)
-                  .map(([key, value]) => {
-                    const icon = getSocialMediaIcon(value);
-                    const url = value.startsWith('http') ? value : `https://${value}`;
-
-                    return (
-                      <a
-                        key={key}
-                        href={url}
-                        target="_blank"
+          {/* Right Column */}
+          <DetailColumn>
+            {/* Website */}
+            <DetailItem>
+              <DetailLabel>Website</DetailLabel>
+              <DetailValue>
+                {sot.url ? (
+                  (() => {
+                    // Collect all website URLs
+                    const websiteUrls = [];
+                    
+                    // Add main URL if exists
+                    if (sot.url) {
+                      websiteUrls.push(sot.url);
+                    }
+                    
+                    // Check for additional URLs in other fields
+                    Object.entries(sot)
+                      .filter(([key, value]) => 
+                        (key.startsWith('url_') || key.startsWith('website_') || key.startsWith('alternate_url_')) && 
+                        value && 
+                        typeof value === 'string')
+                      .forEach(([_, value]) => {
+                        websiteUrls.push(value);
+                      });
+                    
+                    // Determine if we need a scrollable container
+                    const needsScroll = websiteUrls.length > 5;
+                    
+                    // Create URL components array
+                    const urlComponents = websiteUrls.map((url, index) => (
+                      <a 
+                        key={index}
+                        href={url.startsWith('http') ? url : `https://${url}`} 
+                        target="_blank" 
                         rel="noopener noreferrer"
                         style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
                       >
-                        {icon}
-                        <span>{value}</span>
+                        <GlobalOutlined />
+                        <span>{url}</span>
                       </a>
+                    ));
+                    
+                    // Render links in scrollable container if needed
+                    if (needsScroll) {
+                      return (
+                        <div>
+                          <Text type="secondary" style={{ marginBottom: '8px', display: 'block' }}>
+                            {websiteUrls.length} websites available (scroll to view all)
+                          </Text>
+                          <ScrollableWebsiteLinks>
+                            {urlComponents}
+                          </ScrollableWebsiteLinks>
+                        </div>
+                      );
+                    }
+
+                    // Otherwise render normally
+                    return urlComponents.length === 1 ? (
+                      <>
+                        <GlobalOutlined />
+                        <a href={websiteUrls[0].startsWith('http') ? websiteUrls[0] : `https://${websiteUrls[0]}`} target="_blank" rel="noopener noreferrer">
+                          {websiteUrls[0]}
+                        </a>
+                      </>
+                    ) : (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        {urlComponents}
+                      </div>
                     );
-                  })}
+                  })()
+                ) : (
+                  <Text type="secondary">No website available</Text>
+                )}
               </DetailValue>
             </DetailItem>
-          )}
+            
+            {/* Social Media Profiles */}
+            {(sot.contact_twitter || sot.contact_telegram || 
+              Object.entries(sot).some(([key, value]) => key.startsWith('social_media_profile') && value)) && (
+              <DetailItem>
+                <DetailLabel>Social Media Profiles</DetailLabel>
+                <DetailValue style={{ display: 'block' }}>
+                  {(() => {
+                    // Count total social media links
+                    const socialMediaCount = [
+                      sot.contact_twitter, 
+                      sot.contact_telegram,
+                      ...Object.entries(sot)
+                        .filter(([key, value]) => key.startsWith('social_media_profile') && value)
+                        .map(([_, value]) => value)
+                    ].filter(Boolean).length;
+                    
+                    // Determine if we need a scrollable container
+                    const needsScroll = socialMediaCount > 5;
+                    
+                    // Create array of all social media links components
+                    const socialMediaLinks = [];
+                    
+                    // Add Twitter link
+                    if (sot.contact_twitter) {
+                      socialMediaLinks.push(
+                        <a
+                          key="twitter"
+                          href={`https://twitter.com/${sot.contact_twitter.replace('@', '')}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+                        >
+                          <TwitterOutlined />
+                          <span>{sot.contact_twitter}</span>
+                        </a>
+                      );
+                    }
+                    
+                    // Add Telegram link
+                    if (sot.contact_telegram) {
+                      socialMediaLinks.push(
+                        <a
+                          key="telegram"
+                          href={`https://t.me/${sot.contact_telegram.replace('@', '')}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+                        >
+                          <SendOutlined />
+                          <span>{sot.contact_telegram}</span>
+                        </a>
+                      );
+                    }
+                    
+                    // Add other social media profile links
+                    Object.entries(sot)
+                      .filter(([key, value]) => key.startsWith('social_media_profile') && value)
+                      .forEach(([key, value]) => {
+                        const icon = getSocialMediaIcon(value);
+                        const url = value.startsWith('http') ? value : `https://${value}`;
+                        
+                        socialMediaLinks.push(
+                          <a
+                            key={key}
+                            href={url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+                          >
+                            {icon}
+                            <span>{value}</span>
+                          </a>
+                        );
+                      });
+                    
+                    // Render links in scrollable container if needed
+                    if (needsScroll) {
+                      return (
+                        <div>
+                          <Text type="secondary" style={{ marginBottom: '8px', display: 'block' }}>
+                            {socialMediaCount} profiles available (scroll to view all)
+                          </Text>
+                          <ScrollableSocialLinks>
+                            {socialMediaLinks}
+                          </ScrollableSocialLinks>
+                        </div>
+                      );
+                    }
+
+                    // Otherwise render normally
+                    return (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        {socialMediaLinks}
+                      </div>
+                    );
+                  })()}
+                </DetailValue>
+              </DetailItem>
+            )}
+          </DetailColumn>
         </DetailSection>
-
-        {/* <Divider />
-
-        <ButtonGroup>
-          <Button type="primary" onClick={handleEdit}>
-            Edit
-          </Button>
-          <Button danger onClick={handleDelete} loading={loading}>
-            Delete
-          </Button>
-        </ButtonGroup> */}
       </>
     );
   };
