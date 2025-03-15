@@ -225,7 +225,7 @@ const SOTEditor: React.FC<SOTEditorProps> = ({ sot, onSelectAssociatedSot }) => 
     if (!isValidSOT(sot)) return null;
 
     // Check if entity is an individual person
-    const isIndividualPerson = sot.entity_type?.toLowerCase() === EEntityType.INDIVIDUAL_PERSON;
+    // const isIndividualPerson = sot.entity_type?.toLowerCase() === EEntityType.INDIVIDUAL_PERSON;
     
     // Check if entity is OFAC sanctioned
     const isOfacSanctioned = Object.entries(sot)
