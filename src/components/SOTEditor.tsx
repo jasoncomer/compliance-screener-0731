@@ -132,62 +132,6 @@ const SanctionedPill = styled.div`
   }
 `;
 
-// Add styled component for scrollable social media links container
-const ScrollableSocialLinks = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  max-height: 200px;
-  overflow-y: auto;
-  padding-right: 10px;
-  
-  &::-webkit-scrollbar {
-    width: 6px;
-  }
-  
-  &::-webkit-scrollbar-track {
-    background: ${colors.gray[100]};
-    border-radius: 3px;
-  }
-  
-  &::-webkit-scrollbar-thumb {
-    background: ${colors.gray[300]};
-    border-radius: 3px;
-    
-    &:hover {
-      background: ${colors.gray[400]};
-    }
-  }
-`;
-
-// Add styled component for scrollable website links container
-const ScrollableWebsiteLinks = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  max-height: 200px;
-  overflow-y: auto;
-  padding-right: 10px;
-  
-  &::-webkit-scrollbar {
-    width: 6px;
-  }
-  
-  &::-webkit-scrollbar-track {
-    background: ${colors.gray[100]};
-    border-radius: 3px;
-  }
-  
-  &::-webkit-scrollbar-thumb {
-    background: ${colors.gray[300]};
-    border-radius: 3px;
-    
-    &:hover {
-      background: ${colors.gray[400]};
-    }
-  }
-`;
-
 interface SOTEditorProps {
   sot: SOT | null;
   onSelectAssociatedSot: (sot: SOT) => void;
@@ -266,6 +210,7 @@ const SOTEditor: React.FC<SOTEditorProps> = ({ sot, onSelectAssociatedSot }) => 
     if (!isValidSOT(sot)) return null;
 
     // Check if entity is an individual person
+
     const isIndividualPerson = sot.entity_type?.toLowerCase() === EEntityType.INDIVIDUAL_PERSON;
     
     // Check if entity is OFAC sanctioned
@@ -460,6 +405,7 @@ const SOTEditor: React.FC<SOTEditorProps> = ({ sot, onSelectAssociatedSot }) => 
             {/* Entity ID */}
           <DetailItem>
             <DetailLabel>Entity ID</DetailLabel>
+
               <DetailValue>
               <span>{sot.entity_id}</span>
             </DetailValue>
@@ -535,6 +481,7 @@ const SOTEditor: React.FC<SOTEditorProps> = ({ sot, onSelectAssociatedSot }) => 
                 </DetailValue>
               </DetailItem>
             )}
+
 
             {/* Additional Information */}
             {(sot.year_founded || sot.ticker || sot.parent_id || 
@@ -771,6 +718,129 @@ const SOTEditor: React.FC<SOTEditorProps> = ({ sot, onSelectAssociatedSot }) => 
               </DetailItem>
             )}
           </DetailColumn>
+=======
+          {/* Description and Notes */}
+          {(sot.description_merged || sot.note) && (
+            <DetailItem style={{ gridColumn: '1 / -1' }}>
+              <DetailLabel>Description & Notes</DetailLabel>
+              <DetailValue>
+                {sot.description_merged && (
+                  <div style={{ whiteSpace: 'pre-wrap', marginBottom: '16px', marginTop: '8px', maxWidth: '40%' }}>
+                    {sot.description_merged}
+                  </div>
+                )}
+                {sot.note && (
+                  <div style={{ whiteSpace: 'pre-wrap' }}>
+                    <strong>Notes:</strong><br />
+                    {sot.note}
+                  </div>
+                )}
+              </DetailValue>
+            </DetailItem>
+          )}
+
+          {(sot.year_founded || sot.ticker || sot.parent_id || 
+            Object.entries(sot).some(([key, value]) => key.startsWith('associate_country_') && value) ||
+            sot.legal_info_url) && (
+            <DetailItem style={{ gridColumn: '1 / -1' }}>
+              <DetailLabel style={{ marginBottom: '8px' }}>Additional Information</DetailLabel>
+              <DetailValue style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {sot.year_founded && <span><strong>Founded:</strong> {sot.year_founded}</span>}
+                {sot.ticker && <span><strong>Ticker:</strong> {sot.ticker.split(',').map(t => 
+                  <Tag key={t.trim()}>{t.trim()}</Tag>
+                )}</span>}
+                {sot.parent_id && <span><strong>Parent ID:</strong> {sot.parent_id}</span>}
+                
+                {/* Associated Countries */}
+                {Object.entries(sot)
+                  .filter(([key, value]) => key.startsWith('associate_country_') && value)
+                  .length > 0 && (
+                  <span>
+                    <strong>Associated Countries:</strong>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '4px' }}>
+                      {Object.entries(sot)
+                        .filter(([key, value]) => key.startsWith('associate_country_') && value)
+                        .map(([key, value]) => (
+                          <Tag key={key}>{value}</Tag>
+                        ))}
+                    </div>
+                  </span>
+                )}
+
+                {sot.legal_info_url && (
+                  <span>
+                    <strong>Legal Info: </strong>
+                    <a href={sot.legal_info_url} target="_blank" rel="noopener noreferrer">
+                      <GlobalOutlined /> View Legal Information
+                    </a>
+                  </span>
+                )}
+              </DetailValue>
+            </DetailItem>
+          )}
+
+          {(sot.user || sot.date_updated || sot.revisit_site) && (
+            <DetailItem style={{ gridColumn: '1 / -1', fontSize: '0.9em', color: '#666' }}>
+              {sot.user && <div>Last modified by: {sot.user}</div>}
+              {sot.date_updated && <div>Updated: {new Date(sot.date_updated).toLocaleString()}</div>}
+              {sot.revisit_site && <div>Flagged for review</div>}
+            </DetailItem>
+          )}
+
+          {(sot.contact_twitter || sot.contact_telegram || 
+            Object.entries(sot).some(([key, value]) => key.startsWith('social_media_profile') && value)) && (
+            <DetailItem style={{ gridColumn: '1 / -1' }}>
+              <DetailLabel>Social Media Profiles</DetailLabel>
+              <DetailValue style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {/* Twitter */}
+                {sot.contact_twitter && (
+                  <a
+                    href={`https://twitter.com/${sot.contact_twitter.replace('@', '')}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+                  >
+                    <TwitterOutlined />
+                    <span>{sot.contact_twitter}</span>
+                  </a>
+                )}
+
+                {/* Telegram */}
+                {sot.contact_telegram && (
+                  <a
+                    href={`https://t.me/${sot.contact_telegram.replace('@', '')}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+                  >
+                    <SendOutlined />
+                    <span>{sot.contact_telegram}</span>
+                  </a>
+                )}
+
+                {/* Other social media profiles */}
+                {Object.entries(sot)
+                  .filter(([key, value]) => key.startsWith('social_media_profile') && value)
+                  .map(([key, value]) => {
+                    const icon = getSocialMediaIcon(value);
+                    const url = value.startsWith('http') ? value : `https://${value}`;
+
+                    return (
+                      <a
+                        key={key}
+                        href={url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+                      >
+                        {icon}
+                        <span>{value}</span>
+                      </a>
+                    );
+                  })}
+              </DetailValue>
+            </DetailItem>
+          )}
         </DetailSection>
       </>
     );
