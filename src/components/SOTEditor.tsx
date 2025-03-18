@@ -444,44 +444,18 @@ const SOTEditor: React.FC<SOTEditorProps> = ({ sot, onSelectAssociatedSot }) => 
               </DetailItem>
             )}
 
-            {/* Entity Tags */}
-            {Object.entries(sot)
-              .filter(([key, value]) => key.startsWith('entity_tag') && value)
-              .length > 0 && (
-                <DetailItem>
-                  <DetailLabel>Tags</DetailLabel>
-                  <TagsContainer>
-                    {Object.entries(sot)
-                      .filter(([key, value]) => key.startsWith('entity_tag') && value)
-                      .map(([key, value]) => (
-                        <Tag key={key} color="blue" style={{ marginBottom: 8, padding: '4px 8px', borderRadius: '16px' }}>
-                          {value}
-                        </Tag>
-                      ))}
-                  </TagsContainer>
-                </DetailItem>
-              )}
 
-            {/* Description and Notes */}
-            {(sot.description_merged || sot.note) && (
-              <DetailItem>
-                <DetailLabel>Description & Notes</DetailLabel>
-                <DetailValue>
-                  {sot.description_merged && (
-                    <div style={{ whiteSpace: 'pre-wrap', width: '80%', marginBottom: '16px' }}>
-                      {sot.description_merged}
-                    </div>
-                  )}
-                  {sot.note && (
-                    <div style={{ whiteSpace: 'pre-wrap' }}>
-                      <strong>Notes:</strong><br />
-                      {sot.note}
-                    </div>
-                  )}
-                </DetailValue>
-              </DetailItem>
-            )}
-
+          {(sot.contact_email || sot.contact_phone || sot.contact_address || sot.ens_address) && (
+            <DetailItem style={{ gridColumn: '1 / -1' }}>
+              <DetailLabel>Contact Information</DetailLabel>
+              <DetailValue style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '40%'}}>
+                {sot.contact_email && <span><strong>Email:</strong> {sot.contact_email}</span>}
+                {sot.contact_phone && <span><strong>Phone:</strong> {sot.contact_phone}</span>}
+                {sot.contact_address && <span><strong>Address:</strong> {sot.contact_address}</span>}
+                {sot.ens_address && <span><strong>ENS Address:</strong> {sot.ens_address}</span>}
+              </DetailValue>
+            </DetailItem>
+          )}
 
             {/* Additional Information */}
             {(sot.year_founded || sot.ticker || sot.parent_id || 
@@ -718,7 +692,7 @@ const SOTEditor: React.FC<SOTEditorProps> = ({ sot, onSelectAssociatedSot }) => 
               </DetailItem>
             )}
           </DetailColumn>
-=======
+
           {/* Description and Notes */}
           {(sot.description_merged || sot.note) && (
             <DetailItem style={{ gridColumn: '1 / -1' }}>

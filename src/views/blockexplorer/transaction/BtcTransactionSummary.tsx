@@ -15,6 +15,7 @@ const SummaryWrapper = styled.div`
   justify-content: space-between;
   flex-direction: row;
 
+
   .col {
     display: flex;
     flex: 1;
