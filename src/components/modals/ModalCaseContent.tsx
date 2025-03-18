@@ -180,7 +180,7 @@ const ModalCaseContent: React.FC<ModalCaseContentProps> = ({ userCase, open, clo
           <SummarySection>
             <section>
               <Title level={4}>Case Summary</Title>
-              <p><Label>Address Balance:</Label><Value>{summary.balance}</Value></p>
+              <p><Label>Address Balance:</Label><Value>hh{summary.balance}</Value></p>
               <p><Label>Total Transactions:</Label><Value>{transactions.length}</Value></p>
               <p><Label>Total BTC Transacted:</Label><Value>{summary.total_received + summary.total_spent}</Value></p>
               <p><Label>Total Received:</Label><Value>{summary.total_received}</Value></p>

@@ -19,6 +19,7 @@ const HeaderWrapper = styled.div<{ theme?: { theme: Theme } }>`
 const HeaderItem = styled.div<{ theme?: { theme: Theme } }>`
   display: flex;
   flex-direction: column;
+  font-family: monospace;
   color: ${props => props.theme?.theme === 'dark' ? '#ffffff' : '#000000'};
 
   span:first-child {
@@ -43,15 +44,15 @@ interface BtcTransactionHeaderProps {
 
 const BtcTransactionHeader: React.FC<BtcTransactionHeaderProps> = ({ txHash, blockHeight, date, theme }) => (
   <HeaderWrapper theme={theme}>
-    <HeaderItem theme={theme}>
+    <HeaderItem theme={theme} style={{ fontFamily: 'monospace' }}>
       <span>Transaction Hash:</span>
-      <Link to={`/home/block-explorer/transaction/${txHash}`}>{txHash}</Link>
+      <Link to={`/home/block-explorer/transaction/${txHash}`} style={{ fontFamily: 'monospace' }}>{txHash}</Link>
     </HeaderItem>
-    <HeaderItem theme={theme}>
+    <HeaderItem theme={theme} style={{fontFamily: 'monospace'}}>
       <span>Block Height:</span>
-      <span>{blockHeight.toLocaleString()}</span>
+      <span style={{ fontFamily: 'monospace' }}>{blockHeight.toLocaleString()}</span>
     </HeaderItem>
-    <HeaderItem theme={theme}>
+    <HeaderItem theme={theme} style={{fontFamily: 'monospace'}}>
       <span>Date:</span>
       <span>{date}</span>
     </HeaderItem>
@@ -67,7 +68,7 @@ const BtcTransactionTable: React.FC<BtcTransactionTableProps> = ({ transaction, 
   if (!transaction) return null;
 
   return (
-    <BsBlock theme={theme}>
+    <BsBlock theme={theme} style={{ fontFamily: 'monospace' }}>
       <BtcTransactionHeader
         txHash={transaction.txid}
         blockHeight={transaction.block}

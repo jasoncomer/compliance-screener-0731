@@ -186,7 +186,7 @@ const Address: React.FC = () => {
           </AddressInfoWrapper>
         </BsBlock>
 
-        <BsBlock theme={{ theme }}>
+        <BsBlock theme={{ theme }} style={{ fontFamily: 'monospace' }}>
           <h3>Summary</h3>
           <hr />
           <SummaryWrapper>
@@ -204,7 +204,7 @@ const Address: React.FC = () => {
           </SummaryWrapper>
         </BsBlock>
 
-        <BsBlock theme={{ theme }}>
+        <BsBlock theme={{ theme }} style={{ fontFamily: 'monospace' }}>
           <h3>Transactions ({totalTxs.toLocaleString()})</h3>
           <hr />
           {isLoading ? (

@@ -12,16 +12,24 @@ interface BtcInputsOutputsProps {
   type: 'inputs' | 'outputs';
 }
 
-const Amount = styled.span``;
+const Amount = styled.span`
+  font-family: monospace;
+`;
 
 const Wrapper = styled.div`
   display: flex;
   flex-direction: column;
+  left: 0;
 
   div {
     display: flex;
     justify-content: space-between;
     flex-direction: row;
+  }
+  .row-container {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
   }
   .attributed {
     color: ${colors.attribution};
@@ -30,10 +38,69 @@ const Wrapper = styled.div`
       color: ${colors.attributionHover};
     }
   }
+  .address {
+    font-family: monospace;
+    left: 0;
+    color: ${colors.primary};
+    &:hover {
+      color: ${colors.link};
+    }
+  }
+  .toggle-button {
+    color: #888;
+    cursor: pointer;
+    position: absolute;
+    margin-left: 85%;
+    &:hover {
+      color: orange;
+    }
+  }
+  .address-container {
+    display: flex;
+    align-items: center;
+    position: relative;
+    width: 100%;
+  }
+  .address-wrapper {
+    min-width: 240px;
+    display: flex;
+    align-items: center;
+  }
+  .copy-button {
+    cursor: pointer;
+    color: #888;
+    margin-right: 8px;
+    &:hover {
+      color: ${colors.primary};
+    }
+  }
+  .copy-alert {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: ${colors.primary};
+    color: white;
+    padding: 15px 30px;
+    border-radius: 6px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    z-index: 1000;
+    font-size: 18px;
+    animation: fadeIn 0.3s, fadeOut 0.3s 1.7s;
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  @keyframes fadeOut {
+    from { opacity: 1; }
+    to { opacity: 0; }
+  }
 `;
 
 const Row = styled.div`
   margin-bottom: 8px;
+  left: 0;
 `;
 
 const ToggleButton = styled.button`
@@ -59,16 +126,17 @@ const BtcTxAddress: React.FC<BtcTxAddressProps> = ({ address }) => {
   const url = window.location.href;
   const currAddress = url.split('/').pop();
   const { attributions, referenceAttributions } = useAttribution();
+  const [showFullAddress, setShowFullAddress] = useState(false);
+  const [copySuccess, setCopySuccess] = useState(false);
+  const [showCopyAlert, setShowCopyAlert] = useState(false);
 
   const attribution = attributions[address]?.entity;
   const referenceAttribution = referenceAttributions[address]?.entity;
 
-  const truncatedAddress = truncateAddress(address);
+  // Show first 6 characters with ellipsis instead of truncating
+  const shortenedAddress = `${address.substring(0, 6)}...`;
+  const displayAddress = showFullAddress ? address : shortenedAddress;
 
-  if (address === currAddress) {
-    return <span className="monospace">{truncatedAddress}</span>;
-  }
-  
   // Split reference attribution by "." if it exists
   const splitReferenceAttribution = referenceAttribution ? referenceAttribution.split('.')[0] : '';
   
@@ -76,7 +144,7 @@ const BtcTxAddress: React.FC<BtcTxAddressProps> = ({ address }) => {
   const attributionsMatch = attribution && splitReferenceAttribution && 
     attribution.toLowerCase() === splitReferenceAttribution.toLowerCase();
   
-  const bsAttribution = attribution ? attribution : truncatedAddress;
+  const bsAttribution = attribution ? attribution : displayAddress;
   
   // css
   let className = attribution ? 'attributed' : '';
@@ -84,13 +152,65 @@ const BtcTxAddress: React.FC<BtcTxAddressProps> = ({ address }) => {
     className = 'attributed reference';
   }
 
+  const copyToClipboard = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    navigator.clipboard.writeText(address)
+      .then(() => {
+        setCopySuccess(true);
+        setShowCopyAlert(true);
+        setTimeout(() => setCopySuccess(false), 2000);
+        setTimeout(() => setShowCopyAlert(false), 2000);
+      })
+      .catch(err => {
+        console.error('Failed to copy address: ', err);
+      });
+  };
+
+  if (address === currAddress) {
+    return (
+      <>
+        <div className="address-container">
+          <div className="address-wrapper">
+            <span className="copy-button" onClick={copyToClipboard} title="Copy address">
+              {copySuccess ? '✓' : '⧉'}
+            </span>
+            <span className="address" style={{ cursor: 'pointer' }} onClick={() => setShowFullAddress(!showFullAddress)}>
+              {displayAddress}
+            </span>
+          </div>
+          <small className="toggle-button" onClick={() => setShowFullAddress(!showFullAddress)}>
+            {!showFullAddress ? 'Show more' : 'Show less'}
+          </small>
+        </div>
+        {showCopyAlert && <div className="copy-alert">Address copied</div>}
+      </>
+    );
+  }
+
   return (
-    <Link 
-      className={className} 
-      to={`/home/block-explorer/address/${address}`}
-    >
-      {bsAttribution} {(referenceAttribution && !attributionsMatch) ? `(${splitReferenceAttribution})` : ''}
-    </Link>
+    <>
+      <div className="address-container">
+        <div className="address-wrapper">
+          <span className="copy-button" onClick={copyToClipboard} title="Copy address">
+            {copySuccess ? '✓' : '⧉'}
+          </span>
+          <Link 
+            className={`address ${className}`}
+            to={`/home/block-explorer/address/${address}`}
+          >
+            {bsAttribution} {(referenceAttribution && !attributionsMatch) ? `(${splitReferenceAttribution})` : ''}
+          </Link>
+        </div>
+        <small 
+          className="toggle-button"
+          onClick={(e) => { e.preventDefault(); setShowFullAddress(!showFullAddress); }}
+        >
+          {!showFullAddress ? 'Show more' : 'Show less'}
+        </small>
+      </div>
+      {showCopyAlert && <div className="copy-alert">Address copied</div>}
+    </>
   );
 }
 
@@ -111,7 +231,7 @@ const BtcInputsOutputs: React.FC<BtcInputsOutputsProps> = ({ data }) => {
   return (
     <Wrapper>
       {displayData.map((input: BtcTransaction['inputs'][0], index: number) => (
-        <Row key={index}>
+        <Row key={index} className="row-container">
           <BtcTxAddress address={input.addr} />
           <Amount>{renderAmt(input.amt)}</Amount>
         </Row>
