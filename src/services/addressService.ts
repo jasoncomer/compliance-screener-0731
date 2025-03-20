@@ -1,5 +1,5 @@
 import Papa from 'papaparse';
-import type { MonitoredAddress, AddressUploadFormat, AddressUploadResponse } from '../types/addresses';
+import type { MonitoredAddress, AddressUploadFormat, AddressUploadResponse } from '../typings/addresses';
 import type { ParseResult } from 'papaparse';
 
 export class AddressService {

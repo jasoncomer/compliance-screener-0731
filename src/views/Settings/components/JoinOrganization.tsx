@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
-import { Card, Form, Button, Result, Spin, Input } from 'antd';
+import { Card, Form, Button, Result, Spin, Input, message } from 'antd';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import styled from 'styled-components';
 import ViewWrapper from '../../../components/ViewWrapper';
 import { TeamOutlined } from '@ant-design/icons';
+import { api } from '../../../api/api';
+import { useAppContext } from '../../../context/AppContext';
 
 const StyledCard = styled(Card)`
   max-width: 500px;
@@ -12,26 +14,41 @@ const StyledCard = styled(Card)`
 
 const JoinOrganization: React.FC = () => {
   const navigate = useNavigate();
+  const { user } = useAppContext();
   const [searchParams] = useSearchParams();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>();
   const [success, setSuccess] = useState(false);
+  const [organizationName, setOrganizationName] = useState<string>('');
 
   // Get invitation token or code from URL
   const inviteToken = searchParams.get('token');
   const inviteCode = searchParams.get('code');
 
   const handleJoinWithCode = async (values: { code: string }) => {
+    if (!user?.email) {
+      setError('You must be logged in to join an organization');
+      return;
+    }
+    
     setLoading(true);
     setError(undefined);
-    console.log('values', values);
     
     try {
-      // API call will be implemented later
-      // await api.organization.joinWithCode(values.code);
-      setSuccess(true);
+      const response = await api.organizations.join({ 
+        code: values.code,
+        email: user.email
+      });
+      
+      if (response.data) {
+        setOrganizationName(response.data.name || '');
+        setSuccess(true);
+        message.success(`Successfully joined ${response.data.name || 'the organization'}!`);
+      }
     } catch (err: any) {
+      console.error('Error joining organization:', err);
       setError(err.message || 'Failed to join organization');
+      message.error('Failed to join organization');
     } finally {
       setLoading(false);
     }
@@ -44,11 +61,18 @@ const JoinOrganization: React.FC = () => {
     setError(undefined);
     
     try {
-      // API call will be implemented later
-      // await api.organization.acceptInvitation(inviteToken);
+      // This API endpoint is not implemented yet, but will be similar to join
+      // For now, we can use a mock implementation
+      
+      // await api.organizations.acceptInvite(inviteToken);
+      
+      // Mock successful joining
       setSuccess(true);
+      message.success('Successfully accepted invitation!');
     } catch (err: any) {
+      console.error('Error accepting invitation:', err);
       setError(err.message || 'Failed to accept invitation');
+      message.error('Failed to accept invitation');
     } finally {
       setLoading(false);
     }
@@ -73,11 +97,11 @@ const JoinOrganization: React.FC = () => {
         <StyledCard>
           <Result
             status="success"
-            title="Welcome to the organization!"
+            title={`Welcome to ${organizationName || 'the organization'}!`}
             subTitle="You have successfully joined the organization."
             extra={[
-              <Button type="primary" key="home" onClick={() => navigate('/home')}>
-                Go to Dashboard
+              <Button type="primary" key="home" onClick={() => navigate('/settings/members')}>
+                Go to Members
               </Button>
             ]}
           />

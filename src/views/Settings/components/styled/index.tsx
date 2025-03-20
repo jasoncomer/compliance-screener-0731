@@ -152,6 +152,19 @@ export const Button = styled.button`
   &:hover {
     background: #2980b9;
   }
+
+  &:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+  }
+
+  &.delete-button {
+    background: #e74c3c;
+
+    &:hover {
+      background: #c0392b;
+    }
+  }
 `;
 
 export const PreferencesGrid = styled.div`

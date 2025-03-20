@@ -36,6 +36,11 @@ h1 {
   pointer-events: none;
 }
 
+.capitalize {
+  text-transform: capitalize;
+}
+
+/* Antd styles */
 .ant-input:focus,
 .ant-input-focused {
   outline: none !important;
@@ -71,6 +76,82 @@ pre {
   overflow-x: auto;
   font-family: monospace;
   border: 1px solid #303030;
+}
+
+/* Custom modal styling for dark mode */
+.custom-modal-dark .ant-modal-content {
+  background-color: #1f1f1f;
+  color: #ffffff;
+}
+
+.custom-modal-dark .ant-modal-header {
+  background-color: #1f1f1f;
+  border-bottom: 1px solid #303030;
+}
+
+.custom-modal-dark .ant-modal-body {
+  background-color: #1f1f1f;
+  color: #d9d9d9;
+}
+
+.custom-modal-dark .ant-modal-footer {
+  background-color: #1f1f1f;
+  border-top: 1px solid #303030;
+}
+
+.custom-modal-dark .ant-modal-title,
+.custom-modal-dark .ant-modal-confirm-title {
+  color: #ffffff;
+}
+
+.custom-modal-dark .ant-modal-confirm-content {
+  color: #d9d9d9;
+}
+
+.custom-modal-dark .ant-btn-default {
+  background-color: #141414;
+  color: #d9d9d9;
+  border-color: #303030;
+}
+
+.custom-modal-dark .ant-btn-default:hover,
+.custom-modal-dark .ant-btn-default:focus {
+  background-color: #303030 !important;
+  border-color: #434343 !important;
+  color: #d9d9d9 !important;
+}
+
+/* Input fields in dark mode modal */
+.custom-modal-dark .ant-input {
+  background-color: #141414;
+  color: #ffffff;
+  border-color: #303030;
+}
+
+.custom-modal-dark .ant-input:hover,
+.custom-modal-dark .ant-input:focus {
+  border-color: #e87e4f;
+}
+
+.custom-modal-dark .ant-input::placeholder {
+  color: #666666;
+}
+
+.custom-modal-dark .ant-modal-confirm-btns .ant-btn-primary[disabled] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Fix for primary button hover in dark mode */
+.custom-modal-dark .ant-btn-primary:hover,
+.custom-modal-dark .ant-btn-primary:focus {
+  background-color: #c0392b !important;
+  border-color: #c0392b !important;
+}
+
+.custom-modal-dark .ant-btn-primary {
+  background-color: #e74c3c !important;
+  border-color: #e74c3c !important;
 }
 
 @media (prefers-color-scheme: light) {

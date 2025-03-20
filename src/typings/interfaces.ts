@@ -23,12 +23,24 @@ export interface ICaseCreate {
   notes?: string;
 }
 
+export interface ICaseStatusChange {
+  oldStatus: ECaseStatus;
+  newStatus: ECaseStatus;
+  changedBy: string; // userId
+  changeDate: string; // ISO date string
+  notes?: string;
+}
+
 export interface ICase extends ICaseCreate {
   _id: string;
   caseId: string;
   userId: string;
   blockchain?: 'bitcoin' | 'ethereum';
   key?: string;
+  statusHistory?: ICaseStatusChange[];
+  assignedTo?: string;
+  priority?: 'low' | 'medium' | 'high';
+  lastUpdated?: string;
 }
 
 export interface ITx {

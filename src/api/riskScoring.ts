@@ -1,5 +1,5 @@
 import { axiosInstance } from './api';
-import { RiskScoringResponse } from '../types/riskScoring';
+import { RiskScoringResponse } from '../typings/riskScoring';
 
 interface RiskScoringRequest {
   identifier: string;

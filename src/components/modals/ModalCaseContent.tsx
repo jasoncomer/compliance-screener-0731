@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Modal, Typography, Button, Table } from 'antd';
-import { ICase } from '../../typings/interfaces';
+import { Modal, Typography, Button, Table, Timeline, Select, Form, Input, message, Divider, Tag, Space } from 'antd';
+import { ICase, ICaseStatusChange } from '../../typings/interfaces';
 import styled from 'styled-components';
 import { api } from '../../api/api';
 import { IBtcAddressSummary } from '../../typings/BtcAddress';
 import { BtcTransaction } from '../../typings/BtcTransaction';
 import { satsToBTC, getTransactionAmountOfAddress } from '../../utils/crypto';
+import { ECaseStatus, ECaseStatusDisplayNames, ECaseStatusColors } from '../../typings/enums';
+import { ArrowRightOutlined } from '@ant-design/icons';
 
 const { Title: AntTitle, Text } = Typography;
 
@@ -13,9 +15,7 @@ interface ModalCaseContentProps {
   userCase: ICase;
   open: boolean;
   close: () => void;
-  // fetchCaseSummary: (caseId: string) => Promise<IAddressSummary>;
-  // fetchCaseTransactions: (caseId: string) => Promise<ITransaction[]>;
-  // downloadPdfReport: (caseId: string) => void;
+  refreshCases?: () => void;
 }
 
 const Wrapper = styled.div`
@@ -84,13 +84,30 @@ const Textarea = styled.textarea`
   margin-top: 16px;
 `;
 
-const ModalCaseContent: React.FC<ModalCaseContentProps> = ({ userCase, open, close }) => {
+const ModalCaseContent: React.FC<ModalCaseContentProps> = ({ userCase, open, close, refreshCases }) => {
   const { addresses: addressesString, caseId, clientEmail, clientName, status, userId, blockchain, notes } = userCase;
   const addresses = useMemo(() => Array.isArray(addressesString) ? addressesString : [addressesString], [addressesString]);
 
   const [summary, setSummary] = useState<IBtcAddressSummary>();
   const [transactions, setTransactions] = useState<BtcTransaction[]>([]);
+  const [statusHistory, setStatusHistory] = useState<ICaseStatusChange[]>([]);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+  
+  // For status change form
+  const [form] = Form.useForm();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // Status options for the dropdown - filtered based on current status
+  const statusTransitions: Record<ECaseStatus, ECaseStatus[]> = {
+    [ECaseStatus.NEW]: [ECaseStatus.UNDER_REVIEW, ECaseStatus.PENDING_INFO, ECaseStatus.CLOSED],
+    [ECaseStatus.UNDER_REVIEW]: [ECaseStatus.ESCALATED, ECaseStatus.PENDING_INFO, ECaseStatus.CLOSED],
+    [ECaseStatus.ESCALATED]: [ECaseStatus.UNDER_REVIEW, ECaseStatus.PENDING_INFO, ECaseStatus.CLOSED],
+    [ECaseStatus.PENDING_INFO]: [ECaseStatus.UNDER_REVIEW, ECaseStatus.CLOSED],
+    [ECaseStatus.CLOSED]: [ECaseStatus.ARCHIVED],
+    [ECaseStatus.ARCHIVED]: [],
+  };
 
+  // Load case data when modal opens
   useEffect(() => {
     if (open) {
       const addrTmp = "16va6NxJrMGe5d2LP6wUzuVnzBBoKQZKom";
@@ -107,8 +124,42 @@ const ModalCaseContent: React.FC<ModalCaseContentProps> = ({ userCase, open, clo
           setTransactions(txs);
         })
         .catch(console.error);
+      
+      // Load status history
+      setIsLoadingHistory(true);
+      api.cases.getCaseStatusHistory(userCase._id)
+        .then(history => {
+          setStatusHistory(history);
+        })
+        .catch(error => {
+          console.error('Failed to load status history:', error);
+        })
+        .finally(() => {
+          setIsLoadingHistory(false);
+        });
     }
-  }, [open, caseId, addresses]);
+  }, [open, caseId, addresses, userCase._id]);
+  
+  // Handle status change form submission
+  const handleStatusChange = async (values: { newStatus: ECaseStatus; notes: string }) => {
+    setIsSubmitting(true);
+    try {
+      await api.cases.updateStatus(userCase._id, values.newStatus, values.notes);
+      message.success(`Status updated to ${ECaseStatusDisplayNames[values.newStatus]}`);
+      form.resetFields();
+      
+      // Refresh cases list and close modal
+      if (refreshCases) {
+        refreshCases();
+      }
+      close();
+    } catch (error) {
+      console.error('Failed to update status:', error);
+      message.error('Failed to update status');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   const downloadPdfReport = async (address: string) => {
     console.log('Downloading PDF report for address:', address);
@@ -200,9 +251,89 @@ const ModalCaseContent: React.FC<ModalCaseContentProps> = ({ userCase, open, clo
           <StyledTable dataSource={transactions} columns={columns} />
         </TransactionSection>
 
+        {/* Status History Section */}
         <InfoSection>
-          <Title level={4}>Notes</Title>
-          <Textarea>{notes}</Textarea>
+          <Title level={4}>Status History</Title>
+          {isLoadingHistory ? (
+            <div style={{ textAlign: 'center', padding: '20px' }}>Loading status history...</div>
+          ) : statusHistory.length > 0 ? (
+            <Timeline
+              mode="left"
+              items={statusHistory.map(item => ({
+                color: ECaseStatusColors[item.newStatus],
+                children: (
+                  <div>
+                    <Space direction="vertical">
+                      <Space>
+                        <Tag color={ECaseStatusColors[item.oldStatus]}>
+                          {ECaseStatusDisplayNames[item.oldStatus]}
+                        </Tag>
+                        <ArrowRightOutlined />
+                        <Tag color={ECaseStatusColors[item.newStatus]}>
+                          {ECaseStatusDisplayNames[item.newStatus]}
+                        </Tag>
+                      </Space>
+                      <Text type="secondary">
+                        {new Date(item.changeDate).toLocaleString()} by {item.changedBy}
+                      </Text>
+                      {item.notes && <Text>{item.notes}</Text>}
+                    </Space>
+                  </div>
+                ),
+              }))}
+            />
+          ) : (
+            <Text>No status changes recorded yet.</Text>
+          )}
+        </InfoSection>
+
+        {/* Status Change Form */}
+        {statusTransitions[status as ECaseStatus]?.length > 0 && (
+          <InfoSection>
+            <Title level={4}>Update Status</Title>
+            <Form 
+              form={form}
+              onFinish={handleStatusChange}
+              layout="vertical"
+            >
+              <Form.Item
+                name="newStatus"
+                label="Change status to:"
+                rules={[{ required: true, message: 'Please select a new status' }]}
+              >
+                <Select placeholder="Select new status">
+                  {statusTransitions[status as ECaseStatus].map(availableStatus => (
+                    <Select.Option key={availableStatus} value={availableStatus}>
+                      <Space>
+                        <Tag color={ECaseStatusColors[availableStatus]}>
+                          {ECaseStatusDisplayNames[availableStatus]}
+                        </Tag>
+                      </Space>
+                    </Select.Option>
+                  ))}
+                </Select>
+              </Form.Item>
+              
+              <Form.Item
+                name="notes"
+                label="Notes for this status change"
+                rules={[{ required: true, message: 'Please provide notes explaining this status change' }]}
+              >
+                <Input.TextArea rows={4} placeholder="Explain why you are changing the status" />
+              </Form.Item>
+              
+              <Form.Item>
+                <Button type="primary" htmlType="submit" loading={isSubmitting}>
+                  Update Status
+                </Button>
+              </Form.Item>
+            </Form>
+          </InfoSection>
+        )}
+
+        <InfoSection>
+          <Title level={4}>Case Notes</Title>
+          <Textarea readOnly value={notes || ''} />
         </InfoSection>
 
       </Wrapper>

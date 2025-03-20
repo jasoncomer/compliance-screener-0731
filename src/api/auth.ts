@@ -26,9 +26,16 @@ const resetPassword = async (username: string): Promise<boolean> => {
   return res.data;
 }
 
+// Function to delete a user account
+const deleteAccount = async (userId: string): Promise<IBSApiResponse<null>> => {
+  const res = await axiosInstance.delete(`/auth/remove/${userId}`);
+  return res.data;
+}
+
 // Other auth API functions...
 export const users = {
   authenticateUser,
   registerUser,
   resetPassword,
+  deleteAccount,
 };

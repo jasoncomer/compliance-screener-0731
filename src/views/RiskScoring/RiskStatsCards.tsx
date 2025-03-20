@@ -1,6 +1,6 @@
 import React from 'react';
 import { Row, Col, Card, Statistic, Progress } from 'antd';
-import { RiskScoringResponse } from '../../types/riskScoring';
+import { RiskScoringResponse } from '../../typings/riskScoring';
 import { getRiskColor } from './utils';
 
 interface RiskStatsCardsProps {

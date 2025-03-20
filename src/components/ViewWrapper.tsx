@@ -5,7 +5,6 @@ import styled from 'styled-components';
 const ViewContainer = styled.div<{ $theme: 'light' | 'dark'; $fullWidth?: boolean }>`
   margin-top: 0;
   padding-top: 0;
-  background: ${props => props.$theme === 'light' ? '#fff' : '#141414'};
   border-radius: 4px;
   width: 100%;
   height: 100%;
@@ -43,7 +42,7 @@ const ViewWrapper: React.FC<ViewWrapperProps> = ({
   fullWidth = false
 }) => {
   const { theme } = useTheme();
-  
+
   return (
     <ViewContainer 
       className={`view-wrapper ${className || ''}`}

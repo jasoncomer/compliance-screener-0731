@@ -1,7 +1,7 @@
 import React from 'react';
 import { Card, Typography, Descriptions, Tag, Space, Progress } from 'antd';
 import { ClockCircleOutlined, CheckCircleOutlined, CloseCircleOutlined } from '@ant-design/icons';
-import { TransactionInfo, RiskFactor } from '../../types/riskScoring';
+import { TransactionInfo, RiskFactor } from '../../typings/riskScoring';
 import { getRiskColor } from './utils';
 import styled from 'styled-components';
 

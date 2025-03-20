@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { Row, Col, Card, Statistic, Progress } from 'antd';
-import { RiskScoringResponse } from '../../types/riskScoring';
+import { RiskScoringResponse } from '../../typings/riskScoring';
 
 interface RiskScoreCardsProps {
   riskScores: RiskScoringResponse;

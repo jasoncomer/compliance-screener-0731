@@ -14,7 +14,7 @@ import { config } from "./config/config";
 import { setAuthToken } from "./api/api";
 import { useTheme } from "./context/ThemeContext";
 import { lightTheme, darkTheme } from "./styles/theme";
-import ComplianceScreener from './views/ComplianceScreener';
+import ComplianceScreener from './views/Compliance/ComplianceScreener';
 import Admin from './views/Admin';
 import Alerts from './views/Alerts';
 import Cases from './views/Cases';

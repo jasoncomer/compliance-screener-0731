@@ -1,4 +1,4 @@
-import { SOTV2 } from "../typings/interfaces";
+import { SOTV2 } from "./interfaces";
 
 // Base type for measuring any kind of risk
 interface RiskFactor {

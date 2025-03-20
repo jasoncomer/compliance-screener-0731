@@ -3,7 +3,7 @@ import { Spin, Alert } from 'antd';
 import { SafetyOutlined } from '@ant-design/icons';
 import { colors } from '../styles/variables';
 import { calculateRiskScore } from '../api/riskScoring';
-import { RiskScoringResponse } from '../types/riskScoring';
+import { RiskScoringResponse } from '../typings/riskScoring';
 import ViewWrapper from '../components/ViewWrapper';
 import RiskDetailsTable from './RiskScoring/RiskDetailsTable';
 import SearchBar from './RiskScoring/SearchBar';

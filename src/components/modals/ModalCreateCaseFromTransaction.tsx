@@ -1,10 +1,12 @@
-import { FC, useState } from 'react';
-import { Button, Form, Modal as AntModal, Spin } from 'antd';
-import { ICase, ICaseCreate } from '../../typings/interfaces';
+import React, { FC, useState } from 'react';
+import { Button, Form, Modal as AntModal, Spin, message } from 'antd';
+import { ICaseCreate } from '../../typings/interfaces';
 import { ECaseStatus } from '../../typings/enums';
 import { api } from '../../api/api';
 import styled from 'styled-components';
 import Input from '../common/Input';
+import { ComplianceTransaction } from '../../typings/compliance';
+import { useNavigate } from 'react-router-dom';
 
 const Modal = styled(AntModal)`
   .ant-modal-body {
@@ -13,22 +15,37 @@ const Modal = styled(AntModal)`
 `;
 
 interface Props {
-  isModalOpen: boolean;
-  setIsModalOpen: (isOpen: boolean) => void;
-  cases: ICase[];
-  setCase: (data: ICase) => void;
+  isVisible: boolean;
+  onClose: () => void;
+  transaction: ComplianceTransaction | null;
 }
 
-const ModalAddCase: FC<Props> = ({ isModalOpen, setIsModalOpen, setCase }) => {
+const ModalCreateCaseFromTransaction: FC<Props> = ({ isVisible, onClose, transaction }) => {
+  const navigate = useNavigate();
   const [clientName, setClientName] = useState('');
   const [clientEmail, setClientEmail] = useState('');
-  const [blockchainAddress, setBlockchainAddress] = useState('');
   const [notes, setNotes] = useState('');
   const [loading, setLoading] = useState(false);
 
+  // Pre-populate notes with transaction information if available
+  React.useEffect(() => {
+    if (transaction) {
+      const transactionInfo = `
+Transaction ID: ${transaction.transactionId}
+Blockchain: ${transaction.blockchain}
+Amount: ${transaction.amount}
+Risk Score: ${transaction.riskScore}
+Timestamp: ${new Date(transaction.timestamp).toLocaleString()}
+Counterparty Address: ${transaction.counterpartyAddress}
+Monitored Address ID: ${transaction.monitoredAddressId}
+`;
+      setNotes(transactionInfo);
+    }
+  }, [transaction]);
+
   const handleCreateCase = async () => {
-    if (!clientName || !clientEmail || !blockchainAddress) {
-      alert('Please fill in all required fields');
+    if (!clientName || !clientEmail || !transaction) {
+      message.error('Please fill in all required fields');
       return;
     }
 
@@ -38,24 +55,25 @@ const ModalAddCase: FC<Props> = ({ isModalOpen, setIsModalOpen, setCase }) => {
       const caseData: ICaseCreate = {
         clientName,
         clientEmail,
-        addresses: [blockchainAddress],
+        addresses: [transaction.counterpartyAddress, transaction.monitoredAddressId],
         notes,
         status: ECaseStatus.NEW,
       };
 
       const res = await api.cases.create(caseData);
       if (res) {
-        setCase(res);
-        setIsModalOpen(false);
+        message.success(`Case #${res.caseId} created successfully`);
+        onClose();
         // Reset form
         setClientName('');
         setClientEmail('');
-        setBlockchainAddress('');
         setNotes('');
+        // Navigate to the cases page
+        navigate('/home/cases');
       }
     } catch (err) {
       console.error(err);
-      alert('Error creating case');
+      message.error('Error creating case');
     } finally {
       setLoading(false);
     }
@@ -63,17 +81,15 @@ const ModalAddCase: FC<Props> = ({ isModalOpen, setIsModalOpen, setCase }) => {
 
   return (
     <Modal
-      title="New Case"
+      title="Create Case from Transaction"
       centered
-      open={isModalOpen}
-      onCancel={() => setIsModalOpen(false)}
+      open={isVisible}
+      onCancel={onClose}
       footer={null}
-      loading={loading}
+      destroyOnClose={true}
     >
       {loading && <Spin style={{ position: 'absolute', left: 'calc(100% - 25px)', top: 'calc(100% - 25px)', zIndex: 9 }} />}
-      <Form
-        onFinish={handleCreateCase}
-      >
+      <Form onFinish={handleCreateCase}>
         <Form.Item>
           <Input
             required
@@ -96,16 +112,6 @@ const ModalAddCase: FC<Props> = ({ isModalOpen, setIsModalOpen, setCase }) => {
 
         <Form.Item>
           <Input
-            required
-            placeholder="Address of interest (BTC/ETH)"
-            type="text"
-            value={blockchainAddress}
-            onChange={(e) => setBlockchainAddress(e.target.value)}
-          />
-        </Form.Item>
-
-        <Form.Item>
-          <Input
             multiline
             rows={10}
             placeholder="Case Notes"
@@ -115,7 +121,7 @@ const ModalAddCase: FC<Props> = ({ isModalOpen, setIsModalOpen, setCase }) => {
         </Form.Item>
 
         <div style={{ display: 'flex', flexDirection: 'row', gap: '1em', justifyContent: 'flex-end' }}>
-          <Button type="default" onClick={() => setIsModalOpen(false)}>
+          <Button type="default" onClick={onClose}>
             Cancel
           </Button>
 
@@ -128,4 +134,4 @@ const ModalAddCase: FC<Props> = ({ isModalOpen, setIsModalOpen, setCase }) => {
   );
 };
 
-export default ModalAddCase;
+export default ModalCreateCaseFromTransaction;

@@ -1,5 +1,5 @@
 import React from 'react';
-import { RiskScoringResponse } from '../../types/riskScoring';
+import { RiskScoringResponse } from '../../typings/riskScoring';
 import {
   Box,
   Card,

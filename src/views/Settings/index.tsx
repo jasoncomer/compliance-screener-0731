@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Switch } from 'antd';
+import { useState, useEffect } from 'react';
+import { Switch, message } from 'antd';
 import { 
   SettingOutlined, 
   UserOutlined, 
@@ -13,7 +13,8 @@ import ViewWrapper from '../../components/ViewWrapper';
 import ProfileSection from './components/ProfileSection';
 import MembersSection from './components/MembersSection';
 import OrganizationSection from './components/OrganizationSection';
-import { IMember, IInvitation, IOrganization } from '../../typings/organization';
+import { IMember, IInvitation, IOrganization, IOrganizationMember } from '../../typings/organization';
+import { api } from '../../api/api';
 import {
   SettingsLayout,
   Sidebar,
@@ -40,43 +41,171 @@ const Settings = () => {
   const [members, setMembers] = useState<IMember[]>([]);
   const [pendingInvitations, setPendingInvitations] = useState<IInvitation[]>([]);
   const [activeSection, setActiveSection] = useState<SettingSection>('profile');
+  const [loading, setLoading] = useState(false);
 
-  // These handlers will be implemented when we add the API
+  useEffect(() => {
+    // Load organization data when component mounts
+    fetchOrganizationData();
+  }, []);
+
+  const fetchOrganizationData = async () => {
+    try {
+      setLoading(true);
+      // Fetch organizations where user is a member
+      const orgsResponse = await api.organizations.list();
+      if (orgsResponse.data && orgsResponse.data.length > 0) {
+        // Use the first organization for now
+        const org = orgsResponse.data[0];
+        setOrganization(org);
+        
+        // Fetch members of that organization
+        const membersResponse = await api.organizations.listMembers(org._id);
+        if (membersResponse.data) {
+          // Convert to IMember format
+          const membersList = membersResponse.data.map((member: IOrganizationMember) => ({
+            _id: member._id,
+            user: {
+              _id: member.userId,
+              email: member.email,
+              name: '',  // Required by IUser
+              surname: '',  // Required by IUser
+              password: '',  // Required by IUser
+              plan: 'free',  // Required by IUser
+              isVerified: true,  // Required by IUser
+              isDeleted: false,  // Required by IUser
+              status: 'active',  // Required by IUser
+            },
+            email: member.email,
+            role: member.role,
+            status: member.status,
+            joinedAt: member.createdAt,
+            invitedBy: member.invitedBy
+          })) as IMember[];
+          setMembers(membersList);
+        }
+        
+        // TODO: Fetch pending invitations when API endpoint is available
+      }
+    } catch (error) {
+      console.error('Error fetching organization data:', error);
+      message.error('Failed to load organization data');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleInviteMember = async (email: string, role: 'manager' | 'team_member') => {
-    // TODO: Implement with API
-    console.log('Invite member:', email, role);
+    if (!organization) {
+      message.error('No active organization');
+      return;
+    }
+    
+    try {
+      setLoading(true);
+      await api.organizations.invite(organization._id, {
+        emails: [email],
+        role: role
+      });
+      
+      message.success(`Invitation sent to ${email}`);
+      
+      // Refresh the pending invitations list
+      // TODO: When API endpoint for fetching invitations is available
+    } catch (error) {
+      console.error('Error inviting member:', error);
+      message.error('Failed to send invitation');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleRemoveMember = async (memberId: string) => {
-    // TODO: Implement with API
-    console.log('Remove member:', memberId);
     if (!organization) return;
-    setMembers(prev => prev.filter(member => member._id !== memberId));
+    
+    try {
+      setLoading(true);
+      await api.organizations.removeMember(organization._id, memberId);
+      
+      setMembers(prev => prev.filter(member => member._id !== memberId));
+      message.success('Member removed successfully');
+    } catch (error) {
+      console.error('Error removing member:', error);
+      message.error('Failed to remove member');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleUpdateMemberRole = async (memberId: string, newRole: 'manager' | 'team_member') => {
-    // TODO: Implement with API
-    console.log('Update member role:', memberId, newRole);
     if (!organization) return;
+    
+    try {
+      setLoading(true);
+      await api.organizations.updateMemberRole(organization._id, memberId, newRole);
+      
+      setMembers(prev => 
+        prev.map(member => 
+          member._id === memberId ? { ...member, role: newRole } : member
+        )
+      );
+      message.success('Member role updated successfully');
+    } catch (error) {
+      console.error('Error updating member role:', error);
+      message.error('Failed to update member role');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleGenerateInviteCode = async () => {
-    // TODO: Implement with API
-    return 'MOCK-INVITE-CODE';
+    // This API endpoint doesn't exist yet, should be added
+    try {
+      // For now, generate a mock code
+      return 'MOCK-INVITE-CODE';
+      
+      // When API is available:
+      // const response = await api.organizations.generateInviteCode(organization._id);
+      // return response.data.code;
+    } catch (error) {
+      console.error('Error generating invite code:', error);
+      message.error('Failed to generate invite code');
+      throw error;
+    }
   };
 
   const handleRevokeInvitation = async (invitationId: string) => {
-    // TODO: Implement with API
-    console.log('Revoke invitation:', invitationId);
+    // This API endpoint doesn't exist yet, should be added
     if (!organization) return;
-    setPendingInvitations(prev => prev.filter(invitation => invitation.id !== invitationId));
+    
+    try {
+      // When API is available:
+      // await api.organizations.revokeInvitation(organization._id, invitationId);
+      
+      setPendingInvitations(prev => prev.filter(invitation => invitation.id !== invitationId));
+      message.success('Invitation revoked successfully');
+    } catch (error) {
+      console.error('Error revoking invitation:', error);
+      message.error('Failed to revoke invitation');
+    }
   };
 
   const handleUpdateOrganization = async (data: Partial<IOrganization>) => {
-    // TODO: Implement with API
-    console.log('Update organization:', data);
     if (!organization) return;
-    setOrganization({ ...organization, ...data });
+    
+    try {
+      setLoading(true);
+      const response = await api.organizations.update(organization._id, data);
+      
+      if (response.data) {
+        setOrganization(response.data);
+        message.success('Organization updated successfully');
+      }
+    } catch (error) {
+      console.error('Error updating organization:', error);
+      message.error('Failed to update organization');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const renderPreferencesSection = () => (

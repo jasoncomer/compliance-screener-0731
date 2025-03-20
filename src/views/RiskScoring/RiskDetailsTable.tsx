@@ -1,7 +1,7 @@
 import React from 'react';
 import { Card, Table, Tabs, Space, Typography, Progress, Empty } from 'antd';
 import { UserOutlined } from '@ant-design/icons';
-import { RiskScoringResponse, RiskFactor } from '../../types/riskScoring';
+import { RiskScoringResponse, RiskFactor } from '../../typings/riskScoring';
 import { getRiskIcon } from './utils';
 import JurisdictionMap from './JurisdictionMap';
 import EntityDetails from './EntityDetails';
