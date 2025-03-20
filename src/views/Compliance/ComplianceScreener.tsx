@@ -15,19 +15,15 @@ const ComplianceScreener: React.FC = () => {
   const { theme } = useTheme();
   const [monitoredAddresses, setMonitoredAddresses] = useState<MonitoredAddress[]>([]);
   const [activeTab, setActiveTab] = useState<string>('transactions');
-  const [isLoading, setIsLoading] = useState<boolean>(false);
 
   // Load monitored addresses
   useEffect(() => {
     const loadAddresses = async () => {
-      setIsLoading(true);
       try {
         const addresses = await api.compliance.getAddresses();
         setMonitoredAddresses(addresses);
       } catch (error) {
         console.error('Failed to load monitored addresses:', error);
-      } finally {
-        setIsLoading(false);
       }
     };
     loadAddresses();

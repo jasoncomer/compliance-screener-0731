@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import styled from 'styled-components';
 import { colors } from '../../../styles/variables';
 
-import { satsToBTC, truncateAddress } from '../../../utils/crypto';
+import { satsToBTC } from '../../../utils/crypto';
 import { BtcTransaction } from '../../../typings/BtcTransaction';
 import { useAttribution } from '../../../context/AttributionContext';
 

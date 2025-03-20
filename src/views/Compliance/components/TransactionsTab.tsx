@@ -15,9 +15,9 @@ interface TransactionsTabProps {
 
 const TransactionsTab: React.FC<TransactionsTabProps> = ({
   monitoredAddresses,
-  isLoading = false,
+  // isLoading = false,
 }) => {
-  const { cases, setCases } = useAppContext();
+  const { /*cases,*/ setCases } = useAppContext();
   const { fetchAttributions, attributions } = useAttribution();
   const [transactions, setTransactions] = useState<ComplianceTransaction[]>([]);
   const [totalTransactions, setTotalTransactions] = useState<number>(0);

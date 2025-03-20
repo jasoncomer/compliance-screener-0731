@@ -54,7 +54,7 @@ export class AddressService {
       };
 
       for (const entry of addresses) {
-        if (!entry.address || !entry.blockchain || !entry.entityName) {
+        if (!entry.address || !entry.blockchain || !entry.clientId) {
           response.failed.push({
             entry,
             reason: 'Missing required fields'
@@ -87,12 +87,10 @@ export class AddressService {
     return [];
   }
 
-  static async addAddress(address: Omit<MonitoredAddress, 'id' | 'createdAt' | 'updatedAt'>): Promise<MonitoredAddress> {
+  static async addAddress(address: Omit<MonitoredAddress, '_id'>): Promise<MonitoredAddress> {
     // TODO: Implement API call to add address
     return {
-      id: Math.random().toString(36).substr(2, 9),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+      _id: Math.random().toString(36).substr(2, 9),
       ...address
     };
   }

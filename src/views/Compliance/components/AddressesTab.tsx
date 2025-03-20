@@ -24,7 +24,7 @@ const AddressesTab: React.FC<AddressesTabProps> = ({
   addresses,
   onAddressesChange,
   organizationId,
-  isLoading = false,
+  // isLoading = false,
 }) => {
   const { theme } = useTheme();
 

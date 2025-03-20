@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { message, Modal, Form, Input } from 'antd';
+import { message, Modal, Form } from 'antd';
 import type { UploadFile } from 'antd/es/upload/interface';
 import type { 
   MonitoredAddress, 
@@ -84,12 +84,15 @@ const AddressManagement: React.FC<AddressManagementProps> = ({
       
       onOk: async () => {
         try {
+          setLoading(true);
           await api.compliance.deleteAddress(id);
           onAddressesChange(addresses.filter(addr => addr._id !== id));
           message.success('Address deleted successfully');
         } catch (error) {
           console.error('Failed to delete address:', error);
           message.error('Failed to delete address');
+        } finally {
+          setLoading(false);
         }
       }
     });
@@ -100,13 +103,14 @@ const AddressManagement: React.FC<AddressManagementProps> = ({
       const values = await form.validateFields();
       setSubmitLoading(true);
       if (editingAddress) {
+        setLoading(true);
         // Update existing address (no status change or not to suspended/archived)
         const updatedAddress = await api.compliance.updateAddress(
           editingAddress._id, 
           '',
           values,
         );
-        
+        setLoading(false);
         const updatedAddresses = addresses.map(addr => 
           addr._id === editingAddress._id ? updatedAddress : addr
         );
@@ -116,11 +120,13 @@ const AddressManagement: React.FC<AddressManagementProps> = ({
         message.success('Address updated successfully');
       } else {
         // Add new address
+        setLoading(true);
         const newAddress = await api.compliance.addAddress({
           ...values,
           isActive: true,
           tags: values.tags || []
         }, organizationId);
+        setLoading(false);
         const updatedAddresses = [...addresses, newAddress];
         onAddressesChange(updatedAddresses);
         message.success('Address added successfully');

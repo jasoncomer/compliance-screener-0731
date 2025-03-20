@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Modal, Typography, Button, Table, Timeline, Select, Form, Input, message, Divider, Tag, Space } from 'antd';
+import { Modal, Typography, Button, Table, Timeline, Select, Form, Input, message, Tag, Space } from 'antd';
 import { ICase, ICaseStatusChange } from '../../typings/interfaces';
 import styled from 'styled-components';
 import { api } from '../../api/api';

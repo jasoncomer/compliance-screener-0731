@@ -100,14 +100,14 @@ interface GroupedOption {
   })[];
 }
 
-const headerTitleMap: Record<string, string> = {
-  'proper_name': 'Company',
-  'url': 'URL',
-  'entity_id': 'Entity Id', // TODO: only for admin users
-  'contact_twitter': 'Twitter',
-  'contact_telegram': 'Telegram'
-  // 'entity_type': 'Type',
-};
+// const headerTitleMap: Record<string, string> = {
+//   'proper_name': 'Company',
+//   'url': 'URL',
+//   'entity_id': 'Entity Id', // TODO: only for admin users
+//   'contact_twitter': 'Twitter',
+//   'contact_telegram': 'Telegram'
+//   // 'entity_type': 'Type',
+// };
 
 const BlockHam: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
@@ -238,7 +238,9 @@ const BlockHam: React.FC = () => {
 
       for (const result of results.items) {
         const sotItem = sot[result.id];
-        const fieldName = searchableFields[result.score_field] || 'unknown';
+        // Handle score_field property, which is not in the TypeScript type
+        const scoreField = typeof (result as any).score_field === 'number' ? (result as any).score_field : 0;
+        const fieldName = searchableFields[scoreField] || 'unknown';
         const entityId = sotItem._id;
 
         if (consolidatedEntities[entityId]) {

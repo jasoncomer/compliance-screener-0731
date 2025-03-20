@@ -1,5 +1,5 @@
 import React from 'react';
-import { Select, Input } from 'antd';
+import { Select } from 'antd';
 import styled from 'styled-components';
 import { AddressFilters as AddressFiltersType } from '../../../typings/compliance';
 
@@ -24,9 +24,9 @@ const AddressFilters: React.FC<AddressFiltersProps> = ({ filters, onFiltersChang
     onFiltersChange({ ...filters, isActive: value });
   };
 
-  const handleEntityNameSearch = (value: string) => {
-    onFiltersChange({ ...filters, entityName: value });
-  };
+  // const handleEntityNameSearch = (value: string) => {
+  //   onFiltersChange({ ...filters, entityName: value });
+  // };
 
   return (
     <FilterSection>

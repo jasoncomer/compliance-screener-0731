@@ -41,7 +41,7 @@ const Settings = () => {
   const [members, setMembers] = useState<IMember[]>([]);
   const [pendingInvitations, setPendingInvitations] = useState<IInvitation[]>([]);
   const [activeSection, setActiveSection] = useState<SettingSection>('profile');
-  const [loading, setLoading] = useState(false);
+  const [/*loading*/, setLoading] = useState(false);
 
   useEffect(() => {
     // Load organization data when component mounts

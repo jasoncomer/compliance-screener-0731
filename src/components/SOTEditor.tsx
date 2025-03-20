@@ -105,12 +105,7 @@ const StyledAvatar = styled(Avatar)`
   height: 64px;
 `;
 
-const TagsContainer = styled.div`
-  display: flex;
-  flex-direction: row;
-  flex-wrap: wrap;
-  justify-content: flex-start;
-`;
+// Removed unused styled component
 
 const SanctionedPill = styled.div`
   display: inline-flex;
@@ -220,8 +215,7 @@ const SOTEditor: React.FC<SOTEditorProps> = ({ sot, onSelectAssociatedSot }) => 
     if (!isValidSOT(sot)) return null;
 
     // Check if entity is an individual person
-
-    const isIndividualPerson = sot.entity_type?.toLowerCase() === EEntityType.INDIVIDUAL_PERSON;
+    // const isIndividualPerson = sot.entity_type?.toLowerCase() === EEntityType.INDIVIDUAL_PERSON;
 
     // Check if entity is OFAC sanctioned
     const isOfacSanctioned = Object.entries(sot)

@@ -67,34 +67,6 @@ const AddressChangeHistory: React.FC<AddressChangeHistoryProps> = ({ addressId, 
     return <EditOutlined style={{ color: '#1890ff' }} />;
   };
 
-  const formatValue = (value?: string, field?: string) => {
-    if (!value) return 'N/A';
-
-    if (field === 'tags') {
-      try {
-        const tags = JSON.parse(value);
-        return tags.length > 0
-          ? tags.map((tag: string) => <Tag key={tag}>{tag}</Tag>)
-          : 'No tags';
-      } catch {
-        return value;
-      }
-    }
-
-    if (field === 'status') {
-      const statusColors: Record<string, string> = {
-        active: 'green',
-        inactive: 'red',
-        pending_review: 'orange',
-        suspended: 'volcano',
-        archived: 'gray'
-      };
-
-      return <Tag color={statusColors[value]}>{value.replace('_', ' ')}</Tag>;
-    }
-
-    return value;
-  };
 
   const getChangeTitle = (item: MonitoredAddressChange) => {
     if (item.changeType === 'create') {

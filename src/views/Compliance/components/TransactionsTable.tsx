@@ -1,16 +1,14 @@
 import React, { useState } from 'react';
-import { Table, Button, Space, Select, Popover, Tooltip, Tag } from 'antd';
+import { Table, Button, Space, Popover, Tag } from 'antd';
 import { useNavigate } from 'react-router-dom';
-import { useTheme } from '../../../context/ThemeContext';
 import { colors } from '../../../styles/variables';
 import { FolderAddOutlined, EyeOutlined } from '@ant-design/icons';
-import { ComplianceTransaction, TransactionFilters } from '../../../typings/compliance';
+import { ComplianceTransaction } from '../../../typings/compliance';
 import { conversionRates, currencySymbols } from './CurrencySelector';
 import ModalCreateCaseFromTransaction from '../../../components/modals/ModalCreateCaseFromTransaction';
 import { useAttribution } from '../../../context/AttributionContext';
 import { truncateAddress } from '../../../utils/crypto';
 
-const { Option } = Select;
 
 interface TransactionsTableProps {
   transactions: ComplianceTransaction[];
@@ -35,7 +33,6 @@ const TransactionsTable: React.FC<TransactionsTableProps> = ({
   onStatusChange,
   onEntityClick,
 }) => {
-  const { theme } = useTheme();
   const navigate = useNavigate();
   const { attributions } = useAttribution();
   const [selectedTransaction, setSelectedTransaction] = useState<ComplianceTransaction | null>(null);
@@ -57,10 +54,10 @@ const TransactionsTable: React.FC<TransactionsTableProps> = ({
     return colors.success;
   };
 
-  const getCryptocurrencyPrice = (cryptocurrency: string) => {
-    const price = conversionRates[cryptocurrency];
-    return price ? price.toFixed(2) : 'N/A';
-  };
+  // const getCryptocurrencyPrice = (cryptocurrency: string) => {
+  //   const price = conversionRates[cryptocurrency];
+  //   return price ? price.toFixed(2) : 'N/A';
+  // };
 
   console.log({ denom, currencySymbols, conversionRates, transactions });
 

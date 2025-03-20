@@ -1,6 +1,6 @@
 import { TableProps, Tag, Table, Button as AntButton, Tabs as AntTabs, Space, Dropdown, MenuProps, message } from 'antd';
 import { ICase } from '../typings/interfaces';
-import { FC, useState, useEffect } from 'react';
+import { FC, useState } from 'react';
 import styled from 'styled-components';
 import { ECaseStatus, ECaseStatusDisplayNames, ECaseStatusColors } from '../typings/enums';
 import { truncateAddress } from '../utils/crypto';

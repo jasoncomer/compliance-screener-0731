@@ -1,5 +1,5 @@
 import React from 'react';
-import { Modal, Form } from 'antd';
+import { Modal } from 'antd';
 import { MonitoredAddress } from '../../../typings/compliance';
 import AddressForm from './AddressForm';
 

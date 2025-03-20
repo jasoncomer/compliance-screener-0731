@@ -37,7 +37,8 @@ Amount: ${transaction.amount}
 Risk Score: ${transaction.riskScore}
 Timestamp: ${new Date(transaction.timestamp).toLocaleString()}
 Counterparty Address: ${transaction.counterpartyAddress}
-Monitored Address ID: ${transaction.monitoredAddressId}
+Monitored Address ID: ${transaction.monitoredAddressId._id}
+Monitored Address: ${transaction.monitoredAddressId.address}
 `;
       setNotes(transactionInfo);
     }
@@ -55,7 +56,7 @@ Monitored Address ID: ${transaction.monitoredAddressId}
       const caseData: ICaseCreate = {
         clientName,
         clientEmail,
-        addresses: [transaction.counterpartyAddress, transaction.monitoredAddressId],
+        addresses: [transaction.counterpartyAddress, transaction.monitoredAddressId._id],
         notes,
         status: ECaseStatus.NEW,
       };
