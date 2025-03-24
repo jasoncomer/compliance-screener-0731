@@ -15,29 +15,55 @@ const AssociatedSOTsWrapper = styled.div`
   h4 {
     margin: 0;
   }
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
 `;
 
 const AssociatedList = styled.div`
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-  gap: 16px;
-  margin-top: 16px;
+  gap: 8px;
+  margin-top: 12px;
+  overflow-y: auto;
+  flex: 1;
+  padding-right: 4px;
+  max-height: 500px;
+  
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  &::-webkit-scrollbar-track {
+    background: transparent;
+
+  }
+  
+  &::-webkit-scrollbar-thumb {
+    background: ${({ theme }) => theme.theme === 'dark' ? '#303030' : '#d9d9d9'};
+    border-radius: 3px;
+  }
 `;
 
 const StyledCard = styled(Card)`
   cursor: pointer;
   transition: all 0.3s;
+  margin-bottom: 0;
 
   &:hover {
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 12px "green";
     transform: translateY(-2px);
+  }
+  
+  .ant-card-body {
+    padding: 12px;
   }
 `;
 
-const CardContent = styled.div`
-  display: flex;
+const CardContent = styled.div`  display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
 `;
 
 const EntityInfo = styled.div`
@@ -45,7 +71,7 @@ const EntityInfo = styled.div`
   
   .entity-name {
     font-weight: 500;
-    margin-bottom: 4px;
+    margin-bottom: 2px;
   }
   
   .entity-type {
@@ -64,6 +90,7 @@ const AssociatedSOTs: React.FC<AssociatedSOTsProps> = ({ sot, onSelectSot }) => 
 
   if (!sot || !sot.parent_id || sot.parent_id === '') return null;
 
+  // Get all associated entities
   const associatedSots = Object.values(itemsMap)
     .filter(item => item.parent_id === sot.parent_id)
     .filter(Boolean);
@@ -72,7 +99,7 @@ const AssociatedSOTs: React.FC<AssociatedSOTsProps> = ({ sot, onSelectSot }) => 
 
   return (
     <AssociatedSOTsWrapper>
-      <Title level={4}>Associated Entities</Title>
+      <Title level={4}>Associated Entities ({associatedSots.length})</Title>
       <AssociatedList>
         {associatedSots.map((associatedSot) => (
           <StyledCard 
@@ -104,4 +131,4 @@ const AssociatedSOTs: React.FC<AssociatedSOTsProps> = ({ sot, onSelectSot }) => 
   );
 };
 
-export default AssociatedSOTs; 
+export default AssociatedSOTs;

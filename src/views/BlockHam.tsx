@@ -23,6 +23,7 @@ const OptionWrapper = styled.div`
   display: flex;
   align-items: center;
   gap: 8px;
+  
 `;
 
 const OptionContent = styled.div`
@@ -48,9 +49,11 @@ const GroupHeader = styled.div`
   border-bottom: 1px solid ${({ theme }) => theme.theme === 'dark' ? colors.gray[700] : colors.gray[200]};
   margin-top: 4px;
   
+  
   .header-title {
     font-size: 14px;
     font-weight: 600;
+    
     color: ${({ theme }) => theme.theme === 'dark' ? colors.white : colors.gray[600]};
     text-transform: uppercase;
     letter-spacing: 0.5px;

@@ -9,6 +9,9 @@ import { getEntityTypeLabel } from '../utils/display-labels';
 import { EEntityType } from '../typings/SOT';
 import Input from './common/Input';
 import { colors } from '../styles/variables';
+import { useSelector } from 'react-redux';
+import { RootState } from '../store/store';
+import { light } from '@mui/material/styles/createPalette';
 
 const { Title, Text } = Typography;
 
@@ -23,6 +26,24 @@ const Container = styled.div`
 
 const EditorWrapper = styled(Card)`
   flex: 1;
+`;
+
+const AssociatedSOTsWrapper = styled(Card)`
+  width: 340px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background-color: ${({ theme }) => theme.theme === 'dark' ? '#141414' : '#fff'};
+  max-height: 80vh;
+
+  .ant-card-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 16px;
+    overflow: hidden;
+    background-color: inherit;
+  }
 `;
 
 const ButtonGroup = styled(Space)`
@@ -159,10 +180,23 @@ const SOTEditor: React.FC<SOTEditorProps> = ({ sot, onSelectAssociatedSot }) => 
   const [form] = Form.useForm();
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
+  const { itemsMap } = useSelector((state: RootState) => state.sot);
+  
   console.log(sot);
   const isValidSOT = (sot: SOT | null): sot is SOT => {
     return sot !== null;
   };
+
+  // Check if there are any associated entities
+  const hasAssociatedEntities = (() => {
+    if (!sot || !sot.parent_id || sot.parent_id === '') return false;
+    
+    const associatedSots = Object.values(itemsMap)
+      .filter(item => item.parent_id === sot.parent_id)
+      .filter(Boolean);
+      
+    return associatedSots.length > 0;
+  })();
 
   const handleCancel = () => {
     setIsEditing(false);
@@ -448,19 +482,6 @@ const SOTEditor: React.FC<SOTEditorProps> = ({ sot, onSelectAssociatedSot }) => 
               </DetailItem>
             )}
 
-
-            {(sot.contact_email || sot.contact_phone || sot.contact_address || sot.ens_address) && (
-              <DetailItem style={{ gridColumn: '1 / -1' }}>
-                <DetailLabel>Contact Information</DetailLabel>
-                <DetailValue style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '40%' }}>
-                  {sot.contact_email && <span><strong>Email:</strong> {sot.contact_email}</span>}
-                  {sot.contact_phone && <span><strong>Phone:</strong> {sot.contact_phone}</span>}
-                  {sot.contact_address && <span><strong>Address:</strong> {sot.contact_address}</span>}
-                  {sot.ens_address && <span><strong>ENS Address:</strong> {sot.ens_address}</span>}
-                </DetailValue>
-              </DetailItem>
-            )}
-
             {/* Additional Information */}
             {(sot.year_founded || sot.ticker || sot.parent_id ||
               Object.entries(sot).some(([key, value]) => key.startsWith('associate_country_') && value) ||
@@ -707,10 +728,14 @@ const SOTEditor: React.FC<SOTEditorProps> = ({ sot, onSelectAssociatedSot }) => 
         {renderContent()}
       </EditorWrapper>
 
-      <AssociatedSOTs
-        sot={sot}
-        onSelectSot={onSelectAssociatedSot}
-      />
+      {hasAssociatedEntities && (
+        <AssociatedSOTsWrapper>
+          <AssociatedSOTs
+            sot={sot}
+            onSelectSot={onSelectAssociatedSot}
+          />
+        </AssociatedSOTsWrapper>
+      )}
     </Container>
   );
 };
