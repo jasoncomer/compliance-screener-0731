@@ -45,44 +45,32 @@ export interface MonitoredAddressChange {
   timestamp: string;
 }
 
-// Transaction Types
-export interface TransactionRecord {
-  _id: string;
-  monitoredAddressId: string;
-  counterpartyAddress: string;
-  counterpartyEntity: string;
-  blockchain: string;
-  amount: number;
-  timestamp: string;
-  riskScore: number;
-  status: string;
-  reviewer?: string;
-  reviewTimestamp?: string;
+export enum ETransactionStatus {
+  UNREVIEWED = 'UNREVIEWED',
+  NEEDS_REVIEW = 'NEEDS_REVIEW',
+  APPROVED = 'APPROVED',
+  IN_REVIEW = 'IN_REVIEW',
+  CLOSED = 'CLOSED'
 }
 
-export interface ComplianceTransaction {
+export type TTransactionStatus = keyof typeof ETransactionStatus;
+export interface IComplianceTransaction {
   _id: string;
-  transactionId: string;
-  monitoredAddressId: {
-    _id: string;
-    address: string;
-    blockchain: string;
-    clientId: string;
-    notes?: string;
-  };
-  counterpartyAddress: string;
+  txId: string;
+  monitoredAddressId: string;
+  counterpartyEntities: string[];
   blockchain: string;
   amount: number;
-  timestamp: string;
-  riskScore: number;
-  status: string;
-  createdBy: string;
-  organizationId?: string;
-  createdAt: string;
-  updatedAt: string;
+  timestamp: Date;
+  riskScores: number[];
+  status: ETransactionStatus;
   reviewer?: string;
-  reviewTimestamp?: string;
-  __v?: number;
+  reviewTimestamp?: Date;
+  notes?: string;
+  organizationId?: string;
+  createdBy: string;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export interface TransactionFilters {
@@ -94,26 +82,8 @@ export interface TransactionFilters {
 }
 
 export interface ComplianceTransactionResponse {
-  transactions: ComplianceTransaction[];
+  transactions: IComplianceTransaction[];
   total: number;
   page: number;
   limit: number;
 }
-
-export const mapComplianceTransactionToRecord = (
-  transaction: ComplianceTransaction
-): TransactionRecord => {
-  return {
-    _id: transaction._id,
-    monitoredAddressId: transaction.monitoredAddressId._id,
-    counterpartyAddress: transaction.counterpartyAddress,
-    counterpartyEntity: transaction.monitoredAddressId.address,
-    blockchain: transaction.blockchain,
-    amount: typeof transaction.amount === 'string' ? parseFloat(transaction.amount) : transaction.amount,
-    timestamp: transaction.timestamp,
-    riskScore: transaction.riskScore,
-    status: transaction.status,
-    reviewer: transaction.reviewer,
-    reviewTimestamp: transaction.reviewTimestamp
-  };
-}; 

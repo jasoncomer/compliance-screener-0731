@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { message } from 'antd';
 import { api } from '../../../api/api';
-import { ComplianceTransaction, TransactionFilters, TransactionRecord, MonitoredAddress } from '../../../typings/compliance';
+import { IComplianceTransaction, TransactionFilters, MonitoredAddress, ETransactionStatus } from '../../../typings/compliance';
 import ComplianceHeaderActions from './ComplianceHeaderActions';
 import TransactionsTable from './TransactionsTable';
 import EntityModal from './EntityModal';
@@ -19,14 +19,14 @@ const TransactionsTab: React.FC<TransactionsTabProps> = ({
 }) => {
   const { /*cases,*/ setCases } = useAppContext();
   const { fetchAttributions, attributions } = useAttribution();
-  const [transactions, setTransactions] = useState<ComplianceTransaction[]>([]);
+  const [transactions, setTransactions] = useState<IComplianceTransaction[]>([]);
   const [totalTransactions, setTotalTransactions] = useState<number>(0);
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [pageSize, setPageSize] = useState<number>(10);
   const [loading, setLoading] = useState<boolean>(false);
   const [denom, setDenom] = useState<string>('USD');
   const [modalVisible, setModalVisible] = useState<boolean>(false);
-  const [selectedEntity, setSelectedEntity] = useState<TransactionRecord | null>(null);
+  const [selectedEntity, setSelectedEntity] = useState<IComplianceTransaction | null>(null);
   const [filters, setFilters] = useState<TransactionFilters>({
     page: 1,
     limit: 10
@@ -42,14 +42,15 @@ const TransactionsTab: React.FC<TransactionsTabProps> = ({
       setLoading(true);
       try {
         const response = await api.compliance.getTransactions(filters);
+        console.log(response.transactions);
         setTransactions(response.transactions);
         setTotalTransactions(response.total);
         setCurrentPage(response.page);
         setPageSize(response.limit);
-        const uniqueAddresses = new Set([
-          ...response.transactions.flatMap(tx => [tx.monitoredAddressId.address, tx.counterpartyAddress])
-        ]);
-        fetchAttributions(Array.from(uniqueAddresses));
+        // const uniqueAddresses = new Set([
+        //   ...response.transactions.flatMap(tx => [tx.monitoredAddressId.address, tx.counterpartyEntities[0]])
+        // ]);
+        // fetchAttributions(Array.from(uniqueAddresses));
       } catch (error) {
         console.error('Failed to load transactions:', error);
         message.error('Failed to load transactions');
@@ -83,7 +84,7 @@ const TransactionsTab: React.FC<TransactionsTabProps> = ({
       setTransactions(prevTransactions =>
         prevTransactions.map(transaction =>
           transaction._id === id
-            ? { ...transaction, status: newStatus, reviewer: 'Current User', reviewTimestamp: new Date().toISOString() }
+            ? { ...transaction, status: newStatus as ETransactionStatus, reviewer: 'Current User', reviewTimestamp: new Date() }
             : transaction
         )
       );
@@ -96,21 +97,9 @@ const TransactionsTab: React.FC<TransactionsTabProps> = ({
   };
 
   // Function to open modal when an entity is clicked
-  const handleOpenEntity = (record: ComplianceTransaction) => {
-    setSelectedEntity({
-      _id: record._id,
-      monitoredAddressId: record.monitoredAddressId._id,
-      counterpartyAddress: record.counterpartyAddress,
-      counterpartyEntity: attributions[record.counterpartyAddress]?.entity,
-      blockchain: record.blockchain,
-      amount: parseFloat(record.amount.toString()),
-      timestamp: record.timestamp,
-      riskScore: record.riskScore,
-      status: record.status,
-      reviewer: record.reviewer,
-      reviewTimestamp: record.reviewTimestamp
-    });
-    setModalVisible(true);
+  const handleOpenEntity = (record: IComplianceTransaction) => {
+    // setSelectedEntity(record);
+    // setModalVisible(true);
   };
 
   // Handle pagination change

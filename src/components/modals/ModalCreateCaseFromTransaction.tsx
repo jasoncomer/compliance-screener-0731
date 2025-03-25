@@ -5,7 +5,7 @@ import { ECaseStatus } from '../../typings/enums';
 import { api } from '../../api/api';
 import styled from 'styled-components';
 import Input from '../common/Input';
-import { ComplianceTransaction } from '../../typings/compliance';
+import { IComplianceTransaction } from '../../typings/compliance';
 import { useNavigate } from 'react-router-dom';
 
 const Modal = styled(AntModal)`
@@ -17,7 +17,7 @@ const Modal = styled(AntModal)`
 interface Props {
   isVisible: boolean;
   onClose: () => void;
-  transaction: ComplianceTransaction | null;
+  transaction: IComplianceTransaction | null;
 }
 
 const ModalCreateCaseFromTransaction: FC<Props> = ({ isVisible, onClose, transaction }) => {

@@ -5,7 +5,7 @@ import {
   AddressUploadResponse,
   AddressImportFormat,
   AddressFilters,
-  ComplianceTransaction,
+  IComplianceTransaction,
   TransactionFilters,
   MonitoredAddressChangeType,
   MonitoredAddressChange
@@ -17,7 +17,7 @@ export type {
   AddressUploadResponse,
   AddressImportFormat,
   AddressFilters,
-  ComplianceTransaction,
+  IComplianceTransaction as ComplianceTransaction,
   TransactionFilters,
   MonitoredAddressChangeType,
   MonitoredAddressChange

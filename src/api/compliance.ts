@@ -4,7 +4,7 @@ import {
   AddressUploadFormat,
   AddressUploadResponse,
   MonitoredAddressChange,
-  ComplianceTransaction,
+  IComplianceTransaction,
 } from '../typings/compliance';
 
 // API endpoints
@@ -80,7 +80,7 @@ export const compliance = {
       limit?: number;
     },
   ): Promise<{
-    transactions: ComplianceTransaction[];
+    transactions: IComplianceTransaction[];
     total: number;
     page: number;
     limit: number;
