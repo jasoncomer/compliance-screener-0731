@@ -46,15 +46,6 @@ const Wrapper = styled.div`
       color: ${colors.link};
     }
   }
-  .toggle-button {
-    color: #888;
-    cursor: pointer;
-    position: absolute;
-    margin-left: 85%;
-    &:hover {
-      color: orange;
-    }
-  }
   .address-container {
     display: flex;
     align-items: center;
@@ -65,11 +56,15 @@ const Wrapper = styled.div`
     min-width: 240px;
     display: flex;
     align-items: center;
+    position: relative;
   }
   .copy-button {
     cursor: pointer;
     color: #888;
     margin-right: 8px;
+    font-size: 18px;
+    display: flex;
+    align-items: center;
     &:hover {
       color: ${colors.primary};
     }
@@ -87,6 +82,26 @@ const Wrapper = styled.div`
     z-index: 1000;
     font-size: 18px;
     animation: fadeIn 0.3s, fadeOut 0.3s 1.7s;
+  }
+  .attribution-tooltip {
+    position: absolute;
+    top: 0;
+    left: 100%;
+    margin-left: 10px;
+    background-color: #222;
+    color: white;
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-size: 14px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    z-index: 100;
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+  }
+  .address-wrapper:hover .attribution-tooltip {
+    opacity: 1;
   }
   @keyframes fadeIn {
     from { opacity: 0; }
@@ -126,17 +141,15 @@ const BtcTxAddress: React.FC<BtcTxAddressProps> = ({ address }) => {
   const url = window.location.href;
   const currAddress = url.split('/').pop();
   const { attributions, referenceAttributions } = useAttribution();
-  const [showFullAddress, setShowFullAddress] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
   const [showCopyAlert, setShowCopyAlert] = useState(false);
 
   const attribution = attributions[address]?.entity;
   const referenceAttribution = referenceAttributions[address]?.entity;
 
-  // Show first 6 characters with ellipsis instead of truncating
-  const shortenedAddress = `${address.substring(0, 6)}...`;
-  const displayAddress = showFullAddress ? address : shortenedAddress;
-
+  // No more address truncation
+  const displayAddress = address;
+  
   // Split reference attribution by "." if it exists
   const splitReferenceAttribution = referenceAttribution ? referenceAttribution.split('.')[0] : '';
   
@@ -144,12 +157,17 @@ const BtcTxAddress: React.FC<BtcTxAddressProps> = ({ address }) => {
   const attributionsMatch = attribution && splitReferenceAttribution && 
     attribution.toLowerCase() === splitReferenceAttribution.toLowerCase();
   
-  const bsAttribution = attribution ? attribution : displayAddress;
+  // Prepare tooltip content
+  const hasAttributions = attribution || referenceAttribution;
+  let tooltipContent = '';
   
-  // css
-  let className = attribution ? 'attributed' : '';
+  if (attribution) {
+    tooltipContent += attribution;
+  }
+  
   if (referenceAttribution && !attributionsMatch) {
-    className = 'attributed reference';
+    if (tooltipContent) tooltipContent += ' | ';
+    tooltipContent += splitReferenceAttribution;
   }
 
   const copyToClipboard = (e: React.MouseEvent) => {
@@ -175,13 +193,11 @@ const BtcTxAddress: React.FC<BtcTxAddressProps> = ({ address }) => {
             <span className="copy-button" onClick={copyToClipboard} title="Copy address">
               {copySuccess ? '✓' : '⧉'}
             </span>
-            <span className="address" style={{ cursor: 'pointer' }} onClick={() => setShowFullAddress(!showFullAddress)}>
+            <span className="address">
               {displayAddress}
             </span>
+            {hasAttributions && <div className="attribution-tooltip">{tooltipContent}</div>}
           </div>
-          <small className="toggle-button" onClick={() => setShowFullAddress(!showFullAddress)}>
-            {!showFullAddress ? 'Show more' : 'Show less'}
-          </small>
         </div>
         {showCopyAlert && <div className="copy-alert">Address copied</div>}
       </>
@@ -196,18 +212,13 @@ const BtcTxAddress: React.FC<BtcTxAddressProps> = ({ address }) => {
             {copySuccess ? '✓' : '⧉'}
           </span>
           <Link 
-            className={`address ${className}`}
+            className="address"
             to={`/home/block-explorer/address/${address}`}
           >
-            {bsAttribution} {(referenceAttribution && !attributionsMatch) ? `(${splitReferenceAttribution})` : ''}
+            {displayAddress}
           </Link>
+          {hasAttributions && <div className="attribution-tooltip">{tooltipContent}</div>}
         </div>
-        <small 
-          className="toggle-button"
-          onClick={(e) => { e.preventDefault(); setShowFullAddress(!showFullAddress); }}
-        >
-          {!showFullAddress ? 'Show more' : 'Show less'}
-        </small>
       </div>
       {showCopyAlert && <div className="copy-alert">Address copied</div>}
     </>

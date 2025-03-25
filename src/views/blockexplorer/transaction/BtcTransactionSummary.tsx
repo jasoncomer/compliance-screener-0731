@@ -32,7 +32,7 @@ const SummaryWrapper = styled.div`
 
 const BtcTransactionSummary: React.FC<BtcTransactionSummaryProps> = ({ transaction, theme }) => {
   return (
-    <BsBlock theme={theme} style={{ fontFamily: 'fantasy' }}>
+    <BsBlock theme={theme} style={{ fontFamily: 'monospace' }}>
       <h3>Summary</h3>
       <hr />
       <SummaryWrapper>
