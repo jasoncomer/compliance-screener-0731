@@ -26,7 +26,7 @@ const TransactionsTab: React.FC<TransactionsTabProps> = ({
   const [loading, setLoading] = useState<boolean>(false);
   const [denom, setDenom] = useState<string>('USD');
   const [modalVisible, setModalVisible] = useState<boolean>(false);
-  const [selectedEntity, setSelectedEntity] = useState<IComplianceTransaction | null>(null);
+  const [selectedEntity] = useState<IComplianceTransaction | null>(null);
   const [filters, setFilters] = useState<TransactionFilters>({
     page: 1,
     limit: 10
@@ -97,7 +97,7 @@ const TransactionsTab: React.FC<TransactionsTabProps> = ({
   };
 
   // Function to open modal when an entity is clicked
-  const handleOpenEntity = (record: IComplianceTransaction) => {
+  const handleOpenEntity = () => {
     // setSelectedEntity(record);
     // setModalVisible(true);
   };

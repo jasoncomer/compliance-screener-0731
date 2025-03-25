@@ -31,14 +31,13 @@ const ModalCreateCaseFromTransaction: FC<Props> = ({ isVisible, onClose, transac
   React.useEffect(() => {
     if (transaction) {
       const transactionInfo = `
-Transaction ID: ${transaction.transactionId}
+Transaction ID: ${transaction.txId}
 Blockchain: ${transaction.blockchain}
 Amount: ${transaction.amount}
-Risk Score: ${transaction.riskScore}
+Risk Score: ${transaction.riskScores}
 Timestamp: ${new Date(transaction.timestamp).toLocaleString()}
-Counterparty Address: ${transaction.counterpartyAddress}
-Monitored Address ID: ${transaction.monitoredAddressId._id}
-Monitored Address: ${transaction.monitoredAddressId.address}
+Counterparty Address: ${transaction.counterpartyEntities}
+Monitored Address ID: ${transaction.monitoredAddressId}
 `;
       setNotes(transactionInfo);
     }
@@ -56,7 +55,7 @@ Monitored Address: ${transaction.monitoredAddressId.address}
       const caseData: ICaseCreate = {
         clientName,
         clientEmail,
-        addresses: [transaction.counterpartyAddress, transaction.monitoredAddressId._id],
+        addresses: [transaction.monitoredAddressId],
         notes,
         status: ECaseStatus.NEW,
       };

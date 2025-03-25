@@ -11,7 +11,7 @@ import Input from './common/Input';
 import { colors } from '../styles/variables';
 import { useSelector } from 'react-redux';
 import { RootState } from '../store/store';
-import { light } from '@mui/material/styles/createPalette';
+
 
 const { Title, Text } = Typography;
 

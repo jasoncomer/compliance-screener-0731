@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import { Table, Button, Space, Popover, Tag } from 'antd';
-import { useNavigate } from 'react-router-dom';
 import { colors } from '../../../styles/variables';
-import { FolderAddOutlined, EyeOutlined, EllipsisOutlined, CheckOutlined } from '@ant-design/icons';
+import { FolderAddOutlined, EllipsisOutlined, CheckOutlined } from '@ant-design/icons';
 import { IComplianceTransaction } from '../../../typings/compliance';
 import { conversionRates, currencySymbols } from './CurrencySelector';
 import ModalCreateCaseFromTransaction from '../../../components/modals/ModalCreateCaseFromTransaction';
@@ -33,7 +32,7 @@ const TransactionsTable: React.FC<TransactionsTableProps> = ({
   onStatusChange,
   onEntityClick,
 }) => {
-  const navigate = useNavigate();
+  // const navigate = useNavigate();
   const { attributions } = useAttribution();
   const [selectedTransaction, setSelectedTransaction] = useState<IComplianceTransaction | null>(null);
   const [isCaseModalVisible, setIsCaseModalVisible] = useState(false);
