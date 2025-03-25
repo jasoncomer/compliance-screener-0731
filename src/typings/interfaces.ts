@@ -139,7 +139,7 @@ export interface SOT {
   contact_telegram: string;
   contact_twitter: string;
   logo: string;
-  centralized: boolean;
+  centralized: boolean | null;
   year_founded: string;
   social_media_profile: string;
   social_media_profile_2: string;

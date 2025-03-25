@@ -1,6 +1,7 @@
 import React, { ReactNode } from 'react';
 import { useTheme } from '../context/ThemeContext';
 import styled from 'styled-components';
+import { colors } from '../styles/variables';
 
 const ViewContainer = styled.div<{ $theme: 'light' | 'dark'; $fullWidth?: boolean }>`
   margin-top: 0;
@@ -8,6 +9,7 @@ const ViewContainer = styled.div<{ $theme: 'light' | 'dark'; $fullWidth?: boolea
   border-radius: 4px;
   width: 100%;
   height: 100%;
+  background-color: ${props => props.$theme === 'light' ? colors.white : 'inherit'};
 `;
 
 const TitleContainer = styled.div`

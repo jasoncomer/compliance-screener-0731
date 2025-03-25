@@ -35,6 +35,11 @@ function App() {
   const currentTheme = theme === 'light' ? lightTheme : darkTheme;
 
   useEffect(() => {
+    // Set data-theme attribute on body
+    document.body.setAttribute('data-theme', theme);
+  }, [theme]);
+
+  useEffect(() => {
     const loadUser = async () => {
       try {
         const { accessToken, user: userKey } = config.localstorageKeys;

@@ -1,10 +1,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Form, InputNumber, Button, Typography, message, Radio, Input, Select, AutoComplete } from 'antd';
+import { useTheme } from '../context/ThemeContext';
+import { colors } from '../styles/variables';
 
 const { Title, Paragraph } = Typography;
 const { Option } = Select;
 
 const AlertConfig: React.FC = () => {
+  const { theme } = useTheme();
   const [form] = Form.useForm();
   const [previewSentence, setPreviewSentence] = useState('');
   const [entityOptions, setEntityOptions] = useState<{ value: string }[]>([]);
@@ -74,8 +77,15 @@ const AlertConfig: React.FC = () => {
   }, [anyAmount, form, onValuesChange]);
 
   return (
-    <div style={{ padding: '0px 20px 20px 20px' }}>
-      <Title level={3} style={{ marginTop: 0 }}>Alert Configuration</Title>
+    <div style={{ 
+      padding: '0px 20px 20px 20px',
+      backgroundColor: theme === 'dark' ? colors.gray[900] : colors.white,
+      color: theme === 'dark' ? colors.white : colors.gray[800]
+    }}>
+      <Title level={3} style={{ 
+        marginTop: 0,
+        color: theme === 'dark' ? colors.white : colors.gray[800]
+      }}>Alert Configuration</Title>
       <Form
         form={form}
         layout="vertical"
@@ -90,7 +100,7 @@ const AlertConfig: React.FC = () => {
           severity: 'medium',
           counterpartyRelation: '',
           counterpartyEntity: '',
-          alertSummary: ''
+          alertSummary: '',
         }}
       >
         <Form.Item
@@ -219,7 +229,10 @@ const AlertConfig: React.FC = () => {
         </Form.Item>
 
         {previewSentence && (
-          <Paragraph strong style={{ marginBottom: '20px' }}>
+          <Paragraph strong style={{ 
+            marginBottom: '20px',
+            color: theme === 'dark' ? colors.white : colors.gray[800]
+          }}>
             {previewSentence}
           </Paragraph>
         )}

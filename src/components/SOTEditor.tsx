@@ -419,13 +419,24 @@ const SOTEditor: React.FC<SOTEditorProps> = ({ sot, onSelectAssociatedSot }) => 
                   </Text>
                 </span>
               )}
-              {!sot.centralized && (
+              {sot.centralized === false && (
                 <span>
                   <Text strong style={{ color: colors.secondary, marginBottom: '0' }}>
                     Decentralized Entity
                   </Text>
                 </span>
               )}
+              {(sot.centralized === null || sot.centralized === undefined) && (
+                <span>
+                  <Text strong style={{ color: colors.warning, marginBottom: '0' }}>
+                    this is null
+                  </Text>
+                </span>
+              )}
+              {/* Debug information */}
+              <span style={{ fontSize: '0.8em', color: '#666' }}>
+                <strong>Debug - Centralized:</strong> Value: {String(sot.centralized)}, Type: {typeof sot.centralized}
+              </span>
               {sot.no_kyc_req && (
                 <span>
                   <Text strong style={{ color: colors.primary, marginTop: '0' }}>

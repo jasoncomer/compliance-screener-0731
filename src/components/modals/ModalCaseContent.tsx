@@ -8,6 +8,9 @@ import { BtcTransaction } from '../../typings/BtcTransaction';
 import { satsToBTC, getTransactionAmountOfAddress } from '../../utils/crypto';
 import { ECaseStatus, ECaseStatusDisplayNames, ECaseStatusColors } from '../../typings/enums';
 import { ArrowRightOutlined } from '@ant-design/icons';
+import { useTheme } from '../../context/ThemeContext';
+import { colors } from '../../styles/variables';
+import '../../styles/theme-overrides.css';
 
 const { Title: AntTitle, Text } = Typography;
 
@@ -16,6 +19,10 @@ interface ModalCaseContentProps {
   open: boolean;
   close: () => void;
   refreshCases?: () => void;
+}
+
+interface ThemedProps {
+  theme: 'light' | 'dark';
 }
 
 const Wrapper = styled.div`
@@ -29,20 +36,21 @@ const GridContainer = styled.div`
   gap: 20px;
 `;
 
-const InfoSection = styled.div`
-  background-color: #f5f5f5;
+const InfoSection = styled.div<ThemedProps>`
+  background-color: ${props => props.theme === 'light' ? '#f5f5f5' : colors.gray[800]};
   border-radius: 8px;
   padding: 16px;
   margin-bottom: 16px;
 `;
 
-const Label = styled(Text)`
+const Label = styled(Text)<ThemedProps>`
   font-weight: bold;
   margin-right: 8px;
+  color: ${props => props.theme === 'light' ? colors.gray[800] : colors.white};
 `;
 
-const Value = styled(Text)`
-  color: #1890ff;
+const Value = styled(Text)<ThemedProps>`
+  color: ${props => props.theme === 'light' ? '#1890ff' : '#69c0ff'};
 `;
 
 const AddressList = styled.ul`
@@ -51,8 +59,9 @@ const AddressList = styled.ul`
   margin: 0;
 `;
 
-const Title = styled(AntTitle)`
+const Title = styled(AntTitle)<ThemedProps>`
   margin-top: 0;
+  color: ${props => props.theme === 'light' ? colors.gray[800] : colors.white};
 `;
 
 const SummarySection = styled(InfoSection)`
@@ -65,9 +74,19 @@ const TransactionSection = styled(InfoSection)`
   margin-top: 16px;
 `;
 
-const StyledTable = styled(Table)`
-  .ant-table-thead > tr > th {
-    background-color: #f0f2f5;
+const StyledTable = styled(Table)<ThemedProps>`
+  &.light-theme-table .ant-table {
+    background-color: #fff !important;
+  }
+  
+  &.light-theme-table .ant-table-thead > tr > th {
+    background-color: #fafafa !important;
+    color: #000 !important;
+  }
+  
+  &.light-theme-table .ant-table-tbody > tr > td {
+    background-color: #fff !important;
+    color: #000 !important;
   }
 `;
 
@@ -75,18 +94,25 @@ const DownloadButton = styled(Button)`
   margin-top: 16px;
 `;
 
-const Textarea = styled.textarea`
+const Textarea = styled.textarea<ThemedProps>`
   width: 100%;
   height: 100px;
   padding: 8px;
   border-radius: 8px;
-  border: 1px solid #d9d9d9;
+  border: 1px solid ${props => props.theme === 'light' ? '#d9d9d9' : colors.gray[700]};
+  background-color: ${props => props.theme === 'light' ? colors.white : colors.gray[900]};
+  color: ${props => props.theme === 'light' ? colors.gray[800] : colors.white};
   margin-top: 16px;
 `;
+
+const FormLabel = ({ children, theme }: { children: React.ReactNode; theme: 'light' | 'dark' }) => (
+  <Label theme={theme}>{children}</Label>
+);
 
 const ModalCaseContent: React.FC<ModalCaseContentProps> = ({ userCase, open, close, refreshCases }) => {
   const { addresses: addressesString, caseId, clientEmail, clientName, status, userId, blockchain, notes } = userCase;
   const addresses = useMemo(() => Array.isArray(addressesString) ? addressesString : [addressesString], [addressesString]);
+  const { theme } = useTheme();
 
   const [summary, setSummary] = useState<IBtcAddressSummary>();
   const [transactions, setTransactions] = useState<BtcTransaction[]>([]);
@@ -196,46 +222,47 @@ const ModalCaseContent: React.FC<ModalCaseContentProps> = ({ userCase, open, clo
 
   return (
     <Modal
-      title={<Title level={3}>{`Case Details: ${caseId.toUpperCase()}`}</Title>}
+      title={<Title level={3} theme={theme}>{`Case Details: ${caseId.toUpperCase()}`}</Title>}
       centered
       open={open}
       onOk={() => close()}
       onCancel={() => close()}
       width={1000}
+      className={theme === 'light' ? 'light-theme-view' : ''}
     >
       <Wrapper>
         <GridContainer>
-          <InfoSection>
-            <Title level={4}>Client Information</Title>
-            <p><Label>Name:</Label><Value>{clientName}</Value></p>
-            <p><Label>Email:</Label><Value>{clientEmail}</Value></p>
-            <p><Label>Blockchain:</Label><Value>{blockchain}</Value></p>
+          <InfoSection theme={theme}>
+            <Title level={4} theme={theme}>Client Information</Title>
+            <p><Label theme={theme}>Name:</Label><Value theme={theme}>{clientName}</Value></p>
+            <p><Label theme={theme}>Email:</Label><Value theme={theme}>{clientEmail}</Value></p>
+            <p><Label theme={theme}>Blockchain:</Label><Value theme={theme}>{blockchain}</Value></p>
           </InfoSection>
-          <InfoSection>
-            <Title level={4}>Case Details</Title>
-            <p><Label>Status:</Label><Value>{status}</Value></p>
-            <p><Label>User ID:</Label><Value>{userId}</Value></p>
+          <InfoSection theme={theme}>
+            <Title level={4} theme={theme}>Case Details</Title>
+            <p><Label theme={theme}>Status:</Label><Value theme={theme}>{status}</Value></p>
+            <p><Label theme={theme}>User ID:</Label><Value theme={theme}>{userId}</Value></p>
           </InfoSection>
         </GridContainer>
 
-        <InfoSection>
-          <Title level={4}>Addresses</Title>
+        <InfoSection theme={theme}>
+          <Title level={4} theme={theme}>Addresses</Title>
           <AddressList>
             {addresses.map((address, index) => (
-              <li key={index}><Value>{address.trim()}</Value></li>
+              <li key={index}><Value theme={theme}>{address.trim()}</Value></li>
             ))}
           </AddressList>
         </InfoSection>
 
         {summary && (
-          <SummarySection>
+          <SummarySection theme={theme}>
             <section>
-              <Title level={4}>Case Summary</Title>
-              <p><Label>Address Balance:</Label><Value>hh{summary.balance}</Value></p>
-              <p><Label>Total Transactions:</Label><Value>{transactions.length}</Value></p>
-              <p><Label>Total BTC Transacted:</Label><Value>{summary.total_received + summary.total_spent}</Value></p>
-              <p><Label>Total Received:</Label><Value>{summary.total_received}</Value></p>
-              <p><Label>Total Sent:</Label><Value>{summary.total_spent}</Value></p>
+              <Title level={4} theme={theme}>Case Summary</Title>
+              <p><Label theme={theme}>Address Balance:</Label><Value theme={theme}>{summary.balance}</Value></p>
+              <p><Label theme={theme}>Total Transactions:</Label><Value theme={theme}>{transactions.length}</Value></p>
+              <p><Label theme={theme}>Total BTC Transacted:</Label><Value theme={theme}>{summary.total_received + summary.total_spent}</Value></p>
+              <p><Label theme={theme}>Total Received:</Label><Value theme={theme}>{summary.total_received}</Value></p>
+              <p><Label theme={theme}>Total Sent:</Label><Value theme={theme}>{summary.total_spent}</Value></p>
             </section>
             <section>
               {/* Support for multiple addresses is not implemented yet */}
@@ -246,82 +273,72 @@ const ModalCaseContent: React.FC<ModalCaseContentProps> = ({ userCase, open, clo
           </SummarySection>
         )}
 
-        <TransactionSection>
-          <Title level={4}>Transactions</Title>
-          <StyledTable dataSource={transactions} columns={columns} />
+        <TransactionSection theme={theme}>
+          <Title level={4} theme={theme}>Transactions</Title>
+          <StyledTable 
+            columns={columns} 
+            dataSource={transactions} 
+            rowKey="txid"
+            theme={theme}
+            className={theme === 'light' ? 'light-theme-table' : ''}
+          />
         </TransactionSection>
 
         {/* Status History Section */}
-        <InfoSection>
-          <Title level={4}>Status History</Title>
+        <InfoSection theme={theme}>
+          <Title level={4} theme={theme}>Status History</Title>
           {isLoadingHistory ? (
             <div style={{ textAlign: 'center', padding: '20px' }}>Loading status history...</div>
-          ) : statusHistory.length > 0 ? (
+          ) : statusHistory.length === 0 ? (
+            <p><Label theme={theme}>No status changes recorded yet.</Label></p>
+          ) : (
             <Timeline
-              mode="left"
-              items={statusHistory.map(item => ({
-                color: ECaseStatusColors[item.newStatus],
+              items={statusHistory.map((item, index) => ({
+                key: index.toString(),
                 children: (
-                  <div>
-                    <Space direction="vertical">
-                      <Space>
-                        <Tag color={ECaseStatusColors[item.oldStatus]}>
-                          {ECaseStatusDisplayNames[item.oldStatus]}
-                        </Tag>
-                        <ArrowRightOutlined />
-                        <Tag color={ECaseStatusColors[item.newStatus]}>
-                          {ECaseStatusDisplayNames[item.newStatus]}
-                        </Tag>
-                      </Space>
-                      <Text type="secondary">
-                        {new Date(item.changeDate).toLocaleString()} by {item.changedBy}
-                      </Text>
-                      {item.notes && <Text>{item.notes}</Text>}
-                    </Space>
-                  </div>
-                ),
+                  <>
+                    <p><Value theme={theme}>{`${ECaseStatusDisplayNames[item.oldStatus]} → ${ECaseStatusDisplayNames[item.newStatus]}`}</Value></p>
+                    <p><Label theme={theme}>User:</Label> <Value theme={theme}>{item.changedBy}</Value></p>
+                    <p><Label theme={theme}>Notes:</Label> <Value theme={theme}>{item.notes || 'No notes provided'}</Value></p>
+                    <p><Label theme={theme}>Date:</Label> <Value theme={theme}>{new Date(item.changeDate).toLocaleString()}</Value></p>
+                  </>
+                )
               }))}
             />
-          ) : (
-            <Text>No status changes recorded yet.</Text>
           )}
         </InfoSection>
 
         {/* Status Change Form */}
         {statusTransitions[status as ECaseStatus]?.length > 0 && (
-          <InfoSection>
-            <Title level={4}>Update Status</Title>
+          <InfoSection theme={theme}>
+            <Title level={4} theme={theme}>Update Status</Title>
             <Form 
               form={form}
-              onFinish={handleStatusChange}
               layout="vertical"
+              onFinish={handleStatusChange}
+              initialValues={{ newStatus: '', notes: '' }}
             >
               <Form.Item
                 name="newStatus"
-                label="Change status to:"
+                label={<FormLabel theme={theme}>New Status</FormLabel>}
                 rules={[{ required: true, message: 'Please select a new status' }]}
               >
                 <Select placeholder="Select new status">
-                  {statusTransitions[status as ECaseStatus].map(availableStatus => (
-                    <Select.Option key={availableStatus} value={availableStatus}>
+                  {statusTransitions[status as ECaseStatus].map(s => (
+                    <Select.Option key={s} value={s}>
                       <Space>
-                        <Tag color={ECaseStatusColors[availableStatus]}>
-                          {ECaseStatusDisplayNames[availableStatus]}
-                        </Tag>
+                        <Tag color={ECaseStatusColors[s]}>{ECaseStatusDisplayNames[s]}</Tag>
                       </Space>
                     </Select.Option>
                   ))}
                 </Select>
               </Form.Item>
-              
               <Form.Item
                 name="notes"
-                label="Notes for this status change"
-                rules={[{ required: true, message: 'Please provide notes explaining this status change' }]}
+                label={<FormLabel theme={theme}>Notes (optional)</FormLabel>}
               >
-                <Input.TextArea rows={4} placeholder="Explain why you are changing the status" />
+                <Input.TextArea rows={4} />
               </Form.Item>
-              
               <Form.Item>
                 <Button type="primary" htmlType="submit" loading={isSubmitting}>
                   Update Status
@@ -331,11 +348,10 @@ const ModalCaseContent: React.FC<ModalCaseContentProps> = ({ userCase, open, clo
           </InfoSection>
         )}
 
-        <InfoSection>
-          <Title level={4}>Case Notes</Title>
-          <Textarea readOnly value={notes || ''} />
+        <InfoSection theme={theme}>
+          <Title level={4} theme={theme}>Case Notes</Title>
+          <Textarea readOnly value={notes || ''} theme={theme} />
         </InfoSection>
-
       </Wrapper>
     </Modal>
   );

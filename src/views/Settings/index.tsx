@@ -35,7 +35,7 @@ import {
 type SettingSection = 'profile' | 'preferences' | 'members' | 'notifications' | 'security' | 'organization';
 
 const Settings = () => {
-  const { theme } = useTheme();
+  const { theme, toggleTheme } = useTheme();
   const { user } = useAppContext();
   const [organization, setOrganization] = useState<IOrganization>();
   const [members, setMembers] = useState<IMember[]>([]);
@@ -223,7 +223,7 @@ const Settings = () => {
           <Label theme={{ theme }} style={{ margin: 0 }}>Dark Mode</Label>
           <Switch
             checked={theme === 'dark'}
-            onChange={() => {}}
+            onChange={toggleTheme}
             checkedChildren="🌙"
             unCheckedChildren="☀️"
           />

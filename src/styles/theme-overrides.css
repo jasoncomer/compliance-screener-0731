@@ -1,0 +1,68 @@
+/* Theme overrides for components */
+
+/* Light theme overrides for tables */
+.light-theme-table {
+  background-color: #fff !important;
+}
+
+.light-theme-table .ant-table {
+  background-color: #fff !important;
+  color: #000 !important;
+}
+
+.light-theme-table .ant-table-thead > tr > th {
+  background-color: #fafafa !important;
+  color: #000 !important;
+}
+
+.light-theme-table .ant-table-tbody > tr > td {
+  background-color: #fff !important;
+  color: #000 !important;
+}
+
+.light-theme-table .ant-table-tbody > tr.ant-table-row:hover > td {
+  background-color: #f5f5f5 !important;
+}
+
+.light-theme-table .ant-table-container,
+.light-theme-table .ant-table-wrapper,
+.light-theme-table .ant-spin-container,
+.light-theme-table .ant-table,
+.light-theme-table .ant-table-content {
+  background-color: #fff !important;
+}
+
+/* Overall light theme background */
+.light-theme-view {
+  background-color: #fff !important;
+}
+
+/* General light theme overrides */
+body[data-theme="light"] .ant-layout,
+body[data-theme="light"] .ant-layout-content {
+  background-color: #fff !important;
+}
+
+body[data-theme="light"] .ant-table,
+body[data-theme="light"] .ant-table-wrapper,
+body[data-theme="light"] .ant-table-container {
+  background-color: #fff !important;
+}
+
+/* Light theme for view elements */
+.light-theme-view .ant-table {
+  background-color: #fff !important;
+}
+
+/* Force background color for ant-table components */
+.ant-table-wrapper.light-theme-table .ant-table {
+  background-color: #fff !important;
+}
+
+.ant-table-wrapper.light-theme-table .ant-table-container {
+  background-color: #fff !important;
+}
+
+.ant-table-wrapper.light-theme-table .ant-table-content {
+  background-color: #fff !important;
+} 

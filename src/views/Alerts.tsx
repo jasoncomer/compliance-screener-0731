@@ -4,6 +4,8 @@ import ViewWrapper from '../components/ViewWrapper';
 import { Typography, Table, Tag, Input, Select, Space, Button, Collapse } from 'antd';
 import AlertConfig from './AlertConfig';
 import { colors } from '../styles/variables';
+import { useTheme } from '../context/ThemeContext';
+import '../styles/theme-overrides.css';
 
 const { Paragraph } = Typography;
 const { Option } = Select;
@@ -18,6 +20,7 @@ interface Alert {
 }
 
 const Alerts: React.FC = () => {
+  const { theme } = useTheme();
   // This would typically come from an API or state management
   const alerts: Alert[] = [
     {
@@ -136,68 +139,84 @@ const Alerts: React.FC = () => {
     <ViewWrapper
       icon={<AlertOutlined style={{ fontSize: '28px', color: colors.attributionHover, fontWeight: 'bold' }} />}
       title="Alerts"
+      className={theme === 'light' ? 'light-theme-view' : ''}
     >
-      <Paragraph>
-        Monitor and manage alerts for suspicious blockchain activities, high-risk transactions,
-        and potential security threats.
-      </Paragraph>
+      <div className={theme === 'light' ? 'light-theme-view' : ''} style={{padding: '20px'}}>
+        <Paragraph>
+          Monitor and manage alerts for suspicious blockchain activities, high-risk transactions,
+          and potential security threats.
+        </Paragraph>
 
-      {/* Alert Configuration Section */}
-      <Collapse defaultActiveKey={[]} expandIconPosition="right">
-        <Collapse.Panel header="Alert Configuration" key="1" style={{ border: `1px solid ${colors.attributionHover}`, backgroundColor: colors.gray[900], color: colors.gray[50] }} className="no-collapse-padding">
-          <AlertConfig />
-        </Collapse.Panel>
-      </Collapse>
+        {/* Alert Configuration Section */}
+        <Collapse defaultActiveKey={[]} expandIconPosition="right">
+          <Collapse.Panel 
+            header="Alert Configuration" 
+            key="1" 
+            style={{ 
+              border: `1px solid ${colors.attributionHover}`, 
+              backgroundColor: theme === 'dark' ? colors.gray[900] : colors.white, 
+              color: theme === 'dark' ? colors.gray[50] : colors.gray[800] 
+            }} 
+            className="no-collapse-padding"
+          >
+            <AlertConfig />
+          </Collapse.Panel>
+        </Collapse>
 
-      {/* All Alerts Section */}
-      <h2>All Alerts</h2>
-      <Space style={{ marginBottom: 16 }}>
-        <Input.Search
-          placeholder="Search alerts"
-          onSearch={(value) => setAllSearchText(value)}
-          allowClear
-          style={{ width: 200 }}
-          value={allSearchText}
+        {/* All Alerts Section */}
+        <h2 style={{ color: theme === 'dark' ? colors.white : colors.gray[800] }}>All Alerts</h2>
+        <Space style={{ marginBottom: 16 }}>
+          <Input.Search
+            placeholder="Search alerts"
+            onSearch={(value) => setAllSearchText(value)}
+            allowClear
+            style={{ width: 200 }}
+            value={allSearchText}
+          />
+          <Select defaultValue="All" style={{ width: 120 }} onChange={(value) => setAllSeverityFilter(value)} value={allSeverityFilter}>
+            <Option value="All">All</Option>
+            <Option value="high">High</Option>
+            <Option value="medium">Medium</Option>
+            <Option value="low">Low</Option>
+          </Select>
+          <Button type="default" style={{ height: 32 }} onClick={resetAllFilters}>Reset Filters</Button>
+        </Space>
+        <Table
+          dataSource={filteredAllAlerts}
+          columns={columns}
+          rowKey="id"
+          pagination={{ pageSize: 10 }}
+          className={`${theme === 'light' ? 'light-theme-table' : ''}`}
+          style={{ backgroundColor: theme === 'light' ? '#ffffff' : '' }}
         />
-        <Select defaultValue="All" style={{ width: 120 }} onChange={(value) => setAllSeverityFilter(value)} value={allSeverityFilter}>
-          <Option value="All">All</Option>
-          <Option value="high">High</Option>
-          <Option value="medium">Medium</Option>
-          <Option value="low">Low</Option>
-        </Select>
-        <Button type="default" style={{ height: 32 }} onClick={resetAllFilters}>Reset Filters</Button>
-      </Space>
-      <Table
-        dataSource={filteredAllAlerts}
-        columns={columns}
-        rowKey="id"
-        pagination={{ pageSize: 10 }}
-      />
 
-      {/* Triggered Alerts Section */}
-      <h2 style={{ marginTop: 0 }}>Triggered Alerts</h2>
-      <Space style={{ marginBottom: 16 }}>
-        <Input.Search
-          placeholder="Search triggered alerts"
-          onSearch={(value) => setTriggeredSearchText(value)}
-          allowClear
-          style={{ width: 200 }}
-          value={triggeredSearchText}
+        {/* Triggered Alerts Section */}
+        <h2 style={{ marginTop: 0, color: theme === 'dark' ? colors.white : colors.gray[800] }}>Triggered Alerts</h2>
+        <Space style={{ marginBottom: 16 }}>
+          <Input.Search
+            placeholder="Search triggered alerts"
+            onSearch={(value) => setTriggeredSearchText(value)}
+            allowClear
+            style={{ width: 200 }}
+            value={triggeredSearchText}
+          />
+          <Select defaultValue="All" style={{ width: 120 }} onChange={(value) => setTriggeredSeverityFilter(value)} value={triggeredSeverityFilter}>
+            <Option value="All">All</Option>
+            <Option value="high">High</Option>
+            <Option value="medium">Medium</Option>
+            <Option value="low">Low</Option>
+          </Select>
+          <Button type="default" style={{ height: 32 }} onClick={resetTriggeredFilters}>Reset Filters</Button>
+        </Space>
+        <Table
+          dataSource={filteredTriggeredAlerts}
+          columns={columns}
+          rowKey="id"
+          pagination={{ pageSize: 10 }}
+          className={`${theme === 'light' ? 'light-theme-table' : ''}`}
+          style={{ backgroundColor: theme === 'light' ? '#ffffff' : '' }}
         />
-        <Select defaultValue="All" style={{ width: 120 }} onChange={(value) => setTriggeredSeverityFilter(value)} value={triggeredSeverityFilter}>
-          <Option value="All">All</Option>
-          <Option value="high">High</Option>
-          <Option value="medium">Medium</Option>
-          <Option value="low">Low</Option>
-        </Select>
-        <Button type="default" style={{ height: 32 }} onClick={resetTriggeredFilters}>Reset Filters</Button>
-      </Space>
-      <Table
-        dataSource={filteredTriggeredAlerts}
-        columns={columns}
-        rowKey="id"
-        pagination={{ pageSize: 10 }}
-      />
+      </div>
     </ViewWrapper>
   );
 };
