@@ -29,7 +29,7 @@ const TransactionView: React.FC = () => {
   if (!transaction) return <div>Loading...</div>;
 
   return (
-    <BsWrapper>
+    <BsWrapper style={{ fontFamily: 'monospace' }}>
       <h1>Transaction</h1>
 
       <BsBlock theme={{ theme }}>
