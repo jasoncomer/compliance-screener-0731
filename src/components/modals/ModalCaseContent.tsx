@@ -7,7 +7,6 @@ import { IBtcAddressSummary } from '../../typings/BtcAddress';
 import { BtcTransaction } from '../../typings/BtcTransaction';
 import { satsToBTC, getTransactionAmountOfAddress } from '../../utils/crypto';
 import { ECaseStatus, ECaseStatusDisplayNames, ECaseStatusColors } from '../../typings/enums';
-import { ArrowRightOutlined } from '@ant-design/icons';
 import { useTheme } from '../../context/ThemeContext';
 import { colors } from '../../styles/variables';
 import '../../styles/theme-overrides.css';
