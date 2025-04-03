@@ -65,10 +65,10 @@ const Home: React.FC = () => {
                   { key: 'compliance-screener', label: 'Compliance Screener' },
                   { key: 'block-explorer', label: 'Block Explorer' },
                   { key: 'risk-scoring', label: 'Risk Scoring' },
-                  { key: 'alerts', label: 'Alerts' },
+                  // { key: 'alerts', label: 'Alerts' },
                   { key: 'cases', label: 'Cases' },
                   { key: 'blockham', label: 'VASP Entity Explorer' },
-                  { key: 'flow-trace', label: 'Flow Trace' },
+                  // { key: 'flow-trace', label: 'Flow Trace' },
                 ]}
               />
             </TabsContainer>

@@ -17,7 +17,6 @@ const TitleContainer = styled.div`
   align-items: center;
   margin-bottom: 16px;
   margin-top: 0;
-
   .icon {
     margin-right: 8px;
   }

@@ -30,7 +30,6 @@ const TransactionView: React.FC = () => {
 
   return (
     <BsWrapper style={{ fontFamily: 'monospace' }}>
-      <h1>Transaction</h1>
 
       <BsBlock theme={{ theme }}>
         <h3>Transaction Hash</h3>
