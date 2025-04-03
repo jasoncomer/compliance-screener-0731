@@ -12,6 +12,31 @@ import { useAttribution } from '../../context/AttributionContext';
 import Pagination from '../../components/common/Pagination';
 import { useTheme } from '../../context/ThemeContext';
 
+const AddressLayout = styled.div`
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+`;
+
+const FixedAddressHeader = styled.div`
+  position: sticky;
+  top: 0;
+  background: ${props => props.theme.theme === 'dark' ? '#141414' : '#ffffff'};
+  z-index: 9;
+  padding-bottom: 20px;
+`;
+
+const ScrollableAddressContent = styled.div`
+  flex: 1;
+  overflow-y: auto;
+  padding-top: 20px;
+
+  > :first-child {
+    margin-top: 0;
+  }
+`;
+
 const SummaryWrapper = styled.div`
   display: flex;
   justify-content: space-between;
@@ -149,8 +174,8 @@ const Address: React.FC = () => {
   );
 
   return (
-    <>
-      <BsWrapper>
+    <AddressLayout>
+      <FixedAddressHeader>
         <BsBlock theme={{ theme }}>
           <h3>Address</h3>
           <hr />
@@ -185,7 +210,9 @@ const Address: React.FC = () => {
             )}
           </AddressInfoWrapper>
         </BsBlock>
+      </FixedAddressHeader>
 
+      <ScrollableAddressContent>
         <BsBlock theme={{ theme }} style={{ fontFamily: 'monospace' }}>
           <h3>Summary</h3>
           <hr />
@@ -220,8 +247,8 @@ const Address: React.FC = () => {
             </>
           )}
         </BsBlock>
-      </BsWrapper>
-    </>
+      </ScrollableAddressContent>
+    </AddressLayout>
   );
 };
 
