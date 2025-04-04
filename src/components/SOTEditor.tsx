@@ -468,57 +468,26 @@ const SOTEditor: React.FC<SOTEditorProps> = ({ sot, onSelectAssociatedSot }) => 
                 </DetailValue>
               </DetailItem>
             )}
+              {/* Description */}
+              {sot.description_merged && (
+              <DetailItem>
+                <DetailLabel>Description</DetailLabel>
+                <DetailValue style={{ whiteSpace: 'pre-wrap', width: '70%'}}>
+                  {sot.description_merged}
+                </DetailValue>
+              </DetailItem>
+            )}
 
             {/* Contact Information */}
             {(sot.contact_email || sot.contact_phone || sot.contact_address || sot.ens_address) && (
               <DetailItem>
                 <DetailLabel>Contact Information</DetailLabel>
-                <DetailValue style={{ display: 'flex', flexDirection: 'column', width: '80%', gap: '8px' }}>
+                <DetailValue style={{ display: 'flex', flexDirection: 'column', width: '70%', gap: '8px' }}>
                   {sot.contact_email && <span><strong>Email:</strong> {sot.contact_email}</span>}
                   {sot.contact_phone && <span><strong>Phone:</strong> {sot.contact_phone}</span>}
                   {sot.contact_address && <span><strong>Address:</strong> {sot.contact_address}</span>}
                   {sot.ens_address && <span><strong>ENS Address:</strong> {sot.ens_address}</span>}
-                </DetailValue>
-              </DetailItem>
-            )}
-
-            {/* Additional Information */}
-            {(sot.year_founded || sot.ticker || sot.parent_id ||
-              Object.entries(sot).some(([key, value]) => key.startsWith('associate_country_') && value) ||
-              sot.legal_info_url) && (
-                <DetailItem>
-                  <DetailLabel>Additional Information</DetailLabel>
-                  <DetailValue style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    {sot.year_founded && <span><strong>Founded:</strong> {sot.year_founded}</span>}
-                    {sot.ticker && (
-                      <span>
-                        <strong>Ticker:</strong>
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginTop: '4px' }}>
-                          {sot.ticker.split(',').map(t =>
-                            <Tag key={t.trim()}>{t.trim()}</Tag>
-                          )}
-                        </div>
-                      </span>
-                    )}
-                    {sot.parent_id && <span><strong>Parent ID:</strong> {sot.parent_id}</span>}
-
-                    {/* Associated Countries */}
-                    {Object.entries(sot)
-                      .filter(([key, value]) => key.startsWith('associate_country_') && value)
-                      .length > 0 && (
-                        <span>
-                          <strong>Associated Countries:</strong>
-                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginTop: '4px' }}>
-                            {Object.entries(sot)
-                              .filter(([key, value]) => key.startsWith('associate_country_') && value)
-                              .map(([key, value]) => (
-                                <Tag key={key}>{value}</Tag>
-                              ))}
-                          </div>
-                        </span>
-                      )}
-
-                    {sot.legal_info_url && (
+                  {sot.legal_info_url && (
                       <span style={{ marginTop: '48px', display: 'block' }}>
                         <strong>Legal Info: </strong>
                         <a href={sot.legal_info_url} target="_blank" rel="noopener noreferrer">
@@ -526,13 +495,17 @@ const SOTEditor: React.FC<SOTEditorProps> = ({ sot, onSelectAssociatedSot }) => 
                         </a>
                       </span>
                     )}
-                  </DetailValue>
-                </DetailItem>
-              )}
+                </DetailValue>
+              </DetailItem>
+            )}
+          
+            
+
+           
 
             {/* Metadata - moved to bottom of left column */}
             {(sot.user || sot.date_updated || sot.revisit_site) && (
-              <DetailItem style={{ fontSize: '0.9em', color: '#666', marginTop: '12px' }}>
+              <DetailItem style={{ fontSize: '0.9em', color: '#666', marginTop: '0px' }}>
                 {sot.user && <div>Last modified by: {sot.user}</div>}
                 {sot.date_updated && <div>Updated: {new Date(sot.date_updated).toLocaleString()}</div>}
                 {sot.revisit_site && <div>Flagged for review</div>}
@@ -713,6 +686,44 @@ const SOTEditor: React.FC<SOTEditorProps> = ({ sot, onSelectAssociatedSot }) => 
                         </div>
                       );
                     })()}
+                  </DetailValue>
+                </DetailItem>
+              )}
+ {/* Additional Information */}
+ {(sot.year_founded || sot.ticker || sot.parent_id ||
+              Object.entries(sot).some(([key, value]) => key.startsWith('associate_country_') && value) ||
+              sot.legal_info_url) && (
+                <DetailItem>
+                  <DetailLabel style={{ marginTop: '24px' }}>Additional Information</DetailLabel>
+                  <DetailValue style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {sot.year_founded && <span><strong>Founded:</strong> {sot.year_founded}</span>}
+                    {sot.ticker && (
+                      <span>
+                        <strong>Ticker:</strong>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginTop: '4px' }}>
+                          {sot.ticker.split(',').map(t =>
+                            <Tag key={t.trim()}>{t.trim()}</Tag>
+                          )}
+                        </div>
+                      </span>
+                    )}
+                    {sot.parent_id && <span><strong>Parent ID:</strong> {sot.parent_id}</span>}
+
+                    {/* Associated Countries */}
+                    {Object.entries(sot)
+                      .filter(([key, value]) => key.startsWith('associate_country_') && value)
+                      .length > 0 && (
+                        <span>
+                          <strong>Associated Countries:</strong>
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginTop: '4px' }}>
+                            {Object.entries(sot)
+                              .filter(([key, value]) => key.startsWith('associate_country_') && value)
+                              .map(([key, value]) => (
+                                <Tag key={key}>{value}</Tag>
+                              ))}
+                          </div>
+                        </span>
+                      )}
                   </DetailValue>
                 </DetailItem>
               )}
