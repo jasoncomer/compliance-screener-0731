@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import styled from 'styled-components';
 import { colors } from '../../../styles/variables';
@@ -6,6 +6,8 @@ import { colors } from '../../../styles/variables';
 import { satsToBTC } from '../../../utils/crypto';
 import { BtcTransaction } from '../../../typings/BtcTransaction';
 import { useAttribution } from '../../../context/AttributionContext';
+import { api } from '../../../api/api';
+import { IBtcAddress } from '../../../typings/BtcAddress';
 
 interface BtcInputsOutputsProps {
   data: BtcTransaction['inputs'];
@@ -30,6 +32,8 @@ const Wrapper = styled.div`
     display: flex;
     justify-content: space-between;
     width: 100%;
+    gap: 16px;
+    align-items: center;
   }
   .attributed {
     color: ${colors.attribution};
@@ -42,15 +46,22 @@ const Wrapper = styled.div`
     font-family: monospace;
     left: 0;
     color: ${colors.primary};
+    text-decoration: none;
     &:hover {
       color: ${colors.link};
+      text-decoration: underline;
     }
+  }
+  .address.highlighted {
+    color: white;
+    text-decoration: none;
   }
   .address-container {
     display: flex;
     align-items: center;
     position: relative;
     width: 100%;
+    min-width: 240px;
   }
   .address-wrapper {
     min-width: 240px;
@@ -102,6 +113,22 @@ const Wrapper = styled.div`
   }
   .address-wrapper:hover .attribution-tooltip {
     opacity: 1;
+  }
+  .entity-id {
+    min-width: 150px;
+    font-family: monospace;
+    color: ${colors.attribution};
+    text-align: left;
+  }
+  .script-type {
+    min-width: 100px;
+    font-family: monospace;
+    color: ${colors.gray[600]};
+    text-align: left;
+  }
+  .amount {
+    min-width: 100px;
+    text-align: right;
   }
   @keyframes fadeIn {
     from { opacity: 0; }
@@ -193,7 +220,7 @@ const BtcTxAddress: React.FC<BtcTxAddressProps> = ({ address }) => {
             <span className="copy-button" onClick={copyToClipboard} title="Copy address">
               {copySuccess ? '✓' : '⧉'}
             </span>
-            <span className="address">
+            <span className="address highlighted">
               {displayAddress}
             </span>
             {hasAttributions && <div className="attribution-tooltip">{tooltipContent}</div>}
@@ -229,6 +256,30 @@ const BtcInputsOutputs: React.FC<BtcInputsOutputsProps> = ({ data }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const displayData = isExpanded ? data : data.slice(0, 5);
   const showToggle = data.length > 5;
+  const { attributions } = useAttribution();
+  const [addressInfo, setAddressInfo] = useState<Record<string, IBtcAddress>>({});
+
+  useEffect(() => {
+    const fetchAddressInfo = async () => {
+      const uniqueAddresses = [...new Set(displayData.map(input => input.addr))];
+      const addressData: Record<string, IBtcAddress> = {};
+      
+      await Promise.all(
+        uniqueAddresses.map(async (addr) => {
+          try {
+            const response = await api.blockchain.getAddress(addr);
+            addressData[addr] = response.data;
+          } catch (error) {
+            console.error(`Failed to fetch address info for ${addr}:`, error);
+          }
+        })
+      );
+      
+      setAddressInfo(addressData);
+    };
+
+    fetchAddressInfo();
+  }, [displayData]);
 
   const toggleExpand = () => {
     setIsExpanded(!isExpanded);
@@ -244,7 +295,9 @@ const BtcInputsOutputs: React.FC<BtcInputsOutputsProps> = ({ data }) => {
       {displayData.map((input: BtcTransaction['inputs'][0], index: number) => (
         <Row key={index} className="row-container">
           <BtcTxAddress address={input.addr} />
-          <Amount>{renderAmt(input.amt)}</Amount>
+          <span className="entity-id">{attributions[input.addr]?.entity || '-'}</span>
+          <span className="script-type">{addressInfo[input.addr]?.script_type || '-'}</span>
+          <Amount className="amount">{renderAmt(input.amt)}</Amount>
         </Row>
       ))}
       {showToggle && (
