@@ -14,6 +14,11 @@ interface BtcInputsOutputsProps {
   type: 'inputs' | 'outputs';
 }
 
+const truncateAddress = (address: string): string => {
+  if (address.length <= 42) return address;
+  return `${address.slice(0, 6)}...${address.slice(-6)}`;
+};
+
 const Amount = styled.span`
   font-family: monospace;
 `;
@@ -47,6 +52,7 @@ const Wrapper = styled.div`
     left: 0;
     color: ${colors.primary};
     text-decoration: none;
+    text-align: left;
     &:hover {
       color: ${colors.link};
       text-decoration: underline;
@@ -62,12 +68,14 @@ const Wrapper = styled.div`
     position: relative;
     width: 100%;
     min-width: 240px;
+    justify-content: flex-start;
   }
   .address-wrapper {
     min-width: 240px;
     display: flex;
     align-items: center;
     position: relative;
+    justify-content: flex-start;
   }
   .copy-button {
     cursor: pointer;
@@ -76,6 +84,7 @@ const Wrapper = styled.div`
     font-size: 18px;
     display: flex;
     align-items: center;
+    flex-shrink: 0;
     &:hover {
       color: ${colors.primary};
     }
@@ -174,8 +183,8 @@ const BtcTxAddress: React.FC<BtcTxAddressProps> = ({ address }) => {
   const attribution = attributions[address]?.entity;
   const referenceAttribution = referenceAttributions[address]?.entity;
 
-  // No more address truncation
-  const displayAddress = address;
+  // Truncate address if it's longer than 42 characters
+  const displayAddress = truncateAddress(address);
   
   // Split reference attribution by "." if it exists
   const splitReferenceAttribution = referenceAttribution ? referenceAttribution.split('.')[0] : '';
@@ -220,7 +229,7 @@ const BtcTxAddress: React.FC<BtcTxAddressProps> = ({ address }) => {
             <span className="copy-button" onClick={copyToClipboard} title="Copy address">
               {copySuccess ? '✓' : '⧉'}
             </span>
-            <span className="address highlighted">
+            <span className="address highlighted" title={address}>
               {displayAddress}
             </span>
             {hasAttributions && <div className="attribution-tooltip">{tooltipContent}</div>}
@@ -241,6 +250,7 @@ const BtcTxAddress: React.FC<BtcTxAddressProps> = ({ address }) => {
           <Link 
             className="address"
             to={`/home/block-explorer/address/${address}`}
+            title={address}
           >
             {displayAddress}
           </Link>
