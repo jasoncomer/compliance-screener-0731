@@ -61,6 +61,7 @@ const Wrapper = styled.div`
   .address.highlighted {
     color: white;
     text-decoration: none;
+    margin-left: 23px;
   }
   .address-container {
     display: flex;
