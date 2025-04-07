@@ -122,7 +122,7 @@ export const Label = styled.span`
   color: ${props => props.theme.theme === 'dark' ? '#a0a0a0' : '#7f8c8d'};
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  width: 200px;
+  width: 300px;
   text-align: left;
   line-height: 1.5;
 `;
