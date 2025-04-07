@@ -13,7 +13,7 @@ export const compliance = {
   getAddresses: async (): Promise<MonitoredAddress[]> => {
     const endpoint = '/compliance/monitored-addresses';
     const response = await axiosInstance.get(endpoint);
-    return response.data.data;
+    return response.data.data.addresses;
   },
 
   // Add a new address

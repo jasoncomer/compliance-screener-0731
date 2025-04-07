@@ -5,7 +5,8 @@ import { axiosInstance } from "./api";
 import { getAddressTransactions } from "./blockchain/address";
 
 
-const getAttributions = async (addresses: string[]): Promise<{ data: IAttribution[], referenceData: IReferenceAttribution[] }> => {
+const getAttributions = async (rawAddresses: string[]): Promise<{ data: IAttribution[], referenceData: IReferenceAttribution[] }> => {
+  const addresses = Array.from(new Set(rawAddresses));
   const res = await axiosInstance.post(`/blockchain/attributions`, { addresses });
   return res.data;
 };
