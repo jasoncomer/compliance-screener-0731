@@ -128,6 +128,7 @@ const Wrapper = styled.div`
     font-family: monospace;
     color: ${colors.attribution};
     text-align: left;
+    margin-right: 50px;
   }
   .script-type {
     min-width: 100px;
@@ -226,9 +227,6 @@ const BtcTxAddress: React.FC<BtcTxAddressProps> = ({ address }) => {
       <>
         <div className="address-container">
           <div className="address-wrapper">
-            <span className="copy-button" onClick={copyToClipboard} title="Copy address">
-              {copySuccess ? '✓' : '⧉'}
-            </span>
             <span className="address highlighted" title={address}>
               {displayAddress}
             </span>
