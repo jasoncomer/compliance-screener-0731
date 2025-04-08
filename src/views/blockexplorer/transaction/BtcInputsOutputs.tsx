@@ -8,16 +8,12 @@ import { BtcTransaction } from '../../../typings/BtcTransaction';
 import { useAttribution } from '../../../context/AttributionContext';
 import { api } from '../../../api/api';
 import { IBtcAddress } from '../../../typings/BtcAddress';
+import { truncateStringMiddle } from '../../../utils/generic';
 
 interface BtcInputsOutputsProps {
-  data: BtcTransaction['inputs'];
+  data: BtcTransaction['inputs'] | BtcTransaction['outputs'];
   type: 'inputs' | 'outputs';
 }
-
-const truncateAddress = (address: string): string => {
-  if (address.length <= 42) return address;
-  return `${address.slice(0, 6)}...${address.slice(-6)}`;
-};
 
 const Amount = styled.span`
   font-family: monospace;
@@ -27,6 +23,7 @@ const Wrapper = styled.div`
   display: flex;
   flex-direction: column;
   left: 0;
+  position: relative;
 
   div {
     display: flex;
@@ -38,7 +35,7 @@ const Wrapper = styled.div`
     justify-content: space-between;
     width: 100%;
     gap: 16px;
-    align-items: center;
+    align-items: center;  
   }
   .attributed {
     color: ${colors.attribution};
@@ -104,30 +101,66 @@ const Wrapper = styled.div`
     font-size: 18px;
     animation: fadeIn 0.3s, fadeOut 0.3s 1.7s;
   }
-  .attribution-tooltip {
-    position: absolute;
-    top: 0;
-    left: 100%;
-    margin-left: 10px;
+  .cospend-tooltip {
     background-color: #222;
     color: white;
-    padding: 8px 12px;
-    border-radius: 4px;
+    padding: 12px 20px;
+    border-radius: 6px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    z-index: 1000;
     font-size: 14px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
-    z-index: 100;
+    font-family: monospace;
+    animation: fadeIn .5s;
+    pointer-events: auto;
     white-space: nowrap;
-    pointer-events: none;
-    opacity: 0;
-    transition: opacity 0.2s ease;
+
+    &:after {
+      content: '';
+      position: absolute;
+      bottom: -6px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 0;
+      height: 0;
+      border-left: 6px solid transparent;
+      border-right: 6px solid transparent;
+      border-top: 6px solid #222;
+
+    }
   }
-  .address-wrapper:hover .attribution-tooltip {
-    opacity: 1;
+  .tooltip-content {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    pointer-events: auto;
+  }
+  .tooltip-content .copy-button {
+    background: none;
+    border: none;
+    color: #888;
+    font-size: 18px;
+    cursor: pointer;
+    padding: 4px 8px;
+    margin: 0;
+    transition: color 0.2s ease;
+    &:hover {
+      color: ${colors.primary};
+    }
+    &:active {
+      transform: scale(0.95);
+    }
   }
   .entity-id {
     min-width: 150px;
     font-family: monospace;
     color: ${colors.attribution};
+    text-align: left;
+    margin-right: 50px;
+  }
+  .cospend-id {
+    min-width: 150px;
+    font-family: monospace;
+    color: ${colors.attributionReference};
     text-align: left;
     margin-right: 50px;
   }
@@ -178,35 +211,12 @@ interface BtcTxAddressProps {
 const BtcTxAddress: React.FC<BtcTxAddressProps> = ({ address }) => {
   const url = window.location.href;
   const currAddress = url.split('/').pop();
-  const { attributions, referenceAttributions } = useAttribution();
   const [copySuccess, setCopySuccess] = useState(false);
   const [showCopyAlert, setShowCopyAlert] = useState(false);
 
-  const attribution = attributions[address]?.entity;
-  const referenceAttribution = referenceAttributions[address]?.entity;
-
   // Truncate address if it's longer than 42 characters
-  const displayAddress = truncateAddress(address);
   
-  // Split reference attribution by "." if it exists
-  const splitReferenceAttribution = referenceAttribution ? referenceAttribution.split('.')[0] : '';
-  
-  // Check if attribution and reference attribution match after splitting
-  const attributionsMatch = attribution && splitReferenceAttribution && 
-    attribution.toLowerCase() === splitReferenceAttribution.toLowerCase();
-  
-  // Prepare tooltip content
-  const hasAttributions = attribution || referenceAttribution;
-  let tooltipContent = '';
-  
-  if (attribution) {
-    tooltipContent += attribution;
-  }
-  
-  if (referenceAttribution && !attributionsMatch) {
-    if (tooltipContent) tooltipContent += ' | ';
-    tooltipContent += splitReferenceAttribution;
-  }
+  const displayAddress = truncateStringMiddle(address, 42);
 
   const copyToClipboard = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -231,7 +241,6 @@ const BtcTxAddress: React.FC<BtcTxAddressProps> = ({ address }) => {
             <span className="address highlighted" title={address}>
               {displayAddress}
             </span>
-            {hasAttributions && <div className="attribution-tooltip">{tooltipContent}</div>}
           </div>
         </div>
         {showCopyAlert && <div className="copy-alert">Address copied</div>}
@@ -253,33 +262,39 @@ const BtcTxAddress: React.FC<BtcTxAddressProps> = ({ address }) => {
           >
             {displayAddress}
           </Link>
-          {hasAttributions && <div className="attribution-tooltip">{tooltipContent}</div>}
         </div>
       </div>
       {showCopyAlert && <div className="copy-alert">Address copied</div>}
     </>
   );
-}
+};
 
-const BtcInputsOutputs: React.FC<BtcInputsOutputsProps> = ({ data }) => {
+const BtcInputsOutputs: React.FC<BtcInputsOutputsProps> = ({ data}) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const displayData = isExpanded ? data : data.slice(0, 5);
   const showToggle = data.length > 5;
   const { attributions } = useAttribution();
   const [addressInfo, setAddressInfo] = useState<Record<string, IBtcAddress>>({});
+  const [hoveredAddress, setHoveredAddress] = useState<string | null>(null);
+  const [isTooltipHovered, setIsTooltipHovered] = useState(false);
+  const [copySuccess, setCopySuccess] = useState(false);
+  const [tooltipPosition, setTooltipPosition] = useState({ top: 0, left: 0 });
 
   useEffect(() => {
     const fetchAddressInfo = async () => {
-      const uniqueAddresses = [...new Set(displayData.map(input => input.addr))];
-      const addressData: Record<string, IBtcAddress> = {};
+      const uniqueAddresses = [...new Set(displayData.map(item => item.addr))];
       
+      // Fetch address information from the blockchain API
+      const addressData: Record<string, IBtcAddress> = {};
       await Promise.all(
         uniqueAddresses.map(async (addr) => {
           try {
-            const response = await api.blockchain.getAddress(addr);
-            addressData[addr] = response.data;
+            const [addressResponse,] = await Promise.all([
+              api.blockchain.getAddress(addr)
+            ]);
+            addressData[addr] = addressResponse.data;
           } catch (error) {
-            console.error(`Failed to fetch address info for ${addr}:`, error);
+            console.error(`Failed to fetch info for ${addr}:`, error);
           }
         })
       );
@@ -299,20 +314,89 @@ const BtcInputsOutputs: React.FC<BtcInputsOutputsProps> = ({ data }) => {
     return sats.toFixed(8);
   }, []);
 
+  const copyCospendId = (cospendId: string) => {
+    navigator.clipboard.writeText(cospendId)
+      .then(() => {
+        setCopySuccess(true);
+        setTimeout(() => setCopySuccess(false), 2000);
+      })
+      .catch(err => {
+        console.error('Failed to copy cospend ID: ', err);
+      });
+  };
+
+  // Handle mouse leave for both address and tooltip
+  const handleMouseLeave = () => {
+    // Use a small timeout to prevent tooltip from disappearing when moving between address and tooltip
+    setTimeout(() => {
+      if (!isTooltipHovered) {
+        setHoveredAddress(null);
+      }
+    }, 100);
+  };
+
+  const handleMouseEnter = (address: string, event: React.MouseEvent<HTMLDivElement>) => {
+    const rect = event.currentTarget.getBoundingClientRect();
+    setTooltipPosition({
+      top: rect.top - 10, // Position above the address with a small gap
+      left: rect.left + (rect.width / 2) // Center horizontally
+    });
+    setHoveredAddress(address);
+  };
+
   return (
     <Wrapper>
-      {displayData.map((input: BtcTransaction['inputs'][0], index: number) => (
+      {displayData.map((item: BtcTransaction['inputs'][0] | BtcTransaction['outputs'][0], index: number) => (
         <Row key={index} className="row-container">
-          <BtcTxAddress address={input.addr} />
-          <span className="entity-id">{attributions[input.addr]?.entity || '-'}</span>
-          <span className="script-type">{addressInfo[input.addr]?.script_type || '-'}</span>
-          <Amount className="amount">{renderAmt(input.amt)}</Amount>
+          <div 
+            className="address-container"
+            onMouseEnter={(e) => handleMouseEnter(item.addr, e)}
+            onMouseLeave={handleMouseLeave}
+          >
+            <BtcTxAddress 
+              address={item.addr}
+            />
+          </div>
+        
+          <span className="entity-id">{attributions[item.addr]?.entity || '-'}</span>
+        
+          <span className="script-type">{addressInfo[item.addr]?.script_type || '-'}</span>
+          <Amount className="amount">{renderAmt(item.amt)}</Amount>
         </Row>
       ))}
       {showToggle && (
         <ToggleButton onClick={toggleExpand}>
           {isExpanded ? 'Show Less' : `Show All (${data.length})`}
         </ToggleButton>
+      )}
+
+      {/* Cospend ID Tooltip */}
+      {hoveredAddress && attributions[hoveredAddress]?.cospend_id && (
+        <div 
+          className="cospend-tooltip"
+          style={{
+            position: 'fixed',
+            top: `${tooltipPosition.top}px`,
+            left: `${tooltipPosition.left}px`,
+            transform: 'translate(-50%, -100%)'
+          }}
+          onMouseEnter={() => setIsTooltipHovered(true)}
+          onMouseLeave={() => {
+            setIsTooltipHovered(false);
+            setHoveredAddress(null);
+          }}
+        >
+          <div className="tooltip-content">
+            <span>Cospend ID: {attributions[hoveredAddress].cospend_id}</span>
+            <button 
+              className="copy-button" 
+              onClick={() => copyCospendId(attributions[hoveredAddress].cospend_id || '')}
+              title="Copy cospend ID"
+            >
+              {copySuccess ? '✓' : '⧉'}
+            </button>
+          </div>
+        </div>
       )}
     </Wrapper>
   );

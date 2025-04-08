@@ -5,6 +5,7 @@ export interface IBtcAddress {
   last_block: number;
   multisig: number;
   script_type: string;
+  cospend_id: string;
 }
 
 export interface IBtcAddressSummary {
