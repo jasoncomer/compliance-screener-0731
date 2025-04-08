@@ -3,7 +3,6 @@ import { useParams } from 'react-router-dom';
 import { api } from '../../api/api';
 import { BsBlock } from '../../styles/Table';
 import { IBtcAddress } from '../../typings/BtcAddress';
-import { BsWrapper } from '../../styles/ocmmon';
 import styled from 'styled-components';
 import BtcTransactionTable from './transaction/BtcTransactionTable';
 import { BtcTransaction } from '../../typings/BtcTransaction';
