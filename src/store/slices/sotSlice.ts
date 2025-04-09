@@ -37,6 +37,7 @@ const sotSlice = createSlice({
       .addCase(fetchSOT.fulfilled, (state, action) => {
         state.loading = false;
         state.items = action.payload;
+        // TODO: index by entity_id
         state.itemsMap = action.payload.reduce((acc, item) => {
           acc[item._id] = item;
           return acc;
