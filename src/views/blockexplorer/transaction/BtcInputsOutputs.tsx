@@ -1,4 +1,4 @@
-import React, { useCallback, useState, useEffect } from 'react';
+import React, { useCallback, useState } from 'react';
 import { Link } from 'react-router-dom';
 import styled from 'styled-components';
 import { colors } from '../../../styles/variables';
@@ -6,8 +6,6 @@ import { colors } from '../../../styles/variables';
 import { satsToBTC } from '../../../utils/crypto';
 import { BtcTransaction } from '../../../typings/BtcTransaction';
 import { useAttribution } from '../../../context/AttributionContext';
-import { api } from '../../../api/api';
-import { IBtcAddress } from '../../../typings/BtcAddress';
 import { truncateStringMiddle } from '../../../utils/generic';
 
 interface BtcInputsOutputsProps {

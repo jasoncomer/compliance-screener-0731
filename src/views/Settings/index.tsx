@@ -22,7 +22,7 @@ const Settings = () => {
   const [members, setMembers] = useState<IMember[]>([]);
   const [pendingInvitations, setPendingInvitations] = useState<IInvitation[]>([]);
   const [activeSection, setActiveSection] = useState<SettingSection>('profile');
-  const [loading, setLoading] = useState(false);
+  const [_, setLoading] = useState(false);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
 
   useEffect(() => {

@@ -53,7 +53,7 @@ const OrganizationSection: React.FC<OrganizationSectionProps> = ({
     }
   };
 
-  const handleComplianceSubmit = async (values: { riskScoreThreshold: number; transactionThreshold: number }) => {
+  const handleComplianceSubmit = async (_: { riskScoreThreshold: number; transactionThreshold: number }) => {
     try {
       // Implement actual API call when backend is ready
       message.success('Compliance settings updated successfully');
