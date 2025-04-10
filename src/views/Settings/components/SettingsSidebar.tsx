@@ -2,7 +2,6 @@ import React from 'react';
 import { 
   SettingOutlined, 
   UserOutlined, 
-  TeamOutlined, 
   BellOutlined,
   SecurityScanOutlined 
 } from '@ant-design/icons';
@@ -40,14 +39,6 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
       </SidebarItem>
       <SidebarItem 
         theme={{ theme }} 
-        active={activeSection === 'members'}
-        onClick={() => onSectionChange('members')}
-      >
-        <TeamOutlined className="icon" />
-        <span>Members</span>
-      </SidebarItem>
-      <SidebarItem 
-        theme={{ theme }} 
         active={activeSection === 'notifications'}
         onClick={() => onSectionChange('notifications')}
       >
@@ -61,6 +52,14 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
       >
         <SecurityScanOutlined className="icon" />
         <span>Security</span>
+      </SidebarItem>
+      <SidebarItem 
+        theme={{ theme }} 
+        active={activeSection === 'organization'}
+        onClick={() => onSectionChange('organization')}
+      >
+        <SettingOutlined className="icon" />
+        <span>Organization</span>
       </SidebarItem>
     </Sidebar>
   );

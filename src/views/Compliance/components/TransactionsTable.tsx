@@ -37,7 +37,7 @@ const TransactionsTable: React.FC<TransactionsTableProps> = ({
   const [selectedTransaction, setSelectedTransaction] = useState<IComplianceTransaction | null>(null);
   const [isCaseModalVisible, setIsCaseModalVisible] = useState(false);
 
-  console.log({ transactions, totalTransactions, currentPage, pageSize, loading, denom, onTableChange, onStatusChange, onEntityClick });
+  // console.log({ transactions, totalTransactions, currentPage, pageSize, loading, denom, onTableChange, onStatusChange, onEntityClick });
 
   // Function to handle the create case action
   const handleCreateCase = (record: IComplianceTransaction, e: React.MouseEvent) => {

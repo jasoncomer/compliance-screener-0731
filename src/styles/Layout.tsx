@@ -15,7 +15,7 @@ export const StyledHeader = styled(AntHeader)<{ $theme: Theme }>`
   z-index: 1000;
   background: ${props => props.$theme === 'light' ? '#fff' : '#141414'};
   padding: 0 24px;
-  height: 80px;
+  height: 50px;
   display: flex;
   align-items: center;
   justify-content: space-between;

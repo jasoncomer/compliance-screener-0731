@@ -1,1 +1,1 @@
-export type SettingSection = 'profile' | 'preferences' | 'members' | 'notifications' | 'security'; 
+export type SettingSection = 'profile' | 'preferences' | 'notifications' | 'security' | 'organization'; 

@@ -1,38 +1,19 @@
 import { useState, useEffect } from 'react';
-import { Switch, message } from 'antd';
-import { 
-  SettingOutlined, 
-  UserOutlined, 
-  TeamOutlined, 
-  BellOutlined,
-  SecurityScanOutlined 
-} from '@ant-design/icons';
+import { message } from 'antd';
+import { SettingOutlined } from '@ant-design/icons';
 import { useAppContext } from '../../context/AppContext';
 import { useTheme } from '../../context/ThemeContext';
 import ViewWrapper from '../../components/ViewWrapper';
 import ProfileSection from './components/ProfileSection';
-import MembersSection from './components/MembersSection';
+import PreferencesSection from './components/PreferencesSection';
+import NotificationsSection from './components/NotificationsSection';
+import SecuritySection from './components/SecuritySection';
 import OrganizationSection from './components/OrganizationSection';
+import SettingsSidebar from './components/SettingsSidebar';
 import { IMember, IInvitation, IOrganization, IOrganizationMember } from '../../typings/organization';
+import { SettingSection } from '../../typings/settings';
 import { api } from '../../api/api';
-import {
-  SettingsLayout,
-  Sidebar,
-  SidebarItem,
-  ContentArea,
-  Card,
-  SubTitle,
-  InfoList,
-  InfoItem,
-  Label,
-  Value,
-  PreferencesGrid,
-  PreferenceToggle
-} from './components/styled';
-
-// ... keep existing styled components ...
-
-type SettingSection = 'profile' | 'preferences' | 'members' | 'notifications' | 'security' | 'organization';
+import { SettingsLayout, ContentArea } from './components/styled';
 
 const Settings = () => {
   const { theme, toggleTheme } = useTheme();
@@ -41,7 +22,8 @@ const Settings = () => {
   const [members, setMembers] = useState<IMember[]>([]);
   const [pendingInvitations, setPendingInvitations] = useState<IInvitation[]>([]);
   const [activeSection, setActiveSection] = useState<SettingSection>('profile');
-  const [/*loading*/, setLoading] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
 
   useEffect(() => {
     // Load organization data when component mounts
@@ -208,84 +190,42 @@ const Settings = () => {
     }
   };
 
-  const renderPreferencesSection = () => (
-    <Card theme={{ theme }}>
-      <SubTitle theme={{ theme }}>Preferences</SubTitle>
-      <PreferencesGrid>
-        <PreferenceToggle theme={{ theme }}>
-          <Label theme={{ theme }} style={{ margin: 0 }}>Email Notifications</Label>
-          <Switch
-            checked={true}
-            onChange={() => {}}
-          />
-        </PreferenceToggle>
-        <PreferenceToggle theme={{ theme }}>
-          <Label theme={{ theme }} style={{ margin: 0 }}>Dark Mode</Label>
-          <Switch
-            checked={theme === 'dark'}
-            onChange={toggleTheme}
-            checkedChildren="🌙"
-            unCheckedChildren="☀️"
-          />
-        </PreferenceToggle>
-      </PreferencesGrid>
-    </Card>
-  );
-
-  const renderNotificationsSection = () => (
-    <Card theme={{ theme }}>
-      <SubTitle theme={{ theme }}>Notifications</SubTitle>
-      <InfoList>
-        <InfoItem theme={{ theme }}>
-          <Label theme={{ theme }}>Coming Soon</Label>
-          <Value theme={{ theme }}>Detailed notification settings will be available soon.</Value>
-        </InfoItem>
-      </InfoList>
-    </Card>
-  );
-
-  const renderSecuritySection = () => (
-    <Card theme={{ theme }}>
-      <SubTitle theme={{ theme }}>Security</SubTitle>
-      <InfoList>
-        <InfoItem theme={{ theme }}>
-          <Label theme={{ theme }}>Coming Soon</Label>
-          <Value theme={{ theme }}>Security settings will be available soon.</Value>
-        </InfoItem>
-      </InfoList>
-    </Card>
-  );
+  const handleNotificationsChange = (checked: boolean) => {
+    setNotificationsEnabled(checked);
+    // TODO: Implement API call to update notifications preference
+  };
 
   const renderContent = () => {
     switch (activeSection) {
       case 'profile':
         return <ProfileSection user={user || undefined} enabled theme={theme} />;
       case 'preferences':
-        return renderPreferencesSection();
-      case 'members':
         return (
-          <MembersSection
-            theme={theme}
-            currentUser={user || undefined}
-            members={members}
-            pendingInvitations={pendingInvitations}
-            onInviteMember={handleInviteMember}
-            onRemoveMember={handleRemoveMember}
-            onUpdateMemberRole={handleUpdateMemberRole}
-            onGenerateInviteCode={handleGenerateInviteCode}
-            onRevokeInvitation={handleRevokeInvitation}
+          <PreferencesSection 
+            theme={theme} 
+            notifications={notificationsEnabled}
+            onNotificationsChange={handleNotificationsChange}
+            onThemeChange={toggleTheme}
           />
         );
       case 'notifications':
-        return renderNotificationsSection();
+        return <NotificationsSection theme={theme} />;
       case 'security':
-        return renderSecuritySection();
+        return <SecuritySection theme={theme} />;
       case 'organization':
         return (
           <OrganizationSection
             theme={theme}
             organization={organization}
+            currentUser={user || undefined}
+            members={members}
+            pendingInvitations={pendingInvitations}
             onUpdateOrganization={handleUpdateOrganization}
+            onInviteMember={handleInviteMember}
+            onRemoveMember={handleRemoveMember}
+            onUpdateMemberRole={handleUpdateMemberRole}
+            onGenerateInviteCode={handleGenerateInviteCode}
+            onRevokeInvitation={handleRevokeInvitation}
           />
         );
       default:
@@ -299,56 +239,11 @@ const Settings = () => {
       title="Settings"
     >
       <SettingsLayout>
-        <Sidebar theme={{ theme }}>
-          <SidebarItem 
-            theme={{ theme }} 
-            active={activeSection === 'profile'}
-            onClick={() => setActiveSection('profile')}
-          >
-            <UserOutlined className="icon" />
-            <span>Profile</span>
-          </SidebarItem>
-          <SidebarItem 
-            theme={{ theme }} 
-            active={activeSection === 'preferences'}
-            onClick={() => setActiveSection('preferences')}
-          >
-            <SettingOutlined className="icon" />
-            <span>Preferences</span>
-          </SidebarItem>
-          <SidebarItem 
-            theme={{ theme }} 
-            active={activeSection === 'members'}
-            onClick={() => setActiveSection('members')}
-          >
-            <TeamOutlined className="icon" />
-            <span>Members</span>
-          </SidebarItem>
-          <SidebarItem 
-            theme={{ theme }} 
-            active={activeSection === 'notifications'}
-            onClick={() => setActiveSection('notifications')}
-          >
-            <BellOutlined className="icon" />
-            <span>Notifications</span>
-          </SidebarItem>
-          <SidebarItem 
-            theme={{ theme }} 
-            active={activeSection === 'security'}
-            onClick={() => setActiveSection('security')}
-          >
-            <SecurityScanOutlined className="icon" />
-            <span>Security</span>
-          </SidebarItem>
-          <SidebarItem 
-            theme={{ theme }} 
-            active={activeSection === 'organization'}
-            onClick={() => setActiveSection('organization')}
-          >
-            <SettingOutlined className="icon" />
-            <span>Organization</span>
-          </SidebarItem>
-        </Sidebar>
+        <SettingsSidebar 
+          activeSection={activeSection} 
+          onSectionChange={setActiveSection}
+          theme={theme}
+        />
         <ContentArea>
           {renderContent()}
         </ContentArea>

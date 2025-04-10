@@ -22,11 +22,10 @@ const FixedHeader = styled.div`
   margin-bottom: 20px;
   background: ${({ theme }) => theme.theme === 'dark' ? '#141414' : '#ffffff'};
   z-index: 10;
-  border-bottom: 1px solid ${({ theme }) => theme.theme === 'dark' ? '#303030' : '#e8e8e8'};
-`;
 
-const HeaderContent = styled.div`
-  padding: 20px 20px;
+  input {
+    margin: 10px 0px;
+  }
 `;
 
 const ContentWrapper = styled.div`
@@ -47,10 +46,8 @@ const StyledViewWrapper = styled(ViewWrapper)`
 
   > div:first-child {
     position: sticky;
-    padding: 0 20px;
-    margin-bottom: 10px;
+    margin-bottom: 0px;
     top: 0;
-    z-index: 11;
     background: ${({ theme }) => theme.theme === 'dark' ? '#141414' : '#ffffff'};
   }
 `;
@@ -82,14 +79,12 @@ const BlockExplorer: React.FC = () => {
     >
       <ExplorerLayout>
         <FixedHeader>
-          <HeaderContent>
             <Search 
               placeholder={searchPlaceholder} 
               value={searchValue} 
               onChange={(e) => setSearchValue(e.target.value)}
               onPressEnter={() => onSearch(searchValue)}
             />
-          </HeaderContent>
         </FixedHeader>
 
         <ContentWrapper>

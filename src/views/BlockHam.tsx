@@ -47,7 +47,7 @@ const InfoTag = styled(Tag)`
 const GroupHeader = styled.div`
   padding: 12px 12px 8px;
   background-color: ${({ theme }) => theme.theme === 'dark' ? colors.gray[700] : colors.gray[50]};
-  border-bottom: 1px solid ${({ theme }) => theme.theme === 'dark' ? colors.gray[700] : colors.gray[200]};
+  
   margin-top: 4px;
   
   
