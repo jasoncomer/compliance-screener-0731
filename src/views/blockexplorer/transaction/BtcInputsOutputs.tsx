@@ -215,7 +215,7 @@ const BtcTxAddress: React.FC<BtcTxAddressProps> = ({ address }) => {
   const [showCopyAlert, setShowCopyAlert] = useState(false);
 
   // Truncate address if it's longer than 42 characters
-  
+
   const displayAddress = truncateStringMiddle(address, 42);
 
   const copyToClipboard = (e: React.MouseEvent) => {
@@ -255,7 +255,7 @@ const BtcTxAddress: React.FC<BtcTxAddressProps> = ({ address }) => {
           <span className="copy-button" onClick={copyToClipboard} title="Copy address">
             {copySuccess ? '✓' : '⧉'}
           </span>
-          <Link 
+          <Link
             className="address"
             to={`/home/block-explorer/address/${address}`}
             title={address}
@@ -269,41 +269,15 @@ const BtcTxAddress: React.FC<BtcTxAddressProps> = ({ address }) => {
   );
 };
 
-const BtcInputsOutputs: React.FC<BtcInputsOutputsProps> = ({ data}) => {
+const BtcInputsOutputs: React.FC<BtcInputsOutputsProps> = ({ data }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const displayData = isExpanded ? data : data.slice(0, 5);
   const showToggle = data.length > 5;
   const { attributions } = useAttribution();
-  const [addressInfo, setAddressInfo] = useState<Record<string, IBtcAddress>>({});
   const [hoveredAddress, setHoveredAddress] = useState<string | null>(null);
   const [isTooltipHovered, setIsTooltipHovered] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
   const [tooltipPosition, setTooltipPosition] = useState({ top: 0, left: 0 });
-
-  useEffect(() => {
-    const fetchAddressInfo = async () => {
-      const uniqueAddresses = [...new Set(displayData.map(item => item.addr))];
-      
-      // Fetch address information from the blockchain API
-      const addressData: Record<string, IBtcAddress> = {};
-      await Promise.all(
-        uniqueAddresses.map(async (addr) => {
-          try {
-            const [addressResponse,] = await Promise.all([
-              api.blockchain.getAddress(addr)
-            ]);
-            addressData[addr] = addressResponse.data;
-          } catch (error) {
-            console.error(`Failed to fetch info for ${addr}:`, error);
-          }
-        })
-      );
-      
-      setAddressInfo(addressData);
-    };
-
-    fetchAddressInfo();
-  }, [displayData]);
 
   const toggleExpand = () => {
     setIsExpanded(!isExpanded);
@@ -348,19 +322,19 @@ const BtcInputsOutputs: React.FC<BtcInputsOutputsProps> = ({ data}) => {
     <Wrapper>
       {displayData.map((item: BtcTransaction['inputs'][0] | BtcTransaction['outputs'][0], index: number) => (
         <Row key={index} className="row-container">
-          <div 
+          <div
             className="address-container"
             onMouseEnter={(e) => handleMouseEnter(item.addr, e)}
             onMouseLeave={handleMouseLeave}
           >
-            <BtcTxAddress 
+            <BtcTxAddress
               address={item.addr}
             />
           </div>
-        
+
           <span className="entity-id">{attributions[item.addr]?.entity || '-'}</span>
-        
-          <span className="script-type">{addressInfo[item.addr]?.script_type || '-'}</span>
+
+          <span className="script-type">{attributions[item.addr]?.script_type || '-'}</span>
           <Amount className="amount">{renderAmt(item.amt)}</Amount>
         </Row>
       ))}
@@ -372,7 +346,7 @@ const BtcInputsOutputs: React.FC<BtcInputsOutputsProps> = ({ data}) => {
 
       {/* Cospend ID Tooltip */}
       {hoveredAddress && attributions[hoveredAddress]?.cospend_id && (
-        <div 
+        <div
           className="cospend-tooltip"
           style={{
             position: 'fixed',
@@ -388,8 +362,8 @@ const BtcInputsOutputs: React.FC<BtcInputsOutputsProps> = ({ data}) => {
         >
           <div className="tooltip-content">
             <span>Cospend ID: {attributions[hoveredAddress].cospend_id}</span>
-            <button 
-              className="copy-button" 
+            <button
+              className="copy-button"
               onClick={() => copyCospendId(attributions[hoveredAddress].cospend_id || '')}
               title="Copy cospend ID"
             >
