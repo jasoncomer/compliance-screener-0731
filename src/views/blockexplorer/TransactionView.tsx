@@ -41,9 +41,6 @@ const TransactionView: React.FC = () => {
 
   if (!transaction) return <div>Loading...</div>;
 
-  console.log('[Transaction] txid:', txid);
-  if (!transaction) return <div>Loading...</div>;
-
   return (
     <BsWrapper style={{ fontFamily: 'monospace' }}>
 

@@ -4,6 +4,7 @@ export interface IAttribution {
   bo: string;
   custodian: string;
   cospend_id?: string;
+  script_type?: string;
 }
 
 export interface IAttributionMap {
