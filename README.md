@@ -29,3 +29,19 @@ export default {
 - Optionally add `plugin:@typescript-eslint/stylistic-type-checked`
 - Install [eslint-plugin-react](https://github.com/jsx-eslint/eslint-plugin-react) and add `plugin:react/recommended` & `plugin:react/jsx-runtime` to the `extends` list
 # blockscout-app
+
+## Git Hooks
+
+This project uses [Husky](https://typicode.github.io/husky/) to manage git hooks for ensuring code quality. Currently implemented hooks:
+
+- **pre-push**: Runs `npm run build` before pushing to origin to ensure the code can be built successfully.
+
+### Setting up Git Hooks
+
+The hooks will be installed automatically when you install dependencies. If you need to manually set up the hooks, run:
+
+```bash
+npx husky install
+```
+
+After installation, the hooks will run automatically during your git workflow - the pre-push hook will verify your code builds successfully before pushing changes.
