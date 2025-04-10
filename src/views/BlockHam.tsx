@@ -17,6 +17,7 @@ import { colors } from '../styles/variables';
 
 const SearchWrapper = styled.div`
   width: 100%;
+
 `;
 
 const OptionWrapper = styled.div`

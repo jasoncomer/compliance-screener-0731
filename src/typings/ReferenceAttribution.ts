@@ -3,6 +3,7 @@ export interface IAttribution {
   entity: string;
   bo: string;
   custodian: string;
+  cospend_id?: string;
 }
 
 export interface IAttributionMap {

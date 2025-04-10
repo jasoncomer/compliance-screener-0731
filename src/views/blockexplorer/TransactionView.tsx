@@ -7,11 +7,13 @@ import BtcTransactionTable from './transaction/BtcTransactionTable';
 import { BsWrapper } from '../../styles/ocmmon';
 import { api } from '../../api/api';
 import { useTheme } from '../../context/ThemeContext';
+import { useAttribution } from '../../context/AttributionContext';
 
 const TransactionView: React.FC = () => {
   const { txid } = useParams();
   const { theme } = useTheme();
   const [transaction, setTransaction] = React.useState<BtcTransaction>();
+  const { fetchAttributions } = useAttribution();
 
   useEffect(() => {
     const fetchTransaction = async () => {
@@ -22,6 +24,20 @@ const TransactionView: React.FC = () => {
 
     fetchTransaction();
   }, [txid]);
+
+  // Fetch attributions for all addresses in the transaction
+  useEffect(() => {
+    if (!transaction) return;
+    
+    // Extract all unique addresses from inputs and outputs
+    const uniqueAddresses = new Set([
+      ...transaction.inputs.map(input => input.addr),
+      ...transaction.outputs.map(output => output.addr)
+    ]);
+    
+    // Fetch attributions for all addresses
+    fetchAttributions(Array.from(uniqueAddresses));
+  }, [transaction, fetchAttributions]);
 
   if (!transaction) return <div>Loading...</div>;
 
