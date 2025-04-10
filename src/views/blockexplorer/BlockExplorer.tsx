@@ -29,7 +29,6 @@ const FixedHeader = styled.div`
 `;
 
 const ContentWrapper = styled.div`
-  padding: 0 20px;
   flex: 1;
   overflow: hidden;
 `;
