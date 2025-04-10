@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Table, Button, Space, Popover, Tag } from 'antd';
 import { colors } from '../../../styles/variables';
 import { FolderAddOutlined, EllipsisOutlined, CheckOutlined } from '@ant-design/icons';
-import { IComplianceTransaction } from '../../../typings/compliance';
+import { ETransactionStatus, IComplianceTransaction } from '../../../typings/compliance';
 import { conversionRates, currencySymbols } from './CurrencySelector';
 import ModalCreateCaseFromTransaction from '../../../components/modals/ModalCreateCaseFromTransaction';
 import { useAttribution } from '../../../context/AttributionContext';
@@ -17,7 +17,7 @@ interface TransactionsTableProps {
   loading: boolean;
   denom: string;
   onTableChange: (pagination: any) => void;
-  onStatusChange: (id: string, newStatus: string) => void;
+  onStatusChange: (id: string, newStatus: ETransactionStatus) => void;
   onEntityClick: (record: IComplianceTransaction) => void;
 }
 
@@ -58,9 +58,15 @@ const TransactionsTable: React.FC<TransactionsTableProps> = ({
   //   return price ? price.toFixed(2) : 'N/A';
   // };
 
-  console.log({ denom, currencySymbols, conversionRates, transactions });
-
   const columns = [
+    {
+      title: 'Client Id',
+      dataIndex: 'clientId',
+      key: 'clientId',
+      width: 100,
+      sorter: (a: IComplianceTransaction, b: IComplianceTransaction) => a.clientId.localeCompare(b.clientId),
+      onFilter: (value: any, record: IComplianceTransaction) => record.clientId.includes(String(value))
+    },
     {
       title: 'Counterparty Entity',
       dataIndex: 'counterpartyEntities',
@@ -185,7 +191,7 @@ const TransactionsTable: React.FC<TransactionsTableProps> = ({
                 icon={<CheckOutlined />}
                 onClick={(e) => {
                   e.stopPropagation();
-                  onStatusChange(record._id, 'approved');
+                  onStatusChange(record._id, ETransactionStatus.APPROVED);
                 }}
                 title="Approve Transaction"
                 style={{ color: colors.success, width: '100%' }}

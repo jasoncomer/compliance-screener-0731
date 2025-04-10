@@ -76,7 +76,7 @@ const TransactionsTab: React.FC<TransactionsTabProps> = ({
   }, [setCases]);
 
   // Update the status in the state when dropdown changes
-  const handleStatusChange = async (id: string, newStatus: string) => {
+  const handleStatusChange = async (id: string, newStatus: ETransactionStatus) => {
     try {
       await api.compliance.updateTransactionStatus(id, newStatus);
 

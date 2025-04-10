@@ -25,6 +25,7 @@ export interface IOrganization {
   ownerId: string;
   createdAt: string;
   updatedAt: string;
+  members: IMember[];
 }
 
 export interface IOrganizationCreate {
@@ -73,4 +74,4 @@ export interface IInvitation {
   createdAt: string;
   expiresAt: string;
   inviteCode: string; // Unique code for this invitation
-} 
+}

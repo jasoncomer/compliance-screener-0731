@@ -46,31 +46,48 @@ export interface MonitoredAddressChange {
 }
 
 export enum ETransactionStatus {
-  UNREVIEWED = 'UNREVIEWED',
-  NEEDS_REVIEW = 'NEEDS_REVIEW',
-  APPROVED = 'APPROVED',
-  IN_REVIEW = 'IN_REVIEW',
-  CLOSED = 'CLOSED'
+  UNASSIGNED = 'UNASSIGNED', // Default. Transition to UNREVIEWED when assigned to compliance member
+  UNREVIEWED = 'UNREVIEWED', // Transition to APPROVED
+
+  IN_REVIEW = 'IN_REVIEW', // Reviewed by compliance team
+
+  APPROVED = 'APPROVED', // Approved by compliance team
+  HOLD = 'HOLD', // Hold by compliance team
+
+  CLOSED_WITH_NOTE = 'CLOSED_WITH_NOTE', // Closed with note
+  CLOSED_WITH_SAR = 'CLOSED_WITH_SAR', // Closed with SAR report
 }
 
 export type TTransactionStatus = keyof typeof ETransactionStatus;
+
 export interface IComplianceTransaction {
   _id: string;
   txId: string;
+  approvedBy?: string;
+  approvedAt?: Date;
+
+  clientId: string;
   monitoredAddressId: string;
   counterpartyEntities: string[];
   blockchain: string;
   amount: number;
   timestamp: Date;
   riskScores: number[];
-  status: ETransactionStatus;
+  organizationId: string;
+  notes?: string;
+
+  // Question: status vs new field for SAR reports?
+  sarSubmitted: boolean;
+  sarReport?: string | null;
+
   reviewer?: string;
   reviewTimestamp?: Date;
-  notes?: string;
-  organizationId?: string;
-  createdBy: string;
-  createdAt: Date;
-  updatedAt: Date;
+  status: ETransactionStatus;
+  statusHistory: {
+    status: ETransactionStatus;
+    timestamp: Date;
+    reviewer?: string;
+  }[];
 }
 
 export interface TransactionFilters {
