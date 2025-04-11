@@ -175,10 +175,14 @@ const Settings = () => {
     if (!organization) return;
     
     try {
+      console.log('Updating organization with data:', data);
+      console.log('Current organization state:', organization);
       setLoading(true);
       const response = await api.organizations.update(organization._id, data);
       
       if (response.data) {
+        console.log('Organization update response:', response.data);
+        console.log('Setting new organization state:', response.data);
         setOrganization(response.data);
         message.success('Organization updated successfully');
       }

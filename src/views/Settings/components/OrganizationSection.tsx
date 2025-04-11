@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Form, Button, message, Tabs, Table, Modal, Select, Tag, Tooltip, InputNumber } from 'antd';
+import { Form, Button, message, Tabs, Table, Modal, Select, Tag, Tooltip, InputNumber, Switch } from 'antd';
 import { UserAddOutlined, CopyOutlined, SettingOutlined, InfoCircleOutlined } from '@ant-design/icons';
 import { Card, SubTitle, InfoList, InfoItem, Label, Value } from './styled';
 import { IOrganization, IMember, IInvitation, MemberRole } from '../../../typings/organization';
@@ -43,6 +43,26 @@ const OrganizationSection: React.FC<OrganizationSectionProps> = ({
   const [inviteCode, setInviteCode] = useState<string>();
   const [isGeneratingCode, setIsGeneratingCode] = useState(false);
 
+  const onCsamChange = (checked: boolean) => {
+    console.log('Toggle clicked, new value:', checked);
+    console.log('Current organization:', organization);
+    if (onUpdateOrganization && organization) {
+      console.log('Current organization settings:', organization.settings);
+      const updatedSettings = {
+        maxMembers: organization.settings.maxMembers,
+        allowedDomains: organization.settings.allowedDomains,
+        allowCSAM: checked,
+        inviteCode: organization.settings.inviteCode
+      };
+      console.log('Updated settings to be sent:', updatedSettings);
+      onUpdateOrganization({
+        settings: updatedSettings
+      });
+    } else {
+      console.log('onUpdateOrganization or organization is not available');
+    }
+  };
+
   const handleSubmit = async (values: Partial<IOrganization>) => {
     try {
       await onUpdateOrganization?.(values);
@@ -71,7 +91,7 @@ const OrganizationSection: React.FC<OrganizationSectionProps> = ({
 
   const handleGenerateInviteCode = async () => {
     if (!onGenerateInviteCode) return;
-    
+
     setIsGeneratingCode(true);
     try {
       const code = await onGenerateInviteCode();
@@ -111,6 +131,15 @@ const OrganizationSection: React.FC<OrganizationSectionProps> = ({
             <Label theme={{ theme }}>Allowed Domains</Label>
             <Value theme={{ theme }}>
               {organization?.settings.allowedDomains?.join(', ') || 'Any domain allowed'}
+            </Value>
+          </InfoItem>
+          <InfoItem theme={{ theme }}>
+            <Label theme={{ theme }}>CSAM Visualization</Label>
+            <Value theme={{ theme }}>
+              <Switch
+                checked={organization?.settings.allowCSAM || false}
+                onChange={onCsamChange}
+              />
             </Value>
           </InfoItem>
         </InfoList>
@@ -195,7 +224,7 @@ const OrganizationSection: React.FC<OrganizationSectionProps> = ({
         title: 'Actions',
         key: 'actions',
         render: (_: any, record: IMember) => (
-          <Button 
+          <Button
             danger
             type="link"
             disabled={!record.user?._id || record.user._id === currentUser?._id}
@@ -236,7 +265,7 @@ const OrganizationSection: React.FC<OrganizationSectionProps> = ({
         title: 'Actions',
         key: 'actions',
         render: (_: any, record: IInvitation) => (
-          <Button 
+          <Button
             danger
             type="link"
             onClick={() => onRevokeInvitation?.(record.id)}
@@ -261,9 +290,9 @@ const OrganizationSection: React.FC<OrganizationSectionProps> = ({
                   <Label theme={{ theme }}>Invite Code</Label>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <Value theme={{ theme }}>{inviteCode}</Value>
-                    <Button 
-                      type="text" 
-                      icon={<CopyOutlined />} 
+                    <Button
+                      type="text"
+                      icon={<CopyOutlined />}
                       onClick={copyInviteCode}
                     />
                   </div>
@@ -326,9 +355,9 @@ const OrganizationSection: React.FC<OrganizationSectionProps> = ({
   return (
     <Card theme={{ theme }}>
       <SubTitle theme={{ theme }}>Organization Settings</SubTitle>
-      <Tabs 
-        activeKey={activeTab} 
-        onChange={setActiveTab} 
+      <Tabs
+        activeKey={activeTab}
+        onChange={setActiveTab}
         items={items}
         style={{ marginTop: '16px' }}
       />

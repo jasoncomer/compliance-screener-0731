@@ -15,6 +15,8 @@ export interface IMember {
 export interface IOrganizationSettings {
   maxMembers: number;
   allowedDomains: string[];
+  allowCSAM: boolean;
+  inviteCode: string;
 }
 
 export interface IOrganization {

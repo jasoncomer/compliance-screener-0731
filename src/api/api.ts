@@ -6,7 +6,7 @@ import { sot } from './sot';
 import { compliance } from './compliance';
 import { organizations } from './organizations';
 
-const BASE_URL = process.env.NODE_ENV === 'production' ? 'https://api.blockscout.ai/api/v1' : 'http://localhost:8000/api/v1';
+const BASE_URL = process.env.NODE_ENV === 'production' ? 'https://api.blockscout.ai/api/v1' : 'http://localhost:8004/api/v1';
 
 export const axiosInstance: AxiosInstance = axios.create({
   baseURL: BASE_URL,
