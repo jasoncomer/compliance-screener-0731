@@ -5,10 +5,11 @@ import { Card, SubTitle, InfoList, InfoItem, Label, Value } from './styled';
 import { IOrganization, IMember, IInvitation, MemberRole } from '../../../typings/organization';
 import { IUser } from '../../../typings/interfaces';
 import Input from '../../../components/common/Input';
+import { useSelector } from 'react-redux';
+import { RootState } from '../../../store/store';
 
 interface OrganizationSectionProps {
   theme: 'dark' | 'light';
-  organization?: IOrganization;
   onUpdateOrganization?: (data: Partial<IOrganization>) => void;
   currentUser?: IUser;
   members: IMember[];
@@ -22,7 +23,6 @@ interface OrganizationSectionProps {
 
 const OrganizationSection: React.FC<OrganizationSectionProps> = ({
   theme,
-  organization,
   onUpdateOrganization,
   currentUser,
   members = [],
@@ -33,6 +33,7 @@ const OrganizationSection: React.FC<OrganizationSectionProps> = ({
   onGenerateInviteCode,
   onRevokeInvitation
 }) => {
+  const organization = useSelector((state: RootState) => state.organization.organization);
   const [isEditModalVisible, setIsEditModalVisible] = useState(false);
   const [isComplianceModalVisible, setIsComplianceModalVisible] = useState(false);
   const [form] = Form.useForm();
@@ -44,22 +45,16 @@ const OrganizationSection: React.FC<OrganizationSectionProps> = ({
   const [isGeneratingCode, setIsGeneratingCode] = useState(false);
 
   const onCsamChange = (checked: boolean) => {
-    console.log('Toggle clicked, new value:', checked);
-    console.log('Current organization:', organization);
     if (onUpdateOrganization && organization) {
-      console.log('Current organization settings:', organization.settings);
       const updatedSettings = {
         maxMembers: organization.settings.maxMembers,
         allowedDomains: organization.settings.allowedDomains,
         allowCSAM: checked,
         inviteCode: organization.settings.inviteCode
       };
-      console.log('Updated settings to be sent:', updatedSettings);
       onUpdateOrganization({
         settings: updatedSettings
       });
-    } else {
-      console.log('onUpdateOrganization or organization is not available');
     }
   };
 
@@ -110,6 +105,7 @@ const OrganizationSection: React.FC<OrganizationSectionProps> = ({
     }
   };
 
+
   const renderGeneralTab = () => {
     return (
       <>
@@ -137,7 +133,7 @@ const OrganizationSection: React.FC<OrganizationSectionProps> = ({
             <Label theme={{ theme }}>CSAM Visualization</Label>
             <Value theme={{ theme }}>
               <Switch
-                checked={organization?.settings.allowCSAM || false}
+                checked={organization?.settings.allowCSAM}
                 onChange={onCsamChange}
               />
             </Value>
