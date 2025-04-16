@@ -116,6 +116,7 @@ interface GroupedOption {
 const BlockHam: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
   const { items: sot, itemsMap: sotMap, loading: sotLoading } = useSelector((state: RootState) => state.sot);
+  const { organization } = useSelector((state: RootState) => state.organization);
   
   const [options, setOptions] = useState<GroupedOption[]>([]);
   const [loading, setLoading] = useState(false);
@@ -234,7 +235,6 @@ const BlockHam: React.FC = () => {
         fields: searchableFields,
         conjunction: 'or',
         sort: [{ field: 'score', direction: 'desc' }],
-
       });
 
       // Consolidate results by entity ID
@@ -246,6 +246,15 @@ const BlockHam: React.FC = () => {
         const scoreField = typeof (result as any).score_field === 'number' ? (result as any).score_field : 0;
         const fieldName = searchableFields[scoreField] || 'unknown';
         const entityId = sotItem._id;
+
+        // Skip CSAM-related entities if allowCSAM is false
+        if (!organization?.settings.allowCSAM) {
+          const hasCSAMTag = getEntityTags(sotItem).some(tag => tag.toLowerCase().includes('csam'));
+          const isCSAMType = sotItem.entity_type?.toLowerCase().includes('csam');
+          if (hasCSAMTag || isCSAMType) {
+            continue;
+          }
+        }
 
         if (consolidatedEntities[entityId]) {
           // Entity already in results, add matched field

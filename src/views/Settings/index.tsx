@@ -3,6 +3,7 @@ import { message } from 'antd';
 import { SettingOutlined } from '@ant-design/icons';
 import { useAppContext } from '../../context/AppContext';
 import { useTheme } from '../../context/ThemeContext';
+import { useDispatch } from 'react-redux';
 import ViewWrapper from '../../components/ViewWrapper';
 import ProfileSection from './components/ProfileSection';
 import PreferencesSection from './components/PreferencesSection';
@@ -14,11 +15,12 @@ import { IMember, IInvitation, IOrganization, IOrganizationMember } from '../../
 import { SettingSection } from '../../typings/settings';
 import { api } from '../../api/api';
 import { SettingsLayout, ContentArea } from './components/styled';
+import { setOrganization } from '../../store/slices/organizationSlice';
 
 const Settings = () => {
   const { theme, toggleTheme } = useTheme();
   const { user } = useAppContext();
-  const [organization, setOrganization] = useState<IOrganization>();
+  const dispatch = useDispatch();
   const [members, setMembers] = useState<IMember[]>([]);
   const [pendingInvitations, setPendingInvitations] = useState<IInvitation[]>([]);
   const [activeSection, setActiveSection] = useState<SettingSection>('profile');
@@ -38,7 +40,7 @@ const Settings = () => {
       if (orgsResponse.data && orgsResponse.data.length > 0) {
         // Use the first organization for now
         const org = orgsResponse.data[0];
-        setOrganization(org);
+        dispatch(setOrganization(org));
         
         // Fetch members of that organization
         const membersResponse = await api.organizations.listMembers(org._id);
@@ -77,22 +79,21 @@ const Settings = () => {
   };
 
   const handleInviteMember = async (email: string, role: 'manager' | 'team_member') => {
-    if (!organization) {
-      message.error('No active organization');
-      return;
-    }
-    
     try {
       setLoading(true);
-      await api.organizations.invite(organization._id, {
-        emails: [email],
-        role: role
-      });
-      
-      message.success(`Invitation sent to ${email}`);
-      
-      // Refresh the pending invitations list
-      // TODO: When API endpoint for fetching invitations is available
+      const orgsResponse = await api.organizations.list();
+      if (orgsResponse.data && orgsResponse.data.length > 0) {
+        const org = orgsResponse.data[0];
+        await api.organizations.invite(org._id, {
+          emails: [email],
+          role: role
+        });
+        
+        message.success(`Invitation sent to ${email}`);
+        
+        // Refresh the pending invitations list
+        // TODO: When API endpoint for fetching invitations is available
+      }
     } catch (error) {
       console.error('Error inviting member:', error);
       message.error('Failed to send invitation');
@@ -102,14 +103,16 @@ const Settings = () => {
   };
 
   const handleRemoveMember = async (memberId: string) => {
-    if (!organization) return;
-    
     try {
       setLoading(true);
-      await api.organizations.removeMember(organization._id, memberId);
-      
-      setMembers(prev => prev.filter(member => member._id !== memberId));
-      message.success('Member removed successfully');
+      const orgsResponse = await api.organizations.list();
+      if (orgsResponse.data && orgsResponse.data.length > 0) {
+        const org = orgsResponse.data[0];
+        await api.organizations.removeMember(org._id, memberId);
+        
+        setMembers(prev => prev.filter(member => member._id !== memberId));
+        message.success('Member removed successfully');
+      }
     } catch (error) {
       console.error('Error removing member:', error);
       message.error('Failed to remove member');
@@ -119,18 +122,20 @@ const Settings = () => {
   };
 
   const handleUpdateMemberRole = async (memberId: string, newRole: 'manager' | 'team_member') => {
-    if (!organization) return;
-    
     try {
       setLoading(true);
-      await api.organizations.updateMemberRole(organization._id, memberId, newRole);
-      
-      setMembers(prev => 
-        prev.map(member => 
-          member._id === memberId ? { ...member, role: newRole } : member
-        )
-      );
-      message.success('Member role updated successfully');
+      const orgsResponse = await api.organizations.list();
+      if (orgsResponse.data && orgsResponse.data.length > 0) {
+        const org = orgsResponse.data[0];
+        await api.organizations.updateMemberRole(org._id, memberId, newRole);
+        
+        setMembers(prev => 
+          prev.map(member => 
+            member._id === memberId ? { ...member, role: newRole } : member
+          )
+        );
+        message.success('Member role updated successfully');
+      }
     } catch (error) {
       console.error('Error updating member role:', error);
       message.error('Failed to update member role');
@@ -157,30 +162,37 @@ const Settings = () => {
 
   const handleRevokeInvitation = async (invitationId: string) => {
     // This API endpoint doesn't exist yet, should be added
-    if (!organization) return;
-    
     try {
-      // When API is available:
-      // await api.organizations.revokeInvitation(organization._id, invitationId);
-      
-      setPendingInvitations(prev => prev.filter(invitation => invitation.id !== invitationId));
-      message.success('Invitation revoked successfully');
+      setLoading(true);
+      const orgsResponse = await api.organizations.list();
+      if (orgsResponse.data && orgsResponse.data.length > 0) {
+        // const org = orgsResponse.data[0];
+        // When API is available:
+        // await api.organizations.revokeInvitation(org._id, invitationId);
+        
+        setPendingInvitations(prev => prev.filter(invitation => invitation.id !== invitationId));
+        message.success('Invitation revoked successfully');
+      }
     } catch (error) {
       console.error('Error revoking invitation:', error);
       message.error('Failed to revoke invitation');
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleUpdateOrganization = async (data: Partial<IOrganization>) => {
-    if (!organization) return;
-    
     try {
       setLoading(true);
-      const response = await api.organizations.update(organization._id, data);
-      
-      if (response.data) {
-        setOrganization(response.data);
-        message.success('Organization updated successfully');
+      const orgsResponse = await api.organizations.list();
+      if (orgsResponse.data && orgsResponse.data.length > 0) {
+        const org = orgsResponse.data[0];
+        const response = await api.organizations.update(org._id, data);
+        
+        if (response.data) {
+          dispatch(setOrganization(response.data));
+          message.success('Organization updated successfully');
+        }
       }
     } catch (error) {
       console.error('Error updating organization:', error);
@@ -216,7 +228,6 @@ const Settings = () => {
         return (
           <OrganizationSection
             theme={theme}
-            organization={organization}
             currentUser={user || undefined}
             members={members}
             pendingInvitations={pendingInvitations}

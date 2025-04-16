@@ -18,7 +18,7 @@ export const Sidebar = styled.div`
   box-shadow: 0 4px 6px ${props => props.theme.theme === 'dark' ? 'rgba(0, 0, 0, 0.2)' : 'rgba(0, 0, 0, 0.05)'};
 `;
 
-export const SidebarItem = styled.div<{ active?: boolean }>`
+export const SidebarItem = styled.div<{ 'data-active'?: boolean }>`
   display: flex;
   align-items: center;
   gap: 12px;
@@ -26,7 +26,7 @@ export const SidebarItem = styled.div<{ active?: boolean }>`
   border-radius: 8px;
   cursor: pointer;
   transition: all ${transitionLength} ease;
-  background: ${props => props.active 
+  background: ${props => props['data-active'] 
     ? props.theme.theme === 'dark' 
       ? '#2d2d2d' 
       : '#f0f0f0'
@@ -39,7 +39,7 @@ export const SidebarItem = styled.div<{ active?: boolean }>`
 
   .icon {
     font-size: 18px;
-    color: ${props => props.active
+    color: ${props => props['data-active']
       ? props.theme.theme === 'dark'
         ? '#3498db'
         : '#2980b9'
@@ -51,7 +51,7 @@ export const SidebarItem = styled.div<{ active?: boolean }>`
 
   span {
     font-size: 15px;
-    color: ${props => props.active
+    color: ${props => props['data-active']
       ? props.theme.theme === 'dark'
         ? '#ffffff'
         : '#2c3e50'
