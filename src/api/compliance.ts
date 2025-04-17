@@ -75,7 +75,11 @@ export const compliance = {
     filters: {
       status?: string;
       blockchain?: string;
+      clientId?: string;
       timestamp?: { from?: string; to?: string };
+      minAmount?: number;
+      maxAmount?: number;
+      riskLevel?: 'high' | 'medium' | 'low';
       page?: number;
       limit?: number;
     },
@@ -97,6 +101,16 @@ export const compliance = {
   ) => {
     const endpoint = `/compliance/transactions/${transactionId}/status`;
     const response = await axiosInstance.put(endpoint, { status });
+    return response.data.data;
+  },
+
+  // Update transaction assignee
+  updateTransactionAssignee: async (
+    transactionId: string,
+    assigneeId: string
+  ): Promise<IComplianceTransaction> => {
+    const endpoint = `/compliance/transactions/${transactionId}/assignee`;
+    const response = await axiosInstance.put(endpoint, { assigneeId });
     return response.data.data;
   },
 

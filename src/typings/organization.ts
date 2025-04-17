@@ -1,13 +1,20 @@
-import { IUser } from './interfaces';
+export enum EMemberRole {
+  ADMIN = 'admin',
+  MANAGER = 'manager',
+  TEAM_MEMBER = 'team_member',
+}
 
-export type MemberRole = 'manager' | 'team_member';
+export enum EMemberStatus {
+  PENDING = 'pending',
+  ACTIVE = 'active',
+  REMOVED = 'removed',
+}
 
 export interface IMember {
-  _id: string;
-  user?: IUser | null; // Optional for pending invitations
+  userId?: string | null; // Optional for pending invitations
   email?: string; // Email for pending invitations
-  role: MemberRole;
-  status: 'pending' | 'active' | 'removed';
+  role: EMemberRole;
+  status: EMemberStatus;
   joinedAt: string;
   invitedBy: string; // User ID who invited this member
 }
@@ -15,8 +22,10 @@ export interface IMember {
 export interface IOrganizationSettings {
   maxMembers: number;
   allowedDomains: string[];
-  allowCSAM: boolean;
   inviteCode: string;
+  allowCSAM: boolean;
+  riskScoreThreshold: number;
+  transactionThreshold: number;
 }
 
 export interface IOrganization {
@@ -42,23 +51,16 @@ export interface IOrganizationUpdate {
   settings?: Partial<IOrganizationSettings>;
 }
 
-export type OrganizationRole = 'owner' | 'manager' | 'team_member';
-
-export interface IOrganizationMember {
-  _id: string;
-  organizationId: string;
-  userId: string;
+export interface IOrganizationMember extends IMember {
   email: string;
-  role: OrganizationRole;
-  status: 'active' | 'pending';
-  invitedBy: string;
-  createdAt: string;
-  updatedAt: string;
+  name: string;
+  surname: string;
+  status: EMemberStatus;
 }
 
 export interface IOrganizationInvite {
   emails: string[];
-  role?: OrganizationRole;
+  role?: EMemberRole;
 }
 
 export interface IOrganizationJoin {
@@ -70,8 +72,8 @@ export interface IInvitation {
   id: string;
   organizationId: string;
   email: string;
-  role: MemberRole;
-  status: 'pending' | 'accepted' | 'expired' | 'revoked';
+  role: EMemberRole;
+  status: EMemberStatus;
   invitedBy: string; // User ID who created the invitation
   createdAt: string;
   expiresAt: string;

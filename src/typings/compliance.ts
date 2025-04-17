@@ -80,7 +80,7 @@ export interface IComplianceTransaction {
   sarSubmitted: boolean;
   sarReport?: string | null;
 
-  reviewer?: string;
+  reviewerId?: string;
   reviewTimestamp?: Date;
   status: ETransactionStatus;
   statusHistory: {
@@ -93,7 +93,11 @@ export interface IComplianceTransaction {
 export interface TransactionFilters {
   status?: string;
   blockchain?: string;
+  clientId?: string;
   timestamp?: { from?: string; to?: string };
+  minAmount?: number;
+  maxAmount?: number;
+  riskLevel?: 'high' | 'medium' | 'low';
   page?: number;
   limit?: number;
 }

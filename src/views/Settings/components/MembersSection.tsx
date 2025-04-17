@@ -2,18 +2,19 @@ import React, { useState } from 'react';
 import { Table, Button, Tag, Tooltip, Modal, Form, Select, message } from 'antd';
 import { UserAddOutlined, CopyOutlined, SettingOutlined } from '@ant-design/icons';
 import { Card, SubTitle, InfoList, InfoItem, Label, Value } from './styled';
-import { IMember, MemberRole, IInvitation } from '../../../typings/organization';
+import { IMember, EMemberRole, IInvitation, IOrganizationMember } from '../../../typings/organization';
 import { IUser } from '../../../typings/interfaces';
 import Input from '../../../components/common/Input';
+import { useAppSelector } from '../../../store/hooks';
+import { selectActiveOrgMembers } from '../../../store/slices/organizationsSlice';
 
 interface MembersSectionProps {
   theme: 'dark' | 'light';
   currentUser?: IUser;
-  members: IMember[];
   pendingInvitations: IInvitation[];
-  onInviteMember?: (email: string, role: MemberRole) => void;
+  onInviteMember?: (email: string, role: EMemberRole) => void;
   onRemoveMember?: (memberId: string) => void;
-  onUpdateMemberRole?: (memberId: string, newRole: MemberRole) => void;
+  onUpdateMemberRole?: (memberId: string, newRole: EMemberRole) => void;
   onGenerateInviteCode?: () => Promise<string>;
   onRevokeInvitation?: (invitationId: string) => void;
 }
@@ -21,7 +22,6 @@ interface MembersSectionProps {
 const MembersSection: React.FC<MembersSectionProps> = ({ 
   theme,
   currentUser,
-  members = [],
   pendingInvitations = [],
   onInviteMember,
   onRemoveMember,
@@ -29,12 +29,15 @@ const MembersSection: React.FC<MembersSectionProps> = ({
   onGenerateInviteCode,
   onRevokeInvitation
 }) => {
+  const members = useAppSelector(selectActiveOrgMembers);
   const [isInviteModalVisible, setIsInviteModalVisible] = useState(false);
   const [inviteForm] = Form.useForm();
   const [inviteCode, setInviteCode] = useState<string>();
   const [isGeneratingCode, setIsGeneratingCode] = useState(false);
 
-  const handleInvite = async (values: { email: string; role: MemberRole }) => {
+  console.log(members);
+
+  const handleInvite = async (values: { email: string; role: EMemberRole }) => {
     onInviteMember?.(values.email, values.role);
     setIsInviteModalVisible(false);
     inviteForm.resetFields();
@@ -64,10 +67,10 @@ const MembersSection: React.FC<MembersSectionProps> = ({
   const columns = [
     {
       title: 'Member',
-      dataIndex: ['user', 'name'],
-      render: (_: string, record: IMember) => (
+      dataIndex: ['name', 'email'],
+      render: (_: string, record: IOrganizationMember) => (
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span>{record.user?.name || record.email || 'Unknown'}</span>
+          <span>{record.name || record.email || 'Unknown'}</span>
           {record.status === 'pending' && (
             <Tag color="orange">Pending</Tag>
           )}
@@ -76,23 +79,23 @@ const MembersSection: React.FC<MembersSectionProps> = ({
     },
     {
       title: 'Email',
-      dataIndex: ['user', 'email'],
-      render: (_: string, record: IMember) => record.user?.email || record.email || 'N/A',
+      dataIndex: ['email'],
+      render: (_: string, record: IMember) => record.email || 'N/A',
     },
     {
       title: 'Role',
       dataIndex: 'role',
-      render: (role: MemberRole, record: IMember) => (
+      render: (role: EMemberRole, record: IMember) => (
         <Select
           value={role}
           style={{ width: 120 }}
-          onChange={(newRole: MemberRole) => {
-            const memberId = record.user?._id;
+          onChange={(newRole: EMemberRole) => {
+            const memberId = record.userId;
             if (memberId) {
               onUpdateMemberRole?.(memberId, newRole);
             }
           }}
-          disabled={!record.user?._id || record.user._id === currentUser?._id}
+          disabled={!record.userId || record.userId === currentUser?._id}
         >
           <Select.Option value="manager">Manager</Select.Option>
           <Select.Option value="team_member">Team Member</Select.Option>
@@ -111,9 +114,9 @@ const MembersSection: React.FC<MembersSectionProps> = ({
         <Button 
           danger
           type="link"
-          disabled={!record.user?._id || record.user._id === currentUser?._id}
+          disabled={!record.userId || record.userId === currentUser?._id}
           onClick={() => {
-            const memberId = record.user?._id;
+            const memberId = record.userId;
             if (memberId) {
               onRemoveMember?.(memberId);
             }
@@ -133,7 +136,7 @@ const MembersSection: React.FC<MembersSectionProps> = ({
     {
       title: 'Role',
       dataIndex: 'role',
-      render: (role: MemberRole) => (
+      render: (role: EMemberRole) => (
         <Tag color={role === 'manager' ? 'blue' : 'green'}>
           {role === 'manager' ? 'Manager' : 'Team Member'}
         </Tag>
@@ -204,7 +207,7 @@ const MembersSection: React.FC<MembersSectionProps> = ({
       <Table
         dataSource={members}
         columns={columns}
-        rowKey={(record) => record.user?._id || record.email || record.joinedAt}
+        rowKey={(record) => record.userId || record.email || record.joinedAt}
         style={{ marginTop: '24px' }}
       />
 

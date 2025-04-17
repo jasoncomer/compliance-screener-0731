@@ -7,9 +7,13 @@ export const colors = {
 
   // Semantic colors
   success: '#52c41a',
+  successDark: '#327a0e',
   warning: '#faad14',
+  warningDark: '#d48806',
   danger: '#ff4d4f',
+  dangerDark: '#d43838',
   info: '#1890ff',
+  infoDark: '#1352ff',
 
   // Neutral colors
   light: '#f0f2f5',

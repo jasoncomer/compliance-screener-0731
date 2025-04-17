@@ -29,6 +29,16 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
         <UserOutlined className="icon" />
         <span>Profile</span>
       </SidebarItem>
+
+      <SidebarItem 
+        theme={{ theme }} 
+        data-active={activeSection === 'organization'}
+        onClick={() => onSectionChange('organization')}
+      >
+        <SettingOutlined className="icon" />
+        <span>Organization</span>
+      </SidebarItem>
+
       <SidebarItem 
         theme={{ theme }} 
         data-active={activeSection === 'preferences'}
@@ -37,6 +47,7 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
         <SettingOutlined className="icon" />
         <span>Preferences</span>
       </SidebarItem>
+
       <SidebarItem 
         theme={{ theme }} 
         data-active={activeSection === 'notifications'}
@@ -45,6 +56,7 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
         <BellOutlined className="icon" />
         <span>Notifications</span>
       </SidebarItem>
+
       <SidebarItem 
         theme={{ theme }} 
         data-active={activeSection === 'security'}
@@ -52,14 +64,6 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
       >
         <SecurityScanOutlined className="icon" />
         <span>Security</span>
-      </SidebarItem>
-      <SidebarItem 
-        theme={{ theme }} 
-        data-active={activeSection === 'organization'}
-        onClick={() => onSectionChange('organization')}
-      >
-        <SettingOutlined className="icon" />
-        <span>Organization</span>
       </SidebarItem>
     </Sidebar>
   );

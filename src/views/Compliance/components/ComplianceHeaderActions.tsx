@@ -11,18 +11,16 @@ const HeaderActionsContainer = styled.div`
 `;
 
 interface HeaderActionsProps {
-  addressCount: number;
-  denom: string;
-  onDenomChange: (value: string) => void;
+  txCount: number;
 }
 
-const ComplianceHeaderActions: React.FC<HeaderActionsProps> = () => {
+const ComplianceHeaderActions: React.FC<HeaderActionsProps> = ({ txCount }) => {
   const { theme } = useTheme();
   return (
     <HeaderActionsContainer>
       <h3 style={{ margin: 0, color: theme === 'light' ? colors.black : colors.white }}>
         <DatabaseOutlined style={{ marginRight: '8px' }} />
-        Real-Time Compliance Monitoring
+        Real-Time Compliance Monitoring ({txCount})
       </h3>
     </HeaderActionsContainer>
   );

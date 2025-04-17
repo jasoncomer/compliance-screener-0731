@@ -1,5 +1,5 @@
 import { axiosInstance } from './api';
-import { IBSApiResponse } from '../typings/interfaces';
+import { IBSApiResponse, IUser } from '../typings/interfaces';
 import {
   IOrganization,
   IOrganizationCreate,
@@ -7,14 +7,14 @@ import {
   IOrganizationMember,
   IOrganizationInvite,
   IOrganizationJoin,
-  OrganizationRole
+  EMemberRole
 } from '../typings/organization';
 
 export const organizations = {
   // List organizations where user is a member
-  list: async (): Promise<IBSApiResponse<IOrganization[]>> => {
-    const response = await axiosInstance.get('/organizations');
-    return response.data;
+  list: async (): Promise<{ organizations: IOrganization[], users: IUser[] }> => {
+    const { data } = await axiosInstance.get('/organizations');
+    return data.data;
   },
 
   // Create a new organization
@@ -54,16 +54,16 @@ export const organizations = {
   },
 
   // List organization members
-  listMembers: async (organizationId: string): Promise<IBSApiResponse<IOrganizationMember[]>> => {
+  listMembers: async (organizationId: string): Promise<IOrganizationMember[]> => {
     const response = await axiosInstance.get(`/organizations/${organizationId}/members`);
-    return response.data;
+    return response.data.data;
   },
 
   // Update member role
   updateMemberRole: async (
     organizationId: string,
     memberId: string,
-    role: OrganizationRole
+    role: EMemberRole
   ): Promise<IBSApiResponse<IOrganizationMember>> => {
     const response = await axiosInstance.patch(
       `/organizations/${organizationId}/members/${memberId}/role`,

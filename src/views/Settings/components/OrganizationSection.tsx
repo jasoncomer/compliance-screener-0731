@@ -2,38 +2,37 @@ import React, { useState } from 'react';
 import { Form, Button, message, Tabs, Table, Modal, Select, Tag, Tooltip, InputNumber, Switch } from 'antd';
 import { UserAddOutlined, CopyOutlined, SettingOutlined, InfoCircleOutlined } from '@ant-design/icons';
 import { Card, SubTitle, InfoList, InfoItem, Label, Value } from './styled';
-import { IOrganization, IMember, IInvitation, MemberRole } from '../../../typings/organization';
+import { IOrganization, IMember, IInvitation, EMemberRole, IOrganizationMember } from '../../../typings/organization';
 import { IUser } from '../../../typings/interfaces';
 import Input from '../../../components/common/Input';
-import { useSelector } from 'react-redux';
-import { RootState } from '../../../store/store';
+import { useAppSelector, useAppDispatch } from '../../../store/hooks';
+import { selectActiveOrgMembers, updateMemberRole, selectCurrentOrganization, updateOrganization } from '../../../store/slices/organizationsSlice';
+
 
 interface OrganizationSectionProps {
   theme: 'dark' | 'light';
   onUpdateOrganization?: (data: Partial<IOrganization>) => void;
   currentUser?: IUser;
-  members: IMember[];
   pendingInvitations: IInvitation[];
-  onInviteMember?: (email: string, role: MemberRole) => void;
+  onInviteMember?: (email: string, role: EMemberRole) => void;
   onRemoveMember?: (memberId: string) => void;
-  onUpdateMemberRole?: (memberId: string, newRole: MemberRole) => void;
   onGenerateInviteCode?: () => Promise<string>;
-  onRevokeInvitation?: (invitationId: string) => void;
+  onRevokeInvitation?: (invitationId: string) => Promise<void> | void;
 }
 
 const OrganizationSection: React.FC<OrganizationSectionProps> = ({
   theme,
   onUpdateOrganization,
   currentUser,
-  members = [],
   pendingInvitations = [],
   onInviteMember,
   onRemoveMember,
-  onUpdateMemberRole,
   onGenerateInviteCode,
   onRevokeInvitation
 }) => {
-  const organization = useSelector((state: RootState) => state.organization.organization);
+  const members = useAppSelector(selectActiveOrgMembers);
+  const dispatch = useAppDispatch();
+  const organization = useAppSelector(selectCurrentOrganization);
   const [isEditModalVisible, setIsEditModalVisible] = useState(false);
   const [isComplianceModalVisible, setIsComplianceModalVisible] = useState(false);
   const [form] = Form.useForm();
@@ -43,6 +42,9 @@ const OrganizationSection: React.FC<OrganizationSectionProps> = ({
   const [inviteForm] = Form.useForm();
   const [inviteCode, setInviteCode] = useState<string>();
   const [isGeneratingCode, setIsGeneratingCode] = useState(false);
+  const [updatingRoleForMemberId, setUpdatingRoleForMemberId] = useState<string | null>(null);
+  const [revokingInvitationId, setRevokingInvitationId] = useState<string | null>(null);
+  const [isSubmittingCompliance, setIsSubmittingCompliance] = useState(false);
 
   const onCsamChange = (checked: boolean) => {
     if (onUpdateOrganization && organization) {
@@ -50,7 +52,9 @@ const OrganizationSection: React.FC<OrganizationSectionProps> = ({
         maxMembers: organization.settings.maxMembers,
         allowedDomains: organization.settings.allowedDomains,
         allowCSAM: checked,
-        inviteCode: organization.settings.inviteCode
+        inviteCode: organization.settings.inviteCode,
+        riskScoreThreshold: organization.settings.riskScoreThreshold,
+        transactionThreshold: organization.settings.transactionThreshold
       };
       onUpdateOrganization({
         settings: updatedSettings
@@ -60,7 +64,10 @@ const OrganizationSection: React.FC<OrganizationSectionProps> = ({
 
   const handleSubmit = async (values: Partial<IOrganization>) => {
     try {
-      await onUpdateOrganization?.(values);
+      await dispatch(updateOrganization({ 
+        organizationId: organization?._id || '', 
+        data: values 
+      })).unwrap();
       setIsEditModalVisible(false);
       message.success('Organization settings updated successfully');
     } catch (error) {
@@ -68,17 +75,34 @@ const OrganizationSection: React.FC<OrganizationSectionProps> = ({
     }
   };
 
-  const handleComplianceSubmit = async (_: { riskScoreThreshold: number; transactionThreshold: number }) => {
+  const handleComplianceSubmit = async (values: { riskScoreThreshold: number; transactionThreshold: number }) => {
     try {
-      // Implement actual API call when backend is ready
+      if (!organization) return;
+      setIsSubmittingCompliance(true);
+      await dispatch(updateOrganization({ 
+        organizationId: organization._id, 
+        data: {
+          settings: {
+            maxMembers: organization?.settings.maxMembers || 5,
+            allowedDomains: organization?.settings.allowedDomains || [],
+            inviteCode: organization?.settings.inviteCode || '',
+            allowCSAM: organization?.settings.allowCSAM || false,
+            riskScoreThreshold: values.riskScoreThreshold,
+            transactionThreshold: values.transactionThreshold
+          }
+        }
+      })).unwrap();
       message.success('Compliance settings updated successfully');
       setIsComplianceModalVisible(false);
+      
     } catch (error) {
       message.error('Failed to update compliance settings');
+    } finally {
+      setIsSubmittingCompliance(false);
     }
   };
 
-  const handleInvite = async (values: { email: string; role: MemberRole }) => {
+  const handleInvite = async (values: { email: string; role: EMemberRole }) => {
     onInviteMember?.(values.email, values.role);
     setIsInviteModalVisible(false);
     inviteForm.resetFields();
@@ -152,7 +176,7 @@ const OrganizationSection: React.FC<OrganizationSectionProps> = ({
                 <InfoCircleOutlined style={{ marginLeft: '8px', fontSize: '14px', opacity: 0.7 }} />
               </Tooltip>
             </Label>
-            <Value theme={{ theme }}>70</Value>
+            <Value theme={{ theme }}>{organization?.settings.riskScoreThreshold || 70}</Value>
           </InfoItem>
           <InfoItem theme={{ theme }}>
             <Label theme={{ theme }}>
@@ -161,7 +185,7 @@ const OrganizationSection: React.FC<OrganizationSectionProps> = ({
                 <InfoCircleOutlined style={{ marginLeft: '8px', fontSize: '14px', opacity: 0.7 }} />
               </Tooltip>
             </Label>
-            <Value theme={{ theme }}>$30</Value>
+            <Value theme={{ theme }}>${organization?.settings.transactionThreshold || 30}</Value>
           </InfoItem>
         </InfoList>
         <div style={{ marginTop: '16px' }}>
@@ -175,11 +199,11 @@ const OrganizationSection: React.FC<OrganizationSectionProps> = ({
     const columns = [
       {
         title: 'Member',
-        dataIndex: ['user', 'name'],
+        dataIndex: ['name', 'email'],
         width: 240,
-        render: (_: string, record: IMember) => (
+        render: (_: string, record: IOrganizationMember) => (
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span>{record.user?.name || record.email || 'Unknown'}</span>
+            <span className="capitalize">{(record.name && record.surname) ? `${record.name} ${record.surname}` : 'Unknown'}</span>
             {record.status === 'pending' && (
               <Tag color="orange">Pending</Tag>
             )}
@@ -188,28 +212,48 @@ const OrganizationSection: React.FC<OrganizationSectionProps> = ({
       },
       {
         title: 'Email',
-        dataIndex: ['user', 'email'],
-        render: (_: string, record: IMember) => record.user?.email || record.email || 'N/A',
+        dataIndex: ['email'],
+        render: (_: string, record: IMember) => record.email || 'N/A',
       },
       {
         title: 'Role',
         dataIndex: 'role',
-        render: (role: MemberRole, record: IMember) => (
-          <Select
-            value={role}
-            style={{ width: 120 }}
-            onChange={(newRole: MemberRole) => {
-              const memberId = record.user?._id;
-              if (memberId) {
-                onUpdateMemberRole?.(memberId, newRole);
-              }
-            }}
-            disabled={!record.user?._id || record.user._id === currentUser?._id}
-          >
-            <Select.Option value="manager">Manager</Select.Option>
-            <Select.Option value="team_member">Team Member</Select.Option>
-          </Select>
-        ),
+        render: (role: EMemberRole, record: IMember) => {
+          const currentMember = members.find(m => m.userId === record.userId);
+          const currentRole = currentMember?.role || role;
+          console.log('updating ', updatingRoleForMemberId, currentRole, record.userId);
+          return (
+            <Select
+              key={`role-${record.userId}-${currentRole}`}
+              value={currentRole}
+              style={{ width: 120 }}
+              onChange={(newRole: EMemberRole) => {
+                const memberId = record.userId;
+                if (memberId && organization) {
+                  setUpdatingRoleForMemberId(memberId);
+                  dispatch(updateMemberRole({ 
+                    organizationId: organization._id, 
+                    memberId, 
+                    role: newRole 
+                  }))
+                    .unwrap()
+                    .catch((error) => {
+                      message.error(`Failed to update role: ${error.message}`);
+                    })
+                    .finally(() => {
+                      setUpdatingRoleForMemberId(null);
+                    });
+                }
+              }}
+              disabled={!record.userId || record.userId === currentUser?._id || updatingRoleForMemberId != null && updatingRoleForMemberId === record.userId}
+              loading={updatingRoleForMemberId != null && updatingRoleForMemberId === record.userId}
+            >
+              <Select.Option value="manager">Manager</Select.Option>
+              <Select.Option value="team_member">Team Member</Select.Option>
+              <Select.Option value="admin">Admin</Select.Option>
+            </Select>
+          );
+        },
       },
       {
         title: 'Joined',
@@ -223,9 +267,9 @@ const OrganizationSection: React.FC<OrganizationSectionProps> = ({
           <Button
             danger
             type="link"
-            disabled={!record.user?._id || record.user._id === currentUser?._id}
+            disabled={!record.userId || record.userId === currentUser?._id}
             onClick={() => {
-              const memberId = record.user?._id;
+              const memberId = record.userId;
               if (memberId) {
                 onRemoveMember?.(memberId);
               }
@@ -246,9 +290,9 @@ const OrganizationSection: React.FC<OrganizationSectionProps> = ({
       {
         title: 'Role',
         dataIndex: 'role',
-        render: (role: MemberRole) => (
-          <Tag color={role === 'manager' ? 'blue' : 'green'}>
-            {role === 'manager' ? 'Manager' : 'Team Member'}
+        render: (role: EMemberRole) => (
+          <Tag color={role === EMemberRole.MANAGER ? 'blue' : 'green'}>
+            {role === EMemberRole.MANAGER ? 'Manager' : 'Team Member'}
           </Tag>
         ),
       },
@@ -264,7 +308,31 @@ const OrganizationSection: React.FC<OrganizationSectionProps> = ({
           <Button
             danger
             type="link"
-            onClick={() => onRevokeInvitation?.(record.id)}
+            loading={revokingInvitationId === record.id}
+            disabled={revokingInvitationId === record.id}
+            onClick={() => {
+              if (onRevokeInvitation) {
+                setRevokingInvitationId(record.id);
+                
+                try {
+                  const result = onRevokeInvitation(record.id);
+                  
+                  Promise.resolve(result)
+                    .then(() => {
+                      message.success(`Invitation revoked successfully`);
+                    })
+                    .catch((error) => {
+                      message.error(`Failed to revoke invitation: ${error.message}`);
+                    })
+                    .finally(() => {
+                      setRevokingInvitationId(null);
+                    });
+                } catch (error) {
+                  message.error(`Failed to revoke invitation: ${error instanceof Error ? error.message : String(error)}`);
+                  setRevokingInvitationId(null);
+                }
+              }
+            }}
           >
             Revoke
           </Button>
@@ -317,7 +385,7 @@ const OrganizationSection: React.FC<OrganizationSectionProps> = ({
         <Table
           dataSource={members}
           columns={columns}
-          rowKey={(record) => record.user?._id || record.email || record.joinedAt}
+          rowKey={(record) => record.userId || record.email || record.joinedAt}
           style={{ marginTop: '24px' }}
         />
 
@@ -390,6 +458,7 @@ const OrganizationSection: React.FC<OrganizationSectionProps> = ({
             <Select>
               <Select.Option value="manager">Manager</Select.Option>
               <Select.Option value="team_member">Team Member</Select.Option>
+              <Select.Option value="admin">Admin</Select.Option>
             </Select>
           </Form.Item>
         </Form>
@@ -447,6 +516,7 @@ const OrganizationSection: React.FC<OrganizationSectionProps> = ({
           complianceForm.resetFields();
         }}
         onOk={() => complianceForm.submit()}
+        confirmLoading={isSubmittingCompliance}
       >
         <Form
           form={complianceForm}

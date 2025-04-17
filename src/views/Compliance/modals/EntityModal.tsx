@@ -10,7 +10,7 @@ interface EntityModalProps {
   entity: IComplianceTransaction | null;
 }
 
-const EntityModal: React.FC<EntityModalProps> = ({ visible, onClose, entity }) => {
+export const EntityModal: React.FC<EntityModalProps> = ({ visible, onClose, entity }) => {
   const { theme } = useTheme();
 
   return (
@@ -32,5 +32,3 @@ const EntityModal: React.FC<EntityModalProps> = ({ visible, onClose, entity }) =
     </Modal>
   );
 };
-
-export default EntityModal; 

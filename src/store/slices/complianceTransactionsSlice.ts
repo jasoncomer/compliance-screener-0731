@@ -1,0 +1,138 @@
+import { createSlice, createAsyncThunk, PayloadAction, createSelector } from '@reduxjs/toolkit';
+import { api } from '../../api/api';
+import { IComplianceTransaction, ComplianceTransactionResponse, TransactionFilters, ETransactionStatus } from '../../typings/compliance';
+import { RootState } from '../store';
+
+interface ComplianceTransactionsState {
+  transactions: {
+    [id: string]: IComplianceTransaction;
+  };
+  loading: boolean;
+  error: string | null;
+  filters: TransactionFilters;
+  total: number;
+  page: number;
+  limit: number;
+}
+
+const initialState: ComplianceTransactionsState = {
+  transactions: {},
+  loading: false,
+  error: null,
+  filters: {},
+  total: 0,
+  page: 1,
+  limit: 10,
+};
+
+export const fetchComplianceTransactions = createAsyncThunk(
+  'complianceTransactions/fetchTransactions',
+  async (filters: TransactionFilters) => {
+    const response = await api.compliance.getTransactions(filters);
+    return response;
+  }
+);
+
+export const updateTransactionStatus = createAsyncThunk(
+  'complianceTransactions/updateStatus',
+  async ({ transactionId, status }: { transactionId: string; status: string }) => {
+    const response = await api.compliance.updateTransactionStatus(transactionId, status);
+    return response;
+  }
+);
+
+export const updateTransactionAssignee = createAsyncThunk(
+  'complianceTransactions/updateAssignee',
+  async ({ transactionId, assignee }: { transactionId: string; assignee: string }) => {
+    const response = await api.compliance.updateTransactionAssignee(transactionId, assignee);
+    return response;
+  }
+);
+
+const complianceTransactionsSlice = createSlice({
+  name: 'complianceTransactions',
+  initialState,
+  reducers: {
+    setFilters: (state, action: PayloadAction<TransactionFilters>) => {
+      state.filters = action.payload;
+    },
+    setPage: (state, action: PayloadAction<number>) => {
+      state.page = action.payload;
+    },
+    setLimit: (state, action: PayloadAction<number>) => {
+      state.limit = action.payload;
+    },
+  },
+  extraReducers: (builder) => {
+    builder
+      .addCase(fetchComplianceTransactions.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchComplianceTransactions.fulfilled, (state, action) => {
+        state.loading = false;
+        
+        const response = action.payload as ComplianceTransactionResponse;
+        const transactionsById: Record<string, IComplianceTransaction> = {};
+        
+        response.transactions.forEach((transaction) => {
+          transactionsById[transaction._id] = transaction;
+        });
+        
+        state.transactions = transactionsById;
+        state.total = response.total;
+        state.page = response.page;
+        state.limit = response.limit;
+      })
+      .addCase(fetchComplianceTransactions.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.error.message || 'Failed to fetch compliance transactions';
+      })
+      .addCase(updateTransactionAssignee.fulfilled, (state, action) => {
+        const updatedTransaction = action.payload as IComplianceTransaction;
+        if (updatedTransaction && updatedTransaction._id) {
+          state.transactions[updatedTransaction._id] = updatedTransaction;
+        }
+      })
+      .addCase(updateTransactionStatus.fulfilled, (state, action) => {
+        const updatedTransaction = action.payload as IComplianceTransaction;
+        if (updatedTransaction && updatedTransaction._id) {
+          state.transactions[updatedTransaction._id] = updatedTransaction;
+        }
+      });
+  },
+});
+
+// Selectors
+export const selectAllTransactions = createSelector(
+  (state: RootState) => state.complianceTransactions.transactions,
+  (txs: Record<string, IComplianceTransaction>) => Object.values(txs)
+);
+
+export const selectActiveTransactions = createSelector(
+  (state: RootState) => state.complianceTransactions.transactions,
+  (txs: Record<string, IComplianceTransaction>) => Object.values(txs).filter((tx) => tx.status !== ETransactionStatus.APPROVED)
+);
+
+export const selectTransactionById = createSelector(
+  (state: RootState) => state.complianceTransactions.transactions,
+  (_: RootState, id: string) => id,
+  (txs: Record<string, IComplianceTransaction>, id: string) => txs[id]
+);
+
+export const selectComplianceFilters = (state: RootState) => state.complianceTransactions.filters;
+
+export const selectPagination = createSelector(
+  (state: RootState) => state.complianceTransactions,
+  (complianceTransactions) => ({
+    total: complianceTransactions.total,
+    page: complianceTransactions.page,
+    limit: complianceTransactions.limit,
+  })
+);
+
+export const selectIsLoading = (state: RootState) =>
+  state.complianceTransactions.loading;
+
+export const { setFilters, setPage, setLimit } = complianceTransactionsSlice.actions;
+export default complianceTransactionsSlice.reducer;

@@ -25,8 +25,11 @@ import Settings from './views/Settings';
 import FlowTrace from './views/FlowTrace';
 import ProtectedRoute from './components/ProtectedRoute';
 import Welcome from './views/Welcome/index';
+import { useAppDispatch } from './store/hooks';
+import { fetchOrganizations } from './store/slices/organizationsSlice';
 
 function App() {
+  const dispatch = useAppDispatch();
   const { user, setUser } = useAppContext();
   const { theme } = useTheme();
   const [isLoading, setIsLoading] = useState(true);
@@ -59,6 +62,7 @@ function App() {
           
           // Then set the user
           setUser(parsedUser);
+          dispatch(fetchOrganizations());
           
         } catch (parseError) {
           // Handle invalid stored data
@@ -74,7 +78,7 @@ function App() {
     };
 
     loadUser();
-  }, [setUser, messageApi]);
+  }, [setUser, messageApi, dispatch]);
 
   if (isLoading) {
     return (

@@ -1,65 +1,68 @@
 import React, { useState, useEffect } from 'react';
-import { message } from 'antd';
-import { api } from '../../../api/api';
-import { IComplianceTransaction, TransactionFilters, MonitoredAddress, ETransactionStatus } from '../../../typings/compliance';
+import { Form, Button, Select, Input, DatePicker, Card } from 'antd';
+import { FilterOutlined, ClearOutlined } from '@ant-design/icons';
+import { ETransactionStatus } from '../../../typings/compliance';
 import ComplianceHeaderActions from './ComplianceHeaderActions';
 import TransactionsTable from './TransactionsTable';
-import EntityModal from './EntityModal';
+import { EntityModal } from '../modals/EntityModal';
 import { useAppContext } from '../../../context/AppContext';
-import { useAttribution } from '../../../context/AttributionContext';
+import { selectCurrentOrganization } from '../../../store/slices/organizationsSlice';
+import { useAppDispatch, useAppSelector } from '../../../store/hooks';
+import { 
+  fetchComplianceTransactions, 
+  selectActiveTransactions, 
+  selectPagination, 
+  selectIsLoading,
+  selectComplianceFilters,
+  setFilters,
+  setPage,
+  setLimit
+} from '../../../store/slices/complianceTransactionsSlice';
+import { api } from '../../../api/api';
 
-interface TransactionsTabProps {
-  monitoredAddresses: MonitoredAddress[];
-  isLoading?: boolean;
-}
+const { RangePicker } = DatePicker;
 
-const TransactionsTab: React.FC<TransactionsTabProps> = ({
-  monitoredAddresses,
-  // isLoading = false,
-}) => {
-  const { /*cases,*/ setCases } = useAppContext();
-  const { fetchAttributions, attributions } = useAttribution();
-  const [transactions, setTransactions] = useState<IComplianceTransaction[]>([]);
-  const [totalTransactions, setTotalTransactions] = useState<number>(0);
-  const [currentPage, setCurrentPage] = useState<number>(1);
-  const [pageSize, setPageSize] = useState<number>(10);
-  const [loading, setLoading] = useState<boolean>(false);
-  const [denom, setDenom] = useState<string>('USD');
+const TransactionsTab: React.FC = () => {
+  const { setCases } = useAppContext();
+  const organization = useAppSelector(selectCurrentOrganization);
+  const dispatch = useAppDispatch();
+  
+  // Use Redux store data
+  const transactions = useAppSelector(selectActiveTransactions);
+  const { total: totalTransactions, page: currentPage, limit: pageSize } = useAppSelector(selectPagination);
+  const loading = useAppSelector(selectIsLoading);
+  const filters = useAppSelector(selectComplianceFilters);
+  
   const [modalVisible, setModalVisible] = useState<boolean>(false);
-  const [selectedEntity] = useState<IComplianceTransaction | null>(null);
-  const [filters, setFilters] = useState<TransactionFilters>({
-    page: 1,
-    limit: 10
-  });
+  const [selectedEntity] = useState(null);
+  const [form] = Form.useForm();
+  
+  // Track available filter options
+  const [availableBlockchains, setAvailableBlockchains] = useState<string[]>([]);
+  const [availableClientIds, setAvailableClientIds] = useState<string[]>([]);
 
+  // Load transactions from Redux store
   useEffect(() => {
-    console.log(attributions);
-  }, [attributions]);
-
-  // Load transactions
-  useEffect(() => {
-    const loadTransactions = async () => {
-      setLoading(true);
-      try {
-        const response = await api.compliance.getTransactions(filters);
-        console.log(response.transactions);
-        setTransactions(response.transactions);
-        setTotalTransactions(response.total);
-        setCurrentPage(response.page);
-        setPageSize(response.limit);
-        // const uniqueAddresses = new Set([
-        //   ...response.transactions.flatMap(tx => [tx.monitoredAddressId.address, tx.counterpartyEntities[0]])
-        // ]);
-        // fetchAttributions(Array.from(uniqueAddresses));
-      } catch (error) {
-        console.error('Failed to load transactions:', error);
-        message.error('Failed to load transactions');
-      } finally {
-        setLoading(false);
-      }
+    const mergedFilters = { 
+      ...filters,
+      page: currentPage,
+      limit: pageSize
     };
-    loadTransactions();
-  }, [filters, fetchAttributions]);
+    dispatch(fetchComplianceTransactions(mergedFilters));
+  }, [dispatch, filters, organization, currentPage, pageSize]);
+
+  // Extract unique filter options from transaction data
+  useEffect(() => {
+    if (transactions.length > 0) {
+      // Extract unique blockchains
+      const blockchains = [...new Set(transactions.map(tx => tx.blockchain))];
+      setAvailableBlockchains(blockchains);
+      
+      // Extract unique client IDs
+      const clientIds = [...new Set(transactions.map(tx => tx.clientId))];
+      setAvailableClientIds(clientIds);
+    }
+  }, [transactions]);
 
   // Refresh cases from API whenever the component is mounted or after a case might have been created
   useEffect(() => {
@@ -75,49 +78,188 @@ const TransactionsTab: React.FC<TransactionsTabProps> = ({
     refreshCases();
   }, [setCases]);
 
-  // Update the status in the state when dropdown changes
-  const handleStatusChange = async (id: string, newStatus: ETransactionStatus) => {
-    try {
-      await api.compliance.updateTransactionStatus(id, newStatus);
-
-      // Update local state
-      setTransactions(prevTransactions =>
-        prevTransactions.map(transaction =>
-          transaction._id === id
-            ? { ...transaction, status: newStatus as ETransactionStatus, reviewer: 'Current User', reviewTimestamp: new Date() }
-            : transaction
-        )
-      );
-
-      message.success(`Transaction status updated to ${newStatus}`);
-    } catch (error) {
-      console.error('Failed to update transaction status:', error);
-      message.error('Failed to update transaction status');
-    }
-  };
-
   // Function to open modal when an entity is clicked
   const handleOpenEntity = () => {
     // setSelectedEntity(record);
     // setModalVisible(true);
   };
 
-  // Handle pagination change
+  // Handle table change (pagination, sorting)
   const handleTableChange = (pagination: any) => {
-    setFilters(prev => ({
-      ...prev,
-      page: pagination.current,
-      limit: pagination.pageSize
+    dispatch(setPage(pagination.current));
+    dispatch(setLimit(pagination.pageSize));
+  };
+  
+  // Handle filter form submission
+  const handleFilterSubmit = (values: any) => {
+    const newFilters = { ...filters };
+    
+    // Reset pagination when applying new filters
+    dispatch(setPage(1));
+    
+    // Process status filter
+    if (values.status) {
+      newFilters.status = values.status;
+    } else {
+      delete newFilters.status;
+    }
+    
+    // Process blockchain filter
+    if (values.blockchain) {
+      newFilters.blockchain = values.blockchain;
+    } else {
+      delete newFilters.blockchain;
+    }
+    
+    // Process clientId filter
+    if (values.clientId) {
+      newFilters.clientId = values.clientId;
+    } else {
+      delete newFilters.clientId;
+    }
+    
+    // Process date range filter
+    if (values.dateRange && values.dateRange.length === 2) {
+      newFilters.timestamp = {
+        from: values.dateRange[0].format('YYYY-MM-DD'),
+        to: values.dateRange[1].format('YYYY-MM-DD')
+      };
+    } else {
+      delete newFilters.timestamp;
+    }
+    
+    // Process amount filters
+    if (values.minAmount) {
+      newFilters.minAmount = parseFloat(values.minAmount) * 100000000; // Convert to satoshis
+    } else {
+      delete newFilters.minAmount;
+    }
+    
+    if (values.maxAmount) {
+      newFilters.maxAmount = parseFloat(values.maxAmount) * 100000000; // Convert to satoshis
+    } else {
+      delete newFilters.maxAmount;
+    }
+    
+    // Process risk level filter
+    if (values.riskLevel) {
+      newFilters.riskLevel = values.riskLevel;
+    } else {
+      delete newFilters.riskLevel;
+    }
+    
+    dispatch(setFilters(newFilters));
+  };
+  
+  // Clear all filters
+  const handleClearFilters = () => {
+    form.resetFields();
+    dispatch(setFilters({
+      page: 1,
+      limit: pageSize
     }));
   };
 
   return (
     <div>
       <ComplianceHeaderActions
-        addressCount={monitoredAddresses.length}
-        denom={denom}
-        onDenomChange={setDenom}
+        txCount={totalTransactions}
       />
+      
+      {/* Filter Panel */}
+      <Card 
+        title={<><FilterOutlined /> Filters</>}
+        style={{ marginBottom: 16 }}
+        size="small"
+        extra={
+          <Button 
+            icon={<ClearOutlined />} 
+            onClick={handleClearFilters}
+            size="small"
+          >
+            Clear
+          </Button>
+        }
+      >
+        <Form
+          form={form}
+          layout="inline"
+          onFinish={handleFilterSubmit}
+          style={{ display: 'flex', flexWrap: 'wrap', height: '32px' }}
+        >
+          <Form.Item name="status" style={{ minWidth: 140 }}>
+            <Select 
+              placeholder="Status"
+              allowClear
+              size="small"
+            >
+              {Object.values(ETransactionStatus).map(status => (
+                <Select.Option key={status} value={status}>
+                  {status.replace(/_/g, ' ')}
+                </Select.Option>
+              ))}
+            </Select>
+          </Form.Item>
+          
+          <Form.Item name="blockchain" style={{ minWidth: 120 }}>
+            <Select 
+              placeholder="Blockchain"
+              allowClear
+              size="small"
+            >
+              {availableBlockchains.map(blockchain => (
+                <Select.Option key={blockchain} value={blockchain}>
+                  {blockchain.charAt(0).toUpperCase() + blockchain.slice(1)}
+                </Select.Option>
+              ))}
+            </Select>
+          </Form.Item>
+          
+          <Form.Item name="clientId" style={{ minWidth: 110 }}>
+            <Select 
+              placeholder="Client ID"
+              allowClear
+              size="small"
+            >
+              {availableClientIds.map(clientId => (
+                <Select.Option key={clientId} value={clientId}>
+                  {clientId}
+                </Select.Option>
+              ))}
+            </Select>
+          </Form.Item>
+          
+          <Form.Item name="dateRange" style={{ marginBottom: 8 }}>
+            <RangePicker size="small" placeholder={['From date', 'To date']} />
+          </Form.Item>
+          
+          <Form.Item name="riskLevel" style={{ minWidth: 120 }}>
+            <Select 
+              placeholder="Risk level"
+              allowClear
+              size="small"
+            >
+              <Select.Option value="high">High ({'>'}70)</Select.Option>
+              <Select.Option value="medium">Medium (41-70)</Select.Option>
+              <Select.Option value="low">Low ({'≤'}40)</Select.Option>
+            </Select>
+          </Form.Item>
+          
+          <Form.Item name="minAmount" style={{ width: 100 }}>
+            <Input type="number" placeholder="Min BTC" step="0.0001" size="small" />
+          </Form.Item>
+          
+          <Form.Item name="maxAmount" style={{ width: 100 }}>
+            <Input type="number" placeholder="Max BTC" step="0.0001" size="small" />
+          </Form.Item>
+          
+          <Form.Item style={{ marginBottom: 8 }}>
+            <Button type="primary" htmlType="submit" size="small">
+              Apply
+            </Button>
+          </Form.Item>
+        </Form>
+      </Card>
       
       <TransactionsTable
         transactions={transactions}
@@ -125,9 +267,7 @@ const TransactionsTab: React.FC<TransactionsTabProps> = ({
         currentPage={currentPage}
         pageSize={pageSize}
         loading={loading}
-        denom={denom}
         onTableChange={handleTableChange}
-        onStatusChange={handleStatusChange}
         onEntityClick={handleOpenEntity}
       />
       
@@ -140,4 +280,4 @@ const TransactionsTab: React.FC<TransactionsTabProps> = ({
   );
 };
 
-export default TransactionsTab; 
+export default TransactionsTab;
