@@ -50,6 +50,7 @@ const TransactionView: React.FC = () => {
         <div>
           {transaction.txid}
         </div>
+        
       </BsBlock>
 
       <BtcTransactionSummary transaction={transaction} theme={{ theme }} />

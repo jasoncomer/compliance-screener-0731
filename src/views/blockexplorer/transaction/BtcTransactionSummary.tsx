@@ -31,6 +31,11 @@ const SummaryWrapper = styled.div`
 `;
 
 const BtcTransactionSummary: React.FC<BtcTransactionSummaryProps> = ({ transaction, theme }) => {
+  // Use the correct field names from the API response
+  const inputAmount = transaction.input_amt || 0;
+  const outputAmount = transaction.output_amt || 0;
+ 
+
   return (
     <BsBlock theme={theme} style={{ fontFamily: 'monospace' }}>
       <h3>Summary</h3>
@@ -41,25 +46,22 @@ const BtcTransactionSummary: React.FC<BtcTransactionSummaryProps> = ({ transacti
             <strong>Height:</strong> {transaction.block.toLocaleString()}
           </span>
           <span>
-            <strong>Timestamp:</strong> {new Date(transaction.timestamp).toISOString()}
+            <strong>Timestamp:</strong> {new Date(transaction.timestamp*1000).toLocaleString()}
           </span>
           <span>
             <strong>Coinbase:</strong> {transaction.coinbase ? 'Yes' : 'No'}
-          </span>
-          <span>
-            <strong>Coinjoin:</strong> {transaction.coinjoin ? 'Yes' : 'No'}
           </span>
         </div>
 
         <div className='col'>
           <span>
-            <strong>Input Amount:</strong> {satsToBTC(transaction.inamt)} BTC
+            <strong>Input Amount:</strong> {satsToBTC(inputAmount).toFixed(8)} BTC
           </span>
           <span>
-            <strong>Output Amount:</strong> {satsToBTC(transaction.outamt)} BTC
+            <strong>Output Amount:</strong> {satsToBTC(outputAmount).toFixed(8)} BTC
           </span>
           <span>
-            <strong>Fee:</strong> {transaction.txfee}
+            <strong>Coinjoin:</strong> {transaction.is_coinjoin ? 'Yes' : 'No'}
           </span>
         </div>
       </SummaryWrapper>

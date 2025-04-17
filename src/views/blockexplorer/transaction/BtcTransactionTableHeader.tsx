@@ -28,7 +28,7 @@ const BtcTransactionTableHeader: React.FC<BtcTransactionTableHeaderProps> = ({ t
     <TxTableHeader>
       <span>{transaction.txid}</span>
       <span>{transaction.block}</span>
-      <span>{transaction.txfee}</span>
+      <span>{transaction.fee_amt}</span>
       <span>{new Date(transaction.timestamp).toISOString()}</span>
     </TxTableHeader>
   );

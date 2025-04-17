@@ -5,6 +5,7 @@ import BtcTransactionInputsOutputs from './BtcTransactionTableInputsOutputs';
 import styled from 'styled-components';
 import { Link } from 'react-router-dom';
 import { Theme } from '../../../context/ThemeContext';
+import { satsToBTC } from '../../../utils/crypto';
 
 const HeaderWrapper = styled.div<{ theme?: { theme: Theme } }>`
   display: flex;
@@ -39,10 +40,11 @@ interface BtcTransactionHeaderProps {
   txHash: string;
   blockHeight: number;
   date: string;
+  fee: number;
   theme?: { theme: Theme };
 }
 
-const BtcTransactionHeader: React.FC<BtcTransactionHeaderProps> = ({ txHash, blockHeight, date, theme }) => (
+const BtcTransactionHeader: React.FC<BtcTransactionHeaderProps> = ({ txHash, blockHeight, date, fee, theme }) => (
   <HeaderWrapper theme={theme}>
     <HeaderItem theme={theme} style={{ fontFamily: 'monospace' }}>
       <span>Transaction Hash:</span>
@@ -51,6 +53,10 @@ const BtcTransactionHeader: React.FC<BtcTransactionHeaderProps> = ({ txHash, blo
     <HeaderItem theme={theme} style={{fontFamily: 'monospace'}}>
       <span>Block Height:</span>
       <span style={{ fontFamily: 'monospace' }}>{blockHeight.toLocaleString()}</span>
+    </HeaderItem>
+    <HeaderItem theme={theme} style={{fontFamily: 'monospace'}}>
+      <span>Fee:</span>
+      <span style={{ fontFamily: 'monospace' }}>{satsToBTC(fee).toFixed(8)} BTC</span>
     </HeaderItem>
     <HeaderItem theme={theme} style={{fontFamily: 'monospace'}}>
       <span>Date:</span>
@@ -72,6 +78,8 @@ const BtcTransactionTable: React.FC<BtcTransactionTableProps> = ({ transaction, 
       <BtcTransactionHeader
         txHash={transaction.txid}
         blockHeight={transaction.block}
+        fee={transaction.fee_amt}
+        
         date={new Date(transaction.timestamp * 1000).toLocaleString()}
         theme={theme}
       />
