@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Card, Form, Button, Space, Typography, message, Avatar, Modal, Row, Col, Tag, Switch } from 'antd';
 import { UserOutlined, GlobalOutlined, TwitterOutlined, SendOutlined, GithubOutlined, LinkedinOutlined, FacebookOutlined, InstagramOutlined, YoutubeOutlined, RedditOutlined, MediumOutlined, WarningOutlined } from '@ant-design/icons';
 import styled from 'styled-components';
@@ -35,6 +35,8 @@ const AssociatedSOTsWrapper = styled(Card)`
   flex-direction: column;
   background-color: ${({ theme }) => theme.theme === 'dark' ? '#141414' : '#fff'};
   max-height: 80vh;
+  overflow: hidden;
+
 
   .ant-card-body {
     flex: 1;
@@ -181,22 +183,22 @@ const SOTEditor: React.FC<SOTEditorProps> = ({ sot, onSelectAssociatedSot }) => 
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
   const { itemsMap } = useSelector((state: RootState) => state.sot);
-  
-  console.log(sot);
+
   const isValidSOT = (sot: SOT | null): sot is SOT => {
     return sot !== null;
   };
 
   // Check if there are any associated entities
-  const hasAssociatedEntities = (() => {
-    if (!sot || !sot.parent_id || sot.parent_id === '') return false;
-    
-    const associatedSots = Object.values(itemsMap)
-      .filter(item => item.parent_id === sot.parent_id)
-      .filter(Boolean);
-      
-    return associatedSots.length > 0;
-  })();
+  const associatedSotItems = useMemo(() => {
+    if (!sot || !Object.keys(sot).length) return [];
+
+    const isParent = (item: SOT) => item.parent_id === sot.entity_id;
+    const isChild = (item: SOT) => item.entity_id === sot.parent_id;
+
+    const associatedSots = Object.values(itemsMap).filter(item => isParent(item) || isChild(item));
+
+    return associatedSots;
+  }, [sot, itemsMap]);
 
   const handleCancel = () => {
     setIsEditing(false);
@@ -468,11 +470,11 @@ const SOTEditor: React.FC<SOTEditorProps> = ({ sot, onSelectAssociatedSot }) => 
                 </DetailValue>
               </DetailItem>
             )}
-              {/* Description */}
-              {sot.description_merged && (
+            {/* Description */}
+            {sot.description_merged && (
               <DetailItem>
                 <DetailLabel>Description</DetailLabel>
-                <DetailValue style={{ whiteSpace: 'pre-wrap', width: '70%'}}>
+                <DetailValue style={{ whiteSpace: 'pre-wrap', width: '70%' }}>
                   {sot.description_merged}
                 </DetailValue>
               </DetailItem>
@@ -488,20 +490,20 @@ const SOTEditor: React.FC<SOTEditorProps> = ({ sot, onSelectAssociatedSot }) => 
                   {sot.contact_address && <span><strong>Address:</strong> {sot.contact_address}</span>}
                   {sot.ens_address && <span><strong>ENS Address:</strong> {sot.ens_address}</span>}
                   {sot.legal_info_url && (
-                      <span style={{ marginTop: '48px', display: 'block' }}>
-                        <strong>Legal Info: </strong>
-                        <a href={sot.legal_info_url} target="_blank" rel="noopener noreferrer">
-                          <GlobalOutlined /> View Legal Information
-                        </a>
-                      </span>
-                    )}
+                    <span style={{ marginTop: '48px', display: 'block' }}>
+                      <strong>Legal Info: </strong>
+                      <a href={sot.legal_info_url} target="_blank" rel="noopener noreferrer">
+                        <GlobalOutlined /> View Legal Information
+                      </a>
+                    </span>
+                  )}
                 </DetailValue>
               </DetailItem>
             )}
-          
-            
 
-           
+
+
+
 
             {/* Metadata - moved to bottom of left column */}
             {(sot.user || sot.date_updated || sot.revisit_site) && (
@@ -689,8 +691,8 @@ const SOTEditor: React.FC<SOTEditorProps> = ({ sot, onSelectAssociatedSot }) => 
                   </DetailValue>
                 </DetailItem>
               )}
- {/* Additional Information */}
- {(sot.year_founded || sot.ticker || sot.parent_id ||
+            {/* Additional Information */}
+            {(sot.year_founded || sot.ticker || sot.parent_id ||
               Object.entries(sot).some(([key, value]) => key.startsWith('associate_country_') && value) ||
               sot.legal_info_url) && (
                 <DetailItem>
@@ -739,11 +741,12 @@ const SOTEditor: React.FC<SOTEditorProps> = ({ sot, onSelectAssociatedSot }) => 
         {renderContent()}
       </EditorWrapper>
 
-      {hasAssociatedEntities && (
+      {associatedSotItems && associatedSotItems.length > 0 && (
         <AssociatedSOTsWrapper>
           <AssociatedSOTs
-            sot={sot}
+            associatedSots={associatedSotItems}
             onSelectSot={onSelectAssociatedSot}
+            currentEntityId={sot?.entity_id}
           />
         </AssociatedSOTsWrapper>
       )}

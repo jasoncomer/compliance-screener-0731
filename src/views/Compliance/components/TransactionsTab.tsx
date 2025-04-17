@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Form, Button, Select, Input, DatePicker, Card } from 'antd';
 import { FilterOutlined, ClearOutlined } from '@ant-design/icons';
-import { ETransactionStatus } from '../../../typings/compliance';
+import { ETransactionStatus, TransactionFilters } from '../../../typings/compliance';
 import ComplianceHeaderActions from './ComplianceHeaderActions';
 import TransactionsTable from './TransactionsTable';
 import { EntityModal } from '../modals/EntityModal';
@@ -89,36 +89,47 @@ const TransactionsTab: React.FC = () => {
     dispatch(setPage(pagination.current));
     dispatch(setLimit(pagination.pageSize));
   };
+
+  
+  // Clear all filters
+  const handleClearFilters = () => {
+    form.resetFields();
+    dispatch(setFilters({
+      page: 1,
+      limit: pageSize
+    }));
+  };
   
   // Handle filter form submission
   const handleFilterSubmit = (values: any) => {
-    const newFilters = { ...filters };
+    console.log('Filter values:', values);
     
-    // Reset pagination when applying new filters
-    dispatch(setPage(1));
+    // Create new filter object
+    const newFilters: TransactionFilters = {
+      ...filters,
+      page: 1, // Reset to first page when applying new filters
+    };
     
-    // Process status filter
+    // Add form filters
     if (values.status) {
       newFilters.status = values.status;
     } else {
       delete newFilters.status;
     }
     
-    // Process blockchain filter
     if (values.blockchain) {
       newFilters.blockchain = values.blockchain;
     } else {
       delete newFilters.blockchain;
     }
     
-    // Process clientId filter
     if (values.clientId) {
       newFilters.clientId = values.clientId;
     } else {
       delete newFilters.clientId;
     }
     
-    // Process date range filter
+    // Date range filter
     if (values.dateRange && values.dateRange.length === 2) {
       newFilters.timestamp = {
         from: values.dateRange[0].format('YYYY-MM-DD'),
@@ -128,36 +139,21 @@ const TransactionsTab: React.FC = () => {
       delete newFilters.timestamp;
     }
     
-    // Process amount filters
+    // Amount filters
     if (values.minAmount) {
       newFilters.minAmount = parseFloat(values.minAmount) * 100000000; // Convert to satoshis
-    } else {
-      delete newFilters.minAmount;
     }
     
     if (values.maxAmount) {
       newFilters.maxAmount = parseFloat(values.maxAmount) * 100000000; // Convert to satoshis
-    } else {
-      delete newFilters.maxAmount;
     }
     
-    // Process risk level filter
+    // Risk level filter
     if (values.riskLevel) {
       newFilters.riskLevel = values.riskLevel;
-    } else {
-      delete newFilters.riskLevel;
     }
     
-    dispatch(setFilters(newFilters));
-  };
-  
-  // Clear all filters
-  const handleClearFilters = () => {
-    form.resetFields();
-    dispatch(setFilters({
-      page: 1,
-      limit: pageSize
-    }));
+    setFilters(newFilters);
   };
 
   return (

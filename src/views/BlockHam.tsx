@@ -24,7 +24,7 @@ const OptionWrapper = styled.div`
   display: flex;
   align-items: center;
   gap: 8px;
-  
+
 `;
 
 const OptionContent = styled.div`
@@ -298,7 +298,7 @@ const BlockHam: React.FC = () => {
                     </InfoTag>
                   )}
                   {entity.url && (
-                    <InfoTag color="green">URL</InfoTag>
+                    <InfoTag color="green">{entity.url}</InfoTag>
                   )}
                   {entity.contact_twitter && (
                     <InfoTag color="cyan">Twitter</InfoTag>

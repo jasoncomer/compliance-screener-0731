@@ -19,8 +19,8 @@ import SecuritySection from './components/SecuritySection';
 import OrganizationSection from './components/OrganizationSection';
 import SettingsSidebar from './components/SettingsSidebar';
 import { SettingSection } from '../../typings/settings';
-import { SettingsLayout, ContentArea } from './components/styled';
 import { EMemberRole } from '../../typings/organization';
+import { SettingsLayout, ContentArea } from './components/styled';
 
 const Settings = () => {
   const { theme, toggleTheme } = useTheme();
