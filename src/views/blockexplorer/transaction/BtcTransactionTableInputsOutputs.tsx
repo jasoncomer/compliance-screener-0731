@@ -10,34 +10,51 @@ interface BtcTransactionInputsOutputsProps {
 }
 
 const TableWrapper = styled.div`
-  display: flex;
-  flex-direction: row;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: 20px;
   width: 100%;
+  min-width: 0; /* Prevent grid from overflowing */
 
   @media (max-width: 1680px) {
-    flex-direction: column;
+    grid-template-columns: 1fr;
     gap: 32px;
   }
 
   .inputs, .outputs {
     display: flex;
     flex-direction: column;
-    flex: 1;
-    min-width: min-content; /* Prevent content from wrapping */
-    overflow-x: auto; /* Enable horizontal scroll if needed */
-
+    min-width: 0; /* Allow content to shrink below its minimum content size */
+    
     .header {
-      display: flex;
-      justify-content: space-between;
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      align-items: center;
+      gap: 16px;
       border-bottom: 1px solid #ccc;
       padding-bottom: 5px;
       margin-bottom: 10px;
-      width: 100%;
-      white-space: nowrap;
-      position: sticky;
-      left: 0;
       background: inherit;
+      position: sticky;
+      top: 0;
+      z-index: 1;
+
+      hr {
+        margin: 0;
+        border: none;
+        width: 100%;
+      }
+
+      span {
+        white-space: nowrap;
+        font-weight: 500;
+      }
+    }
+
+    /* Ensure content can be scrolled horizontally if needed */
+    > div:not(.header) {
+      overflow-x: auto;
+      max-width: 100%;
     }
   }
 `;
