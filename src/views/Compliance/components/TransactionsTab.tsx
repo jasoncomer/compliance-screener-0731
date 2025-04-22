@@ -100,10 +100,8 @@ const TransactionsTab: React.FC = () => {
     }));
   };
   
-  // Handle filter form submission
-  const handleFilterSubmit = (values: any) => {
-    console.log('Filter values:', values);
-    
+  // Process filter values and update the store
+  const processFilterValues = (values: any) => {
     // Create new filter object
     const newFilters: TransactionFilters = {
       ...filters,
@@ -142,18 +140,30 @@ const TransactionsTab: React.FC = () => {
     // Amount filters
     if (values.minAmount) {
       newFilters.minAmount = parseFloat(values.minAmount) * 100000000; // Convert to satoshis
+    } else {
+      delete newFilters.minAmount;
     }
     
     if (values.maxAmount) {
       newFilters.maxAmount = parseFloat(values.maxAmount) * 100000000; // Convert to satoshis
+    } else {
+      delete newFilters.maxAmount;
     }
     
     // Risk level filter
     if (values.riskLevel) {
       newFilters.riskLevel = values.riskLevel;
+    } else {
+      delete newFilters.riskLevel;
     }
     
-    setFilters(newFilters);
+    dispatch(setFilters(newFilters));
+  };
+
+  // Handle filter changes
+  const handleFilterChange = () => {
+    const values = form.getFieldsValue();
+    processFilterValues(values);
   };
 
   return (
@@ -180,8 +190,8 @@ const TransactionsTab: React.FC = () => {
         <Form
           form={form}
           layout="inline"
-          onFinish={handleFilterSubmit}
           style={{ display: 'flex', flexWrap: 'wrap', height: '32px' }}
+          onValuesChange={handleFilterChange}
         >
           <Form.Item name="status" style={{ minWidth: 140 }}>
             <Select 
@@ -247,12 +257,6 @@ const TransactionsTab: React.FC = () => {
           
           <Form.Item name="maxAmount" style={{ width: 100 }}>
             <Input type="number" placeholder="Max BTC" step="0.0001" size="small" />
-          </Form.Item>
-          
-          <Form.Item style={{ marginBottom: 8 }}>
-            <Button type="primary" htmlType="submit" size="small">
-              Apply
-            </Button>
           </Form.Item>
         </Form>
       </Card>
