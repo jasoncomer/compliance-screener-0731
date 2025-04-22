@@ -352,15 +352,18 @@ const BtcInputsOutputs: React.FC<BtcInputsOutputsProps> = ({ data }) => {
   };
 
   // Function to format entity ID with truncation if needed
-  const formatEntityId = (entityId: string | undefined) => {
+  const formatEntityId = (entityId: string | undefined, bo: string | undefined) => {
     if (!entityId) return '-';
-    return entityId.length > 42 ? truncateAddress(entityId) : entityId;
+    // If beneficial owner exists and is different from entity, show that instead
+    const displayId = (bo && bo !== entityId) ? bo : entityId;
+    return displayId.length > 42 ? truncateAddress(displayId) : displayId;
   };
 
   // Check if entity ID is truncated
-  const isEntityIdTruncated = (entityId: string | undefined) => {
+  const isEntityIdTruncated = (entityId: string | undefined, bo: string | undefined) => {
     if (!entityId) return false;
-    return entityId.length > 42;
+    const displayId = (bo && bo !== entityId) ? bo : entityId;
+    return displayId.length > 42;
   };
 
   return (
@@ -379,11 +382,16 @@ const BtcInputsOutputs: React.FC<BtcInputsOutputsProps> = ({ data }) => {
 
           <span 
             className="entity-id" 
-            title={attributions[item.addr]?.entity || '-'}
-            onMouseEnter={(e) => isEntityIdTruncated(attributions[item.addr]?.entity) && handleEntityMouseEnter(attributions[item.addr]?.entity || '', e)}
+            title={attributions[item.addr]?.bo && attributions[item.addr]?.bo !== attributions[item.addr]?.entity 
+              ? attributions[item.addr]?.bo 
+              : attributions[item.addr]?.entity || '-'}
+            onMouseEnter={(e) => isEntityIdTruncated(attributions[item.addr]?.entity, attributions[item.addr]?.bo) && 
+              handleEntityMouseEnter(attributions[item.addr]?.bo && attributions[item.addr]?.bo !== attributions[item.addr]?.entity 
+                ? attributions[item.addr]?.bo 
+                : attributions[item.addr]?.entity || '', e)}
             onMouseLeave={handleEntityMouseLeave}
           >
-            {formatEntityId(attributions[item.addr]?.entity)}
+            {formatEntityId(attributions[item.addr]?.entity, attributions[item.addr]?.bo)}
           </span>
 
           <span className="script-type">{attributions[item.addr]?.script_type || '-'}</span>

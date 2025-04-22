@@ -34,10 +34,11 @@ const TableWrapper = styled.div`
       border-bottom: 1px solid #ccc;
       padding-bottom: 5px;
       margin-bottom: 10px;
-      background: inherit;
-      position: sticky;
+      position: relative;
       top: 0;
-      z-index: 1;
+      z-index: 2;
+      padding: 8px 10px ;
+   
 
       hr {
         margin: 0;
