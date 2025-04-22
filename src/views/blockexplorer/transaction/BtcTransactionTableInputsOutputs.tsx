@@ -15,7 +15,7 @@ const TableWrapper = styled.div`
   gap: 20px;
   width: 100%;
 
-  @media (max-width: 1024px) {
+  @media (max-width: 1680px) {
     flex-direction: column;
     gap: 32px;
   }
