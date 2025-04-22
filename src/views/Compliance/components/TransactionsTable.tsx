@@ -3,7 +3,6 @@ import { Table, Tag } from 'antd';
 import { colors } from '../../../styles/variables';
 import { ETransactionStatus, IComplianceTransaction } from '../../../typings/compliance';
 import { conversionRates, currencySymbols } from './CurrencySelector';
-import ModalCreateCaseFromTransaction from '../../../components/modals/ModalCreateCaseFromTransaction';
 import { TransactionDetailsModal } from '../modals/TransactionDetails/TransactionDetailsModal';
 import { useAttribution } from '../../../context/AttributionContext';
 import { truncateAddress } from '../../../utils/crypto';
@@ -32,8 +31,6 @@ const TransactionsTable: React.FC<TransactionsTableProps> = ({
 }) => {
   const denom = 'USD';
   const { attributions } = useAttribution();
-  const [selectedTransaction, setSelectedTransaction] = useState<IComplianceTransaction | null>(null);
-  const [isCaseModalVisible, setIsCaseModalVisible] = useState(false);
   const [isDetailsModalVisible, setIsDetailsModalVisible] = useState(false);
   const [selectedTransactionId, setSelectedTransactionId] = useState<string | null>(null);
 
@@ -41,12 +38,6 @@ const TransactionsTable: React.FC<TransactionsTableProps> = ({
   const handleRowClick = (record: IComplianceTransaction) => {
     setSelectedTransactionId(record._id);
     setIsDetailsModalVisible(true);
-  };
-  
-  // Function to open case modal from transaction
-  const openCaseModal = (transaction: IComplianceTransaction) => {
-    setSelectedTransaction(transaction);
-    setIsCaseModalVisible(true);
   };
 
   const columns = [
@@ -197,17 +188,10 @@ const TransactionsTable: React.FC<TransactionsTableProps> = ({
         scroll={{ x: 1400 }}
       />
 
-      <ModalCreateCaseFromTransaction
-        isVisible={isCaseModalVisible}
-        onClose={() => setIsCaseModalVisible(false)}
-        transaction={selectedTransaction}
-      />
-
       <TransactionDetailsModal 
         isVisible={isDetailsModalVisible}
         onClose={() => setIsDetailsModalVisible(false)}
         transactionId={selectedTransactionId}
-        openCaseModal={openCaseModal}
       />
     </>
   );

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState, useRef, useImperativeHandle, forwardRef, useEffect } from 'react';
 import { Select, message } from 'antd';
 import { InfoCircleOutlined, UserOutlined, LoadingOutlined } from '@ant-design/icons';
 import { ETransactionStatus } from '../../../../typings/compliance';
@@ -9,18 +9,79 @@ import { EMemberStatus, IOrganizationMember } from '../../../../typings/organiza
 import { getUserDisplayName } from '../../../../utils/display-labels';
 import { updateTransactionAssignee, updateTransactionStatus } from '../../../../store/slices/complianceTransactionsSlice';
 
+// CSS styles
+const highlightStyles = `
+.highlight-selector {
+  border-color: #1890ff !important;
+  box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2) !important;
+  animation: pulse 1.5s infinite !important;
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(24, 144, 255, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 6px rgba(24, 144, 255, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(24, 144, 255, 0);
+  }
+}`;
+
 interface TransactionDetailsHeaderProps {
   transactionDetails: IComplianceTransaction;
 }
 
-const TransactionDetailsHeader: React.FC<TransactionDetailsHeaderProps> = ({
+const TransactionDetailsHeader = forwardRef<{ highlightAssignSelector: () => void }, TransactionDetailsHeaderProps>(({
   transactionDetails,
-}) => {
+}, ref) => {
   const dispatch = useAppDispatch();
   const organizationMembers = useAppSelector(selectActiveOrgMembers);
+  const selectRef = useRef<any>(null);
 
-  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  // Initialize selectedUserId with the reviewerId from the transaction details
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(
+    transactionDetails?.reviewerId || null
+  );
   const [assigningUser, setAssigningUser] = useState(false);
+  
+  // Update selectedUserId when transactionDetails changes
+  useEffect(() => {
+    if (transactionDetails?.reviewerId) {
+      setSelectedUserId(transactionDetails.reviewerId);
+    }
+  }, [transactionDetails]);
+  
+  // Add styles to the document on mount
+  useEffect(() => {
+    // Add the styles to the document once
+    const styleElement = document.createElement('style');
+    styleElement.innerHTML = highlightStyles;
+    document.head.appendChild(styleElement);
+    
+    // Clean up on unmount
+    return () => {
+      document.head.removeChild(styleElement);
+    };
+  }, []);
+  
+  // Expose the highlightAssignSelector function to parent components
+  useImperativeHandle(ref, () => ({
+    highlightAssignSelector: () => {
+      if (selectRef.current) {
+        selectRef.current.focus();
+        // Add a temporary highlight effect
+        const selectElement = selectRef.current.selectRef;
+        if (selectElement) {
+          selectElement.classList.add('highlight-selector');
+          setTimeout(() => {
+            selectElement.classList.remove('highlight-selector');
+          }, 2000);
+        }
+      }
+    }
+  }));
   
   if (!transactionDetails || !organizationMembers) return null;
 
@@ -41,8 +102,8 @@ const TransactionDetailsHeader: React.FC<TransactionDetailsHeaderProps> = ({
       })).unwrap();
 
       message.success('Transaction assigned successfully');
-      // Clear selection after successful assignment
-      setSelectedUserId(null);
+      // Update the selected user ID
+      setSelectedUserId(userId);
     } catch (error) {
       console.error('Failed to assign transaction:', error);
       message.error('Failed to assign transaction');
@@ -64,6 +125,7 @@ const TransactionDetailsHeader: React.FC<TransactionDetailsHeaderProps> = ({
           gap: '10px'
         }}>
           <Select
+            ref={selectRef}
             style={{ width: 230 }}
             size="middle"
             placeholder="Assign to..."
@@ -105,6 +167,6 @@ const TransactionDetailsHeader: React.FC<TransactionDetailsHeaderProps> = ({
       </div>
     </>
   );
-};
+});
 
 export default TransactionDetailsHeader;

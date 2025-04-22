@@ -1,4 +1,4 @@
-import { FC, useEffect } from 'react';
+import { FC, useEffect, useRef } from 'react';
 import { Modal } from 'antd';
 import { IComplianceTransaction } from '../../../../typings/compliance';
 import TransactionDetailsHeader from './TransactionDetailsHeader';
@@ -13,17 +13,16 @@ interface TransactionDetailsModalProps {
   isVisible: boolean;
   onClose: () => void;
   transactionId: string | null;
-  openCaseModal: (transaction: IComplianceTransaction) => void;
 }
 
 export const TransactionDetailsModal: FC<TransactionDetailsModalProps> = ({
   isVisible,
   onClose,
   transactionId,
-  openCaseModal,
 }) => {
   const dispatch = useAppDispatch();
   const { attributions } = useAttribution();
+  const headerRef = useRef<{ highlightAssignSelector: () => void }>(null);
   const transactionDetails = useAppSelector(state => 
     transactionId ? selectTransactionById(state, transactionId) : null
   );
@@ -47,6 +46,13 @@ export const TransactionDetailsModal: FC<TransactionDetailsModalProps> = ({
     console.log('Entity clicked:', record);
   };
 
+  // Handler to highlight the assignee selector
+  const handleHighlightAssignSelector = () => {
+    if (headerRef.current) {
+      headerRef.current.highlightAssignSelector();
+    }
+  };
+
   return (
     <>
       {/* Main Transaction Details Modal */}
@@ -62,6 +68,7 @@ export const TransactionDetailsModal: FC<TransactionDetailsModalProps> = ({
       >
         <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
           <TransactionDetailsHeader
+            ref={headerRef}
             transactionDetails={transactionDetails}
           />
 
@@ -79,8 +86,8 @@ export const TransactionDetailsModal: FC<TransactionDetailsModalProps> = ({
 
           <TransactionDetailsFooter
             transactionId={transactionId}
-            openCaseModal={openCaseModal}
             onClose={onClose}
+            onHighlightAssignSelector={handleHighlightAssignSelector}
           />
         </div>
       </Modal>

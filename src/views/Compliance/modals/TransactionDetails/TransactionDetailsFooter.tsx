@@ -1,6 +1,6 @@
 import { Button, message } from 'antd';
 import { CheckOutlined } from '@ant-design/icons';
-import { ETransactionStatus, IComplianceTransaction } from '../../../../typings/compliance';
+import { ETransactionStatus } from '../../../../typings/compliance';
 import { useState } from 'react';
 import { selectTransactionById, updateTransactionStatus } from '../../../../store/slices/complianceTransactionsSlice';
 import { useAppDispatch, useAppSelector } from '../../../../store/hooks';
@@ -10,10 +10,10 @@ import { SearchOff } from '@mui/icons-material';
 
 interface TransactionDetailsFooterProps {
   transactionId: string;
-  openCaseModal: (transaction: IComplianceTransaction) => void;
   onClose: () => void;
+  onHighlightAssignSelector?: () => void;
 }
-export const TransactionDetailsFooter = ({ transactionId, openCaseModal, onClose }: TransactionDetailsFooterProps) => {
+export const TransactionDetailsFooter = ({ transactionId, onClose, onHighlightAssignSelector }: TransactionDetailsFooterProps) => {
   const dispatch = useAppDispatch();
   const transactionDetails = useAppSelector(state => selectTransactionById(state, transactionId));
   const [modalLoading, setModalLoading] = useState(false);
@@ -42,6 +42,22 @@ export const TransactionDetailsFooter = ({ transactionId, openCaseModal, onClose
     }
   };
 
+  const handleReviewTransaction = () => {
+    // Check if transaction has an assignee
+    if (!transactionDetails.reviewerId) {
+      message.warning('Please assign this transaction to a team member before reviewing');
+      // Highlight the assignment dropdown in the header
+      if (onHighlightAssignSelector) {
+        onHighlightAssignSelector();
+      }
+      return;
+    }
+    
+    // Proceed with review logic if transaction is assigned
+    console.log('Reviewing transaction', transactionDetails);
+    onClose();
+  };
+
   return (
     <>
       <div style={{
@@ -62,14 +78,9 @@ export const TransactionDetailsFooter = ({ transactionId, openCaseModal, onClose
           key="case"
           type="primary"
           icon={<SearchOff />}
-          onClick={() => {
-            if (transactionDetails) {
-              openCaseModal(transactionDetails);
-              onClose();
-            }
-          }}
+          onClick={handleReviewTransaction}
         >
-          Flag Transaction
+          Review Transaction
         </Button>
       </div>
       <ApproveTransactionModal
