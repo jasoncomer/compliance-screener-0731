@@ -1,15 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { Form, Button, Select, Input, DatePicker, Card } from 'antd';
-import { FilterOutlined, ClearOutlined } from '@ant-design/icons';
+import { FilterOutlined, ClearOutlined, FileSearchOutlined } from '@ant-design/icons';
 import { ETransactionStatus, TransactionFilters } from '../../../typings/compliance';
-import ComplianceHeaderActions from './ComplianceHeaderActions';
-import TransactionsTable from './TransactionsTable';
-import { EntityModal } from '../modals/EntityModal';
+import styled from 'styled-components';
+import { useTheme } from '../../../context/ThemeContext';
+import { colors } from '../../../styles/variables';
+import ActiveCasesTable from './ActiveCasesTable';
 import { selectCurrentOrganization } from '../../../store/slices/organizationsSlice';
 import { useAppDispatch, useAppSelector } from '../../../store/hooks';
 import { 
   fetchComplianceTransactions, 
-  selectActiveTransactions, 
+  selectTransactionsWithAssignee,
   selectPagination, 
   selectIsLoading,
   selectComplianceFilters,
@@ -20,18 +21,24 @@ import {
 
 const { RangePicker } = DatePicker;
 
-const TransactionsTab: React.FC = () => {
+const HeaderActions = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+`;
+
+const ActiveCasesTab: React.FC = () => {
+  const { theme } = useTheme();
   const organization = useAppSelector(selectCurrentOrganization);
   const dispatch = useAppDispatch();
   
   // Use Redux store data
-  const transactions = useAppSelector(selectActiveTransactions);
+  const transactions = useAppSelector(selectTransactionsWithAssignee);
   const { total: totalTransactions, page: currentPage, limit: pageSize } = useAppSelector(selectPagination);
   const loading = useAppSelector(selectIsLoading);
   const filters = useAppSelector(selectComplianceFilters);
   
-  const [modalVisible, setModalVisible] = useState<boolean>(false);
-  const [selectedEntity] = useState(null);
   const [form] = Form.useForm();
   
   // Track available filter options
@@ -43,7 +50,9 @@ const TransactionsTab: React.FC = () => {
     const mergedFilters = { 
       ...filters,
       page: currentPage,
-      limit: pageSize
+      limit: pageSize,
+      // Only show transactions that have a reviewer assigned (IN_REVIEW status)
+      status: ETransactionStatus.IN_REVIEW
     };
     dispatch(fetchComplianceTransactions(mergedFilters));
   }, [dispatch, filters, organization, currentPage, pageSize]);
@@ -61,43 +70,32 @@ const TransactionsTab: React.FC = () => {
     }
   }, [transactions]);
 
-  // Function to open modal when an entity is clicked
-  const handleOpenEntity = () => {
-    // setSelectedEntity(record);
-    // setModalVisible(true);
-  };
-
   // Handle table change (pagination, sorting)
   const handleTableChange = (pagination: any) => {
     dispatch(setPage(pagination.current));
     dispatch(setLimit(pagination.pageSize));
   };
 
-  
   // Clear all filters
   const handleClearFilters = () => {
     form.resetFields();
     dispatch(setFilters({
       page: 1,
-      limit: pageSize
+      limit: pageSize,
+      status: ETransactionStatus.IN_REVIEW
     }));
   };
   
-  // Process filter values and update the store
-  const processFilterValues = (values: any) => {
+  // Handle filter form submission
+  const handleFilterSubmit = (values: any) => {
     // Create new filter object
     const newFilters: TransactionFilters = {
       ...filters,
       page: 1, // Reset to first page when applying new filters
+      status: ETransactionStatus.IN_REVIEW, // Always show IN_REVIEW transactions
     };
     
     // Add form filters
-    if (values.status) {
-      newFilters.status = values.status;
-    } else {
-      delete newFilters.status;
-    }
-    
     if (values.blockchain) {
       newFilters.blockchain = values.blockchain;
     } else {
@@ -123,37 +121,33 @@ const TransactionsTab: React.FC = () => {
     // Amount filters
     if (values.minAmount) {
       newFilters.minAmount = parseFloat(values.minAmount) * 100000000; // Convert to satoshis
-    } else {
-      delete newFilters.minAmount;
     }
     
     if (values.maxAmount) {
       newFilters.maxAmount = parseFloat(values.maxAmount) * 100000000; // Convert to satoshis
-    } else {
-      delete newFilters.maxAmount;
     }
     
     // Risk level filter
     if (values.riskLevel) {
       newFilters.riskLevel = values.riskLevel;
-    } else {
-      delete newFilters.riskLevel;
     }
     
     dispatch(setFilters(newFilters));
   };
 
-  // Handle filter changes
-  const handleFilterChange = () => {
-    const values = form.getFieldsValue();
-    processFilterValues(values);
-  };
-
   return (
-    <div>
-      <ComplianceHeaderActions
-        txCount={totalTransactions}
-      />
+    <>
+      <HeaderActions>
+        <h3 style={{ margin: 0, color: theme === 'light' ? colors.black : colors.white }}>
+          <FileSearchOutlined style={{ marginRight: '8px' }} />
+          Active Cases Management
+        </h3>
+        <div>
+          <span style={{ marginRight: '10px', color: theme === 'light' ? colors.primaryDark : colors.white }}>
+            Total Active Cases: <strong>{totalTransactions}</strong>
+          </span>
+        </div>
+      </HeaderActions>
       
       {/* Filter Panel */}
       <Card 
@@ -173,24 +167,10 @@ const TransactionsTab: React.FC = () => {
         <Form
           form={form}
           layout="inline"
-          style={{ display: 'flex', flexWrap: 'wrap', height: '32px' }}
-          onValuesChange={handleFilterChange}
+          onFinish={handleFilterSubmit}
+          style={{ display: 'flex', flexWrap: 'wrap' }}
         >
-          <Form.Item name="status" style={{ minWidth: 140 }}>
-            <Select 
-              placeholder="Status"
-              allowClear
-              size="small"
-            >
-              {Object.values(ETransactionStatus).map(status => (
-                <Select.Option key={status} value={status}>
-                  {status.replace(/_/g, ' ')}
-                </Select.Option>
-              ))}
-            </Select>
-          </Form.Item>
-          
-          <Form.Item name="blockchain" style={{ minWidth: 120 }}>
+          <Form.Item name="blockchain" style={{ minWidth: 120, marginBottom: 8 }}>
             <Select 
               placeholder="Blockchain"
               allowClear
@@ -204,7 +184,7 @@ const TransactionsTab: React.FC = () => {
             </Select>
           </Form.Item>
           
-          <Form.Item name="clientId" style={{ minWidth: 110 }}>
+          <Form.Item name="clientId" style={{ minWidth: 110, marginBottom: 8 }}>
             <Select 
               placeholder="Client ID"
               allowClear
@@ -222,7 +202,7 @@ const TransactionsTab: React.FC = () => {
             <RangePicker size="small" placeholder={['From date', 'To date']} />
           </Form.Item>
           
-          <Form.Item name="riskLevel" style={{ minWidth: 120 }}>
+          <Form.Item name="riskLevel" style={{ minWidth: 120, marginBottom: 8 }}>
             <Select 
               placeholder="Risk level"
               allowClear
@@ -234,33 +214,32 @@ const TransactionsTab: React.FC = () => {
             </Select>
           </Form.Item>
           
-          <Form.Item name="minAmount" style={{ width: 100 }}>
+          <Form.Item name="minAmount" style={{ width: 100, marginBottom: 8 }}>
             <Input type="number" placeholder="Min BTC" step="0.0001" size="small" />
           </Form.Item>
           
-          <Form.Item name="maxAmount" style={{ width: 100 }}>
+          <Form.Item name="maxAmount" style={{ width: 100, marginBottom: 8 }}>
             <Input type="number" placeholder="Max BTC" step="0.0001" size="small" />
+          </Form.Item>
+          
+          <Form.Item style={{ marginBottom: 8 }}>
+            <Button type="primary" htmlType="submit" size="small">
+              Apply
+            </Button>
           </Form.Item>
         </Form>
       </Card>
       
-      <TransactionsTable
+      <ActiveCasesTable
         transactions={transactions}
         totalTransactions={totalTransactions}
         currentPage={currentPage}
         pageSize={pageSize}
         loading={loading}
         onTableChange={handleTableChange}
-        onEntityClick={handleOpenEntity}
       />
-      
-      <EntityModal
-        visible={modalVisible}
-        onClose={() => setModalVisible(false)}
-        entity={selectedEntity}
-      />
-    </div>
+    </>
   );
 };
 
-export default TransactionsTab;
+export default ActiveCasesTab;

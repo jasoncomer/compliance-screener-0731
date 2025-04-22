@@ -2,10 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { Tabs } from 'antd';
 import { useTheme } from '../../context/ThemeContext';
 import ViewWrapper from '../../components/ViewWrapper';
-import { AuditOutlined, DatabaseOutlined, TableOutlined } from '@ant-design/icons';
+import { AuditOutlined, DatabaseOutlined, TableOutlined, FileSearchOutlined } from '@ant-design/icons';
 import { colors } from '../../styles/variables';
 import TransactionsTab from './components/TransactionsTab';
 import AddressesTab from './components/AddressesTab';
+import ActiveCasesTab from './components/ActiveCasesTab';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import { fetchMonitoredAddresses, selectAllAddresses } from '../../store/slices/monitoredAddressesSlice';
 
@@ -41,6 +42,13 @@ const ComplianceScreener: React.FC = () => {
     </span>
   );
 
+  const activeCasesTabHeader = (
+    <span>
+      <FileSearchOutlined style={{ marginRight: '8px' }} />
+      Active Cases
+    </span>
+  );
+
   return (
     <ViewWrapper title="Compliance Screener" icon={<AuditOutlined style={{ fontSize: '28px', color: colors.attributionHover, fontWeight: 'bold' }} />}>
       <p style={{ marginTop: -15, color: theme === 'light' ? colors.black : colors.white }}>
@@ -56,6 +64,12 @@ const ComplianceScreener: React.FC = () => {
           key="transactions"
         >
           <TransactionsTab />
+        </TabPane>
+        <TabPane
+          tab={activeCasesTabHeader}
+          key="active-cases"
+        >
+          <ActiveCasesTab />
         </TabPane>
         <TabPane
           tab={addressesTabHeader}

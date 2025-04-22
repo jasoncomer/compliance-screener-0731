@@ -114,6 +114,13 @@ export const selectActiveTransactions = createSelector(
   (txs: Record<string, IComplianceTransaction>) => Object.values(txs).filter((tx) => tx.status !== ETransactionStatus.APPROVED)
 );
 
+export const selectTransactionsWithAssignee = createSelector(
+  (state: RootState) => state.complianceTransactions.transactions,
+  (txs: Record<string, IComplianceTransaction>) => Object.values(txs).filter((tx) => 
+    tx.status === ETransactionStatus.IN_REVIEW && tx.reviewerId
+  )
+);
+
 export const selectTransactionById = createSelector(
   (state: RootState) => state.complianceTransactions.transactions,
   (_: RootState, id: string) => id,

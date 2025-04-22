@@ -1,6 +1,5 @@
 import axios, { AxiosInstance } from 'axios';
 import { users } from './auth';
-import { cases } from './cases';
 import { blockchain } from './blockchain';
 import { sot } from './sot';
 import { compliance } from './compliance';
@@ -23,7 +22,6 @@ export const setAuthToken = (token: string) => {
 
 export const api = {
   users,
-  cases,
   blockchain,
   sot,
   compliance,

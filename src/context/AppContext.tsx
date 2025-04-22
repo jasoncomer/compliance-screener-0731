@@ -1,6 +1,6 @@
 // AppContext.tsx
 import React, { createContext, useState, ReactNode, useContext, useCallback, useEffect } from 'react';
-import { ICase, IUser } from '../typings/interfaces';
+import { IUser } from '../typings/interfaces';
 import { IAttributionMap, ReferenceAttributionMap } from '../typings/ReferenceAttribution';
 import { storage } from '../utils/storage';
 import { setAuthToken } from '../api/api';
@@ -8,8 +8,6 @@ import { setAuthToken } from '../api/api';
 export interface AppContextProps {
   user: IUser | null;
   setUser: React.Dispatch<React.SetStateAction<IUser | null>>;
-  cases: ICase[];
-  setCases: React.Dispatch<React.SetStateAction<ICase[]>>;
   attributions: IAttributionMap;
   setAttributions: React.Dispatch<React.SetStateAction<IAttributionMap>>;
   referenceAttributions: ReferenceAttributionMap;
@@ -21,7 +19,6 @@ const AppContext = createContext<AppContextProps | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<IUser | null>(null);
-  const [cases, setCases] = useState<ICase[]>([]);
   const [attributions, setAttributions] = useState<IAttributionMap>({});
   const [referenceAttributions, setReferenceAttributions] = useState<ReferenceAttributionMap>({});
 
@@ -39,7 +36,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const clearAppData = useCallback(() => {
     // Clear app state
     setUser(null);
-    setCases([]);
     setAttributions({});
     setReferenceAttributions({});
     
@@ -51,7 +47,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   }, []);
 
   return (
-    <AppContext.Provider value={{ user, setUser, cases, setCases, attributions, setAttributions, referenceAttributions, setReferenceAttributions, clearAppData }}>
+    <AppContext.Provider value={{ user, setUser, attributions, setAttributions, referenceAttributions, setReferenceAttributions, clearAppData }}>
       {children}
     </AppContext.Provider>
   );
