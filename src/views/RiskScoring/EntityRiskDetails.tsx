@@ -48,7 +48,7 @@ const EntityRiskDetails: React.FC<EntityRiskDetailsProps> = ({ riskScores }) => 
   return (
     <Box>
       <Card sx={{ mb: 3 }}>
-        <CardContent>
+        {/* <CardContent>
           <Grid container spacing={3}>
             <Grid item xs={12} md={3}>
               <Box display="flex" flexDirection="column" alignItems="center">
@@ -189,7 +189,7 @@ const EntityRiskDetails: React.FC<EntityRiskDetailsProps> = ({ riskScores }) => 
                   )}
                 </Grid>
               </Box>
-            </CardContent>
+            </CardContent> */}
           </Card>
         </Grid>
       </Grid>
