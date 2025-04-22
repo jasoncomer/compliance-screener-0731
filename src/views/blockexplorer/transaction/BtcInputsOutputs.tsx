@@ -22,6 +22,8 @@ const Wrapper = styled.div`
   flex-direction: column;
   left: 0;
   position: relative;
+  width: 100%;
+  overflow-x: auto; /* Enable horizontal scroll if needed */
 
   div {
     display: flex;
@@ -33,7 +35,8 @@ const Wrapper = styled.div`
     justify-content: space-between;
     width: 100%;
     gap: 16px;
-    align-items: center;  
+    align-items: center;
+    min-width: min-content; /* Prevent content from wrapping */
   }
   .attributed {
     color: ${colors.attribution};
@@ -185,6 +188,7 @@ const Wrapper = styled.div`
 const Row = styled.div`
   margin-bottom: 8px;
   left: 0;
+  width: 100%;
 `;
 
 const ToggleButton = styled.button`
@@ -213,7 +217,6 @@ const BtcTxAddress: React.FC<BtcTxAddressProps> = ({ address }) => {
   const [showCopyAlert, setShowCopyAlert] = useState(false);
 
   // Truncate address if it's longer than 42 characters
-
   const displayAddress = truncateStringMiddle(address, 42);
 
   const copyToClipboard = (e: React.MouseEvent) => {

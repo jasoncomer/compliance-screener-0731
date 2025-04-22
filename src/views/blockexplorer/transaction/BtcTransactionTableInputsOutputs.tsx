@@ -13,11 +13,19 @@ const TableWrapper = styled.div`
   display: flex;
   flex-direction: row;
   gap: 20px;
+  width: 100%;
+
+  @media (max-width: 1024px) {
+    flex-direction: column;
+    gap: 32px;
+  }
 
   .inputs, .outputs {
     display: flex;
     flex-direction: column;
     flex: 1;
+    min-width: min-content; /* Prevent content from wrapping */
+    overflow-x: auto; /* Enable horizontal scroll if needed */
 
     .header {
       display: flex;
@@ -25,6 +33,11 @@ const TableWrapper = styled.div`
       border-bottom: 1px solid #ccc;
       padding-bottom: 5px;
       margin-bottom: 10px;
+      width: 100%;
+      white-space: nowrap;
+      position: sticky;
+      left: 0;
+      background: inherit;
     }
   }
 `;
