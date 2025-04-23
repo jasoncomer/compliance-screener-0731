@@ -118,6 +118,23 @@ const Address: React.FC = () => {
     total_received: 0,
     total_spent: 0
   });
+  const [blockStats, setBlockStats] = React.useState<{
+    totalBlocks: number;
+    firstBlock: {
+      blockNumber: number;
+      transactionCount: number;
+      totalValue: number;
+    } | null;
+    lastBlock: {
+      blockNumber: number;
+      transactionCount: number;
+      totalValue: number;
+    } | null;
+  }>({
+    totalBlocks: 0,
+    firstBlock: null,
+    lastBlock: null
+  });
   const totalPages = Math.ceil(totalTxs / itemsPerPage);
 
   useEffect(() => {
@@ -125,16 +142,18 @@ const Address: React.FC = () => {
       try {
         if (!address) return;
         setIsLoading(true);
-        const [{ data }, { txs, pagination }] = await Promise.all([
+        const [{ data }, { txs, pagination }, blockStatsData] = await Promise.all([
           api.blockchain.getAddress(address),
           api.blockchain.getAddressTransactions(address, {
             page: currentPage,
             limit: itemsPerPage
-          })
+          }),
+          api.blockchain.getAddressBlockStats(address)
         ]);
         setAddrData(data);
         setTxs(txs);
         setTotalTxs(pagination.totalTxs);
+        setBlockStats(blockStatsData);
         const uniqueAddresses = new Set([
           address,
           ...txs.flatMap(tx => tx.inputs.map(i => i.addr)),
@@ -218,8 +237,8 @@ const Address: React.FC = () => {
           <SummaryWrapper>
             <div className='col'>
               <span><strong>Balance:</strong> {satsToBTC(summary?.balance || 0)} BTC</span>
-              <span><strong>First block:</strong> {addrData?.first_block?.toLocaleString()}</span>
-              <span><strong>Last block:</strong> {addrData?.last_block?.toLocaleString()}</span>
+              <span><strong>First block:</strong> {blockStats.firstBlock ? `${blockStats.firstBlock.blockNumber}` : 'N/A'}</span>
+              <span><strong>Last block:</strong> {blockStats.lastBlock ? `${blockStats.lastBlock.blockNumber}` : 'N/A'}</span>
             </div>
 
             <div className='col'>
