@@ -2,11 +2,14 @@ import React, { useCallback, useState } from 'react';
 import { Link } from 'react-router-dom';
 import styled from 'styled-components';
 import { colors } from '../../../styles/variables';
+import { useSelector } from 'react-redux';
+import { selectCurrentOrganization } from '../../../store/slices/organizationsSlice';
+import { EEntityType } from '../../../typings/SOT';
 
 import { satsToBTC, truncateAddress } from '../../../utils/crypto';
 import { BtcTransaction } from '../../../typings/BtcTransaction';
 import { useAttribution } from '../../../context/AttributionContext';
-import { truncateStringMiddle } from '../../../utils/generic';
+
 
 interface BtcInputsOutputsProps {
   data: BtcTransaction['inputs'] | BtcTransaction['outputs'];
@@ -20,23 +23,20 @@ const Amount = styled.span`
 const Wrapper = styled.div`
   display: flex;
   flex-direction: column;
-  left: 0;
-  position: relative;
   width: 100%;
-  overflow-x: auto; /* Enable horizontal scroll if needed */
+  overflow-x: auto;
 
   div {
     display: flex;
-    justify-content: space-between;
     flex-direction: row;
   }
   .row-container {
-    display: flex;
-    justify-content: space-between;
-    width: 100%;
+    display: grid;
+    grid-template-columns: minmax(300px, 2fr) minmax(200px, 1fr) minmax(120px, 1fr) minmax(120px, 1fr);
     gap: 16px;
     align-items: center;
-    min-width: min-content; /* Prevent content from wrapping */
+    padding: 8px 0;
+    width: 100%;
   }
   .attributed {
     color: ${colors.attribution};
@@ -47,7 +47,6 @@ const Wrapper = styled.div`
   }
   .address {
     font-family: monospace;
-    left: 0;
     color: ${colors.primary};
     text-decoration: none;
     text-align: left;
@@ -59,22 +58,16 @@ const Wrapper = styled.div`
   .address.highlighted {
     color: white;
     text-decoration: none;
-    margin-left: 23px;
   }
   .address-container {
     display: flex;
     align-items: center;
-    position: relative;
     width: 100%;
-    min-width: 240px;
-    justify-content: flex-start;
   }
   .address-wrapper {
-    min-width: 240px;
     display: flex;
     align-items: center;
-    position: relative;
-    justify-content: flex-start;
+    width: 100%;
   }
   .copy-button {
     cursor: pointer;
@@ -152,11 +145,14 @@ const Wrapper = styled.div`
     }
   }
   .entity-id {
-    min-width: 150px;
-    font-family: monospace;
+    min-width: 100px;
+  font-family: monospace;
     color: ${colors.attribution};
     text-align: left;
-    margin-right: 50px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    margin-left: 38px;
   }
   .cospend-id {
     min-width: 150px;
@@ -166,13 +162,13 @@ const Wrapper = styled.div`
     margin-right: 50px;
   }
   .script-type {
-    min-width: 100px;
     font-family: monospace;
     color: ${colors.gray[600]};
     text-align: left;
+    margin-left: 50px;
   }
   .amount {
-    min-width: 100px;
+    font-family: monospace;
     text-align: right;
   }
   @keyframes fadeIn {
@@ -186,8 +182,6 @@ const Wrapper = styled.div`
 `;
 
 const Row = styled.div`
-  margin-bottom: 8px;
-  left: 0;
   width: 100%;
 `;
 
@@ -217,7 +211,7 @@ const BtcTxAddress: React.FC<BtcTxAddressProps> = ({ address }) => {
   const [showCopyAlert, setShowCopyAlert] = useState(false);
 
   // Truncate address if it's longer than 42 characters
-  const displayAddress = truncateStringMiddle(address, 42);
+  const displayAddress = address.length >= 42 ? truncateAddress(address) : address;
 
   const copyToClipboard = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -282,6 +276,7 @@ const BtcInputsOutputs: React.FC<BtcInputsOutputsProps> = ({ data }) => {
   const [hoveredEntityId, setHoveredEntityId] = useState<string | null>(null);
   const [isEntityTooltipHovered, setIsEntityTooltipHovered] = useState(false);
   const [entityTooltipPosition, setEntityTooltipPosition] = useState({ top: 0, left: 0 });
+  const organization = useSelector(selectCurrentOrganization);
 
   const toggleExpand = () => {
     setIsExpanded(!isExpanded);
@@ -366,6 +361,18 @@ const BtcInputsOutputs: React.FC<BtcInputsOutputsProps> = ({ data }) => {
     return displayId.length > 42;
   };
 
+  const getEntityDisplayName = (entityId: string) => {
+    if (!entityId) return '';
+    
+    // If allowCSAM is false and the entity is CSAM-related, show "CSAM Related Entity"
+    if (organization?.settings.allowCSAM === false && EEntityType.CSAM === "csam") {
+      return 'CSAM Related Entity';
+    }
+    
+    // Otherwise show the original entity name
+    return entityId;
+  };
+
   return (
     <Wrapper>
       {displayData.map((item: BtcTransaction['inputs'][0] | BtcTransaction['outputs'][0], index: number) => (
@@ -376,22 +383,22 @@ const BtcInputsOutputs: React.FC<BtcInputsOutputsProps> = ({ data }) => {
             onMouseLeave={handleMouseLeave}
           >
             <BtcTxAddress
-              address={item.addr}
+              address={item.addr} 
             />
           </div>
 
           <span 
             className="entity-id" 
             title={attributions[item.addr]?.bo && attributions[item.addr]?.bo !== attributions[item.addr]?.entity 
-              ? attributions[item.addr]?.bo 
-              : attributions[item.addr]?.entity || '-'}
+              ? getEntityDisplayName(attributions[item.addr]?.bo)
+              : getEntityDisplayName(attributions[item.addr]?.entity) || '-'}
             onMouseEnter={(e) => isEntityIdTruncated(attributions[item.addr]?.entity, attributions[item.addr]?.bo) && 
               handleEntityMouseEnter(attributions[item.addr]?.bo && attributions[item.addr]?.bo !== attributions[item.addr]?.entity 
-                ? attributions[item.addr]?.bo 
-                : attributions[item.addr]?.entity || '', e)}
+                ? getEntityDisplayName(attributions[item.addr]?.bo)
+                : getEntityDisplayName(attributions[item.addr]?.entity) || '', e)}
             onMouseLeave={handleEntityMouseLeave}
           >
-            {formatEntityId(attributions[item.addr]?.entity, attributions[item.addr]?.bo)}
+            {formatEntityId(getEntityDisplayName(attributions[item.addr]?.entity), getEntityDisplayName(attributions[item.addr]?.bo))}
           </span>
 
           <span className="script-type">{attributions[item.addr]?.script_type || '-'}</span>

@@ -10,6 +10,7 @@ import {
   revokeInvitation,
   selectCurrentOrganization,
   selectPendingInvitations,
+  updateOrganization,
 } from '../../store/slices/organizationsSlice';
 import ViewWrapper from '../../components/ViewWrapper';
 import ProfileSection from './components/ProfileSection';
@@ -19,7 +20,7 @@ import SecuritySection from './components/SecuritySection';
 import OrganizationSection from './components/OrganizationSection';
 import SettingsSidebar from './components/SettingsSidebar';
 import { SettingSection } from '../../typings/settings';
-import { EMemberRole } from '../../typings/organization';
+import { EMemberRole, IOrganization } from '../../typings/organization';
 import { SettingsLayout, ContentArea } from './components/styled';
 
 const Settings = () => {
@@ -91,6 +92,24 @@ const Settings = () => {
     // TODO: Implement API call to update notifications preference
   };
 
+  const handleUpdateOrganization = async (data: Partial<IOrganization>) => {
+    if (!organization) {
+      message.error('No active organization');
+      return;
+    }
+
+    try {
+      await dispatch(updateOrganization({
+        organizationId: organization._id,
+        data
+      })).unwrap();
+      message.success('Organization settings updated successfully');
+    } catch (error) {
+      console.error('Error updating organization:', error);
+      message.error('Failed to update organization settings');
+    }
+  };
+
   const renderContent = () => {
     switch (activeSection) {
       case 'profile':
@@ -117,6 +136,7 @@ const Settings = () => {
             onInviteMember={handleInviteMember}
             onGenerateInviteCode={handleGenerateInviteCode}
             onRevokeInvitation={handleRevokeInvitation}
+            onUpdateOrganization={handleUpdateOrganization}
           />
         );
       default:
