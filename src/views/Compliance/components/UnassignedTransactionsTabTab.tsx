@@ -3,13 +3,13 @@ import { Form, Button, Select, Input, DatePicker, Card } from 'antd';
 import { FilterOutlined, ClearOutlined } from '@ant-design/icons';
 import { ETransactionStatus, TransactionFilters } from '../../../typings/compliance';
 import ComplianceHeaderActions from './ComplianceHeaderActions';
-import TransactionsTable from './TransactionsTable';
+import UnassignedTransactionsTabTable from './UnassignedTransactionsTab';
 import { EntityModal } from '../modals/EntityModal';
 import { selectCurrentOrganization } from '../../../store/slices/organizationsSlice';
 import { useAppDispatch, useAppSelector } from '../../../store/hooks';
 import { 
   fetchComplianceTransactions, 
-  selectActiveTransactions, 
+  selectUnassignedTransactions, 
   selectPagination, 
   selectIsLoading,
   selectComplianceFilters,
@@ -20,12 +20,16 @@ import {
 
 const { RangePicker } = DatePicker;
 
-const TransactionsTab: React.FC = () => {
+interface UnassignedTransactionsTabProps {
+  isActive: boolean;
+}
+
+const UnassignedTransactionsTab: React.FC<UnassignedTransactionsTabProps> = ({ isActive }) => {
   const organization = useAppSelector(selectCurrentOrganization);
   const dispatch = useAppDispatch();
   
   // Use Redux store data
-  const transactions = useAppSelector(selectActiveTransactions);
+  const transactions = useAppSelector(selectUnassignedTransactions);
   const { total: totalTransactions, page: currentPage, limit: pageSize } = useAppSelector(selectPagination);
   const loading = useAppSelector(selectIsLoading);
   const filters = useAppSelector(selectComplianceFilters);
@@ -40,13 +44,16 @@ const TransactionsTab: React.FC = () => {
 
   // Load transactions from Redux store
   useEffect(() => {
+    if (!isActive) return;
+
     const mergedFilters = { 
       ...filters,
       page: currentPage,
-      limit: pageSize
+      limit: pageSize,
+      status: ETransactionStatus.UNASSIGNED // Only show unassigned transactions
     };
     dispatch(fetchComplianceTransactions(mergedFilters));
-  }, [dispatch, filters, organization, currentPage, pageSize]);
+  }, [dispatch, filters, organization, currentPage, pageSize, isActive]);
 
   // Extract unique filter options from transaction data
   useEffect(() => {
@@ -79,7 +86,8 @@ const TransactionsTab: React.FC = () => {
     form.resetFields();
     dispatch(setFilters({
       page: 1,
-      limit: pageSize
+      limit: pageSize,
+      status: ETransactionStatus.UNASSIGNED // Maintain unassigned filter
     }));
   };
   
@@ -244,7 +252,7 @@ const TransactionsTab: React.FC = () => {
         </Form>
       </Card>
       
-      <TransactionsTable
+      <UnassignedTransactionsTabTable
         transactions={transactions}
         totalTransactions={totalTransactions}
         currentPage={currentPage}
@@ -263,4 +271,4 @@ const TransactionsTab: React.FC = () => {
   );
 };
 
-export default TransactionsTab;
+export default UnassignedTransactionsTab;

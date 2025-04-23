@@ -20,7 +20,7 @@ interface TransactionsTableProps {
   onEntityClick: (record: IComplianceTransaction) => void;
 }
 
-const TransactionsTable: React.FC<TransactionsTableProps> = ({
+const UnassignedTransactionsTabTable: React.FC<TransactionsTableProps> = ({
   transactions,
   totalTransactions,
   currentPage,
@@ -197,4 +197,4 @@ const TransactionsTable: React.FC<TransactionsTableProps> = ({
   );
 };
 
-export default TransactionsTable; 
+export default UnassignedTransactionsTabTable; 

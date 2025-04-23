@@ -92,6 +92,7 @@ export interface IComplianceTransaction {
 
 export interface TransactionFilters {
   status?: string;
+  statusExclude?: string; // Comma-separated list of statuses to exclude
   blockchain?: string;
   clientId?: string;
   timestamp?: { from?: string; to?: string };

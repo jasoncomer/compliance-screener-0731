@@ -109,15 +109,29 @@ export const selectAllTransactions = createSelector(
   (txs: Record<string, IComplianceTransaction>) => Object.values(txs)
 );
 
-export const selectActiveTransactions = createSelector(
-  (state: RootState) => state.complianceTransactions.transactions,
-  (txs: Record<string, IComplianceTransaction>) => Object.values(txs).filter((tx) => tx.status !== ETransactionStatus.APPROVED)
-);
-
-export const selectTransactionsWithAssignee = createSelector(
+export const selectUnassignedTransactions = createSelector(
   (state: RootState) => state.complianceTransactions.transactions,
   (txs: Record<string, IComplianceTransaction>) => Object.values(txs).filter((tx) => 
-    tx.status === ETransactionStatus.IN_REVIEW && tx.reviewerId
+    tx.status === ETransactionStatus.UNASSIGNED
+  )
+);
+
+export const selectCompletedTransactions = createSelector(
+  (state: RootState) => state.complianceTransactions.transactions,
+  (txs: Record<string, IComplianceTransaction>) => Object.values(txs).filter((tx) => 
+    tx.status === ETransactionStatus.APPROVED || 
+    tx.status === ETransactionStatus.CLOSED_WITH_NOTE || 
+    tx.status === ETransactionStatus.CLOSED_WITH_SAR
+  )
+);
+
+export const selectActiveTransactions = createSelector(
+  (state: RootState) => state.complianceTransactions.transactions,
+  (txs: Record<string, IComplianceTransaction>) => Object.values(txs).filter((tx) => 
+    tx.status !== ETransactionStatus.UNASSIGNED && 
+    tx.status !== ETransactionStatus.APPROVED && 
+    tx.status !== ETransactionStatus.CLOSED_WITH_NOTE && 
+    tx.status !== ETransactionStatus.CLOSED_WITH_SAR
   )
 );
 

@@ -10,7 +10,7 @@ import { selectCurrentOrganization } from '../../../store/slices/organizationsSl
 import { useAppDispatch, useAppSelector } from '../../../store/hooks';
 import { 
   fetchComplianceTransactions, 
-  selectTransactionsWithAssignee,
+  selectActiveTransactions,
   selectPagination, 
   selectIsLoading,
   selectComplianceFilters,
@@ -28,13 +28,17 @@ const HeaderActions = styled.div`
   margin-bottom: 16px;
 `;
 
-const ActiveCasesTab: React.FC = () => {
+interface ActiveCasesTabProps {
+  isActive: boolean;
+}
+
+const ActiveCasesTab: React.FC<ActiveCasesTabProps> = ({ isActive }) => {
   const { theme } = useTheme();
   const organization = useAppSelector(selectCurrentOrganization);
   const dispatch = useAppDispatch();
   
   // Use Redux store data
-  const transactions = useAppSelector(selectTransactionsWithAssignee);
+  const transactions = useAppSelector(selectActiveTransactions);
   const { total: totalTransactions, page: currentPage, limit: pageSize } = useAppSelector(selectPagination);
   const loading = useAppSelector(selectIsLoading);
   const filters = useAppSelector(selectComplianceFilters);
@@ -47,15 +51,18 @@ const ActiveCasesTab: React.FC = () => {
 
   // Load transactions from Redux store
   useEffect(() => {
+    if (!isActive) return;
+
     const mergedFilters = { 
       ...filters,
       page: currentPage,
       limit: pageSize,
-      // Only show transactions that have a reviewer assigned (IN_REVIEW status)
-      status: ETransactionStatus.IN_REVIEW
+      // Exclude UNASSIGNED and APPROVED transactions
+      statusExclude: [ETransactionStatus.UNASSIGNED, ETransactionStatus.APPROVED].join(',')
     };
     dispatch(fetchComplianceTransactions(mergedFilters));
-  }, [dispatch, filters, organization, currentPage, pageSize]);
+    console.log('active cases tab', mergedFilters);
+  }, [dispatch, filters, organization, currentPage, pageSize, isActive]);
 
   // Extract unique filter options from transaction data
   useEffect(() => {
@@ -82,7 +89,7 @@ const ActiveCasesTab: React.FC = () => {
     dispatch(setFilters({
       page: 1,
       limit: pageSize,
-      status: ETransactionStatus.IN_REVIEW
+      statusExclude: [ETransactionStatus.UNASSIGNED, ETransactionStatus.APPROVED].join(',')
     }));
   };
   
@@ -92,7 +99,7 @@ const ActiveCasesTab: React.FC = () => {
     const newFilters: TransactionFilters = {
       ...filters,
       page: 1, // Reset to first page when applying new filters
-      status: ETransactionStatus.IN_REVIEW, // Always show IN_REVIEW transactions
+      statusExclude: [ETransactionStatus.UNASSIGNED, ETransactionStatus.APPROVED].join(','),
     };
     
     // Add form filters
@@ -140,7 +147,7 @@ const ActiveCasesTab: React.FC = () => {
       <HeaderActions>
         <h3 style={{ margin: 0, color: theme === 'light' ? colors.black : colors.white }}>
           <FileSearchOutlined style={{ marginRight: '8px' }} />
-          Active Cases Management
+          Active Cases Management ({totalTransactions})
         </h3>
         <div>
           <span style={{ marginRight: '10px', color: theme === 'light' ? colors.primaryDark : colors.white }}>

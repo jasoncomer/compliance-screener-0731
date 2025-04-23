@@ -209,6 +209,18 @@ const ActiveCasesTable: React.FC<ActiveCasesTableProps> = ({
         loading={loading}
         onChange={onTableChange}
         scroll={{ x: 1300 }}
+        footer={() => (
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div>
+              <strong>{totalTransactions}</strong> active cases requiring review
+            </div>
+            <div>
+              <Button type="link" size="small">
+                Export Cases
+              </Button>
+            </div>
+          </div>
+        )}
       />
 
       <TransactionDetailsModal 

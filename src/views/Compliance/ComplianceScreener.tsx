@@ -4,7 +4,7 @@ import { useTheme } from '../../context/ThemeContext';
 import ViewWrapper from '../../components/ViewWrapper';
 import { AuditOutlined, DatabaseOutlined, TableOutlined, FileSearchOutlined } from '@ant-design/icons';
 import { colors } from '../../styles/variables';
-import TransactionsTab from './components/TransactionsTab';
+import UnassignedTransactionsTab from './components/UnassignedTransactionsTabTab';
 import AddressesTab from './components/AddressesTab';
 import ActiveCasesTab from './components/ActiveCasesTab';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
@@ -31,7 +31,7 @@ const ComplianceScreener: React.FC = () => {
   const txTabHeader = (
     <span>
       <TableOutlined style={{ marginRight: '8px' }} />
-      Incoming Risk
+      Unassigned Transactions
     </span>
   );
 
@@ -52,7 +52,11 @@ const ComplianceScreener: React.FC = () => {
   return (
     <ViewWrapper title="Compliance Screener" icon={<AuditOutlined style={{ fontSize: '28px', color: colors.attributionHover, fontWeight: 'bold' }} />}>
       <p style={{ marginTop: -15, color: theme === 'light' ? colors.black : colors.white }}>
-        This page monitors client defined wallets for incoming transactions and calculates risk scoring.
+        {activeTab === 'active-cases' 
+          ? 'This page shows transactions under investigation that require compliance review or escalation.'
+          : activeTab === 'transactions'
+            ? 'This page shows new unassigned transactions that need to be assigned to a compliance officer for review.'
+            : 'This page monitors client defined wallets for incoming transactions and calculates risk scoring.'}
       </p>
       <Tabs
         activeKey={activeTab}
@@ -63,13 +67,13 @@ const ComplianceScreener: React.FC = () => {
           tab={txTabHeader}
           key="transactions"
         >
-          <TransactionsTab />
+          <UnassignedTransactionsTab isActive={activeTab === 'transactions'} />
         </TabPane>
         <TabPane
           tab={activeCasesTabHeader}
           key="active-cases"
         >
-          <ActiveCasesTab />
+          <ActiveCasesTab isActive={activeTab === 'active-cases'} />
         </TabPane>
         <TabPane
           tab={addressesTabHeader}
