@@ -2,11 +2,14 @@ import React, { useCallback, useState } from 'react';
 import { Link } from 'react-router-dom';
 import styled from 'styled-components';
 import { colors } from '../../../styles/variables';
+import { useSelector } from 'react-redux';
+import { selectCurrentOrganization } from '../../../store/slices/organizationsSlice';
+import { EEntityType } from '../../../typings/SOT';
 
-import { satsToBTC } from '../../../utils/crypto';
+import { satsToBTC, truncateAddress } from '../../../utils/crypto';
 import { BtcTransaction } from '../../../typings/BtcTransaction';
 import { useAttribution } from '../../../context/AttributionContext';
-import { truncateStringMiddle } from '../../../utils/generic';
+
 
 interface BtcInputsOutputsProps {
   data: BtcTransaction['inputs'] | BtcTransaction['outputs'];
@@ -20,20 +23,20 @@ const Amount = styled.span`
 const Wrapper = styled.div`
   display: flex;
   flex-direction: column;
-  left: 0;
-  position: relative;
+  width: 100%;
+  overflow-x: auto;
 
   div {
     display: flex;
-    justify-content: space-between;
     flex-direction: row;
   }
   .row-container {
-    display: flex;
-    justify-content: space-between;
-    width: 100%;
+    display: grid;
+    grid-template-columns: minmax(300px, 2fr) minmax(200px, 1fr) minmax(120px, 1fr) minmax(120px, 1fr);
     gap: 16px;
-    align-items: center;  
+    align-items: center;
+    padding: 8px 0;
+    width: 100%;
   }
   .attributed {
     color: ${colors.attribution};
@@ -44,7 +47,6 @@ const Wrapper = styled.div`
   }
   .address {
     font-family: monospace;
-    left: 0;
     color: ${colors.primary};
     text-decoration: none;
     text-align: left;
@@ -56,22 +58,16 @@ const Wrapper = styled.div`
   .address.highlighted {
     color: white;
     text-decoration: none;
-    margin-left: 23px;
   }
   .address-container {
     display: flex;
     align-items: center;
-    position: relative;
     width: 100%;
-    min-width: 240px;
-    justify-content: flex-start;
   }
   .address-wrapper {
-    min-width: 240px;
     display: flex;
     align-items: center;
-    position: relative;
-    justify-content: flex-start;
+    width: 100%;
   }
   .copy-button {
     cursor: pointer;
@@ -149,11 +145,14 @@ const Wrapper = styled.div`
     }
   }
   .entity-id {
-    min-width: 150px;
-    font-family: monospace;
+    min-width: 100px;
+  font-family: monospace;
     color: ${colors.attribution};
     text-align: left;
-    margin-right: 50px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    margin-left: 38px;
   }
   .cospend-id {
     min-width: 150px;
@@ -163,13 +162,13 @@ const Wrapper = styled.div`
     margin-right: 50px;
   }
   .script-type {
-    min-width: 100px;
     font-family: monospace;
     color: ${colors.gray[600]};
     text-align: left;
+    margin-left: 50px;
   }
   .amount {
-    min-width: 100px;
+    font-family: monospace;
     text-align: right;
   }
   @keyframes fadeIn {
@@ -183,8 +182,7 @@ const Wrapper = styled.div`
 `;
 
 const Row = styled.div`
-  margin-bottom: 8px;
-  left: 0;
+  width: 100%;
 `;
 
 const ToggleButton = styled.button`
@@ -213,8 +211,7 @@ const BtcTxAddress: React.FC<BtcTxAddressProps> = ({ address }) => {
   const [showCopyAlert, setShowCopyAlert] = useState(false);
 
   // Truncate address if it's longer than 42 characters
-
-  const displayAddress = truncateStringMiddle(address, 42);
+  const displayAddress = address.length >= 42 ? truncateAddress(address) : address;
 
   const copyToClipboard = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -276,6 +273,10 @@ const BtcInputsOutputs: React.FC<BtcInputsOutputsProps> = ({ data }) => {
   const [isTooltipHovered, setIsTooltipHovered] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
   const [tooltipPosition, setTooltipPosition] = useState({ top: 0, left: 0 });
+  const [hoveredEntityId, setHoveredEntityId] = useState<string | null>(null);
+  const [isEntityTooltipHovered, setIsEntityTooltipHovered] = useState(false);
+  const [entityTooltipPosition, setEntityTooltipPosition] = useState({ top: 0, left: 0 });
+  const organization = useSelector(selectCurrentOrganization);
 
   const toggleExpand = () => {
     setIsExpanded(!isExpanded);
@@ -294,6 +295,17 @@ const BtcInputsOutputs: React.FC<BtcInputsOutputsProps> = ({ data }) => {
       })
       .catch(err => {
         console.error('Failed to copy cospend ID: ', err);
+      });
+  };
+
+  const copyEntityId = (entityId: string) => {
+    navigator.clipboard.writeText(entityId)
+      .then(() => {
+        setCopySuccess(true);
+        setTimeout(() => setCopySuccess(false), 2000);
+      })
+      .catch(err => {
+        console.error('Failed to copy entity ID: ', err);
       });
   };
 
@@ -316,6 +328,51 @@ const BtcInputsOutputs: React.FC<BtcInputsOutputsProps> = ({ data }) => {
     setHoveredAddress(address);
   };
 
+  // Handle mouse leave for entity ID tooltip
+  const handleEntityMouseLeave = () => {
+    setTimeout(() => {
+      if (!isEntityTooltipHovered) {
+        setHoveredEntityId(null);
+      }
+    }, 100);
+  };
+
+  const handleEntityMouseEnter = (entityId: string, event: React.MouseEvent<HTMLSpanElement>) => {
+    const rect = event.currentTarget.getBoundingClientRect();
+    setEntityTooltipPosition({
+      top: rect.top - 10,
+      left: rect.left + (rect.width / 2)
+    });
+    setHoveredEntityId(entityId);
+  };
+
+  // Function to format entity ID with truncation if needed
+  const formatEntityId = (entityId: string | undefined, bo: string | undefined) => {
+    if (!entityId) return '-';
+    // If beneficial owner exists and is different from entity, show that instead
+    const displayId = (bo && bo !== entityId) ? bo : entityId;
+    return displayId.length > 42 ? truncateAddress(displayId) : displayId;
+  };
+
+  // Check if entity ID is truncated
+  const isEntityIdTruncated = (entityId: string | undefined, bo: string | undefined) => {
+    if (!entityId) return false;
+    const displayId = (bo && bo !== entityId) ? bo : entityId;
+    return displayId.length > 42;
+  };
+
+  const getEntityDisplayName = (entityId: string) => {
+    if (!entityId) return '';
+    
+    // If allowCSAM is false and the entity is CSAM-related, show "CSAM Related Entity"
+    if (organization?.settings.allowCSAM === false && EEntityType.CSAM === "csam") {
+      return 'CSAM Related Entity';
+    }
+    
+    // Otherwise show the original entity name
+    return entityId;
+  };
+
   return (
     <Wrapper>
       {displayData.map((item: BtcTransaction['inputs'][0] | BtcTransaction['outputs'][0], index: number) => (
@@ -326,11 +383,23 @@ const BtcInputsOutputs: React.FC<BtcInputsOutputsProps> = ({ data }) => {
             onMouseLeave={handleMouseLeave}
           >
             <BtcTxAddress
-              address={item.addr}
+              address={item.addr} 
             />
           </div>
 
-          <span className="entity-id">{attributions[item.addr]?.entity || '-'}</span>
+          <span 
+            className="entity-id" 
+            title={attributions[item.addr]?.bo && attributions[item.addr]?.bo !== attributions[item.addr]?.entity 
+              ? getEntityDisplayName(attributions[item.addr]?.bo)
+              : getEntityDisplayName(attributions[item.addr]?.entity) || '-'}
+            onMouseEnter={(e) => isEntityIdTruncated(attributions[item.addr]?.entity, attributions[item.addr]?.bo) && 
+              handleEntityMouseEnter(attributions[item.addr]?.bo && attributions[item.addr]?.bo !== attributions[item.addr]?.entity 
+                ? getEntityDisplayName(attributions[item.addr]?.bo)
+                : getEntityDisplayName(attributions[item.addr]?.entity) || '', e)}
+            onMouseLeave={handleEntityMouseLeave}
+          >
+            {formatEntityId(getEntityDisplayName(attributions[item.addr]?.entity), getEntityDisplayName(attributions[item.addr]?.bo))}
+          </span>
 
           <span className="script-type">{attributions[item.addr]?.script_type || '-'}</span>
           <Amount className="amount">{renderAmt(item.amt)}</Amount>
@@ -349,7 +418,7 @@ const BtcInputsOutputs: React.FC<BtcInputsOutputsProps> = ({ data }) => {
           style={{
             position: 'fixed',
             top: `${tooltipPosition.top}px`,
-            left: `${tooltipPosition.left}px`,
+            left: `${tooltipPosition.left + 50}px`,
             transform: 'translate(-50%, -100%)'
           }}
           onMouseEnter={() => setIsTooltipHovered(true)}
@@ -364,6 +433,35 @@ const BtcInputsOutputs: React.FC<BtcInputsOutputsProps> = ({ data }) => {
               className="copy-button"
               onClick={() => copyCospendId(attributions[hoveredAddress].cospend_id || '')}
               title="Copy cospend ID"
+            >
+              {copySuccess ? '✓' : '⧉'}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Entity ID Tooltip */}
+      {hoveredEntityId && (
+        <div
+          className="cospend-tooltip"
+          style={{
+            position: 'fixed',
+            top: `${entityTooltipPosition.top}px`,
+            left: `${entityTooltipPosition.left + 20}px`,
+            transform: 'translate(-50%, -100%)'
+          }}
+          onMouseEnter={() => setIsEntityTooltipHovered(true)}
+          onMouseLeave={() => {
+            setIsEntityTooltipHovered(false);
+            setHoveredEntityId(null);
+          }}
+        >
+          <div className="tooltip-content">
+            <span>Entity ID: {hoveredEntityId}</span>
+            <button
+              className="copy-button"
+              onClick={() => copyEntityId(hoveredEntityId)}
+              title="Copy entity ID"
             >
               {copySuccess ? '✓' : '⧉'}
             </button>

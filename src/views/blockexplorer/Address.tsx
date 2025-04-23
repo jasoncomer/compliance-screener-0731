@@ -10,6 +10,9 @@ import { satsToBTC } from '../../utils/crypto';
 import { useAttribution } from '../../context/AttributionContext';
 import Pagination from '../../components/common/Pagination';
 import { useTheme } from '../../context/ThemeContext';
+import { useAppSelector } from '../../store/hooks';
+import { selectCurrentOrganization } from '../../store/slices/organizationsSlice';
+import { EEntityType } from '../../typings/SOT';
 
 const AddressLayout = styled.div`
   display: flex;
@@ -109,6 +112,7 @@ const Address: React.FC = () => {
   const [isLoading, setIsLoading] = React.useState<boolean>(false);
   const itemsPerPage = 20;
   const { fetchAttributions, attributions } = useAttribution();
+  const organization = useAppSelector(selectCurrentOrganization);
   const [summary, setSummary] = React.useState<{
     balance: number;
     total_received: number;
@@ -196,6 +200,19 @@ const Address: React.FC = () => {
     attributions[address]?.custodian
   );
 
+  // Function to get the display name for an entity
+  const getEntityDisplayName = (entityId: string) => {
+    if (!entityId) return '';
+    
+    // If allowCSAM is false and the entity is CSAM-related, show "CSAM Related Entity"
+    if (organization?.settings.allowCSAM === false && EEntityType.CSAM === "csam") {
+      return 'CSAM Related Entity';
+    }
+    
+    // Otherwise show the original entity name
+    return entityId;
+  };
+
   return (
     <AddressLayout>
       <FixedAddressHeader>
@@ -212,14 +229,14 @@ const Address: React.FC = () => {
                 {attributions[address]?.entity && (
                   <div className="attribution-item">
                     <div className="label">Entity</div>
-                    <div className="value">{attributions[address].entity}</div>
+                    <div className="value">{getEntityDisplayName(attributions[address].entity)}</div>
                   </div>
                 )}
 
                 {attributions[address]?.bo && (attributions[address]?.bo !== attributions[address]?.entity) && (
                   <div className="attribution-item">
                     <div className="label">Beneficial Owner</div>
-                    <div className="value">{attributions[address].bo}</div>
+                    <div className="value">{getEntityDisplayName(attributions[address].bo)}</div>
                   </div>
                 )}
 

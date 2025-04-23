@@ -9,6 +9,7 @@ import ViewWrapper from '../components/ViewWrapper';
 import SOTEditor from '../components/SOTEditor';
 import { AppDispatch, RootState } from '../store/store';
 import { fetchSOT } from '../store/slices/sotSlice';
+import { fetchOrganizations, selectCurrentOrganization } from '../store/slices/organizationsSlice';
 import { SOT } from '../typings/interfaces';
 import { EEntityType } from '../typings/SOT';
 import { getEntityTypeLabel } from '../utils/display-labels';
@@ -116,7 +117,7 @@ interface GroupedOption {
 const BlockHam: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
   const { items: sot, itemsMap: sotMap, loading: sotLoading } = useSelector((state: RootState) => state.sot);
-  const { organization } = useSelector((state: RootState) => state.organization);
+  const organization = useSelector(selectCurrentOrganization);
   
   const [options, setOptions] = useState<GroupedOption[]>([]);
   const [loading, setLoading] = useState(false);
@@ -124,7 +125,16 @@ const BlockHam: React.FC = () => {
 
   useEffect(() => {
     dispatch(fetchSOT());
+    dispatch(fetchOrganizations());
   }, [dispatch]);
+
+  // Re-trigger search when organization settings change
+  useEffect(() => {
+    const searchInput = document.querySelector('input.ant-input') as HTMLInputElement;
+    if (searchInput && searchInput.value) {
+      handleSearch(searchInput.value);
+    }
+  }, [organization?.settings?.allowCSAM]);
 
   const headerTitle = (title: string, count: number) => {
     return (
@@ -248,7 +258,7 @@ const BlockHam: React.FC = () => {
         const entityId = sotItem._id;
 
         // Skip CSAM-related entities if allowCSAM is false
-        if (!organization?.settings.allowCSAM) {
+        if (organization?.settings.allowCSAM === false) {
           const hasCSAMTag = getEntityTags(sotItem).some(tag => tag.toLowerCase().includes('csam'));
           const isCSAMType = sotItem.entity_type?.toLowerCase().includes('csam');
           if (hasCSAMTag || isCSAMType) {

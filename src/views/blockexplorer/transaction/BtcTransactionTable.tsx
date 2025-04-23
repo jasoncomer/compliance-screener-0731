@@ -1,11 +1,33 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { BtcTransaction } from '../../../typings/BtcTransaction';
 import { BsBlock } from '../../../styles/Table';
 import BtcTransactionInputsOutputs from './BtcTransactionTableInputsOutputs';
 import styled from 'styled-components';
 import { Link } from 'react-router-dom';
 import { Theme } from '../../../context/ThemeContext';
-import { satsToBTC } from '../../../utils/crypto';
+import { satsToBTC, truncateAddress } from '../../../utils/crypto';
+
+// Custom hook to track window size
+const useWindowSize = () => {
+  const [windowSize, setWindowSize] = useState({
+    width: window.innerWidth,
+    height: window.innerHeight,
+  });
+
+  useEffect(() => {
+    const handleResize = () => {
+      setWindowSize({
+        width: window.innerWidth,
+        height: window.innerHeight,
+      });
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  return windowSize;
+};
 
 const HeaderWrapper = styled.div<{ theme?: { theme: Theme } }>`
   display: flex;
@@ -42,13 +64,23 @@ interface BtcTransactionHeaderProps {
   date: string;
   fee: number;
   theme?: { theme: Theme };
+  isSmallScreen: boolean;
 }
 
-const BtcTransactionHeader: React.FC<BtcTransactionHeaderProps> = ({ txHash, blockHeight, date, fee, theme }) => (
+const BtcTransactionHeader: React.FC<BtcTransactionHeaderProps> = ({ 
+  txHash, 
+  blockHeight, 
+  date, 
+  fee, 
+  theme,
+  isSmallScreen 
+}) => (
   <HeaderWrapper theme={theme}>
     <HeaderItem theme={theme} style={{ fontFamily: 'monospace' }}>
       <span>Transaction Hash:</span>
-      <Link to={`/home/block-explorer/transaction/${txHash}`} style={{ fontFamily: 'monospace' }}>{txHash}</Link>
+      <Link to={`/home/block-explorer/transaction/${txHash}`} style={{ fontFamily: 'monospace' }}>
+        {isSmallScreen ? truncateAddress(txHash) : txHash}
+      </Link>
     </HeaderItem>
     <HeaderItem theme={theme} style={{fontFamily: 'monospace'}}>
       <span>Block Height:</span>
@@ -72,6 +104,8 @@ interface BtcTransactionTableProps {
 
 const BtcTransactionTable: React.FC<BtcTransactionTableProps> = ({ transaction, theme }) => {
   if (!transaction) return null;
+  const { width } = useWindowSize();
+  const isSmallScreen = width < 1080;
 
   return (
     <BsBlock theme={theme} style={{ fontFamily: 'monospace' }}>
@@ -79,9 +113,9 @@ const BtcTransactionTable: React.FC<BtcTransactionTableProps> = ({ transaction, 
         txHash={transaction.txid}
         blockHeight={transaction.block}
         fee={transaction.fee_amt}
-        
         date={new Date(transaction.timestamp * 1000).toLocaleString()}
         theme={theme}
+        isSmallScreen={isSmallScreen}
       />
 
       <BtcTransactionInputsOutputs transaction={transaction} />
