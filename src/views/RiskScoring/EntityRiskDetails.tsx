@@ -3,28 +3,8 @@ import { RiskScoringResponse } from '../../typings/riskScoring';
 import {
   Box,
   Card,
-  CardContent,
-  Typography,
-  Grid,
-  Avatar,
-  Chip,
-  Link,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
 } from '@mui/material';
-import {
-  Language as WebIcon,
-  Email as EmailIcon,
-  Phone as PhoneIcon,
-  LocationOn as LocationIcon,
-  Twitter as TwitterIcon,
-  Telegram as TelegramIcon,
-} from '@mui/icons-material';
+
 
 interface EntityRiskDetailsProps {
   riskScores: RiskScoringResponse;
@@ -34,16 +14,16 @@ const EntityRiskDetails: React.FC<EntityRiskDetailsProps> = ({ riskScores }) => 
   const { sot } = riskScores;
   if (!sot) return null;
 
-  const ContactItem = ({ icon, value, link }: { icon: React.ReactNode; value?: string; link?: string }) => {
-    if (!value) return null;
-    const content = (
-      <Box display="flex" alignItems="center" mb={1}>
-        <Box mr={1}>{icon}</Box>
-        <Typography>{value}</Typography>
-      </Box>
-    );
-    return link ? <Link href={link} target="_blank" rel="noopener noreferrer">{content}</Link> : content;
-  };
+  // const ContactItem = ({ icon, value, link }: { icon: React.ReactNode; value?: string; link?: string }) => {
+  //   if (!value) return null;
+  //   const content = (
+  //     <Box display="flex" alignItems="center" mb={1}>
+  //       <Box mr={1}>{icon}</Box>
+  //       <Typography>{value}</Typography>
+  //     </Box>
+  //   );
+  //   return link ? <Link href={link} target="_blank" rel="noopener noreferrer">{content}</Link> : content;
+  // };
 
   return (
     <Box>
@@ -189,10 +169,11 @@ const EntityRiskDetails: React.FC<EntityRiskDetailsProps> = ({ riskScores }) => 
                   )}
                 </Grid>
               </Box>
-            </CardContent> */}
+            </CardContent> 
           </Card>
         </Grid>
-      </Grid>
+      </Grid>*/}
+      </Card>
     </Box>
   );
 };

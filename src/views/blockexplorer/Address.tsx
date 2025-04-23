@@ -137,23 +137,28 @@ const Address: React.FC = () => {
   });
   const totalPages = Math.ceil(totalTxs / itemsPerPage);
 
+  const getAddressStats = async () => {
+    if (!address) return;
+    const blockStatsData = await api.blockchain.getAddressBlockStats(address);
+    setBlockStats(blockStatsData);
+  };
+
   useEffect(() => {
     const fetchAddress = async () => {
       try {
         if (!address) return;
         setIsLoading(true);
-        const [{ data }, { txs, pagination }, blockStatsData] = await Promise.all([
+        getAddressStats();
+        const [{ data }, { txs, pagination }] = await Promise.all([
           api.blockchain.getAddress(address),
           api.blockchain.getAddressTransactions(address, {
             page: currentPage,
             limit: itemsPerPage
           }),
-          api.blockchain.getAddressBlockStats(address)
         ]);
         setAddrData(data);
         setTxs(txs);
         setTotalTxs(pagination.totalTxs);
-        setBlockStats(blockStatsData);
         const uniqueAddresses = new Set([
           address,
           ...txs.flatMap(tx => tx.inputs.map(i => i.addr)),
