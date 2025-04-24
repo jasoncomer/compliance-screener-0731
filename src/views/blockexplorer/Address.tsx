@@ -289,6 +289,22 @@ const Address: React.FC = () => {
     return entity?.proper_name || entityId;
   };
 
+  // Function to mask entity IDs related to CSAM
+  const getMaskedEntityId = (entityId: string) => {
+    if (!entityId) return '';
+    
+    // Get the entity from the SOT data
+    const entity = Object.values(itemsMap).find(sot => sot.entity_id === entityId);
+    
+    // If allowCSAM is false and the entity is CSAM-related, mask the ID
+    if (organization?.settings.allowCSAM === false && 
+        (entity?.entity_type === "csam" || entityId.toLowerCase().includes('csam'))) {
+      return 'CSAM Related Entity';
+    }
+    
+    return entityId;
+  };
+
   // Function to get the entity logo
   const getEntityLogo = (entityId: string) => {
     if (!entityId) return null;
@@ -361,7 +377,7 @@ const Address: React.FC = () => {
                       <div className="field-group">
                         <div className='label'>{capitalizeFirstLetter('entity id')}</div>
                         <div className="entity-id">
-                          {attributions[address].entity}
+                          {getMaskedEntityId(attributions[address].entity)}
                         </div>
                       </div>
                     </EntityInfo>
@@ -391,7 +407,7 @@ const Address: React.FC = () => {
                       <div className="field-group">
                         <div className='label'>{capitalizeFirstLetter('entity id')}</div>
                         <div className="entity-id">
-                          {attributions[address].bo}
+                          {getMaskedEntityId(attributions[address].bo)}
                         </div>
                       </div>
                     </EntityInfo>
@@ -420,7 +436,7 @@ const Address: React.FC = () => {
                       <div className="field-group">
                         <div className='label'>{capitalizeFirstLetter('entity id')}</div>
                         <div className="entity-id">
-                          {attributions[address].custodian}
+                          {getMaskedEntityId(attributions[address].custodian)}
                         </div>
                       </div>
                     </EntityInfo>

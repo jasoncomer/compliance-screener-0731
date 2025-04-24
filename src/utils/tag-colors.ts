@@ -17,7 +17,7 @@ export const getTagColor = (tag: string): PresetColorType | string => {
   if (lowerTag.includes('exchange')) return 'blue';
   if (lowerTag.includes('defi') || lowerTag.includes('dex')) return 'geekblue';
   if (lowerTag.includes('wallet')) return 'cyan';
-  if (lowerTag.includes('mixer') || lowerTag.includes('gambling')) return 'volcano';
+  if (lowerTag.includes('mixer') || lowerTag.includes('gambling') || lowerTag.includes('human trafficking')) return 'volcano';
   
   // Social media related
   if (lowerTag.includes('twitter')) return 'cyan';
