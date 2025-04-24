@@ -10,16 +10,16 @@ import { satsToBTC } from '../../utils/crypto';
 import { useAttribution } from '../../context/AttributionContext';
 import Pagination from '../../components/common/Pagination';
 import { useTheme } from '../../context/ThemeContext';
-import { Avatar } from 'antd';
+import { Avatar, Tag } from 'antd';
 import { UserOutlined } from '@ant-design/icons';
 import { getEntityTypeLabel, capitalizeFirstLetter } from '../../utils/display-labels';
 import { EEntityType } from '../../typings/SOT';
+import { getTagColor } from '../../utils/tag-colors';
 
 import { useAppSelector, useAppDispatch } from '../../store/hooks';
 import { selectCurrentOrganization } from '../../store/slices/organizationsSlice';
 import { RootState } from '../../store/store';
 import { fetchSOT } from '../../store/slices/sotSlice';
-
 
 const AddressLayout = styled.div`
   display: flex;
@@ -303,6 +303,21 @@ const Address: React.FC = () => {
     return entity?.entity_type ? getEntityTypeLabel(entity.entity_type as EEntityType) : '';
   };
 
+  // Function to get entity tags
+  const getEntityTags = (entityId: string): string[] => {
+    if (!entityId) return [];
+    const entity = Object.values(itemsMap).find(sot => sot.entity_id === entityId);
+    // Combine all entity tag fields
+    const tags: string[] = [];
+    for (let i = 1; i <= 5; i++) {
+      const tag = entity?.[`entity_tag${i}` as keyof typeof entity];
+      if (tag && typeof tag === 'string') {
+        tags.push(tag);
+      }
+    }
+    return tags;
+  };
+
   return (
     <AddressLayout>
       <FixedAddressHeader>
@@ -310,8 +325,15 @@ const Address: React.FC = () => {
           <h3>Address</h3>
           <hr />
           <AddressInfoWrapper theme={{ theme }}>
-            <div className="address-row">
+            <div className="address-row" style={{ gap: '12px' }}>
               <div className="address-value">{address}</div>
+              {hasAttributionData && attributions[address]?.entity && (
+                <div style={{ display: 'flex', flexWrap: 'wrap' }}>
+                  {getEntityTags(attributions[address].entity).map((tag: string, index: number) => (
+                    <Tag key={index} color={getTagColor(tag)}>{tag}</Tag>
+                  ))}
+                </div>
+              )}
             </div>
 
             {hasAttributionData && (
