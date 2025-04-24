@@ -10,9 +10,12 @@ import { satsToBTC } from '../../utils/crypto';
 import { useAttribution } from '../../context/AttributionContext';
 import Pagination from '../../components/common/Pagination';
 import { useTheme } from '../../context/ThemeContext';
-import { useAppSelector } from '../../store/hooks';
+
+import { useAppSelector, useAppDispatch } from '../../store/hooks';
 import { selectCurrentOrganization } from '../../store/slices/organizationsSlice';
-import { EEntityType } from '../../typings/SOT';
+import { RootState } from '../../store/store';
+import { fetchSOT } from '../../store/slices/sotSlice';
+
 
 const AddressLayout = styled.div`
   display: flex;
@@ -105,6 +108,7 @@ const AddressInfoWrapper = styled.div`
 const Address: React.FC = () => {
   const { address } = useParams();
   const { theme } = useTheme();
+  const dispatch = useAppDispatch();
   const [addrData, setAddrData] = React.useState<IBtcAddress>();
   const [txs, setTxs] = React.useState<BtcTransaction[]>([]);
   const [totalTxs, setTotalTxs] = React.useState<number>(0);
@@ -113,6 +117,9 @@ const Address: React.FC = () => {
   const itemsPerPage = 20;
   const { fetchAttributions, attributions } = useAttribution();
   const organization = useAppSelector(selectCurrentOrganization);
+
+  const { itemsMap } = useAppSelector((state: RootState) => state.sot);
+
   const [summary, setSummary] = React.useState<{
     balance: number;
     total_received: number;
@@ -146,6 +153,11 @@ const Address: React.FC = () => {
     const blockStatsData = await api.blockchain.getAddressBlockStats(address);
     setBlockStats(blockStatsData);
   };
+
+  useEffect(() => {
+    // Fetch SOT data when component mounts
+    dispatch(fetchSOT());
+  }, [dispatch]);
 
   useEffect(() => {
     const fetchAddress = async () => {
@@ -204,8 +216,15 @@ const Address: React.FC = () => {
   const getEntityDisplayName = (entityId: string) => {
     if (!entityId) return '';
     
+
+    // Get the entity type from the SOT data
+    const entity = Object.values(itemsMap).find(sot => sot.entity_id === entityId);
+    const entityType = entity?.entity_type;
+    
     // If allowCSAM is false and the entity is CSAM-related, show "CSAM Related Entity"
-    if (organization?.settings.allowCSAM === false && EEntityType.CSAM === "csam") {
+    if (organization?.settings.allowCSAM === false && 
+        (entityType === "csam" || entityId.toLowerCase().includes('csam'))) {
+
       return 'CSAM Related Entity';
     }
     

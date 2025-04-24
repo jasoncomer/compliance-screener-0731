@@ -4,7 +4,9 @@ import styled from 'styled-components';
 import { colors } from '../../../styles/variables';
 import { useSelector } from 'react-redux';
 import { selectCurrentOrganization } from '../../../store/slices/organizationsSlice';
-import { EEntityType } from '../../../typings/SOT';
+
+import { RootState } from '../../../store/store';
+
 
 import { satsToBTC, truncateAddress } from '../../../utils/crypto';
 import { BtcTransaction } from '../../../typings/BtcTransaction';
@@ -278,6 +280,9 @@ const BtcInputsOutputs: React.FC<BtcInputsOutputsProps> = ({ data }) => {
   const [entityTooltipPosition, setEntityTooltipPosition] = useState({ top: 0, left: 0 });
   const organization = useSelector(selectCurrentOrganization);
 
+  const { itemsMap } = useSelector((state: RootState) => state.sot);
+
+
   const toggleExpand = () => {
     setIsExpanded(!isExpanded);
   };
@@ -364,8 +369,14 @@ const BtcInputsOutputs: React.FC<BtcInputsOutputsProps> = ({ data }) => {
   const getEntityDisplayName = (entityId: string) => {
     if (!entityId) return '';
     
+
+    // Get the entity type from the SOT data
+    const entity = Object.values(itemsMap).find(sot => sot.entity_id === entityId);
+    const entityType = entity?.entity_type;
+    
     // If allowCSAM is false and the entity is CSAM-related, show "CSAM Related Entity"
-    if (organization?.settings.allowCSAM === false && EEntityType.CSAM === "csam") {
+    if (organization?.settings.allowCSAM === false && entityType === "csam") {
+
       return 'CSAM Related Entity';
     }
     
