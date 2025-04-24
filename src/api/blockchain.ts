@@ -45,6 +45,11 @@ const generateReport = async (address: string) => {
   return res.data;
 };
 
+const getAddressBlockStats = async (address: string) => {
+  const res = await axiosInstance.get(`/blockchain/transactions/${address}/getBlockStats`);
+  return res.data.data;
+};
+
 
 
 export const blockchain = {
@@ -55,4 +60,5 @@ export const blockchain = {
   getBlock,
   getTransaction,
   getAddressTransactions,
+  getAddressBlockStats,
 };

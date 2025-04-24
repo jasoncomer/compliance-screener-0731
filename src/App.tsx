@@ -17,7 +17,6 @@ import { lightTheme, darkTheme } from "./styles/theme";
 import ComplianceScreener from './views/Compliance/ComplianceScreener';
 import Admin from './views/Admin';
 import Alerts from './views/Alerts';
-import Cases from './views/Cases';
 import BlockHam from './views/BlockHam';
 import BlockExplorer from './views/blockexplorer/BlockExplorer';
 import RiskScoring from './views/RiskScoring';
@@ -110,7 +109,6 @@ function App() {
             <Route path="compliance-screener" element={<ComplianceScreener />} />
             <Route path="admin" element={<Admin />} />
             <Route path="alerts" element={<Alerts />} />
-            <Route path="cases" element={<Cases />} />
             <Route path="blockham" element={<BlockHam />} />
             <Route path="block-explorer/*" element={<BlockExplorer />} />
             <Route path="risk-scoring" element={<RiskScoring />} />

@@ -160,7 +160,6 @@ export const RightPanel: React.FC<RightPanelProps> = ({ transactionId }) => {
   const transactionDetails = useAppSelector(state => selectTransactionById(state, transactionId));
 
   if (!transactionDetails) return null;
-  console.log(transactionDetails, 'transactionDetails', transactionDetails.status);
 
   return (
     <Panel.Container as={Panel.Right}>

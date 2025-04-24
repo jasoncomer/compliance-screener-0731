@@ -10,10 +10,12 @@ import { satsToBTC } from '../../utils/crypto';
 import { useAttribution } from '../../context/AttributionContext';
 import Pagination from '../../components/common/Pagination';
 import { useTheme } from '../../context/ThemeContext';
+
 import { useAppSelector, useAppDispatch } from '../../store/hooks';
 import { selectCurrentOrganization } from '../../store/slices/organizationsSlice';
 import { RootState } from '../../store/store';
 import { fetchSOT } from '../../store/slices/sotSlice';
+
 
 const AddressLayout = styled.div`
   display: flex;
@@ -115,7 +117,9 @@ const Address: React.FC = () => {
   const itemsPerPage = 20;
   const { fetchAttributions, attributions } = useAttribution();
   const organization = useAppSelector(selectCurrentOrganization);
+
   const { itemsMap } = useAppSelector((state: RootState) => state.sot);
+
   const [summary, setSummary] = React.useState<{
     balance: number;
     total_received: number;
@@ -125,7 +129,30 @@ const Address: React.FC = () => {
     total_received: 0,
     total_spent: 0
   });
+  const [blockStats, setBlockStats] = React.useState<{
+    totalBlocks: number;
+    firstBlock: {
+      blockNumber: number;
+      transactionCount: number;
+      totalValue: number;
+    } | null;
+    lastBlock: {
+      blockNumber: number;
+      transactionCount: number;
+      totalValue: number;
+    } | null;
+  }>({
+    totalBlocks: 0,
+    firstBlock: null,
+    lastBlock: null
+  });
   const totalPages = Math.ceil(totalTxs / itemsPerPage);
+
+  const getAddressStats = async () => {
+    if (!address) return;
+    const blockStatsData = await api.blockchain.getAddressBlockStats(address);
+    setBlockStats(blockStatsData);
+  };
 
   useEffect(() => {
     // Fetch SOT data when component mounts
@@ -137,12 +164,13 @@ const Address: React.FC = () => {
       try {
         if (!address) return;
         setIsLoading(true);
+        getAddressStats();
         const [{ data }, { txs, pagination }] = await Promise.all([
           api.blockchain.getAddress(address),
           api.blockchain.getAddressTransactions(address, {
             page: currentPage,
             limit: itemsPerPage
-          })
+          }),
         ]);
         setAddrData(data);
         setTxs(txs);
@@ -188,6 +216,7 @@ const Address: React.FC = () => {
   const getEntityDisplayName = (entityId: string) => {
     if (!entityId) return '';
     
+
     // Get the entity type from the SOT data
     const entity = Object.values(itemsMap).find(sot => sot.entity_id === entityId);
     const entityType = entity?.entity_type;
@@ -195,6 +224,7 @@ const Address: React.FC = () => {
     // If allowCSAM is false and the entity is CSAM-related, show "CSAM Related Entity"
     if (organization?.settings.allowCSAM === false && 
         (entityType === "csam" || entityId.toLowerCase().includes('csam'))) {
+
       return 'CSAM Related Entity';
     }
     
@@ -248,8 +278,8 @@ const Address: React.FC = () => {
           <SummaryWrapper>
             <div className='col'>
               <span><strong>Balance:</strong> {satsToBTC(summary?.balance || 0)} BTC</span>
-              <span><strong>First block:</strong> {addrData?.first_block?.toLocaleString()}</span>
-              <span><strong>Last block:</strong> {addrData?.last_block?.toLocaleString()}</span>
+              <span><strong>First block:</strong> {blockStats.firstBlock ? `${blockStats.firstBlock.blockNumber}` : 'N/A'}</span>
+              <span><strong>Last block:</strong> {blockStats.lastBlock ? `${blockStats.lastBlock.blockNumber}` : 'N/A'}</span>
             </div>
 
             <div className='col'>

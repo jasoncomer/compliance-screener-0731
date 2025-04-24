@@ -109,9 +109,30 @@ export const selectAllTransactions = createSelector(
   (txs: Record<string, IComplianceTransaction>) => Object.values(txs)
 );
 
+export const selectUnassignedTransactions = createSelector(
+  (state: RootState) => state.complianceTransactions.transactions,
+  (txs: Record<string, IComplianceTransaction>) => Object.values(txs).filter((tx) => 
+    tx.status === ETransactionStatus.UNASSIGNED
+  )
+);
+
+export const selectCompletedTransactions = createSelector(
+  (state: RootState) => state.complianceTransactions.transactions,
+  (txs: Record<string, IComplianceTransaction>) => Object.values(txs).filter((tx) => 
+    tx.status === ETransactionStatus.APPROVED || 
+    tx.status === ETransactionStatus.CLOSED_WITH_NOTE || 
+    tx.status === ETransactionStatus.CLOSED_WITH_SAR
+  )
+);
+
 export const selectActiveTransactions = createSelector(
   (state: RootState) => state.complianceTransactions.transactions,
-  (txs: Record<string, IComplianceTransaction>) => Object.values(txs).filter((tx) => tx.status !== ETransactionStatus.APPROVED)
+  (txs: Record<string, IComplianceTransaction>) => Object.values(txs).filter((tx) => 
+    tx.status !== ETransactionStatus.UNASSIGNED && 
+    tx.status !== ETransactionStatus.APPROVED && 
+    tx.status !== ETransactionStatus.CLOSED_WITH_NOTE && 
+    tx.status !== ETransactionStatus.CLOSED_WITH_SAR
+  )
 );
 
 export const selectTransactionById = createSelector(

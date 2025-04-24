@@ -1,5 +1,3 @@
-import { ECaseStatus } from "./enums";
-
 export interface IUser {
   name: string;
   surname: string;
@@ -13,34 +11,6 @@ export interface IUser {
   _id?: string;
   createdAt?: string;
   updatedAt?: string;
-}
-
-export interface ICaseCreate {
-  clientName: string;
-  clientEmail: string;
-  addresses: string[];
-  status: ECaseStatus;
-  notes?: string;
-}
-
-export interface ICaseStatusChange {
-  oldStatus: ECaseStatus;
-  newStatus: ECaseStatus;
-  changedBy: string; // userId
-  changeDate: string; // ISO date string
-  notes?: string;
-}
-
-export interface ICase extends ICaseCreate {
-  _id: string;
-  caseId: string;
-  userId: string;
-  blockchain?: 'bitcoin' | 'ethereum';
-  key?: string;
-  statusHistory?: ICaseStatusChange[];
-  assignedTo?: string;
-  priority?: 'low' | 'medium' | 'high';
-  lastUpdated?: string;
 }
 
 export interface ITx {

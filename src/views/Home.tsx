@@ -66,7 +66,7 @@ const Home: React.FC = () => {
                   { key: 'block-explorer', label: 'Block Explorer' },
                   { key: 'risk-scoring', label: 'Risk Scoring' },
                   // { key: 'alerts', label: 'Alerts' },
-                  { key: 'cases', label: 'Cases' },
+                  // { key: 'cases', label: 'Cases' },
                   { key: 'blockham', label: 'VASP Entity Explorer' },
                   // { key: 'flow-trace', label: 'Flow Trace' },
                 ]}
