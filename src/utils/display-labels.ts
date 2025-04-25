@@ -3,6 +3,14 @@ import { IOrganizationMember } from "../typings/organization";
 import { EEntityType } from "../typings/SOT";
 
 /**
+ * Capitalizes the first letter of a string
+ */
+export function capitalizeFirstLetter(str: string): string {
+  if (!str) return '';
+  return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+}
+
+/**
  * Converts an entity type to a properly formatted display label
  * Handles capitalization, acronyms, and special formatting cases
  */

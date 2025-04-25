@@ -10,12 +10,16 @@ import { satsToBTC } from '../../utils/crypto';
 import { useAttribution } from '../../context/AttributionContext';
 import Pagination from '../../components/common/Pagination';
 import { useTheme } from '../../context/ThemeContext';
+import { Avatar, Tag } from 'antd';
+import { UserOutlined } from '@ant-design/icons';
+import { getEntityTypeLabel, capitalizeFirstLetter } from '../../utils/display-labels';
+import { EEntityType } from '../../typings/SOT';
+import { getTagColor } from '../../utils/tag-colors';
 
 import { useAppSelector, useAppDispatch } from '../../store/hooks';
 import { selectCurrentOrganization } from '../../store/slices/organizationsSlice';
 import { RootState } from '../../store/store';
 import { fetchSOT } from '../../store/slices/sotSlice';
-
 
 const AddressLayout = styled.div`
   display: flex;
@@ -29,7 +33,6 @@ const FixedAddressHeader = styled.div`
   top: 0;
   background: ${props => props.theme.theme === 'dark' ? '#141414' : '#ffffff'};
   z-index: 9;
-  padding-bottom: 20px;
 `;
 
 const ScrollableAddressContent = styled.div`
@@ -102,6 +105,63 @@ const AddressInfoWrapper = styled.div`
         font-size: 1rem;
       }
     }
+  }
+`;
+
+const EntityRow = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px;
+  background-color: ${props => props.theme.theme === 'dark' ? '#2a2a2a' : '#f5f5f5'};
+  border-radius: 4px;
+  margin-bottom: 8px;
+  flex: 1;
+  min-width: 0;
+`;
+
+const EntitiesContainer = styled.div`
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  width: 100%;
+`;
+
+const EntityInfo = styled.div`
+  display: flex;
+  align-items: flex-start;
+  gap: 5%;
+  flex: 1;
+  min-width: 0;
+
+  .field-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    flex: 1;
+  }
+
+  .entity-name {
+    font-weight: 500;
+    font-size: 1rem;
+    color: ${props => props.theme.theme === 'dark' ? 'white' : '#666666'};
+    
+  }
+
+  .label {
+    color: ${props => props.theme.theme === 'dark' ? '#a0a0a0' : '#666666'};
+    font-size: 0.85rem;
+  }
+
+  .entity-type {
+    color: ${props => props.theme.theme === 'dark' ? 'white' : '#666666'};
+    font-size: 0.9rem;
+    }
+
+  .entity-id {
+    color: ${props => props.theme.theme === 'dark' ? 'white' : '#666666'};
+    font-size: 0.9rem;
+    font-family: monospace;
   }
 `;
 
@@ -216,20 +276,62 @@ const Address: React.FC = () => {
   const getEntityDisplayName = (entityId: string) => {
     if (!entityId) return '';
     
-
-    // Get the entity type from the SOT data
+    // Get the entity from the SOT data
     const entity = Object.values(itemsMap).find(sot => sot.entity_id === entityId);
-    const entityType = entity?.entity_type;
     
     // If allowCSAM is false and the entity is CSAM-related, show "CSAM Related Entity"
     if (organization?.settings.allowCSAM === false && 
-        (entityType === "csam" || entityId.toLowerCase().includes('csam'))) {
-
+        (entity?.entity_type === "csam" || entityId.toLowerCase().includes('csam'))) {
       return 'CSAM Related Entity';
     }
     
-    // Otherwise show the original entity name
+    // Return proper_name if available, otherwise entity_id
+    return entity?.proper_name || entityId;
+  };
+
+  // Function to mask entity IDs related to CSAM
+  const getMaskedEntityId = (entityId: string) => {
+    if (!entityId) return '';
+    
+    // Get the entity from the SOT data
+    const entity = Object.values(itemsMap).find(sot => sot.entity_id === entityId);
+    
+    // If allowCSAM is false and the entity is CSAM-related, mask the ID
+    if (organization?.settings.allowCSAM === false && 
+        (entity?.entity_type === "csam" || entityId.toLowerCase().includes('csam'))) {
+      return 'CSAM Related Entity';
+    }
+    
     return entityId;
+  };
+
+  // Function to get the entity logo
+  const getEntityLogo = (entityId: string) => {
+    if (!entityId) return null;
+    const entity = Object.values(itemsMap).find(sot => sot.entity_id === entityId);
+    return entity?.logo;
+  };
+
+  // Function to get the entity type
+  const getEntityType = (entityId: string) => {
+    if (!entityId) return '';
+    const entity = Object.values(itemsMap).find(sot => sot.entity_id === entityId);
+    return entity?.entity_type ? getEntityTypeLabel(entity.entity_type as EEntityType) : '';
+  };
+
+  // Function to get entity tags
+  const getEntityTags = (entityId: string): string[] => {
+    if (!entityId) return [];
+    const entity = Object.values(itemsMap).find(sot => sot.entity_id === entityId);
+    // Combine all entity tag fields
+    const tags: string[] = [];
+    for (let i = 1; i <= 5; i++) {
+      const tag = entity?.[`entity_tag${i}` as keyof typeof entity];
+      if (tag && typeof tag === 'string') {
+        tags.push(tag);
+      }
+    }
+    return tags;
   };
 
   return (
@@ -239,33 +341,108 @@ const Address: React.FC = () => {
           <h3>Address</h3>
           <hr />
           <AddressInfoWrapper theme={{ theme }}>
-            <div className="address-row">
+            <div className="address-row" style={{ gap: '12px' }}>
               <div className="address-value">{address}</div>
+              {hasAttributionData && attributions[address]?.entity && (
+                <div style={{ display: 'flex', flexWrap: 'wrap' }}>
+                  {getEntityTags(attributions[address].entity).map((tag: string, index: number) => (
+                    <Tag key={index} color={getTagColor(tag)}>{tag}</Tag>
+                  ))}
+                </div>
+              )}
             </div>
 
             {hasAttributionData && (
-              <div className="attribution-grid">
+              <EntitiesContainer>
                 {attributions[address]?.entity && (
-                  <div className="attribution-item">
-                    <div className="label">Entity</div>
-                    <div className="value">{getEntityDisplayName(attributions[address].entity)}</div>
-                  </div>
+                  <EntityRow theme={{ theme }}>
+                    <Avatar
+                      size={40}
+                      src={getEntityLogo(attributions[address].entity)}
+                      icon={!getEntityLogo(attributions[address].entity) && <UserOutlined />}
+                    />
+                    <EntityInfo theme={{ theme }}>
+                      <div className="field-group">
+                        <div className='label'>{capitalizeFirstLetter('Name')}</div>
+                        <div className="entity-name">
+                          {capitalizeFirstLetter(getEntityDisplayName(attributions[address].entity))}
+                        </div>
+                      </div>
+                      <div className="field-group">
+                        <div className='label'>{capitalizeFirstLetter('entity type')}</div>
+                        <div className="entity-type">
+                          {getEntityType(attributions[address].entity)}
+                        </div>
+                      </div>
+                      <div className="field-group">
+                        <div className='label'>{capitalizeFirstLetter('entity id')}</div>
+                        <div className="entity-id">
+                          {getMaskedEntityId(attributions[address].entity)}
+                        </div>
+                      </div>
+                    </EntityInfo>
+                  </EntityRow>
                 )}
 
                 {attributions[address]?.bo && (attributions[address]?.bo !== attributions[address]?.entity) && (
-                  <div className="attribution-item">
-                    <div className="label">Beneficial Owner</div>
-                    <div className="value">{getEntityDisplayName(attributions[address].bo)}</div>
-                  </div>
+                  <EntityRow theme={{ theme }}>
+                    <Avatar
+                      size={40}
+                      src={getEntityLogo(attributions[address].bo)}
+                      icon={!getEntityLogo(attributions[address].bo) && <UserOutlined />}
+                    />
+                    <EntityInfo theme={{ theme }}>
+                      <div className="field-group">
+                        <div className='label'>{capitalizeFirstLetter('Name')}</div>
+                        <div className="entity-name">
+                          {capitalizeFirstLetter(getEntityDisplayName(attributions[address].bo))}
+                        </div>
+                      </div>
+                      <div className="field-group">
+                        <div className='label'>{capitalizeFirstLetter('entity type')}</div>
+                        <div className="entity-type">
+                          {getEntityType(attributions[address].bo)}
+                        </div>
+                      </div>
+                      <div className="field-group">
+                        <div className='label'>{capitalizeFirstLetter('entity id')}</div>
+                        <div className="entity-id">
+                          {getMaskedEntityId(attributions[address].bo)}
+                        </div>
+                      </div>
+                    </EntityInfo>
+                  </EntityRow>
                 )}
 
                 {attributions[address]?.custodian && (
-                  <div className="attribution-item">
-                    <div className="label">Custodian</div>
-                    <div className="value">{attributions[address].custodian}</div>
-                  </div>
+                  <EntityRow theme={{ theme }}>
+                    <Avatar
+                      size={40}
+                      icon={<UserOutlined />}
+                    />
+                    <EntityInfo theme={{ theme }}>
+                      <div className="field-group">
+                        <div className='label'>{capitalizeFirstLetter('Name')}</div>
+                        <div className="entity-name">
+                          {capitalizeFirstLetter(attributions[address].custodian)}
+                        </div>
+                      </div>
+                      <div className="field-group">
+                        <div className='label'>{capitalizeFirstLetter('entity type')}</div>
+                        <div className="entity-type">
+                          Custodian
+                        </div>
+                      </div>
+                      <div className="field-group">
+                        <div className='label'>{capitalizeFirstLetter('entity id')}</div>
+                        <div className="entity-id">
+                          {getMaskedEntityId(attributions[address].custodian)}
+                        </div>
+                      </div>
+                    </EntityInfo>
+                  </EntityRow>
                 )}
-              </div>
+              </EntitiesContainer>
             )}
           </AddressInfoWrapper>
         </BsBlock>
