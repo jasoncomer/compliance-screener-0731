@@ -97,7 +97,7 @@ interface RiskScoringResponse {
 
   overallRisk: number;
   analysisType: 'address' | 'transaction';
-  historicalData: RiskDataPoint[];
+
   sot?: SOTV2;
 }
 

@@ -4,11 +4,8 @@ import styled from 'styled-components';
 import { colors } from '../styles/variables';
 
 const ViewContainer = styled.div<{ $theme: 'light' | 'dark'; $fullWidth?: boolean }>`
-  margin-top: 0;
-  padding-top: 0;
-  border-radius: 4px;
   width: 100%;
-  height: 100%;
+  height: auto;
   background-color: ${props => props.$theme === 'light' ? colors.white : 'inherit'};
 `;
 

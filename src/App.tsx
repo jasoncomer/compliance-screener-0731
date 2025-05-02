@@ -19,7 +19,7 @@ import Admin from './views/Admin';
 import Alerts from './views/Alerts';
 import BlockHam from './views/BlockHam';
 import BlockExplorer from './views/blockexplorer/BlockExplorer';
-import RiskScoring from './views/RiskScoring';
+import RiskScoring from './views/RiskScoring/index';
 import Settings from './views/Settings';
 import FlowTrace from './views/FlowTrace';
 import ProtectedRoute from './components/ProtectedRoute';

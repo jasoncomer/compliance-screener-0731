@@ -4,6 +4,7 @@ import { ComposableMap, Geographies, Geography, Marker } from 'react-simple-maps
 import { GlobalOutlined } from '@ant-design/icons';
 import styled from 'styled-components';
 import { colors } from '../../styles/variables';
+import { countryCoordinates } from '../../config/country-coordinates';
 
 const { Text } = Typography;
 
@@ -23,25 +24,6 @@ const StyledCard = styled(Card)`
     padding: 24px;
   }
 `;
-
-// Map of country names to their approximate center coordinates [longitude, latitude]
-const countryCoordinates: Record<string, [number, number]> = {
-  'United States': [-95, 40],
-  'United Kingdom': [-2, 54],
-  'Singapore': [103.8, 1.3],
-  'China': [105, 35],
-  'Japan': [138, 36],
-  'South Korea': [127.5, 36.5],
-  'Germany': [10, 51],
-  'France': [2, 46],
-  'Italy': [12, 42],
-  'Spain': [-3, 40],
-  'Russia': [105, 60],
-  'India': [78, 22],
-  'Brazil': [-55, -10],
-  'Canada': [-95, 60],
-  'Australia': [133, -25],
-};
 
 interface JurisdictionMapProps {
   countries?: string[];
@@ -89,11 +71,11 @@ const JurisdictionMap: React.FC<JurisdictionMapProps> = ({ countries }) => {
                 <Geography
                   key={geo.rsmKey || geo.properties?.name}
                   geography={geo}
-                  fill="#E6E6E6"
-                  stroke="#D9D9D9"
+                  fill="#2B3847"
+                  stroke="#4A5568"
                   style={{
                     default: { outline: 'none' },
-                    hover: { outline: 'none' },
+                    hover: { outline: 'none', fill: '#3B4A5A' },
                     pressed: { outline: 'none' },
                   }}
                 />
@@ -105,15 +87,16 @@ const JurisdictionMap: React.FC<JurisdictionMapProps> = ({ countries }) => {
             if (!coordinates) return null;
             return (
               <Marker key={country} coordinates={coordinates}>
-                <circle r={4} fill="#1890FF" stroke="#fff" strokeWidth={2} />
+                <circle r={5} fill="#3E8DDD" stroke="#ffffff" strokeWidth={2} />
                 <text
                   textAnchor="middle"
-                  y={-8}
+                  y={-10}
                   style={{
                     fontFamily: 'system-ui',
-                    fontSize: '10px',
-                    fill: '#1890FF',
-                    fontWeight: 500,
+                    fontSize: '11px',
+                    fill: '#ffffff',
+                    fontWeight: 600,
+                    textShadow: '0px 0px 5px rgba(0,0,0,0.7)'
                   }}
                 >
                   {country}

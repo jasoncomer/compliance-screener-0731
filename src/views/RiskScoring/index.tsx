@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import { Spin, Alert } from 'antd';
 import { SafetyOutlined } from '@ant-design/icons';
-import { colors } from '../styles/variables';
-import { calculateRiskScore } from '../api/riskScoring';
-import { RiskScoringResponse } from '../typings/riskScoring';
-import ViewWrapper from '../components/ViewWrapper';
-import RiskDetailsTable from './RiskScoring/RiskDetailsTable';
-import SearchBar from './RiskScoring/SearchBar';
-import RiskScoreCards from './RiskScoring/RiskScoreCards';
+import { colors } from '../../styles/variables';
+import { calculateRiskScore } from '../../api/riskScoring';
+import { RiskScoringResponse } from '../../typings/riskScoring';
+import ViewWrapper from '../../components/ViewWrapper';
+import RiskDetailsTable from './RiskDetailsTable';
+import SearchBar from './SearchBar';
+import RiskScoreCards from './RiskScoreCards';
 import Paragraph from 'antd/es/typography/Paragraph';
 
 const RiskScoring: React.FC = () => {

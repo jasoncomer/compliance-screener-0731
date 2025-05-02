@@ -1,6 +1,6 @@
 import React from 'react';
 import { Card, Table, Tabs, Space, Typography, Progress, Empty } from 'antd';
-import { UserOutlined } from '@ant-design/icons';
+import { UserOutlined, TransactionOutlined, GlobalOutlined } from '@ant-design/icons';
 import { RiskScoringResponse, RiskFactor } from '../../typings/riskScoring';
 import { getRiskIcon } from './utils';
 import JurisdictionMap from './JurisdictionMap';
@@ -34,7 +34,7 @@ const RiskDetailsTable: React.FC<RiskDetailsTableProps> = ({ riskScores }) => {
       key: 'score',
       render: (score: number) => (
         <Progress 
-          percent={score * 100} 
+          percent={Number((score * 100).toFixed(2))} 
           size="small" 
           status={score * 100 > 70 ? 'exception' : 'normal'} 
           strokeColor={score * 100 > 70 ? '#cf1322' : score * 100 > 40 ? '#faad14' : '#3f8600'}
@@ -52,12 +52,28 @@ const RiskDetailsTable: React.FC<RiskDetailsTableProps> = ({ riskScores }) => {
     return null;
   }
 
-  // Custom empty state component for entity risk
+  // Custom empty state components
+  const customTransactionEmptyState = () => (
+    <Empty
+      image={<TransactionOutlined style={{ fontSize: 40, color: colors.primary }} />}
+      imageStyle={{ height: 40 }}
+      description={<Text style={{ color: colors.primary }}>No transaction risk factors were found for this address</Text>}
+    />
+  );
+
   const customEntityEmptyState = () => (
     <Empty
       image={<UserOutlined style={{ fontSize: 40, color: colors.primary }} />}
       imageStyle={{ height: 40 }}
       description={<Text style={{ color: colors.primary }}>No entity information was found for this address</Text>}
+    />
+  );
+
+  const customJurisdictionEmptyState = () => (
+    <Empty
+      image={<GlobalOutlined style={{ fontSize: 40, color: colors.primary }} />}
+      imageStyle={{ height: 40 }}
+      description={<Text style={{ color: colors.primary }}>No jurisdiction risk data available for this address</Text>}
     />
   );
 
@@ -69,6 +85,7 @@ const RiskDetailsTable: React.FC<RiskDetailsTableProps> = ({ riskScores }) => {
             dataSource={riskScores.transactionRisk.factors}
             columns={columns}
             pagination={false}
+            locale={{ emptyText: customTransactionEmptyState() }}
           />
           {/* <TransactionDetails transactionInfo={riskScores.transactionInfo} /> */}
         </TabPane>
@@ -84,16 +101,17 @@ const RiskDetailsTable: React.FC<RiskDetailsTableProps> = ({ riskScores }) => {
           )}
         </TabPane>
         <TabPane tab="Jurisdiction Risk Factors" key="jurisdiction">
-          {riskScores.jurisdictionRisk.factors.length > 0 ? (
-            <Table 
-              dataSource={riskScores.jurisdictionRisk.factors}
-              columns={columns}
-              pagination={false}
-            />
-          ) : null}
-          <JurisdictionMap 
-            countries={riskScores.sot?.associated_countries} 
+          <Table 
+            dataSource={riskScores.jurisdictionRisk.factors}
+            columns={columns}
+            pagination={false}
+            locale={{ emptyText: customJurisdictionEmptyState() }}
           />
+          {riskScores.sot?.associated_countries && riskScores.sot.associated_countries.length > 0 && (
+            <JurisdictionMap 
+              countries={riskScores.sot.associated_countries} 
+            />
+          )}
         </TabPane>
       </Tabs>
     </Card>
