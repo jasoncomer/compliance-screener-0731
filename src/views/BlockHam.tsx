@@ -15,6 +15,16 @@ import { EEntityType } from '../typings/SOT';
 import { getEntityTypeLabel } from '../utils/display-labels';
 import { colors } from '../styles/variables';
 
+const Container = styled.div`
+  display: flex;
+  flex-direction: row;
+  gap: 24px;
+  width: 100%;
+`;
+
+const MainContent = styled.div`
+  flex: 1;
+`;
 
 const SearchWrapper = styled.div`
   width: 100%;
@@ -361,7 +371,14 @@ const BlockHam: React.FC = () => {
         </StyledAutoComplete>
       </SearchWrapper>
 
-      {selectedSot && <SOTEditor sot={selectedSot} onSelectAssociatedSot={handleSelectAssociatedSot} />}
+      {selectedSot && (
+        <Container>
+          <MainContent>
+            <SOTEditor sot={selectedSot} onSelectAssociatedSot={handleSelectAssociatedSot} />
+          </MainContent>
+       
+        </Container>
+      )}
     </ViewWrapper>
   );
 };

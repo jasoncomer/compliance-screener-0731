@@ -11,6 +11,7 @@ import Input from './common/Input';
 import { colors } from '../styles/variables';
 import { useSelector } from 'react-redux';
 import { RootState } from '../store/store';
+import RelatedEntities from './RelatedEntities';
 
 
 const { Title, Text } = Typography;
@@ -30,13 +31,13 @@ const EditorWrapper = styled(Card)`
 
 const AssociatedSOTsWrapper = styled(Card)`
   width: 340px;
-  height: 100%;
+  height: fit-content;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   background-color: ${({ theme }) => theme.theme === 'dark' ? '#141414' : '#fff'};
   max-height: 80vh;
   overflow: hidden;
-
 
   .ant-card-body {
     flex: 1;
@@ -45,6 +46,11 @@ const AssociatedSOTsWrapper = styled(Card)`
     padding: 16px;
     overflow: hidden;
     background-color: inherit;
+    min-height: 0;
+  }
+
+  &:empty {
+    display: none;
   }
 `;
 
@@ -160,6 +166,7 @@ const ScrollableSocialLinks = styled.div`
   overflow-y: auto;
 `;
 
+
 interface SOTEditorProps {
   sot: SOT | null;
   onSelectAssociatedSot: (sot: SOT) => void;
@@ -183,6 +190,7 @@ const SOTEditor: React.FC<SOTEditorProps> = ({ sot, onSelectAssociatedSot }) => 
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
   const { itemsMap } = useSelector((state: RootState) => state.sot);
+  const [hasRelatedEntities, setHasRelatedEntities] = useState(false);
 
   const isValidSOT = (sot: SOT | null): sot is SOT => {
     return sot !== null;
@@ -737,17 +745,27 @@ const SOTEditor: React.FC<SOTEditorProps> = ({ sot, onSelectAssociatedSot }) => 
 
   return (
     <Container>
-      <EditorWrapper>
+      <EditorWrapper style={{ flex: associatedSotItems.length === 0 && !hasRelatedEntities ? '1 1 100%' : '1' }}>
         {renderContent()}
       </EditorWrapper>
 
-      {associatedSotItems && associatedSotItems.length > 0 && (
+      {(associatedSotItems.length > 0 || hasRelatedEntities) && (
         <AssociatedSOTsWrapper>
-          <AssociatedSOTs
-            associatedSots={associatedSotItems}
-            onSelectSot={onSelectAssociatedSot}
-            currentEntityId={sot?.entity_id}
-          />
+          {sot?.entity_id && (
+            <RelatedEntities 
+              entity={sot.entity_id} 
+              onHasEntities={(has) => setHasRelatedEntities(has)}
+            />
+          )}
+          {associatedSotItems && associatedSotItems.length > 0 && (
+            <div style={{ marginTop: associatedSotItems.length > 0 ? '16px' : '0' }}>
+              <AssociatedSOTs
+                associatedSots={associatedSotItems}
+                onSelectSot={onSelectAssociatedSot}
+                currentEntityId={sot?.entity_id}
+              />
+            </div>
+          )}
         </AssociatedSOTsWrapper>
       )}
     </Container>

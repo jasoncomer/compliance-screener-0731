@@ -25,6 +25,9 @@ const TableWrapper = styled.div`
     display: flex;
     flex-direction: column;
     min-width: 0; /* Allow content to shrink below its minimum content size */
+    max-height: 600px; /* Set a maximum height for scrolling */
+    overflow-y: auto; /* Enable vertical scrolling */
+   
     
     .header {
       display: grid;
@@ -34,7 +37,7 @@ const TableWrapper = styled.div`
       border-bottom: 1px solid #ccc;
       padding-bottom: 5px;
       margin-bottom: 10px;
-      position: relative;
+      position: sticky;
       top: 0;
       z-index: 2;
       padding: 8px 10px ;

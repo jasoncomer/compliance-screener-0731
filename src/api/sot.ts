@@ -2,6 +2,11 @@ import { SOT } from "../typings/interfaces";
 import { ISOTSyncLog } from "../typings/SOT";
 import { axiosInstance } from "./api";
 
+interface RelatedEntitiesResponse {
+  unique_bos: string[];
+  unique_custodians: string[];
+}
+
 const updateMongoDb = async () => {
   const res = await axiosInstance.get('/sot/update', { timeout: 180 * 1000 });
   return res.data;
@@ -39,10 +44,18 @@ const getSOT = async () => {
     await axiosInstance.delete(`/sot/${id}`);
   };
 
+export const getRelatedEntities = async (entityId: string): Promise<RelatedEntitiesResponse> => {
+  console.log('Fetching related entities for entity:', entityId);
+  const response = await axiosInstance.get(`/:entity/${entityId}/unique-values`);
+  console.log('Related entities response:', response.data);
+  return response.data.data;
+};
+
 export const sot = {
   updateMongoDb,
   loadLastUpdate,
   getSOT,
   updateSOT,
-  deleteSOT
+  deleteSOT,
+  getRelatedEntities
 };

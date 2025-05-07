@@ -7,37 +7,37 @@ import { useSelector } from 'react-redux';
 import { RootState } from '../store/store';
 import { getEntityTypeLabel } from '../utils/display-labels';
 import { EEntityType } from '../typings/SOT';
-import { useAttribution } from '../context/AttributionContext';
-import { IAttribution } from '../typings/ReferenceAttribution';
+
+import { colors } from '../styles/variables';
 
 const { Title } = Typography;
 
 const AssociatedSOTsWrapper = styled.div`
   text-align: left;
-  
-  h4 {
-    margin: 0;
-  }
-  height: 100%;
   display: flex;
   flex-direction: column;
   flex: 1;
-  
+  padding-right: 16px;
 `;
 
-const ParentEntitiesContainer = styled.div`
-  margin-bottom: 16px;
+const EntitySection = styled.div`
+  margin-bottom: 14px;
+  h4.ant-typography {
+    margin-bottom: 12px;
+    margin-top: 0px;
+    font-size: 16px;
+  }
 `;
 
 const AssociatedList = styled.div`
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
   gap: 8px;
-  margin-top: 12px;
+  margin-top: 0px;
   overflow-y: auto;
   flex: 1;
   padding-right: 8px;
-  max-height: calc(80vh - 80px);
+  max-height: 260px;
   
   &::-webkit-scrollbar {
     width: 6px;
@@ -62,7 +62,6 @@ const StyledCard = styled(Card)`
   transition: all 0.3s;
   margin-bottom: 0;
   border: 1px solid ${({ theme }) => theme.theme === 'dark' ? '#303030' : '#d9d9d9'};
-  // border-radius: 8px;
 
   &:hover {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
@@ -91,7 +90,7 @@ const EntityInfo = styled.div`
   }
   
   .entity-type {
-    color: #666;
+    color: ${({ theme }) => theme.theme === 'dark' ? colors.gray[400] : colors.gray[600]};
     font-size: 12px;
   }
 `;
@@ -109,7 +108,7 @@ const AssociatedSOTs: React.FC<AssociatedSOTsProps> = ({ associatedSots, onSelec
   }
 
   const { itemsMap } = useSelector((state: RootState) => state.sot);
-  const { attributions } = useAttribution();
+  
   
   // Early return if itemsMap is empty or currentEntity doesn't exist
   if (!itemsMap || Object.keys(itemsMap).length === 0) {
@@ -128,18 +127,6 @@ const AssociatedSOTs: React.FC<AssociatedSOTsProps> = ({ associatedSots, onSelec
   });
   const parentEntity = parentEntityKey ? itemsMap[parentEntityKey] : null;
 
-  // Find beneficial owners
-  const beneficialOwners = Object.entries(attributions)
-    .filter(([_, attribution]: [string, IAttribution]) => 
-      attribution.entity === currentEntityId && 
-      attribution.bo && 
-      attribution.bo !== attribution.entity
-    )
-    .map(([addr, attribution]: [string, IAttribution]) => ({
-      addr,
-      bo: attribution.bo
-    }));
-
   // If we're looking at a parent entity, show its children
   const isParentEntity = !currentEntity.parent_id;
   const childEntities = isParentEntity 
@@ -157,13 +144,12 @@ const AssociatedSOTs: React.FC<AssociatedSOTsProps> = ({ associatedSots, onSelec
 
   // Check if there's any content to display
   const hasParentEntity = parentEntity !== null && Object.keys(parentEntity).length > 0;
-  const hasBeneficialOwners = beneficialOwners.length > 0;
   const hasAssociatedEntities = isParentEntity 
     ? childEntities.length > 0 
     : siblingEntities.length > 0;
 
   // If there's no content to display at all, return null
-  if (!hasParentEntity && !hasBeneficialOwners && !hasAssociatedEntities) {
+  if (!hasParentEntity && !hasAssociatedEntities) {
     return null;
   }
 
@@ -171,7 +157,7 @@ const AssociatedSOTs: React.FC<AssociatedSOTsProps> = ({ associatedSots, onSelec
     if (entities.length === 0) return null;
     
     return (
-      <>
+      <EntitySection>
         <Title level={4}>{title} ({entities.length})</Title>
         <AssociatedList>
           {entities.map((associatedSot) => (
@@ -200,18 +186,13 @@ const AssociatedSOTs: React.FC<AssociatedSOTsProps> = ({ associatedSots, onSelec
             </StyledCard>
           ))}
         </AssociatedList>
-      </>
+      </EntitySection>
     );
   };
 
   return (
     <AssociatedSOTsWrapper>
-      {/* Only show parent entity container if we're not already looking at the parent */}
-      {!isParentEntity && parentEntity && (
-        <ParentEntitiesContainer>
-          {renderEntityList([parentEntity], "Parent Entity")}
-        </ParentEntitiesContainer>
-      )}
+      {!isParentEntity && parentEntity && renderEntityList([parentEntity], "Parent Entity")}
       {isParentEntity 
         ? childEntities.length > 0 && renderEntityList(childEntities, "Associated Entities")
         : siblingEntities.length > 0 && renderEntityList(siblingEntities, "Associated Entities")
