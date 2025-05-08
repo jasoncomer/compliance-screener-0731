@@ -372,13 +372,6 @@ const OrganizationSection: React.FC<OrganizationSectionProps> = ({
             >
               Invite Member
             </Button>
-            <Tooltip title="Generate Invite Code">
-              <Button
-                icon={<SettingOutlined />}
-                onClick={handleGenerateInviteCode}
-                loading={isGeneratingCode}
-              />
-            </Tooltip>
           </div>
         </div>
 

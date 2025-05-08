@@ -55,21 +55,21 @@ const Settings = () => {
     }
   };
 
-  const handleGenerateInviteCode = async () => {
-    // This API endpoint doesn't exist yet, should be added
-    try {
-      // For now, generate a mock code
-      return 'MOCK-INVITE-CODE';
+  // const handleGenerateInviteCode = async () => {
+  //   // This API endpoint doesn't exist yet, should be added
+  //   try {
+  //     // For now, generate a mock code
+  //     return 'MOCK-INVITE-CODE';
 
-      // When API is available:
-      // const response = await api.organizations.generateInviteCode(organization._id);
-      // return response.data.code;
-    } catch (error) {
-      console.error('Error generating invite code:', error);
-      message.error('Failed to generate invite code');
-      throw error;
-    }
-  };
+  //     // When API is available:
+  //     // const response = await api.organizations.generateInviteCode(organization._id);
+  //     // return response.data.code;
+  //   } catch (error) {
+  //     console.error('Error generating invite code:', error);
+  //     message.error('Failed to generate invite code');
+  //     throw error;
+  //   }
+  // };
 
   const handleRevokeInvitation = async (invitationId: string) => {
     // This API endpoint doesn't exist yet, should be added
@@ -134,7 +134,7 @@ const Settings = () => {
             currentUser={user || undefined}
             pendingInvitations={pendingInvitations}
             onInviteMember={handleInviteMember}
-            onGenerateInviteCode={handleGenerateInviteCode}
+            // onGenerateInviteCode={handleGenerateInviteCode}
             onRevokeInvitation={handleRevokeInvitation}
             onUpdateOrganization={handleUpdateOrganization}
           />
