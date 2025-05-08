@@ -17,7 +17,7 @@ import { lightTheme, darkTheme } from "./styles/theme";
 import ComplianceScreener from './views/Compliance/ComplianceScreener';
 import Admin from './views/Admin';
 import Alerts from './views/Alerts';
-import BlockHam from './views/BlockHam';
+import BlockHam from './views/VASPExplorer/VASPExplorer';
 import BlockExplorer from './views/blockexplorer/BlockExplorer';
 import RiskScoring from './views/RiskScoring/index';
 import Settings from './views/Settings';

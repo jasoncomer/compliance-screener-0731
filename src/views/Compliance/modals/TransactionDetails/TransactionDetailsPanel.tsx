@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import styled from 'styled-components';
 import { colors } from '../../../../styles/variables';
 import { IComplianceTransaction } from '../../../../typings/compliance';
@@ -8,6 +8,8 @@ import { useAppSelector } from '../../../../store/hooks';
 import { selectActiveOrgMembersMap } from '../../../../store/slices/organizationsSlice';
 import { getUserDisplayName } from '../../../../utils/display-labels';
 import { selectTransactionById } from '../../../../store/slices/complianceTransactionsSlice';
+import EntityQuickView from '../../../../components/EntityQuickView';
+import { SOT } from '../../../../typings/interfaces';
 
 // Base Styled Components
 const Panel = {
@@ -50,6 +52,20 @@ const Field = {
     font-weight: bold;
   `,
 
+  EntityContainer: styled.div`
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-bottom: 8px;
+    flex-wrap: wrap;
+  `,
+
+  EntityItem: styled.div`
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  `,
+
   Empty: styled.span`
     color: #8c8c8c;
     font-style: italic;
@@ -72,6 +88,17 @@ const Amount = {
   `
 };
 
+// Custom styled wrapper for EntityQuickView to control size in the modal
+const CompactEntityQuickView = styled(EntityQuickView)`
+  .ant-typography {
+    font-size: 12px;
+  }
+
+  svg {
+    font-size: 12px;
+  }
+`;
+
 interface LeftPanelProps {
   transactionDetails: IComplianceTransaction | null;
   currencySymbols: Record<string, string>;
@@ -88,7 +115,33 @@ export const LeftPanel: React.FC<LeftPanelProps> = ({
   onClose,
 }) => {
   const denom = 'USD';
+  const { itemsMap } = useAppSelector(state => state.sot);
+  const [_, setSelectedEntitySot] = useState<SOT | null>(null);
+  
   if (!transactionDetails) return null;
+
+  // Find SOT record by entity ID
+  const getEntitySot = (entityId: string): SOT | null => {
+    return Object.values(itemsMap).find(sot => sot.entity_id === entityId) || null;
+  };
+
+  // Handle view full profile for entity
+  const handleViewFullProfile = (sot: SOT) => {
+    // TODO: Implement navigation to full entity profile view
+    console.log('View full profile for entity:', sot.entity_id);
+    onEntityClick(transactionDetails);
+    onClose();
+  };
+
+  // Handle quick view click
+  const handleQuickView = (e: React.MouseEvent, entityId: string) => {
+    e.stopPropagation();
+    // Set the quick view SOT
+    const sot = getEntitySot(entityId);
+    if (sot) {
+      setSelectedEntitySot(sot);
+    }
+  };
 
   return (
     <Panel.Container as={Panel.Left}>
@@ -115,19 +168,41 @@ export const LeftPanel: React.FC<LeftPanelProps> = ({
           {transactionDetails.counterpartyEntities.length === 0 && (
             <Field.Empty>No attributed counterparty entities</Field.Empty>
           )}
-          {transactionDetails.counterpartyEntities?.map((entity, index) => (
-            <React.Fragment key={entity}>
-              <Field.Link
-                onClick={() => {
-                  onEntityClick(transactionDetails);
-                  onClose();
-                }}
-              >
-                {attributions[entity]?.entity || entity}
-              </Field.Link>
-              {index < transactionDetails.counterpartyEntities.length - 1 && ', '}
-            </React.Fragment>
-          ))}
+          <Field.EntityContainer>
+            {transactionDetails.counterpartyEntities?.map((entity, index) => {
+              const entityName = attributions[entity]?.entity || entity;
+              const entitySot = getEntitySot(entityName);
+              
+              return (
+                <Field.EntityItem key={entity}>
+                  <Field.Link
+                    onClick={() => {
+                      onEntityClick(transactionDetails);
+                      onClose();
+                    }}
+                  >
+                    {entityName}
+                  </Field.Link>
+
+                  {entitySot && (
+                    <CompactEntityQuickView 
+                      entity={{
+                        _id: entitySot._id,
+                        proper_name: entitySot.proper_name,
+                        entity_id: entitySot.entity_id
+                      }}
+                      sot={entitySot}
+                      onViewFull={handleViewFullProfile}
+                      onQuickView={handleQuickView}
+                      popoverPlacement="right"
+                      popoverWidth={400}
+                    />
+                  )}
+                  {index < transactionDetails.counterpartyEntities.length - 1 && ', '}
+                </Field.EntityItem>
+              );
+            })}
+          </Field.EntityContainer>
         </Field.Value>
       </Field.Container>
 

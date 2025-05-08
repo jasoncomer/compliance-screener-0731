@@ -198,7 +198,11 @@ const ActiveCasesTable: React.FC<ActiveCasesTableProps> = ({
         dataSource={transactions}
         columns={columns}
         rowKey="_id"
-        sticky={{ offsetHeader: 80 }}
+        sticky={{
+          offsetHeader: 0,
+          offsetScroll: 0,
+          getContainer: () => document.body
+        }}
         pagination={{
           current: currentPage,
           pageSize: pageSize,

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Form, Button, message, Tabs, Table, Modal, Select, Tag, Tooltip, InputNumber, Switch } from 'antd';
-import { UserAddOutlined, CopyOutlined, SettingOutlined, InfoCircleOutlined } from '@ant-design/icons';
+import { UserAddOutlined, CopyOutlined, InfoCircleOutlined } from '@ant-design/icons';
 import { Card, SubTitle, InfoList, InfoItem, Label, Value } from './styled';
 import { IOrganization, IMember, IInvitation, EMemberRole, IOrganizationMember } from '../../../typings/organization';
 import { IUser } from '../../../typings/interfaces';
@@ -16,7 +16,6 @@ interface OrganizationSectionProps {
   pendingInvitations: IInvitation[];
   onInviteMember?: (email: string, role: EMemberRole) => void;
   onRemoveMember?: (memberId: string) => void;
-  onGenerateInviteCode?: () => Promise<string>;
   onRevokeInvitation?: (invitationId: string) => Promise<void> | void;
 }
 
@@ -27,7 +26,6 @@ const OrganizationSection: React.FC<OrganizationSectionProps> = ({
   pendingInvitations = [],
   onInviteMember,
   onRemoveMember,
-  onGenerateInviteCode,
   onRevokeInvitation
 }) => {
   const members = useAppSelector(selectActiveOrgMembers);
@@ -40,8 +38,7 @@ const OrganizationSection: React.FC<OrganizationSectionProps> = ({
   const [activeTab, setActiveTab] = useState('general');
   const [isInviteModalVisible, setIsInviteModalVisible] = useState(false);
   const [inviteForm] = Form.useForm();
-  const [inviteCode, setInviteCode] = useState<string>();
-  const [isGeneratingCode, setIsGeneratingCode] = useState(false);
+  const [inviteCode, _] = useState<string>();
   const [updatingRoleForMemberId, setUpdatingRoleForMemberId] = useState<string | null>(null);
   const [revokingInvitationId, setRevokingInvitationId] = useState<string | null>(null);
   const [isSubmittingCompliance, setIsSubmittingCompliance] = useState(false);
@@ -106,20 +103,6 @@ const OrganizationSection: React.FC<OrganizationSectionProps> = ({
     onInviteMember?.(values.email, values.role);
     setIsInviteModalVisible(false);
     inviteForm.resetFields();
-  };
-
-  const handleGenerateInviteCode = async () => {
-    if (!onGenerateInviteCode) return;
-
-    setIsGeneratingCode(true);
-    try {
-      const code = await onGenerateInviteCode();
-      setInviteCode(code);
-    } catch (error) {
-      message.error('Failed to generate invite code');
-    } finally {
-      setIsGeneratingCode(false);
-    }
   };
 
   const copyInviteCode = () => {

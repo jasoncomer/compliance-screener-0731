@@ -1,11 +1,11 @@
-import { FC, useEffect, useRef } from 'react';
+import { FC, useRef } from 'react';
 import { Modal } from 'antd';
 import { IComplianceTransaction } from '../../../../typings/compliance';
 import TransactionDetailsHeader from './TransactionDetailsHeader';
 import LeftPanel, { RightPanel } from './TransactionDetailsPanel';
 import { TransactionDetailsFooter } from './TransactionDetailsFooter';
-import { useAppSelector, useAppDispatch } from '../../../../store/hooks';
-import { selectTransactionById, fetchComplianceTransactions } from '../../../../store/slices/complianceTransactionsSlice';
+import { useAppSelector } from '../../../../store/hooks';
+import { selectTransactionById } from '../../../../store/slices/complianceTransactionsSlice';
 import { useAttribution } from '../../../../context/AttributionContext';
 import { currencySymbols } from '../../components/CurrencySelector';
 
@@ -20,23 +20,11 @@ export const TransactionDetailsModal: FC<TransactionDetailsModalProps> = ({
   onClose,
   transactionId,
 }) => {
-  const dispatch = useAppDispatch();
   const { attributions } = useAttribution();
   const headerRef = useRef<{ highlightAssignSelector: () => void }>(null);
   const transactionDetails = useAppSelector(state => 
     transactionId ? selectTransactionById(state, transactionId) : null
   );
-
-  useEffect(() => {
-    console.log('transactionDetails', transactionDetails);
-  }, [transactionDetails]);
-
-  // Refresh transaction data when modal opens
-  useEffect(() => {
-    if (isVisible && transactionId) {
-      dispatch(fetchComplianceTransactions({}));
-    }
-  }, [isVisible, transactionId, dispatch]);
 
   if (!transactionDetails || !transactionId) return null;
 

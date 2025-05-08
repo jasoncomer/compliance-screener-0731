@@ -85,6 +85,7 @@ const RiskDetailsTable: React.FC<RiskDetailsTableProps> = ({ riskScores }) => {
             dataSource={riskScores.transactionRisk.factors}
             columns={columns}
             pagination={false}
+            rowKey="id"
             locale={{ emptyText: customTransactionEmptyState() }}
           />
           {/* <TransactionDetails transactionInfo={riskScores.transactionInfo} /> */}
@@ -95,6 +96,7 @@ const RiskDetailsTable: React.FC<RiskDetailsTableProps> = ({ riskScores }) => {
             columns={columns}
             pagination={false}
             locale={{ emptyText: customEntityEmptyState() }}
+            rowKey="id"
           />
           {riskScores.sot && (
             <EntityDetails sot={riskScores.sot} />
@@ -106,6 +108,7 @@ const RiskDetailsTable: React.FC<RiskDetailsTableProps> = ({ riskScores }) => {
             columns={columns}
             pagination={false}
             locale={{ emptyText: customJurisdictionEmptyState() }}
+            rowKey="id"
           />
           {riskScores.sot?.associated_countries && riskScores.sot.associated_countries.length > 0 && (
             <JurisdictionMap 

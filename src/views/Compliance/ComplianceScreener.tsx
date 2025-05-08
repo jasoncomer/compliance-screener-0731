@@ -4,7 +4,7 @@ import { useTheme } from '../../context/ThemeContext';
 import ViewWrapper from '../../components/ViewWrapper';
 import { AuditOutlined, DatabaseOutlined, TableOutlined, FileSearchOutlined } from '@ant-design/icons';
 import { colors } from '../../styles/variables';
-import UnassignedTransactionsTab from './components/UnassignedTransactionsTabTab';
+import UnassignedTransactionsTab from './components/UnassignedTransactionsTab';
 import AddressesTab from './components/AddressesTab';
 import ActiveCasesTab from './components/ActiveCasesTab';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';

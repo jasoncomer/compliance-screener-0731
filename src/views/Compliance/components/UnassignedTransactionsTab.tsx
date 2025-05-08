@@ -1,200 +1,233 @@
-import React, { useState } from 'react';
-import { Table, Tag } from 'antd';
-import { colors } from '../../../styles/variables';
-import { ETransactionStatus, IComplianceTransaction } from '../../../typings/compliance';
-import { conversionRates, currencySymbols } from './CurrencySelector';
-import { TransactionDetailsModal } from '../modals/TransactionDetails/TransactionDetailsModal';
-import { useAttribution } from '../../../context/AttributionContext';
-import { truncateAddress } from '../../../utils/crypto';
-import { getRiskScoreColor } from '../utils/compliance.utils';
-import { getBlockchainLabel } from '../../../utils/display-labels';
+import React, { useState, useEffect } from 'react';
+import { Form, Button, Select, Input, DatePicker, Card } from 'antd';
+import { FilterOutlined, ClearOutlined } from '@ant-design/icons';
+import { ETransactionStatus, TransactionFilters } from '../../../typings/compliance';
+import ComplianceHeaderActions from './ComplianceHeaderActions';
+import UnassignedTransactionsTable from './UnassignedTransactionsTable';
+import { EntityModal } from '../modals/EntityModal';
+import { selectCurrentOrganization } from '../../../store/slices/organizationsSlice';
+import { useAppDispatch, useAppSelector } from '../../../store/hooks';
+import { 
+  fetchComplianceTransactions, 
+  selectUnassignedTransactions, 
+  selectPagination, 
+  selectIsLoading,
+  selectComplianceFilters,
+  setFilters,
+  setPage,
+  setLimit
+} from '../../../store/slices/complianceTransactionsSlice';
 
+const { RangePicker } = DatePicker;
 
-interface TransactionsTableProps {
-  transactions: IComplianceTransaction[];
-  totalTransactions: number;
-  currentPage: number;
-  pageSize: number;
-  loading: boolean;
-  onTableChange: (pagination: any) => void;
-  onEntityClick: (record: IComplianceTransaction) => void;
+interface UnassignedTransactionsTabProps {
+  isActive: boolean;
 }
 
-const UnassignedTransactionsTabTable: React.FC<TransactionsTableProps> = ({
-  transactions,
-  totalTransactions,
-  currentPage,
-  pageSize,
-  loading,
-  onTableChange,
-  onEntityClick,
-}) => {
-  const denom = 'USD';
-  const { attributions } = useAttribution();
-  const [isDetailsModalVisible, setIsDetailsModalVisible] = useState(false);
-  const [selectedTransactionId, setSelectedTransactionId] = useState<string | null>(null);
+const UnassignedTransactionsTab: React.FC<UnassignedTransactionsTabProps> = ({ isActive }) => {
+  const organization = useAppSelector(selectCurrentOrganization);
+  const dispatch = useAppDispatch();
+  
+  // Use Redux store data
+  const transactions = useAppSelector(selectUnassignedTransactions);
+  const { total: totalTransactions, page: currentPage, limit: pageSize } = useAppSelector(selectPagination);
+  const loading = useAppSelector(selectIsLoading);
+  const filters = useAppSelector(selectComplianceFilters);
+  
+  const [modalVisible, setModalVisible] = useState<boolean>(false);
+  const [form] = Form.useForm();
+  
+  // Track available filter options
+  const [availableBlockchains, setAvailableBlockchains] = useState<string[]>([]);
 
-  // Function to handle row click to show transaction details
-  const handleRowClick = (record: IComplianceTransaction) => {
-    setSelectedTransactionId(record._id);
-    setIsDetailsModalVisible(true);
+  // Load transactions from Redux store
+  useEffect(() => {
+    if (!isActive) return;
+
+    const mergedFilters = { 
+      ...filters,
+      page: currentPage,
+      limit: pageSize,
+      status: ETransactionStatus.UNASSIGNED // Only show unassigned transactions
+    };
+    dispatch(fetchComplianceTransactions(mergedFilters));
+  }, [dispatch, filters, organization, currentPage, pageSize, isActive]);
+
+  // Extract unique filter options from transaction data
+  useEffect(() => {
+    if (transactions.length > 0) {
+      // Extract unique blockchains
+      const blockchains = [...new Set(transactions.map(tx => tx.blockchain))];
+      setAvailableBlockchains(blockchains);
+    }
+  }, [transactions]);
+
+  // Handle table change (pagination, sorting)
+  const handleTableChange = (pagination: any) => {
+    dispatch(setPage(pagination.current));
+    dispatch(setLimit(pagination.pageSize));
   };
 
-  const columns = [
-    {
-      title: 'Status',
-      dataIndex: 'status',
-      key: 'status',
-      width: 120,
-      // Remove filter dropdown since we're using the form above
-      render: (status: ETransactionStatus) => (
-        <Tag color={
-          status === ETransactionStatus.APPROVED 
-            ? 'green' 
-            : status === ETransactionStatus.HOLD 
-              ? 'orange' 
-              : status === ETransactionStatus.CLOSED_WITH_NOTE || status === ETransactionStatus.CLOSED_WITH_SAR 
-                ? 'red' 
-                : 'blue'
-        }>
-          {status.replace(/_/g, ' ')}
-        </Tag>
-      ),
-    },
-    {
-      title: 'Client Id',
-      dataIndex: 'clientId',
-      key: 'clientId',
-      width: 100,
-      sorter: (a: IComplianceTransaction, b: IComplianceTransaction) => a.clientId.localeCompare(b.clientId),
-    },
-    {
-      title: 'Counterparty Entities',
-      dataIndex: 'counterpartyEntities',
-      key: 'counterpartyEntities',
-      width: 200,
-      render: (counterpartyEntities: string[], record: IComplianceTransaction) => {
-        if (!counterpartyEntities.length) return (
-          <span style={{ color: colors.primaryDark }}>N/A</span>
-        );
-        return (
-          <a onClick={() => onEntityClick(record)} style={{ cursor: 'pointer', color: colors.attributionHover, fontWeight: 'bold' }}>
-            {counterpartyEntities.map((entity) => attributions[entity]?.entity || entity).join(', ')}
-          </a>
-        )
-      }
-    },
-    {
-      title: 'Transaction ID',
-      dataIndex: 'txId',
-      key: 'txId',
-      width: 200,
-      sorter: (a: IComplianceTransaction, b: IComplianceTransaction) => a.txId.localeCompare(b.txId),
-      render: (txId: string) => {
-        if (!txId) return null;
-        return (
-          <a href={`/home/block-explorer/transaction/${txId}`} target="_blank" rel="noopener noreferrer">
-            {truncateAddress(txId)}
-          </a>
-        )
-      }
-    },
-    {
-      title: 'Blockchain',
-      dataIndex: 'blockchain',
-      key: 'blockchain',
-      width: 120,
-      sorter: (a: IComplianceTransaction, b: IComplianceTransaction) => a.blockchain.localeCompare(b.blockchain),
-      render: (blockchain: string) => {
-        return getBlockchainLabel(blockchain);
-      }
-    },
-    {
-      title: 'Amount',
-      dataIndex: 'amount',
-      key: 'amount',
-      width: 150,
-      sorter: (a: IComplianceTransaction, b: IComplianceTransaction) => a.amount - b.amount,
-      render: (amount: number) => (
-        <span>
-          BTC {(amount / 100000000)}
-        </span>
-      )
-    },
-    {
-      title: 'Converted Amount',
-      key: 'convertedAmount',
-      width: 140,
-      sorter: (a: IComplianceTransaction, b: IComplianceTransaction) =>
-        (a.amount * conversionRates[denom]) - (b.amount * conversionRates[denom]),
-      render: (_: any, record: IComplianceTransaction) => (
-        <span>
-          {currencySymbols[denom]}
-          {
-            ((record.amount / 100000000) * 83000)
-              .toLocaleString(
-                'en-US',
-                { minimumFractionDigits: 0, maximumFractionDigits: 2 }
-              )
-          }
-        </span>
-      )
-    },
-    {
-      title: 'Timestamp',
-      dataIndex: 'timestamp',
-      key: 'timestamp',
-      width: 140,
-      render: (timestamp: string) => new Date(timestamp).toLocaleString(),
-      sorter: (a: IComplianceTransaction, b: IComplianceTransaction) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(),
-    },
-    {
-      title: 'Risk Score',
-      dataIndex: 'riskScores',
-      key: 'riskScores',
-      width: 80,
-      render: (scores: number[]) => {
-        if (!scores || scores.length === 0) return 'N/A';
-        const score = scores.reduce((acc, curr) => acc + curr, 0) / scores.length;
-        return (
-          <Tag color={getRiskScoreColor(score)} style={{ fontWeight: 'bold' }}>
-            {score}
-          </Tag>
-        );
-      }
-    },
-  ];
+  
+  // Clear all filters
+  const handleClearFilters = () => {
+    form.resetFields();
+    dispatch(setFilters({
+      page: 1,
+      limit: pageSize,
+      status: ETransactionStatus.UNASSIGNED // Maintain unassigned filter
+    }));
+  };
+  
+  // Process filter values and update the store
+  const processFilterValues = (values: any) => {
+    // Create new filter object
+    const newFilters: TransactionFilters = {
+      ...filters,
+      page: 1, // Reset to first page when applying new filters
+    };
+    
+    // Add form filters
+    if (values.status) {
+      newFilters.status = values.status;
+    } else {
+      delete newFilters.status;
+    }
+    
+    if (values.blockchain) {
+      newFilters.blockchain = values.blockchain;
+    } else {
+      delete newFilters.blockchain;
+    }
+    
+    if (values.clientId) {
+      newFilters.clientId = values.clientId;
+    } else {
+      delete newFilters.clientId;
+    }
+    
+    // Date range filter
+    if (values.dateRange && values.dateRange.length === 2) {
+      newFilters.timestamp = {
+        from: values.dateRange[0].format('YYYY-MM-DD'),
+        to: values.dateRange[1].format('YYYY-MM-DD')
+      };
+    } else {
+      delete newFilters.timestamp;
+    }
+    
+    // Amount filters
+    if (values.minAmount) {
+      newFilters.minAmount = parseFloat(values.minAmount) * 100000000; // Convert to satoshis
+    } else {
+      delete newFilters.minAmount;
+    }
+    
+    if (values.maxAmount) {
+      newFilters.maxAmount = parseFloat(values.maxAmount) * 100000000; // Convert to satoshis
+    } else {
+      delete newFilters.maxAmount;
+    }
+    
+    // Risk level filter
+    if (values.riskLevel) {
+      newFilters.riskLevel = values.riskLevel;
+    } else {
+      delete newFilters.riskLevel;
+    }
+    
+    dispatch(setFilters(newFilters));
+  };
+
+  // Handle filter changes
+  const handleFilterChange = () => {
+    const values = form.getFieldsValue();
+    processFilterValues(values);
+  };
 
   return (
-    <>
-      <Table
-        className="compliance-table"
-        dataSource={transactions}
-        columns={columns}
-        rowKey="_id"
-        sticky={{ offsetHeader: 80 }}
-        pagination={{
-          current: currentPage,
-          pageSize: pageSize,
-          total: totalTransactions,
-          showSizeChanger: true,
-          pageSizeOptions: ['10', '20', '50', '100'],
-        }}
+    <div>
+      <ComplianceHeaderActions
+        txCount={totalTransactions}
+      />
+      
+      {/* Filter Panel */}
+      <Card 
+        title={<><FilterOutlined /> Filters</>}
+        style={{ marginBottom: 16 }}
+        size="small"
+        extra={
+          <Button 
+            icon={<ClearOutlined />} 
+            onClick={handleClearFilters}
+            size="small"
+          >
+            Clear
+          </Button>
+        }
+      >
+        <Form
+          form={form}
+          layout="inline"
+          style={{ display: 'flex', flexWrap: 'wrap', height: '32px' }}
+          onValuesChange={handleFilterChange}
+        >
+          <Form.Item name="blockchain" style={{ minWidth: 120 }}>
+            <Select 
+              placeholder="Blockchain"
+              allowClear
+              size="small"
+            >
+              {availableBlockchains.map(blockchain => (
+                <Select.Option key={blockchain} value={blockchain}>
+                  {blockchain.charAt(0).toUpperCase() + blockchain.slice(1)}
+                </Select.Option>
+              ))}
+            </Select>
+          </Form.Item>
+          
+          <Form.Item name="dateRange" style={{ marginBottom: 8 }}>
+            <RangePicker size="small" placeholder={['From date', 'To date']} />
+          </Form.Item>
+          
+          <Form.Item name="riskLevel" style={{ minWidth: 120 }}>
+            <Select 
+              placeholder="Risk level"
+              allowClear
+              size="small"
+            >
+              <Select.Option value="high">High ({'>'}70)</Select.Option>
+              <Select.Option value="medium">Medium (41-70)</Select.Option>
+              <Select.Option value="low">Low ({'≤'}40)</Select.Option>
+            </Select>
+          </Form.Item>
+          
+          <Form.Item name="minAmount" style={{ width: 100 }}>
+            <Input type="number" placeholder="Min BTC" step="0.0001" size="small" />
+          </Form.Item>
+          
+          <Form.Item name="maxAmount" style={{ width: 100 }}>
+            <Input type="number" placeholder="Max BTC" step="0.0001" size="small" />
+          </Form.Item>
+        </Form>
+      </Card>
+      
+      <UnassignedTransactionsTable
+        transactions={transactions}
+        totalTransactions={totalTransactions}
+        currentPage={currentPage}
+        pageSize={pageSize}
         loading={loading}
-        onChange={onTableChange}
-        onRow={(record) => ({
-          onClick: () => handleRowClick(record),
-        })}
-        scroll={{ x: 1400 }}
+        onTableChange={handleTableChange}
       />
-
-      <TransactionDetailsModal 
-        isVisible={isDetailsModalVisible}
-        onClose={() => setIsDetailsModalVisible(false)}
-        transactionId={selectedTransactionId}
+      
+      <EntityModal
+        visible={modalVisible}
+        onClose={() => setModalVisible(false)}
+        entity={null}
       />
-    </>
+    </div>
   );
 };
 
-export default UnassignedTransactionsTabTable; 
+export default UnassignedTransactionsTab;
