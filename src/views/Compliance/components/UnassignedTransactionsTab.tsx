@@ -48,7 +48,6 @@ const UnassignedTransactionsTab: React.FC<UnassignedTransactionsTabProps> = ({ i
       ...filters,
       page: currentPage,
       limit: pageSize,
-      status: ETransactionStatus.UNASSIGNED // Only show unassigned transactions
     };
     dispatch(fetchComplianceTransactions(mergedFilters));
   }, [dispatch, filters, organization, currentPage, pageSize, isActive]);

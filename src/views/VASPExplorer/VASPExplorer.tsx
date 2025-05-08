@@ -166,7 +166,7 @@ const BlockHam: React.FC = () => {
     // Clear the quick view SOT to close the popover
     setQuickViewSot(null);
   }, [setSelectedSot, setQuickViewSot]);
-
+  
   const handleSearch = useCallback(async (searchText: string) => {
     if (!searchText) {
       setOptions([]);
@@ -281,7 +281,7 @@ const BlockHam: React.FC = () => {
                   )}
                 </OptionInfo>
               </OptionContent>
-              <EntityQuickView
+              <EntityQuickView 
                 entity={entity}
                 sot={sotMap[entity._id]}
                 onViewFull={handleViewFullProfile}

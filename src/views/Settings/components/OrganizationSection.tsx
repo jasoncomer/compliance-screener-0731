@@ -114,6 +114,8 @@ const OrganizationSection: React.FC<OrganizationSectionProps> = ({
 
 
   const renderGeneralTab = () => {
+    const { settings } = organization || {};
+    const { riskScoreThreshold, transactionThreshold } = settings || {};
     return (
       <>
         <SubTitle theme={{ theme }} style={{ marginBottom: '16px' }}>Basic Information</SubTitle>
@@ -159,7 +161,7 @@ const OrganizationSection: React.FC<OrganizationSectionProps> = ({
                 <InfoCircleOutlined style={{ marginLeft: '8px', fontSize: '14px', opacity: 0.7 }} />
               </Tooltip>
             </Label>
-            <Value theme={{ theme }}>{organization?.settings.riskScoreThreshold || 70}</Value>
+            <Value theme={{ theme }}>{riskScoreThreshold}</Value>
           </InfoItem>
           <InfoItem theme={{ theme }}>
             <Label theme={{ theme }}>
@@ -168,7 +170,7 @@ const OrganizationSection: React.FC<OrganizationSectionProps> = ({
                 <InfoCircleOutlined style={{ marginLeft: '8px', fontSize: '14px', opacity: 0.7 }} />
               </Tooltip>
             </Label>
-            <Value theme={{ theme }}>${organization?.settings.transactionThreshold || 30}</Value>
+            <Value theme={{ theme }}>${transactionThreshold}</Value>
           </InfoItem>
         </InfoList>
         <div style={{ marginTop: '16px' }}>
@@ -498,8 +500,8 @@ const OrganizationSection: React.FC<OrganizationSectionProps> = ({
           form={complianceForm}
           layout="vertical"
           initialValues={{
-            riskScoreThreshold: 70,
-            transactionThreshold: 30
+            riskScoreThreshold: organization?.settings.riskScoreThreshold !== undefined ? organization.settings.riskScoreThreshold : 70,
+            transactionThreshold: organization?.settings.transactionThreshold !== undefined ? organization.settings.transactionThreshold : 30
           }}
           onFinish={handleComplianceSubmit}
         >
