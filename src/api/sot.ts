@@ -46,7 +46,7 @@ const getSOT = async () => {
 
 export const getRelatedEntities = async (entityId: string): Promise<RelatedEntitiesResponse> => {
   console.log('Fetching related entities for entity:', entityId);
-  const response = await axiosInstance.get(`/:entity/${entityId}/unique-values`);
+  const response = await axiosInstance.get(`/attribution/entity/${entityId}/unique-values`);
   console.log('Related entities response:', response.data);
   return response.data.data;
 };

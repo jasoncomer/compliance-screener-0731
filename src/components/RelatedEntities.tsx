@@ -194,10 +194,18 @@ const RelatedEntities: React.FC<RelatedEntitiesProps> = ({ entity, onHasEntities
 
     return (
       <BusinessOwnersSection>
-        <SectionTitle level={4}>Business Owners ({relatedEntities.unique_bos.length})</SectionTitle>
+        <SectionTitle level={4}>Beneficial Owner ({relatedEntities.unique_bos.length})</SectionTitle>
         <BusinessOwnersList>
           <EntityList>
-            {entityCards}
+            {entityCards.length > 0 ? entityCards : (
+              <StyledCard isEmpty={true}>
+                <CardContent isEmpty={true}>
+                  <EntityInfo>
+                    <div className="entity-name" style={{ color: '#888' }}>None found</div>
+                  </EntityInfo>
+                </CardContent>
+              </StyledCard>
+            )}
           </EntityList>
         </BusinessOwnersList>
       </BusinessOwnersSection>
@@ -205,11 +213,8 @@ const RelatedEntities: React.FC<RelatedEntitiesProps> = ({ entity, onHasEntities
   };
 
   const renderCustodians = () => {
-    if (relatedEntities.unique_custodians.length === 0) {
-      return null;
-    }
-
-    const custodianCards = relatedEntities.unique_custodians.map((entityName, index) => (
+    const custodians = relatedEntities.unique_custodians || [];
+    const custodianCards = custodians.map((entityName, index) => (
       <StyledCard key={index}>
         <CardContent>
           <Avatar
@@ -226,9 +231,17 @@ const RelatedEntities: React.FC<RelatedEntitiesProps> = ({ entity, onHasEntities
 
     return (
       <CustodianSection>
-        <SectionTitle level={4}>Custodians ({relatedEntities.unique_custodians.length})</SectionTitle>
+        <SectionTitle level={4}>Custodiant ({custodians.length})</SectionTitle>
         <EntityList>
-          {custodianCards}
+          {custodianCards.length > 0 ? custodianCards : (
+            <StyledCard isEmpty={true}>
+              <CardContent isEmpty={true}>
+                <EntityInfo>
+                  <div className="entity-name" style={{ color: '#888' }}>None found</div>
+                </EntityInfo>
+              </CardContent>
+            </StyledCard>
+          )}
         </EntityList>
       </CustodianSection>
     );

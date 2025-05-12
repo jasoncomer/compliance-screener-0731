@@ -12,6 +12,7 @@ import { colors } from '../styles/variables';
 import { useSelector } from 'react-redux';
 import { RootState } from '../store/store';
 import RelatedEntities from './RelatedEntities';
+import EntitySidebar from './EntitySidebar';
 
 
 const { Title, Text } = Typography;
@@ -749,25 +750,12 @@ const SOTEditor: React.FC<SOTEditorProps> = ({ sot, onSelectAssociatedSot }) => 
         {renderContent()}
       </EditorWrapper>
 
-      {(associatedSotItems.length > 0 || hasRelatedEntities) && (
-        <AssociatedSOTsWrapper>
-          {sot?.entity_id && (
-            <RelatedEntities 
-              entity={sot.entity_id} 
-              onHasEntities={(has) => setHasRelatedEntities(has)}
-            />
-          )}
-          {associatedSotItems && associatedSotItems.length > 0 && (
-            <div style={{ marginTop: associatedSotItems.length > 0 ? '16px' : '0' }}>
-              <AssociatedSOTs
-                associatedSots={associatedSotItems}
-                onSelectSot={onSelectAssociatedSot}
-                currentEntityId={sot?.entity_id}
-              />
-            </div>
-          )}
-        </AssociatedSOTsWrapper>
-      )}
+      {/* Unified sidebar for associated entities, parent, custodian, and beneficial owner */}
+      <EntitySidebar
+        associatedSots={associatedSotItems}
+        currentEntityId={sot?.entity_id}
+        onSelectSot={onSelectAssociatedSot}
+      />
     </Container>
   );
 };
