@@ -134,7 +134,6 @@ const Settings = () => {
             currentUser={user || undefined}
             pendingInvitations={pendingInvitations}
             onInviteMember={handleInviteMember}
-            // onGenerateInviteCode={handleGenerateInviteCode}
             onRevokeInvitation={handleRevokeInvitation}
             onUpdateOrganization={handleUpdateOrganization}
           />

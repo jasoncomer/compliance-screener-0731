@@ -39,14 +39,14 @@ const CustodianSection = styled.div`
   padding-right: 22px
 `;
 
-const BusinessOwnersSection = styled.div`
+const BeneficialOwnersSection = styled.div`
   display: flex;
   flex-direction: column;
   padding-right: 8px;
   margin-bottom: 0;
 `;
 
-const BusinessOwnersList = styled.div`
+const BeneficialOwnersList = styled.div`
   overflow-y: auto;
   flex: 1;
   padding-right: 8px;
@@ -172,7 +172,7 @@ const RelatedEntities: React.FC<RelatedEntitiesProps> = ({ entity, onHasEntities
   if (!relatedEntities.unique_bos || !relatedEntities.unique_custodians) return null;
   if (relatedEntities.unique_bos.length === 0 && relatedEntities.unique_custodians.length === 0) return null;
 
-  const renderBusinessOwners = () => {
+  const renderBeneficialOwners = () => {
     if (!relatedEntities.unique_bos || relatedEntities.unique_bos.length === 0) {
       return null;
     }
@@ -193,9 +193,9 @@ const RelatedEntities: React.FC<RelatedEntitiesProps> = ({ entity, onHasEntities
     ));
 
     return (
-      <BusinessOwnersSection>
+      <BeneficialOwnersSection>
         <SectionTitle level={4}>Beneficial Owner ({relatedEntities.unique_bos.length})</SectionTitle>
-        <BusinessOwnersList>
+        <BeneficialOwnersList>
           <EntityList>
             {entityCards.length > 0 ? entityCards : (
               <StyledCard isEmpty={true}>
@@ -207,8 +207,8 @@ const RelatedEntities: React.FC<RelatedEntitiesProps> = ({ entity, onHasEntities
               </StyledCard>
             )}
           </EntityList>
-        </BusinessOwnersList>
-      </BusinessOwnersSection>
+        </BeneficialOwnersList>
+      </BeneficialOwnersSection>
     );
   };
 
@@ -248,13 +248,13 @@ const RelatedEntities: React.FC<RelatedEntitiesProps> = ({ entity, onHasEntities
   };
 
   const hasCustodians = relatedEntities.unique_custodians.length > 0;
-  const hasBusinessOwners = relatedEntities.unique_bos.length > 0;
-  const isEmpty = !hasCustodians && !hasBusinessOwners;
+  const hasBeneficialOwners = relatedEntities.unique_bos.length > 0;
+  const isEmpty = !hasCustodians && !hasBeneficialOwners;
 
   return (
     <Container isEmpty={isEmpty}>
       {renderCustodians()}
-      {renderBusinessOwners()}
+      {renderBeneficialOwners()}
     </Container>
   );
 };

@@ -4,14 +4,12 @@ import { UserOutlined, GlobalOutlined, TwitterOutlined, SendOutlined, GithubOutl
 import styled from 'styled-components';
 import { SOT } from '../typings/interfaces';
 import { api } from '../api/api';
-import AssociatedSOTs from './AssociatedSOTs';
 import { getEntityTypeLabel } from '../utils/display-labels';
 import { EEntityType } from '../typings/SOT';
 import Input from './common/Input';
 import { colors } from '../styles/variables';
 import { useSelector } from 'react-redux';
 import { RootState } from '../store/store';
-import RelatedEntities from './RelatedEntities';
 import EntitySidebar from './EntitySidebar';
 
 
@@ -28,31 +26,6 @@ const Container = styled.div`
 
 const EditorWrapper = styled(Card)`
   flex: 1;
-`;
-
-const AssociatedSOTsWrapper = styled(Card)`
-  width: 340px;
-  height: fit-content;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-  background-color: ${({ theme }) => theme.theme === 'dark' ? '#141414' : '#fff'};
-  max-height: 80vh;
-  overflow: hidden;
-
-  .ant-card-body {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    padding: 16px;
-    overflow: hidden;
-    background-color: inherit;
-    min-height: 0;
-  }
-
-  &:empty {
-    display: none;
-  }
 `;
 
 const ButtonGroup = styled(Space)`
@@ -90,7 +63,7 @@ const DetailLabel = styled(Text)`
   margin-bottom: 4px;
   font-size: 14px;
   text-align: left;
-`;
+`; 
 
 const DetailValue = styled(Text)`
   font-size: 16px;
@@ -191,7 +164,7 @@ const SOTEditor: React.FC<SOTEditorProps> = ({ sot, onSelectAssociatedSot }) => 
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
   const { itemsMap } = useSelector((state: RootState) => state.sot);
-  const [hasRelatedEntities, setHasRelatedEntities] = useState(false);
+  const [hasRelatedEntities] = useState(false);
 
   const isValidSOT = (sot: SOT | null): sot is SOT => {
     return sot !== null;

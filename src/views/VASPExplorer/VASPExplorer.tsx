@@ -15,7 +15,6 @@ import { SOT } from '../../typings/interfaces';
 import { EEntityType } from '../../typings/SOT';
 import { getEntityTypeLabel } from '../../utils/display-labels';
 import { colors } from '../../styles/variables';
-import RelatedEntities from '../../components/RelatedEntities';
 
 const SearchWrapper = styled.div`
   width: 100%;

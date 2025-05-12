@@ -214,7 +214,7 @@ const EntitySidebar: React.FC<EntitySidebarProps> = ({ associatedSots, currentEn
     );
   };
 
-  const renderBusinessOwners = () => {
+  const renderBeneficialOwners = () => {
     const bos = relatedEntities?.unique_bos || [];
     return (
       <Section>
@@ -247,7 +247,7 @@ const EntitySidebar: React.FC<EntitySidebarProps> = ({ associatedSots, currentEn
           ? childEntities.length > 0 && renderEntityList(childEntities, 'Associated Entities')
           : siblingEntities.length > 0 && renderEntityList(siblingEntities, 'Associated Entities')}
         {relatedEntities && relatedEntities.unique_custodians && relatedEntities.unique_custodians.length > 0 && renderCustodians()}
-        {relatedEntities && relatedEntities.unique_bos && relatedEntities.unique_bos.length > 0 && renderBusinessOwners()}
+        {relatedEntities && relatedEntities.unique_bos && relatedEntities.unique_bos.length > 0 && renderBeneficialOwners()}
       </ScrollableContent>
     </SidebarCard>
   );
