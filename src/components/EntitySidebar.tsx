@@ -48,6 +48,9 @@ const ScrollableContent = styled.div`
     &:hover {
       background: ${({ theme }) => theme.theme === 'dark' ? '#595959' : '#bfbfbf'};
     }
+
+  }
+
 `;
 
 const Section = styled.div`
@@ -133,6 +136,7 @@ const ScrollMoreMessage = styled.div`
 `;
 
 interface EntitySidebarProps {
+
   currentEntityId?: string;
   onSelectSot: (sot: SOT) => void;
 }

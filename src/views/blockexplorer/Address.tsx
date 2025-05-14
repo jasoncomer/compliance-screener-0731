@@ -129,34 +129,30 @@ const EntitiesContainer = styled.div`
 
 const EntityInfo = styled.div`
   display: flex;
+  gap: 3rem;
   align-items: flex-start;
-  gap: 5%;
-  flex: 1;
-  min-width: 0;
 
   .field-group {
     display: flex;
     flex-direction: column;
-    gap: 10px;
-    flex: 1;
   }
 
   .entity-name {
-    font-weight: 500;
-    font-size: 1rem;
+    font-size: .9rem;
     color: ${props => props.theme.theme === 'dark' ? 'white' : '#666666'};
-    
+  
   }
 
   .label {
     color: ${props => props.theme.theme === 'dark' ? '#a0a0a0' : '#666666'};
     font-size: 0.85rem;
-  }
+
+    }
 
   .entity-type {
     color: ${props => props.theme.theme === 'dark' ? 'white' : '#666666'};
     font-size: 0.9rem;
-    }
+  }
 
   .entity-id {
     color: ${props => props.theme.theme === 'dark' ? 'white' : '#666666'};

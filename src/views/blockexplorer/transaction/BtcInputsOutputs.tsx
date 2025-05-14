@@ -274,7 +274,7 @@ const BtcTxAddress: React.FC<BtcTxAddressProps> = ({ address }) => {
   );
 };
 
-const BtcInputsOutputs: React.FC<BtcInputsOutputsProps> = ({ data }) => {
+const BtcInputsOutputs: React.FC<BtcInputsOutputsProps> = ({ data, type }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const displayData = isExpanded ? data : data.slice(0, 5);
   const showToggle = data.length > 5;
@@ -290,6 +290,14 @@ const BtcInputsOutputs: React.FC<BtcInputsOutputsProps> = ({ data }) => {
 
   const { itemsMap } = useSelector((state: RootState) => state.sot);
 
+  // Show mining reward message if no inputs and type is 'inputs'
+  if (type === 'inputs' && data.length === 0) {
+    return (
+      <Wrapper>
+        <span style={{ color: 'white', fontFamily: 'monospace', fontSize: '1.1em', padding: '12px 0' }}> ⛏️ Mining Reward</span>
+      </Wrapper>
+    );
+  }
 
   const toggleExpand = () => {
     setIsExpanded(!isExpanded);
