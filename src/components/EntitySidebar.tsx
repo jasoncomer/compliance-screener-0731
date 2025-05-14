@@ -47,6 +47,7 @@ const ScrollableContent = styled.div`
     &:hover {
       background: ${({ theme }) => theme.theme === 'dark' ? '#595959' : '#bfbfbf'};
     }
+
   }
 `;
 
@@ -106,6 +107,7 @@ const EntityInfo = styled.div`
 
 const ScrollableSection = styled.div`
   max-height: 230px;
+
   overflow-y: auto;
   position: relative;
   &::-webkit-scrollbar {
@@ -120,6 +122,7 @@ const ScrollableSection = styled.div`
     &:hover {
       background: ${({ theme }) => theme.theme === 'dark' ? '#595959' : '#bfbfbf'};
     }
+
   }
 `;
 
@@ -131,6 +134,7 @@ const ScrollMoreMessage = styled.div`
 `;
 
 interface EntitySidebarProps {
+
   currentEntityId?: string;
   onSelectSot: (sot: SOT) => void;
 }
@@ -151,6 +155,7 @@ const EntitySidebar: React.FC<EntitySidebarProps> = ({ currentEntityId, onSelect
   if (!currentEntity) return null;
 
   const parentEntity = Object.values(itemsMap).find(sot => sot.entity_id === currentEntity.parent_id);
+
   const isParentEntity = !currentEntity.parent_id;
   const childEntities = isParentEntity ? Object.values(itemsMap).filter(sot => sot.parent_id === currentEntityId) : [];
   const siblingEntities = !isParentEntity ? Object.values(itemsMap).filter(sot => sot.parent_id === currentEntity.parent_id && sot.entity_id !== currentEntityId && sot.entity_id !== parentEntity?.entity_id) : [];
@@ -161,6 +166,7 @@ const EntitySidebar: React.FC<EntitySidebarProps> = ({ currentEntityId, onSelect
     (!isParentEntity && siblingEntities.length > 0) ||
     (relatedEntities?.unique_custodians?.length ?? 0) > 0 ||
     (relatedEntities?.unique_bos?.length ?? 0) > 0
+
   );
 
   if (!hasContent) return null;
@@ -181,12 +187,14 @@ const EntitySidebar: React.FC<EntitySidebarProps> = ({ currentEntityId, onSelect
   );
 
   const renderEntitySection = (entities: SOT[] | string[], title: string, type: string, isClickable = true) => (
+
     <Section>
       <SectionTitle level={4}>{title} ({entities.length})</SectionTitle>
       <ScrollableSection>
         <EntityList>
           {entities.length > 0 ? entities.map(entity => renderEntityCard(entity, type, isClickable)) : 
             <div style={{ color: '#888', padding: 8 }}>None found</div>}
+
         </EntityList>
       </ScrollableSection>
       {entities.length > 2 && <ScrollMoreMessage>Scroll for more</ScrollMoreMessage>}
@@ -203,6 +211,7 @@ const EntitySidebar: React.FC<EntitySidebarProps> = ({ currentEntityId, onSelect
           renderEntitySection(relatedEntities.unique_custodians, 'Custodian', 'Custodian', false)}
         {relatedEntities?.unique_bos && relatedEntities.unique_bos.length > 0 && 
           renderEntitySection(relatedEntities.unique_bos, 'Beneficial Owner', 'Beneficial Owner', false)}
+
       </ScrollableContent>
     </SidebarCard>
   );

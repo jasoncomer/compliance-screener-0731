@@ -27,6 +27,7 @@ const Wrapper = styled.div`
   flex-direction: column;
   width: 100%;
   overflow-x: auto;
+  padding: 0 8px; /* Add padding for scrollbar */
 
   div {
     display: flex;
@@ -39,6 +40,7 @@ const Wrapper = styled.div`
     align-items: center;
     padding: 8px 0;
     width: 100%;
+    min-width: 0; /* Allow grid to shrink below minimum content size */
   }
   .attributed {
     color: ${colors.attribution};
@@ -52,6 +54,9 @@ const Wrapper = styled.div`
     color: ${colors.primary};
     text-decoration: none;
     text-align: left;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
     &:hover {
       color: ${colors.link};
       text-decoration: underline;
@@ -65,11 +70,13 @@ const Wrapper = styled.div`
     display: flex;
     align-items: center;
     width: 100%;
+    min-width: 0; /* Allow container to shrink */
   }
   .address-wrapper {
     display: flex;
     align-items: center;
     width: 100%;
+    min-width: 0; /* Allow wrapper to shrink */
   }
   .copy-button {
     cursor: pointer;
@@ -188,7 +195,7 @@ const Row = styled.div`
 `;
 
 const ToggleButton = styled.button`
-  margin-top: 8px;
+  margin: 8px 0;
   color: #333;
   padding: 4px 8px;
   background-color: #f0f0f0;
@@ -196,6 +203,7 @@ const ToggleButton = styled.button`
   border-radius: 4px;
   cursor: pointer;
   font-size: 14px;
+  align-self: flex-start;
 
   &:hover {
     background-color: #e0e0e0;

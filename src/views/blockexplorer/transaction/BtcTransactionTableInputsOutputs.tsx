@@ -14,7 +14,8 @@ const TableWrapper = styled.div`
   grid-template-columns: 1fr 1fr;
   gap: 20px;
   width: 100%;
-  min-width: 0; /* Prevent grid from overflowing */
+  min-width: 0;
+  height: 80%; /* Allow to fill parent height */
 
   @media (max-width: 1680px) {
     grid-template-columns: 1fr;
@@ -24,10 +25,11 @@ const TableWrapper = styled.div`
   .inputs, .outputs {
     display: flex;
     flex-direction: column;
-    min-width: 0; /* Allow content to shrink below its minimum content size */
-    max-height: 600px; /* Set a maximum height for scrolling */
-    overflow-y: auto; /* Enable vertical scrolling */
-   
+    min-width: 0;
+    min-height: 0;
+    position: relative;
+    max-height: 400px;
+    overflow-y: auto;
     
     .header {
       display: grid;
@@ -35,30 +37,31 @@ const TableWrapper = styled.div`
       align-items: center;
       gap: 16px;
       border-bottom: 1px solid #ccc;
-      padding-bottom: 5px;
+      padding: 8px 10px;
       margin-bottom: 10px;
       position: sticky;
       top: 0;
       z-index: 2;
-      padding: 8px 10px ;
-   
-
+      background: inherit;
+      backdrop-filter: blur(8px);
       hr {
         margin: 0;
         border: none;
         width: 100%;
       }
-
       span {
         white-space: nowrap;
         font-weight: 500;
       }
     }
-
-    /* Ensure content can be scrolled horizontally if needed */
+    /* Remove extra padding/margin from content */
     > div:not(.header) {
       overflow-x: auto;
       max-width: 100%;
+      /* Remove padding-right and margin-bottom */
+    }
+    > button {
+      margin: 0 8px 8px 8px;
     }
   }
 `;
