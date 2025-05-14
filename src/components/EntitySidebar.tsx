@@ -44,11 +44,13 @@ const ScrollableContent = styled.div`
   &::-webkit-scrollbar-thumb {
     background: ${({ theme }) => theme.theme === 'dark' ? '#434343' : '#d9d9d9'};
     border-radius: 3px;
+    
     &:hover {
       background: ${({ theme }) => theme.theme === 'dark' ? '#595959' : '#bfbfbf'};
     }
 
   }
+
 `;
 
 const Section = styled.div`
@@ -149,6 +151,7 @@ const EntitySidebar: React.FC<EntitySidebarProps> = ({ currentEntityId, onSelect
     }
   }, [currentEntityId]);
 
+
   if (!itemsMap || !currentEntityId) return null;
   
   const currentEntity = Object.values(itemsMap).find(sot => sot.entity_id === currentEntityId);
@@ -164,12 +167,14 @@ const EntitySidebar: React.FC<EntitySidebarProps> = ({ currentEntityId, onSelect
     parentEntity ||
     (isParentEntity && childEntities.length > 0) ||
     (!isParentEntity && siblingEntities.length > 0) ||
+
     (relatedEntities?.unique_custodians?.length ?? 0) > 0 ||
     (relatedEntities?.unique_bos?.length ?? 0) > 0
 
   );
 
   if (!hasContent) return null;
+
 
   const renderEntityCard = (entity: SOT | string, type: string, isClickable = true) => (
     <StyledCard key={typeof entity === 'string' ? entity : entity._id} onClick={isClickable && typeof entity !== 'string' ? () => onSelectSot(entity) : undefined}>
@@ -192,6 +197,7 @@ const EntitySidebar: React.FC<EntitySidebarProps> = ({ currentEntityId, onSelect
       <SectionTitle level={4}>{title} ({entities.length})</SectionTitle>
       <ScrollableSection>
         <EntityList>
+
           {entities.length > 0 ? entities.map(entity => renderEntityCard(entity, type, isClickable)) : 
             <div style={{ color: '#888', padding: 8 }}>None found</div>}
 
@@ -200,6 +206,7 @@ const EntitySidebar: React.FC<EntitySidebarProps> = ({ currentEntityId, onSelect
       {entities.length > 2 && <ScrollMoreMessage>Scroll for more</ScrollMoreMessage>}
     </Section>
   );
+
 
   return (
     <SidebarCard $hasContent={hasContent}>
