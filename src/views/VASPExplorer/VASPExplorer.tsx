@@ -389,6 +389,7 @@ const BlockHam: React.FC = () => {
       {selectedSot && (
         <MainContent>
           <SOTEditor sot={selectedSot} onSelectAssociatedSot={handleSelectAssociatedSot} />
+          {/* <RelatedEntities entity={selectedSot._id} onHasEntities={() => {}} /> */}
         </MainContent>
       )}
     </ViewWrapper>

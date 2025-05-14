@@ -39,14 +39,14 @@ const CustodianSection = styled.div`
   padding-right: 22px
 `;
 
-const BusinessOwnersSection = styled.div`
+const BeneficialOwnersSection = styled.div`
   display: flex;
   flex-direction: column;
   padding-right: 8px;
   margin-bottom: 0;
 `;
 
-const BusinessOwnersList = styled.div`
+const BeneficialOwnersList = styled.div`
   overflow-y: auto;
   flex: 1;
   padding-right: 8px;
@@ -172,7 +172,7 @@ const RelatedEntities: React.FC<RelatedEntitiesProps> = ({ entity, onHasEntities
   if (!relatedEntities.unique_bos || !relatedEntities.unique_custodians) return null;
   if (relatedEntities.unique_bos.length === 0 && relatedEntities.unique_custodians.length === 0) return null;
 
-  const renderBusinessOwners = () => {
+  const renderBeneficialOwners = () => {
     if (!relatedEntities.unique_bos || relatedEntities.unique_bos.length === 0) {
       return null;
     }
@@ -193,23 +193,28 @@ const RelatedEntities: React.FC<RelatedEntitiesProps> = ({ entity, onHasEntities
     ));
 
     return (
-      <BusinessOwnersSection>
-        <SectionTitle level={4}>Business Owners ({relatedEntities.unique_bos.length})</SectionTitle>
-        <BusinessOwnersList>
+      <BeneficialOwnersSection>
+        <SectionTitle level={4}>Beneficial Owner ({relatedEntities.unique_bos.length})</SectionTitle>
+        <BeneficialOwnersList>
           <EntityList>
-            {entityCards}
+            {entityCards.length > 0 ? entityCards : (
+              <StyledCard isEmpty={true}>
+                <CardContent isEmpty={true}>
+                  <EntityInfo>
+                    <div className="entity-name" style={{ color: '#888' }}>None found</div>
+                  </EntityInfo>
+                </CardContent>
+              </StyledCard>
+            )}
           </EntityList>
-        </BusinessOwnersList>
-      </BusinessOwnersSection>
+        </BeneficialOwnersList>
+      </BeneficialOwnersSection>
     );
   };
 
   const renderCustodians = () => {
-    if (relatedEntities.unique_custodians.length === 0) {
-      return null;
-    }
-
-    const custodianCards = relatedEntities.unique_custodians.map((entityName, index) => (
+    const custodians = relatedEntities.unique_custodians || [];
+    const custodianCards = custodians.map((entityName, index) => (
       <StyledCard key={index}>
         <CardContent>
           <Avatar
@@ -226,22 +231,30 @@ const RelatedEntities: React.FC<RelatedEntitiesProps> = ({ entity, onHasEntities
 
     return (
       <CustodianSection>
-        <SectionTitle level={4}>Custodians ({relatedEntities.unique_custodians.length})</SectionTitle>
+        <SectionTitle level={4}>Custodiant ({custodians.length})</SectionTitle>
         <EntityList>
-          {custodianCards}
+          {custodianCards.length > 0 ? custodianCards : (
+            <StyledCard isEmpty={true}>
+              <CardContent isEmpty={true}>
+                <EntityInfo>
+                  <div className="entity-name" style={{ color: '#888' }}>None found</div>
+                </EntityInfo>
+              </CardContent>
+            </StyledCard>
+          )}
         </EntityList>
       </CustodianSection>
     );
   };
 
   const hasCustodians = relatedEntities.unique_custodians.length > 0;
-  const hasBusinessOwners = relatedEntities.unique_bos.length > 0;
-  const isEmpty = !hasCustodians && !hasBusinessOwners;
+  const hasBeneficialOwners = relatedEntities.unique_bos.length > 0;
+  const isEmpty = !hasCustodians && !hasBeneficialOwners;
 
   return (
     <Container isEmpty={isEmpty}>
       {renderCustodians()}
-      {renderBusinessOwners()}
+      {renderBeneficialOwners()}
     </Container>
   );
 };
