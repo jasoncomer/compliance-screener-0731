@@ -44,9 +44,9 @@ const ScrollableContent = styled.div`
   &::-webkit-scrollbar-thumb {
     background: ${({ theme }) => theme.theme === 'dark' ? '#434343' : '#d9d9d9'};
     border-radius: 3px;
-  }
-  &::-webkit-scrollbar-thumb:hover {
-    background: ${({ theme }) => theme.theme === 'dark' ? '#595959' : '#bfbfbf'};
+    &:hover {
+      background: ${({ theme }) => theme.theme === 'dark' ? '#595959' : '#bfbfbf'};
+    }
   }
 `;
 
@@ -105,7 +105,7 @@ const EntityInfo = styled.div`
 `;
 
 const ScrollableSection = styled.div`
-  max-height: 150px;
+  max-height: 230px;
   overflow-y: auto;
   position: relative;
   &::-webkit-scrollbar {
@@ -117,9 +117,9 @@ const ScrollableSection = styled.div`
   &::-webkit-scrollbar-thumb {
     background: ${({ theme }) => theme.theme === 'dark' ? '#434343' : '#d9d9d9'};
     border-radius: 3px;
-  }
-  &::-webkit-scrollbar-thumb:hover {
-    background: ${({ theme }) => theme.theme === 'dark' ? '#595959' : '#bfbfbf'};
+    &:hover {
+      background: ${({ theme }) => theme.theme === 'dark' ? '#595959' : '#bfbfbf'};
+    }
   }
 `;
 
@@ -131,12 +131,11 @@ const ScrollMoreMessage = styled.div`
 `;
 
 interface EntitySidebarProps {
-  associatedSots: SOT[] | null;
   currentEntityId?: string;
   onSelectSot: (sot: SOT) => void;
 }
 
-const EntitySidebar: React.FC<EntitySidebarProps> = ({ associatedSots, currentEntityId, onSelectSot }) => {
+const EntitySidebar: React.FC<EntitySidebarProps> = ({ currentEntityId, onSelectSot }) => {
   const { itemsMap } = useSelector((state: RootState) => state.sot);
   const [relatedEntities, setRelatedEntities] = React.useState<{ unique_bos: string[]; unique_custodians: string[] } | null>(null);
 
@@ -146,12 +145,12 @@ const EntitySidebar: React.FC<EntitySidebarProps> = ({ associatedSots, currentEn
     }
   }, [currentEntityId]);
 
-  // Parent/Associated logic (from AssociatedSOTs)
   if (!itemsMap || !currentEntityId) return null;
+  
   const currentEntity = Object.values(itemsMap).find(sot => sot.entity_id === currentEntityId);
   if (!currentEntity) return null;
-  const parentEntityKey = Object.keys(itemsMap).find(key => itemsMap[key].entity_id === currentEntity.parent_id);
-  const parentEntity = parentEntityKey ? itemsMap[parentEntityKey] : null;
+
+  const parentEntity = Object.values(itemsMap).find(sot => sot.entity_id === currentEntity.parent_id);
   const isParentEntity = !currentEntity.parent_id;
   const childEntities = isParentEntity ? Object.values(itemsMap).filter(sot => sot.parent_id === currentEntityId) : [];
   const siblingEntities = !isParentEntity ? Object.values(itemsMap).filter(sot => sot.parent_id === currentEntity.parent_id && sot.entity_id !== currentEntityId && sot.entity_id !== parentEntity?.entity_id) : [];
@@ -160,94 +159,50 @@ const EntitySidebar: React.FC<EntitySidebarProps> = ({ associatedSots, currentEn
     parentEntity ||
     (isParentEntity && childEntities.length > 0) ||
     (!isParentEntity && siblingEntities.length > 0) ||
-    (relatedEntities?.unique_custodians && relatedEntities.unique_custodians.length > 0) ||
-    (relatedEntities?.unique_bos && relatedEntities.unique_bos.length > 0)
+    (relatedEntities?.unique_custodians?.length ?? 0) > 0 ||
+    (relatedEntities?.unique_bos?.length ?? 0) > 0
   );
 
   if (!hasContent) return null;
 
-  // Render helpers
-  const renderEntityList = (entities: SOT[], title: string) => (
+  const renderEntityCard = (entity: SOT | string, type: string, isClickable = true) => (
+    <StyledCard key={typeof entity === 'string' ? entity : entity._id} onClick={isClickable && typeof entity !== 'string' ? () => onSelectSot(entity) : undefined}>
+      <CardContent>
+        <Avatar size="large" src={typeof entity === 'string' ? undefined : entity.logo} icon={<UserOutlined />} />
+        <EntityInfo>
+          <div className="entity-name">{typeof entity === 'string' ? entity : entity.proper_name || entity.entity_id}</div>
+          <div className="entity-type">
+            {typeof entity === 'string' ? type : getEntityTypeLabel(entity.entity_type as EEntityType)}
+            {typeof entity !== 'string' && entity.associate_country_1 && ` • ${entity.associate_country_1}`}
+          </div>
+        </EntityInfo>
+      </CardContent>
+    </StyledCard>
+  );
+
+  const renderEntitySection = (entities: SOT[] | string[], title: string, type: string, isClickable = true) => (
     <Section>
       <SectionTitle level={4}>{title} ({entities.length})</SectionTitle>
       <ScrollableSection>
         <EntityList>
-          {entities.map((associatedSot) => (
-            <StyledCard key={associatedSot._id} onClick={() => onSelectSot(associatedSot)}>
-              <CardContent>
-                <Avatar size="large" src={associatedSot.logo} icon={!associatedSot.logo && <UserOutlined />} />
-                <EntityInfo>
-                  <div className="entity-name">{associatedSot.proper_name || associatedSot.entity_id}</div>
-                  <div className="entity-type">{getEntityTypeLabel(associatedSot.entity_type as EEntityType)}{associatedSot.associate_country_1 && ` • ${associatedSot.associate_country_1}`}</div>
-                </EntityInfo>
-              </CardContent>
-            </StyledCard>
-          ))}
+          {entities.length > 0 ? entities.map(entity => renderEntityCard(entity, type, isClickable)) : 
+            <div style={{ color: '#888', padding: 8 }}>None found</div>}
         </EntityList>
       </ScrollableSection>
       {entities.length > 2 && <ScrollMoreMessage>Scroll for more</ScrollMoreMessage>}
     </Section>
   );
 
-  const renderCustodians = () => {
-    const custodians = relatedEntities?.unique_custodians || [];
-    return (
-      <Section>
-        <SectionTitle level={4}>Custodian ({custodians.length})</SectionTitle>
-        <ScrollableSection>
-          <EntityList>
-            {custodians.length > 0 ? custodians.map((entityName, idx) => (
-              <StyledCard key={idx}>
-                <CardContent>
-                  <Avatar size="large" icon={<UserOutlined />} />
-                  <EntityInfo>
-                    <div className="entity-name">{entityName}</div>
-                    <div className="entity-type">Custodian</div>
-                  </EntityInfo>
-                </CardContent>
-              </StyledCard>
-            )) : <div style={{ color: '#888', padding: 8 }}>None found</div>}
-          </EntityList>
-        </ScrollableSection>
-        {custodians.length > 2 && <ScrollMoreMessage>Scroll for more</ScrollMoreMessage>}
-      </Section>
-    );
-  };
-
-  const renderBeneficialOwners = () => {
-    const bos = relatedEntities?.unique_bos || [];
-    return (
-      <Section>
-        <SectionTitle level={4}>Beneficial Owner ({bos.length})</SectionTitle>
-        <ScrollableSection>
-          <EntityList>
-            {bos.length > 0 ? bos.map((entityName, idx) => (
-              <StyledCard key={idx}>
-                <CardContent>
-                  <Avatar size="large" icon={<UserOutlined />} />
-                  <EntityInfo>
-                    <div className="entity-name">{entityName}</div>
-                    <div className="entity-type">Beneficial Owner</div>
-                  </EntityInfo>
-                </CardContent>
-              </StyledCard>
-            )) : <div style={{ color: '#888', padding: 8 }}>None found</div>}
-          </EntityList>
-        </ScrollableSection>
-        {bos.length > 2 && <ScrollMoreMessage>Scroll for more</ScrollMoreMessage>}
-      </Section>
-    );
-  };
-
   return (
     <SidebarCard $hasContent={hasContent}>
       <ScrollableContent>
-        {parentEntity && renderEntityList([parentEntity], 'Parent Entity')}
-        {isParentEntity
-          ? childEntities.length > 0 && renderEntityList(childEntities, 'Associated Entities')
-          : siblingEntities.length > 0 && renderEntityList(siblingEntities, 'Associated Entities')}
-        {relatedEntities && relatedEntities.unique_custodians && relatedEntities.unique_custodians.length > 0 && renderCustodians()}
-        {relatedEntities && relatedEntities.unique_bos && relatedEntities.unique_bos.length > 0 && renderBeneficialOwners()}
+        {parentEntity && renderEntitySection([parentEntity], 'Parent Entity', 'Parent')}
+        {isParentEntity && childEntities.length > 0 && renderEntitySection(childEntities, 'Associated Entities', 'Child')}
+        {!isParentEntity && siblingEntities.length > 0 && renderEntitySection(siblingEntities, 'Associated Entities', 'Sibling')}
+        {relatedEntities?.unique_custodians && relatedEntities.unique_custodians.length > 0 && 
+          renderEntitySection(relatedEntities.unique_custodians, 'Custodian', 'Custodian', false)}
+        {relatedEntities?.unique_bos && relatedEntities.unique_bos.length > 0 && 
+          renderEntitySection(relatedEntities.unique_bos, 'Beneficial Owner', 'Beneficial Owner', false)}
       </ScrollableContent>
     </SidebarCard>
   );
