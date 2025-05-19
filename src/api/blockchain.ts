@@ -21,8 +21,52 @@ const getTransaction = async (txHash: string) => {
 };
 
 const getBlock = async (blockNumber: number) => {
-  const res = await axiosInstance.get(`/blockchain/block/${blockNumber}`);
-  return res.data;
+  try {
+    // Validate block number
+    if (!Number.isInteger(blockNumber) || blockNumber < 0) {
+      throw new Error('Invalid block number');
+    }
+
+    const url = `/blockchain/block/${blockNumber}`;
+    console.log('Request URL:', url);
+    console.log('Request headers:', axiosInstance.defaults.headers);
+    
+    const res = await axiosInstance.get(url);
+    console.log('Full API response:', {
+      status: res.status,
+      statusText: res.statusText,
+      headers: res.headers,
+      data: res.data,
+      config: {
+        url: res.config.url,
+        method: res.config.method,
+        headers: res.config.headers,
+        baseURL: res.config.baseURL
+      }
+    });
+    
+    // Check if response is null or empty
+    if (!res.data) {
+      console.error('Block API returned empty response');
+      throw new Error('Block not found or no data available');
+    }
+
+    // Validate the response data structure
+    if (!res.data.height || !res.data.hash) {
+      console.error('Invalid block data structure:', res.data);
+      throw new Error('Invalid block data structure received from API');
+    }
+
+    return res.data;
+  } catch (error: any) {
+    console.error('Error in getBlock:', error);
+    if (error.response) {
+      console.error('Error response data:', error.response.data);
+      console.error('Error response status:', error.response.status);
+      console.error('Error response headers:', error.response.headers);
+    }
+    throw error;
+  }
 };
 
 interface GetAddressResponseData {

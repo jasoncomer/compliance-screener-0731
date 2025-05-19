@@ -38,7 +38,7 @@ const Wrapper = styled.div`
     grid-template-columns: minmax(300px, 2fr) minmax(200px, 1fr) minmax(120px, 1fr) minmax(120px, 1fr);
     gap: 16px;
     align-items: center;
-    padding-bottom: 2px;
+    padding: 2px 0;
     width: 100%;
     min-width: 0; /* Allow grid to shrink below minimum content size */
   }

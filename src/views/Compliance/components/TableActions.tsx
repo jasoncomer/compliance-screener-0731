@@ -7,7 +7,7 @@ const TableActionsContainer = styled.div`
   display: flex;
   justify-content: space-between;
   margin-bottom: 24px;
-  gap: 16px;
+  gap: 1px;
 `;
 
 interface TableActionsProps {

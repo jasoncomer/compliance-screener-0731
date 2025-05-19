@@ -8,6 +8,7 @@ import ViewWrapper from '../../components/ViewWrapper';
 import { determineInputType } from '../../utils/crypto';
 import TransactionView from './TransactionView';
 import Address from './Address';
+import BlockView from './BlockView';
 
 const ExplorerLayout = styled.div`
   display: flex;
@@ -89,7 +90,7 @@ const BlockExplorer: React.FC = () => {
         <ContentWrapper>
           <Routes>
             <Route path="/transaction/:txid" element={<TransactionView />} />
-            <Route path="/block/:block" element={<div>Block</div>} />
+            <Route path="/block/:block" element={<BlockView />} />
             <Route path="/address/:address" element={<Address />} />
           </Routes>
         </ContentWrapper>

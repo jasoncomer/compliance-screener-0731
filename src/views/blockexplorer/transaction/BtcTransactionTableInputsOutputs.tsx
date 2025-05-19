@@ -35,7 +35,7 @@ const TableWrapper = styled.div`
       display: grid;
       grid-template-columns: auto 1fr auto;
       align-items: center;
-      gap: 16px;
+      gap: 1px;
       border-bottom: 1px solid #ccc;
       padding: 8px 10px;
       margin-bottom: 10px;
