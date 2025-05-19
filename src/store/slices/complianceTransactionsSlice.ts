@@ -51,6 +51,14 @@ export const updateTransactionAssignee = createAsyncThunk(
   }
 );
 
+export const bulkUpdateTransactionAssignee = createAsyncThunk(
+  'complianceTransactions/bulkUpdateAssignee',
+  async ({ transactionIds, assignee }: { transactionIds: string[]; assignee: string }) => {
+    const response = await api.compliance.bulkUpdateTransactionAssignee(transactionIds, assignee);
+    return response;
+  }
+);
+
 const complianceTransactionsSlice = createSlice({
   name: 'complianceTransactions',
   initialState,
@@ -101,6 +109,14 @@ const complianceTransactionsSlice = createSlice({
         if (updatedTransaction && updatedTransaction._id) {
           state.transactions[updatedTransaction._id] = updatedTransaction;
         }
+      })
+      .addCase(bulkUpdateTransactionAssignee.fulfilled, (state, action) => {
+        const updatedTransactions = action.payload as IComplianceTransaction[];
+        updatedTransactions.forEach(transaction => {
+          if (transaction && transaction._id) {
+            state.transactions[transaction._id] = transaction;
+          }
+        });
       });
   },
 });

@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { Layout, Tabs, Dropdown } from 'antd';
+import type { MenuProps } from 'antd';
 import { UserOutlined, LogoutOutlined, SettingOutlined, TeamOutlined } from '@ant-design/icons';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import BSLogo from '../assets/darkmode_logo.png';
@@ -47,6 +48,41 @@ const Home: React.FC = () => {
     navigate('/login');
   };
 
+  const handleMenuClick: MenuProps['onClick'] = (e) => {
+    if (e.key === 'admin') {
+      navigate('/home/admin');
+    } else if (e.key === 'settings') {
+      navigate('/home/settings');
+    } else if (e.key === 'logout') {
+      handleLogout();
+    }
+  };
+
+  const items: MenuProps['items'] = [
+    {
+      key: 'settings',
+      label: 'Settings',
+      icon: <SettingOutlined />
+    },
+    {
+      type: 'divider',
+    },
+    {
+      key: 'logout',
+      label: 'Logout',
+      icon: <LogoutOutlined />
+    }
+  ];
+
+  // TODO: Add role to user object
+     if (user?.email.includes('@blockscout.ai')) {
+     items.unshift({
+       key: 'admin',
+       label: 'Admin Panel',
+       icon: <TeamOutlined />,
+     });
+   }
+
   return (
     <StyledLayout>
       <Layout>
@@ -75,31 +111,7 @@ const Home: React.FC = () => {
           </HeaderSection>
           <HeaderSection>
             <Dropdown
-              menu={{
-                items: [
-                  {
-                    key: 'admin',
-                    label: 'Admin Panel',
-                    icon: <TeamOutlined />,
-                    onClick: () => navigate('/home/admin')
-                  },
-                  {
-                    key: 'settings',
-                    label: 'Settings',
-                    icon: <SettingOutlined />,
-                    onClick: () => navigate('/home/settings')
-                  },
-                  {
-                    type: 'divider'
-                  },
-                  {
-                    key: 'logout',
-                    label: 'Logout',
-                    icon: <LogoutOutlined />,
-                    onClick: handleLogout
-                  }
-                ]
-              }}
+              menu={{ items, onClick: handleMenuClick }}
               placement="bottomRight"
               trigger={['click']}
             >

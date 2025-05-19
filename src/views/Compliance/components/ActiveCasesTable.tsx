@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
 import { Table, Tag, Button, Space, Tooltip } from 'antd';
 import { EyeOutlined, CheckOutlined, CloseOutlined } from '@ant-design/icons';
-import { IComplianceTransaction } from '../../../typings/compliance';
+import { ETransactionStatus, IComplianceTransaction } from '../../../typings/compliance';
 import { TransactionDetailsModal } from '../modals/TransactionDetails/TransactionDetailsModal';
 import { conversionRates, currencySymbols } from './CurrencySelector';
-import { getRiskScoreColor } from '../utils/compliance.utils';
+import { getRiskScoreColor, getStatusColor } from '../utils/compliance.utils';
 import { getBlockchainLabel } from '../../../utils/display-labels';
-import { useAppContext } from '../../../context/AppContext';
 import { truncateAddress } from '../../../utils/crypto';
+import { useAppSelector } from '../../../store/hooks';
+import { IUser } from '../../../typings/interfaces';
+import { useCryptoPrices } from '../../../hooks/useCryptoPrices';
 
 interface ActiveCasesTableProps {
   transactions: IComplianceTransaction[];
@@ -27,30 +29,41 @@ const ActiveCasesTable: React.FC<ActiveCasesTableProps> = ({
   onTableChange,
 }) => {
   const denom = 'USD';
-  const { user } = useAppContext();
   const [isDetailsModalVisible, setIsDetailsModalVisible] = useState(false);
   const [selectedTransactionId, setSelectedTransactionId] = useState<string | null>(null);
+  const { users } = useAppSelector(state => state.organizations);
+  const { getPrice } = useCryptoPrices();
+  const btcPrice = getPrice('BTC') || 0;
 
   // Function to handle row click to show transaction details
   const handleViewDetails = (record: IComplianceTransaction) => {
     setSelectedTransactionId(record._id);
     setIsDetailsModalVisible(true);
   };
-  
+
   // Function to get user name from ID
-  const getReviewerName = (reviewerId?: string) => {
+  const getReviewerName = (users: { [id: string]: IUser }, reviewerId?: string) => {
     if (!reviewerId) return 'Unassigned';
-    
+
     // For demo purposes. In a real app, you'd fetch this from your users list
     // This is just a placeholder - you should replace with actual user data
-    if (reviewerId === user?._id) {
+    const user = users[reviewerId];
+    if (user) {
       return `${user.name} ${user.surname}`;
     }
-    
+
     return `User ${reviewerId.substring(0, 8)}`;
   };
 
   const columns = [
+    {
+      title: 'Status',
+      dataIndex: 'status',
+      key: 'status',
+      width: 100,
+      render: (status: ETransactionStatus) => <div style={{ display: 'flex', justifyContent: 'right' }}>
+        <Tag color={getStatusColor(status)} style={{ fontWeight: 'bold' }}>{status}</Tag></div>,
+    },
     {
       title: 'Transaction ID',
       dataIndex: 'txId',
@@ -59,9 +72,11 @@ const ActiveCasesTable: React.FC<ActiveCasesTableProps> = ({
       render: (txId: string) => {
         if (!txId) return null;
         return (
-          <a href={`/home/block-explorer/transaction/${txId}`} target="_blank" rel="noopener noreferrer">
-            {truncateAddress(txId)}
-          </a>
+          <div style={{ display: 'flex', justifyContent: 'right' }}>
+            <a href={`/home/block-explorer/transaction/${txId}`} target="_blank" rel="noopener noreferrer">
+              {truncateAddress(txId)}
+            </a>
+          </div>
         )
       }
     },
@@ -81,28 +96,30 @@ const ActiveCasesTable: React.FC<ActiveCasesTableProps> = ({
       width: 120,
       sorter: (a: IComplianceTransaction, b: IComplianceTransaction) => a.amount - b.amount,
       render: (amount: number) => (
-        <span>
-          BTC {(amount / 100000000).toFixed(8)}
-        </span>
+        <div style={{ display: 'flex', justifyContent: 'right' }}>
+          {(amount / 100000000).toFixed(8)} BTC
+        </div>
       )
     },
     {
       title: 'Converted Amount',
       key: 'convertedAmount',
-      width: 120,
+      width: 110,
       sorter: (a: IComplianceTransaction, b: IComplianceTransaction) =>
         (a.amount * conversionRates[denom]) - (b.amount * conversionRates[denom]),
       render: (_: any, record: IComplianceTransaction) => (
-        <span>
-          {currencySymbols[denom]}
-          {
-            ((record.amount / 100000000) * 83000)
-              .toLocaleString(
-                'en-US',
-                { minimumFractionDigits: 0, maximumFractionDigits: 2 }
-              )
-          }
-        </span>
+        <div style={{ display: 'flex', justifyContent: 'right' }}>
+          <span>
+            {currencySymbols[denom]}
+            {
+              ((record.amount / 100000000) * btcPrice)
+                .toLocaleString(
+                  'en-US',
+                  { minimumFractionDigits: 0, maximumFractionDigits: 2 }
+                )
+            }
+          </span>
+        </div>
       )
     },
     {
@@ -116,7 +133,7 @@ const ActiveCasesTable: React.FC<ActiveCasesTableProps> = ({
       dataIndex: 'reviewerId',
       key: 'reviewerId',
       width: 150,
-      render: (reviewerId?: string) => getReviewerName(reviewerId),
+      render: (reviewerId?: string) => <span className="capitalize">{getReviewerName(users, reviewerId)}</span>,
     },
     {
       title: 'Risk Score',
@@ -138,7 +155,7 @@ const ActiveCasesTable: React.FC<ActiveCasesTableProps> = ({
       dataIndex: 'reviewTimestamp',
       key: 'reviewTimestamp',
       width: 150,
-      render: (reviewTimestamp?: Date) => 
+      render: (reviewTimestamp?: Date) =>
         reviewTimestamp ? new Date(reviewTimestamp).toLocaleString() : 'Not reviewed yet',
       sorter: (a: IComplianceTransaction, b: IComplianceTransaction) => {
         if (!a.reviewTimestamp) return -1;
@@ -153,10 +170,10 @@ const ActiveCasesTable: React.FC<ActiveCasesTableProps> = ({
       render: (_: any, record: IComplianceTransaction) => (
         <Space size="small">
           <Tooltip title="View Details">
-            <Button 
-              type="primary" 
-              size="small" 
-              icon={<EyeOutlined />} 
+            <Button
+              type="primary"
+              size="small"
+              icon={<EyeOutlined />}
               onClick={(e) => {
                 e.stopPropagation();
                 handleViewDetails(record);
@@ -164,11 +181,11 @@ const ActiveCasesTable: React.FC<ActiveCasesTableProps> = ({
             />
           </Tooltip>
           <Tooltip title="Approve">
-            <Button 
-              type="primary" 
-              size="small" 
+            <Button
+              type="primary"
+              size="small"
               style={{ backgroundColor: '#52c41a', borderColor: '#52c41a' }}
-              icon={<CheckOutlined />} 
+              icon={<CheckOutlined />}
               onClick={(e) => {
                 e.stopPropagation();
                 // Handle approve action
@@ -176,10 +193,10 @@ const ActiveCasesTable: React.FC<ActiveCasesTableProps> = ({
             />
           </Tooltip>
           <Tooltip title="Escalate">
-            <Button 
-              danger 
-              size="small" 
-              icon={<CloseOutlined />} 
+            <Button
+              danger
+              size="small"
+              icon={<CloseOutlined />}
               onClick={(e) => {
                 e.stopPropagation();
                 // Handle escalate action
@@ -227,7 +244,7 @@ const ActiveCasesTable: React.FC<ActiveCasesTableProps> = ({
         )}
       />
 
-      <TransactionDetailsModal 
+      <TransactionDetailsModal
         isVisible={isDetailsModalVisible}
         onClose={() => setIsDetailsModalVisible(false)}
         transactionId={selectedTransactionId}

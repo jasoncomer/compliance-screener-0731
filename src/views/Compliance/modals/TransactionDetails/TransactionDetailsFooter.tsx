@@ -2,7 +2,7 @@ import { Button, message } from 'antd';
 import { CheckOutlined } from '@ant-design/icons';
 import { ETransactionStatus } from '../../../../typings/compliance';
 import { useState } from 'react';
-import { selectTransactionById, updateTransactionStatus } from '../../../../store/slices/complianceTransactionsSlice';
+import { selectTransactionById, updateTransactionStatus, fetchComplianceTransactions } from '../../../../store/slices/complianceTransactionsSlice';
 import { useAppDispatch, useAppSelector } from '../../../../store/hooks';
 import ApproveTransactionModal from '../ApproveTransaction.modal';
 import { SearchOff } from '@mui/icons-material';
@@ -16,6 +16,8 @@ interface TransactionDetailsFooterProps {
 export const TransactionDetailsFooter = ({ transactionId, onClose, onHighlightAssignSelector }: TransactionDetailsFooterProps) => {
   const dispatch = useAppDispatch();
   const transactionDetails = useAppSelector(state => selectTransactionById(state, transactionId));
+  const filters = useAppSelector(state => state.complianceTransactions.filters);
+  const { page, limit } = useAppSelector(state => state.complianceTransactions);
   const [modalLoading, setModalLoading] = useState(false);
   const [showApproveModal, setShowApproveModal] = useState(false);
 
@@ -30,6 +32,14 @@ export const TransactionDetailsFooter = ({ transactionId, onClose, onHighlightAs
         transactionId: transactionDetails._id, 
         status: ETransactionStatus.APPROVED 
       })).unwrap();
+      
+      // Re-fetch transactions with current filters to update the list
+      const mergedFilters = { 
+        ...filters,
+        page,
+        limit,
+      };
+      dispatch(fetchComplianceTransactions(mergedFilters));
       
       message.success('Transaction approved successfully');
       setShowApproveModal(false);

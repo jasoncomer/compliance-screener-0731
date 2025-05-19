@@ -1,6 +1,6 @@
 import { axiosInstance } from './api';
 
-export const getRelatedEntities = async (entity: string) => {
+const getRelatedEntities = async (entity: string) => {
   try {
     const response = await axiosInstance.get(`/attribution/entity/${entity}/unique-values`, {
       params: {
@@ -16,4 +16,8 @@ export const getRelatedEntities = async (entity: string) => {
     console.error('Error fetching related entities:', error);
     throw error;
   }
-}; 
+};
+
+export const attribution = {
+  getRelatedEntities,
+};

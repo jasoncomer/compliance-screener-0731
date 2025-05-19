@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { BtcTransaction } from '../../../typings/BtcTransaction';
 import { BsBlock } from '../../../styles/Table';
 import BtcTransactionInputsOutputs from './BtcTransactionTableInputsOutputs';
@@ -6,28 +6,7 @@ import styled from 'styled-components';
 import { Link } from 'react-router-dom';
 import { Theme } from '../../../context/ThemeContext';
 import { satsToBTC, truncateAddress } from '../../../utils/crypto';
-
-// Custom hook to track window size
-const useWindowSize = () => {
-  const [windowSize, setWindowSize] = useState({
-    width: window.innerWidth,
-    height: window.innerHeight,
-  });
-
-  useEffect(() => {
-    const handleResize = () => {
-      setWindowSize({
-        width: window.innerWidth,
-        height: window.innerHeight,
-      });
-    };
-
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
-  return windowSize;
-};
+import useWindowSize from '../../../hooks/useWindowSize';
 
 const HeaderWrapper = styled.div<{ theme?: { theme: Theme } }>`
   display: flex;
@@ -103,8 +82,9 @@ interface BtcTransactionTableProps {
 }
 
 const BtcTransactionTable: React.FC<BtcTransactionTableProps> = ({ transaction, theme }) => {
-  if (!transaction) return null;
   const { width } = useWindowSize();
+
+  if (!transaction) return null;
   const isSmallScreen = width < 1080;
 
   return (

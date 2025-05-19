@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { BtcTransaction } from '../../typings/BtcTransaction';
 import { BsBlock } from '../../styles/Table';
@@ -9,28 +9,7 @@ import { api } from '../../api/api';
 import { useTheme } from '../../context/ThemeContext';
 import { useAttribution } from '../../context/AttributionContext';
 import { truncateAddress } from '../../utils/crypto';
-
-// Custom hook to track window size
-const useWindowSize = () => {
-  const [windowSize, setWindowSize] = useState({
-    width: window.innerWidth,
-    height: window.innerHeight,
-  });
-
-  useEffect(() => {
-    const handleResize = () => {
-      setWindowSize({
-        width: window.innerWidth,
-        height: window.innerHeight,
-      });
-    };
-
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
-  return windowSize;
-};
+import useWindowSize from '../../hooks/useWindowSize';
 
 const TransactionView: React.FC = () => {
   const { txid } = useParams();

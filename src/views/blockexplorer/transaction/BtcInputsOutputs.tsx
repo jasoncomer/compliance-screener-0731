@@ -38,7 +38,7 @@ const Wrapper = styled.div`
     grid-template-columns: minmax(300px, 2fr) minmax(200px, 1fr) minmax(120px, 1fr) minmax(120px, 1fr);
     gap: 16px;
     align-items: center;
-    padding: 8px 0;
+    padding-bottom: 2px;
     width: 100%;
     min-width: 0; /* Allow grid to shrink below minimum content size */
   }
@@ -220,7 +220,6 @@ const BtcTxAddress: React.FC<BtcTxAddressProps> = ({ address }) => {
   const [copySuccess, setCopySuccess] = useState(false);
   const [showCopyAlert, setShowCopyAlert] = useState(false);
 
-  // Truncate address if it's longer than 42 characters
   const displayAddress = address.length >= 42 ? truncateAddress(address) : address;
 
   const copyToClipboard = (e: React.MouseEvent) => {
@@ -243,6 +242,9 @@ const BtcTxAddress: React.FC<BtcTxAddressProps> = ({ address }) => {
       <>
         <div className="address-container">
           <div className="address-wrapper">
+            <span className="copy-button" onClick={copyToClipboard} title="Copy address">
+              {copySuccess ? '✓' : '⧉'}
+            </span>
             <span className="address highlighted" title={address}>
               {displayAddress}
             </span>
@@ -384,54 +386,56 @@ const BtcInputsOutputs: React.FC<BtcInputsOutputsProps> = ({ data, type }) => {
 
   const getEntityDisplayName = (entityId: string) => {
     if (!entityId) return '';
-    
+
 
     // Get the entity type from the SOT data
     const entity = Object.values(itemsMap).find(sot => sot.entity_id === entityId);
     const entityType = entity?.entity_type;
-    
+
     // If allowCSAM is false and the entity is CSAM-related, show "CSAM Related Entity"
     if (organization?.settings.allowCSAM === false && entityType === "csam") {
 
       return 'CSAM Related Entity';
     }
-    
+
     // Otherwise show the original entity name
     return entityId;
   };
 
   return (
     <Wrapper>
-      {displayData.map((item: BtcTransaction['inputs'][0] | BtcTransaction['outputs'][0], index: number) => (
-        <Row key={index} className="row-container">
-          <div
-            className="address-container"
-            onMouseEnter={(e) => handleMouseEnter(item.addr, e)}
-            onMouseLeave={handleMouseLeave}
-          >
-            <BtcTxAddress
-              address={item.addr} 
-            />
-          </div>
+      {displayData.map((item: BtcTransaction['inputs'][0] | BtcTransaction['outputs'][0], index: number) => {
+        const entityDisplayName = getEntityDisplayName(attributions[item.addr]?.entity);
+        const boDisplayName = getEntityDisplayName(attributions[item.addr]?.bo);
+        const shouldShowBO = attributions[item.addr]?.bo && attributions[item.addr]?.bo !== attributions[item.addr]?.entity;
+        const titleText = shouldShowBO ? boDisplayName : entityDisplayName || '-';
+        const displayEntityId = formatEntityId(entityDisplayName, boDisplayName);
+        const isEntityTruncated = isEntityIdTruncated(entityDisplayName, boDisplayName);
 
-          <span 
-            className="entity-id" 
-            title={attributions[item.addr]?.bo && attributions[item.addr]?.bo !== attributions[item.addr]?.entity 
-              ? getEntityDisplayName(attributions[item.addr]?.bo)
-              : getEntityDisplayName(attributions[item.addr]?.entity) || '-'}
-            onMouseEnter={(e) => isEntityIdTruncated(attributions[item.addr]?.entity, attributions[item.addr]?.bo) && 
-              handleEntityMouseEnter(attributions[item.addr]?.bo && attributions[item.addr]?.bo !== attributions[item.addr]?.entity 
-                ? getEntityDisplayName(attributions[item.addr]?.bo)
-                : getEntityDisplayName(attributions[item.addr]?.entity) || '', e)}
-            onMouseLeave={handleEntityMouseLeave}
-          >
-            {formatEntityId(getEntityDisplayName(attributions[item.addr]?.entity), getEntityDisplayName(attributions[item.addr]?.bo))}
-          </span>
+        return (
+          <Row key={index} className="row-container">
+            <div
+              className="address-container"
+              onMouseEnter={(e) => handleMouseEnter(item.addr, e)}
+              onMouseLeave={handleMouseLeave}
+            >
+              <BtcTxAddress address={item.addr} />
+            </div>
 
-          <span className="script-type">{attributions[item.addr]?.script_type || '-'}</span>
-          <Amount className="amount">{renderAmt(item.amt)}</Amount>
-        </Row>
-      ))}
+            <span
+              className="entity-id"
+              title={titleText}
+              onMouseEnter={(e) => isEntityTruncated && handleEntityMouseEnter(titleText, e)}
+              onMouseLeave={handleEntityMouseLeave}
+            >
+              {displayEntityId}
+            </span>
+
+            <span className="script-type">{attributions[item.addr]?.script_type || '-'}</span>
+            <Amount className="amount">{renderAmt(item.amt)}</Amount>
+          </Row>
+        );
+      })}
       {showToggle && (
         <ToggleButton onClick={toggleExpand}>
           {isExpanded ? 'Show Less' : `Show All (${data.length})`}

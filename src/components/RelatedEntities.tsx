@@ -3,7 +3,7 @@ import styled from 'styled-components';
 import { Typography, Card, Avatar } from 'antd';
 import { UserOutlined } from '@ant-design/icons';
 import { colors } from '../styles/variables';
-import { getRelatedEntities } from '../api/attribution';
+import { api } from '../api/api';
 
 const { Title } = Typography;
 
@@ -143,7 +143,7 @@ const RelatedEntities: React.FC<RelatedEntitiesProps> = ({ entity, onHasEntities
     const fetchRelatedEntities = async () => {
       try {
         setLoading(true);
-        const data = await getRelatedEntities(entity);
+        const data = await api.sot.getRelatedEntities(entity);
         setRelatedEntities(data);
         // Notify parent about whether we have entities
         onHasEntities?.(

@@ -113,6 +113,19 @@ export const compliance = {
     const response = await axiosInstance.put(endpoint, { assigneeId });
     return response.data.data;
   },
+  
+  // Bulk update transaction assignee
+  bulkUpdateTransactionAssignee: async (
+    transactionIds: string[],
+    assigneeId: string
+  ): Promise<IComplianceTransaction[]> => {
+    const endpoint = `/compliance/transactions/bulk/assignee`;
+    const response = await axiosInstance.post(endpoint, { 
+      transactionIds,
+      assigneeId
+    });
+    return response.data.data.results;
+  },
 
   // Get address change history
   getAddressChangeHistory: async (

@@ -58,6 +58,7 @@ export const TransactionDetailsModal: FC<TransactionDetailsModalProps> = ({
           <TransactionDetailsHeader
             ref={headerRef}
             transactionDetails={transactionDetails}
+            modalOpen={isVisible}
           />
 
           {/* Content Section */}

@@ -102,13 +102,12 @@ interface AssociatedSOTsProps {
 }
 
 const AssociatedSOTs: React.FC<AssociatedSOTsProps> = ({ associatedSots, onSelectSot, currentEntityId }) => {
+  const { itemsMap } = useSelector((state: RootState) => state.sot);
+  
   // Early return if any of these conditions are true
   if (!associatedSots || !Array.isArray(associatedSots) || associatedSots.length === 0 || !currentEntityId) {
     return null;
   }
-
-  const { itemsMap } = useSelector((state: RootState) => state.sot);
-  
   
   // Early return if itemsMap is empty or currentEntity doesn't exist
   if (!itemsMap || Object.keys(itemsMap).length === 0) {

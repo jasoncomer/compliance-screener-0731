@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { Form, Button, Select, Input, DatePicker, Card } from 'antd';
-import { FilterOutlined, ClearOutlined } from '@ant-design/icons';
+import { Form, Button, Select, Input, DatePicker, Card, Modal, message, Row, Col, Space } from 'antd';
+import { FilterOutlined, ClearOutlined, UserOutlined } from '@ant-design/icons';
 import { ETransactionStatus, TransactionFilters } from '../../../typings/compliance';
 import ComplianceHeaderActions from './ComplianceHeaderActions';
 import UnassignedTransactionsTable from './UnassignedTransactionsTable';
 import { EntityModal } from '../modals/EntityModal';
-import { selectCurrentOrganization } from '../../../store/slices/organizationsSlice';
+import { selectCurrentOrganization, selectActiveOrgMembers } from '../../../store/slices/organizationsSlice';
 import { useAppDispatch, useAppSelector } from '../../../store/hooks';
+import { EMemberStatus, IOrganizationMember } from '../../../typings/organization';
+import { getUserDisplayName } from '../../../utils/display-labels';
 import { 
   fetchComplianceTransactions, 
   selectUnassignedTransactions, 
@@ -15,7 +17,8 @@ import {
   selectComplianceFilters,
   setFilters,
   setPage,
-  setLimit
+  setLimit,
+  bulkUpdateTransactionAssignee,
 } from '../../../store/slices/complianceTransactionsSlice';
 
 const { RangePicker } = DatePicker;
@@ -33,10 +36,18 @@ const UnassignedTransactionsTab: React.FC<UnassignedTransactionsTabProps> = ({ i
   const { total: totalTransactions, page: currentPage, limit: pageSize } = useAppSelector(selectPagination);
   const loading = useAppSelector(selectIsLoading);
   const filters = useAppSelector(selectComplianceFilters);
+  const organizationMembers = useAppSelector(selectActiveOrgMembers);
   
+  // Entity modal state
   const [modalVisible, setModalVisible] = useState<boolean>(false);
   const [form] = Form.useForm();
   
+  // Bulk selection state
+  const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
+  const [assignModalVisible, setAssignModalVisible] = useState<boolean>(false);
+  const [selectedReviewer, setSelectedReviewer] = useState<string | null>(null);
+  const [assignLoading, setAssignLoading] = useState<boolean>(false);
+
   // Track available filter options
   const [availableBlockchains, setAvailableBlockchains] = useState<string[]>([]);
 
@@ -67,6 +78,65 @@ const UnassignedTransactionsTab: React.FC<UnassignedTransactionsTabProps> = ({ i
     dispatch(setLimit(pagination.pageSize));
   };
 
+  // Handle row selection change
+  const handleSelectChange = (selectedKeys: React.Key[]) => {
+    setSelectedRowKeys(selectedKeys);
+  };
+
+  // Open bulk assign modal
+  const openBulkAssignModal = () => {
+    if (selectedRowKeys.length === 0) {
+      message.warning('Please select at least one transaction to assign');
+      return;
+    }
+    setAssignModalVisible(true);
+  };
+
+  // Close bulk assign modal
+  const closeBulkAssignModal = () => {
+    setAssignModalVisible(false);
+    setSelectedReviewer(null);
+  };
+
+  // Perform bulk assignment
+  const handleBulkAssign = async () => {
+    if (!selectedReviewer) {
+      message.warning('Please select a reviewer to assign these transactions');
+      return;
+    }
+
+    try {
+      setAssignLoading(true);
+      
+      // Convert selectedRowKeys to string array
+      const transactionIds = selectedRowKeys.map(key => String(key));
+      
+      // Dispatch the bulk update action
+      await dispatch(bulkUpdateTransactionAssignee({
+        transactionIds,
+        assignee: selectedReviewer
+      })).unwrap();
+      
+      // Re-fetch transactions with current filters to update the list
+      const mergedFilters = { 
+        ...filters,
+        page: currentPage,
+        limit: pageSize,
+      };
+      dispatch(fetchComplianceTransactions(mergedFilters));
+      
+      // Clear selection and close modal
+      setSelectedRowKeys([]);
+      closeBulkAssignModal();
+      
+      message.success(`Successfully assigned ${transactionIds.length} transaction(s) for review`);
+    } catch (error) {
+      console.error('Error assigning transactions:', error);
+      message.error('Failed to assign transactions');
+    } finally {
+      setAssignLoading(false);
+    }
+  };
   
   // Clear all filters
   const handleClearFilters = () => {
@@ -150,6 +220,37 @@ const UnassignedTransactionsTab: React.FC<UnassignedTransactionsTabProps> = ({ i
         txCount={totalTransactions}
       />
       
+      {/* Bulk Action Bar */}
+      {selectedRowKeys.length > 0 && (
+        <Card 
+          style={{ marginBottom: 16 }}
+          size="small"
+        >
+          <Row align="middle" justify="space-between">
+            <Col>
+              <span>{selectedRowKeys.length} transaction(s) selected</span>
+            </Col>
+            <Col>
+              <Space>
+                <Button 
+                  type="primary"
+                  icon={<UserOutlined />}
+                  onClick={openBulkAssignModal}
+                >
+                  Assign
+                </Button>
+                <Button 
+                  danger
+                  onClick={() => setSelectedRowKeys([])}
+                >
+                  Clear Selection
+                </Button>
+              </Space>
+            </Col>
+          </Row>
+        </Card>
+      )}
+      
       {/* Filter Panel */}
       <Card 
         title={<><FilterOutlined /> Filters</>}
@@ -218,13 +319,55 @@ const UnassignedTransactionsTab: React.FC<UnassignedTransactionsTabProps> = ({ i
         pageSize={pageSize}
         loading={loading}
         onTableChange={handleTableChange}
+        selectedRowKeys={selectedRowKeys}
+        onSelectChange={handleSelectChange}
       />
       
+      {/* Entity Modal */}
       <EntityModal
         visible={modalVisible}
         onClose={() => setModalVisible(false)}
         entity={null}
       />
+      
+      {/* Bulk Assign Modal */}
+      <Modal
+        title="Assign Transactions"
+        open={assignModalVisible}
+        onCancel={closeBulkAssignModal}
+        footer={[
+          <Button key="cancel" onClick={closeBulkAssignModal}>
+            Cancel
+          </Button>,
+          <Button 
+            key="assign" 
+            type="primary" 
+            loading={assignLoading}
+            disabled={!selectedReviewer}
+            onClick={handleBulkAssign}
+          >
+            Assign
+          </Button>,
+        ]}
+      >
+        <p>Select a team member to assign {selectedRowKeys.length} transaction(s) for review:</p>
+        <Select
+          style={{ width: '100%' }}
+          placeholder="Select a reviewer"
+          value={selectedReviewer}
+          onChange={(value) => setSelectedReviewer(value)}
+          suffixIcon={<UserOutlined />}
+        >
+          {organizationMembers.map(member => {
+            const isDisabled = member.status === EMemberStatus.REMOVED || member.status === EMemberStatus.PENDING;
+            return (
+              <Select.Option key={member.userId} value={member.userId} disabled={isDisabled}>
+                {getUserDisplayName(member as IOrganizationMember)}
+              </Select.Option>
+            );
+          })}
+        </Select>
+      </Modal>
     </div>
   );
 };

@@ -7,7 +7,7 @@ import { selectActiveOrgMembers } from '../../../../store/slices/organizationsSl
 import { useAppSelector, useAppDispatch } from '../../../../store/hooks';
 import { EMemberStatus, IOrganizationMember } from '../../../../typings/organization';
 import { getUserDisplayName } from '../../../../utils/display-labels';
-import { updateTransactionAssignee, updateTransactionStatus } from '../../../../store/slices/complianceTransactionsSlice';
+import { updateTransactionAssignee, updateTransactionStatus, fetchComplianceTransactions } from '../../../../store/slices/complianceTransactionsSlice';
 
 // CSS styles
 const highlightStyles = `
@@ -31,13 +31,17 @@ const highlightStyles = `
 
 interface TransactionDetailsHeaderProps {
   transactionDetails: IComplianceTransaction;
+  modalOpen?: boolean; // New prop to track modal state
 }
 
 const TransactionDetailsHeader = forwardRef<{ highlightAssignSelector: () => void }, TransactionDetailsHeaderProps>(({
   transactionDetails,
+  modalOpen = true,
 }, ref) => {
   const dispatch = useAppDispatch();
   const organizationMembers = useAppSelector(selectActiveOrgMembers);
+  const filters = useAppSelector(state => state.complianceTransactions.filters);
+  const { page, limit } = useAppSelector(state => state.complianceTransactions);
   const selectRef = useRef<any>(null);
 
   // Initialize selectedUserId with the reviewerId from the transaction details
@@ -50,8 +54,17 @@ const TransactionDetailsHeader = forwardRef<{ highlightAssignSelector: () => voi
   useEffect(() => {
     if (transactionDetails?.reviewerId) {
       setSelectedUserId(transactionDetails.reviewerId);
+    } else {
+      setSelectedUserId(null);
     }
   }, [transactionDetails]);
+  
+  // Reset selectedUserId when modal is closed
+  useEffect(() => {
+    if (!modalOpen) {
+      setSelectedUserId(null);
+    }
+  }, [modalOpen]);
   
   // Add styles to the document on mount
   useEffect(() => {
@@ -100,6 +113,14 @@ const TransactionDetailsHeader = forwardRef<{ highlightAssignSelector: () => voi
         transactionId: transactionDetails._id, 
         status: ETransactionStatus.IN_REVIEW 
       })).unwrap();
+
+      // Re-fetch transactions with current filters to update the list
+      const mergedFilters = { 
+        ...filters,
+        page,
+        limit,
+      };
+      dispatch(fetchComplianceTransactions(mergedFilters));
 
       message.success('Transaction assigned successfully');
       // Update the selected user ID

@@ -94,7 +94,8 @@ const ActiveCasesTab: React.FC<ActiveCasesTabProps> = ({ isActive }) => {
   };
   
   // Handle filter form submission
-  const handleFilterSubmit = (values: any) => {
+  const handleFilterSubmit = (values: Record<string, any>) => {
+    console.log('handleFilterSubmit', values);
     // Create new filter object
     const newFilters: TransactionFilters = {
       ...filters,
@@ -103,6 +104,13 @@ const ActiveCasesTab: React.FC<ActiveCasesTabProps> = ({ isActive }) => {
     };
     
     // Add form filters
+    console.log('newFilters', newFilters);
+    if (values.status) {
+      newFilters.status = values.status;
+    } else {
+      delete newFilters.status;
+    }
+
     if (values.blockchain) {
       newFilters.blockchain = values.blockchain;
     } else {
@@ -177,6 +185,23 @@ const ActiveCasesTab: React.FC<ActiveCasesTabProps> = ({ isActive }) => {
           onFinish={handleFilterSubmit}
           style={{ display: 'flex', flexWrap: 'wrap' }}
         >
+          <Form.Item name="status" style={{ minWidth: 120, marginBottom: 8 }}>
+            <Select 
+              placeholder="Status"
+              allowClear
+              size="small"
+              style={{ width: 150 }}
+              onChange={(value) => handleFilterSubmit({ status: value })}
+            >
+              <Select.Option value={ETransactionStatus.UNREVIEWED}>Unreviewed</Select.Option>
+              <Select.Option value={ETransactionStatus.IN_REVIEW}>In Review</Select.Option>
+              <Select.Option value={ETransactionStatus.HOLD}>Hold</Select.Option>
+              {/* <Select.Option value={ETransactionStatus.APPROVED}>Approved</Select.Option> */}
+              {/* <Select.Option value={ETransactionStatus.CLOSED_WITH_NOTE}>Closed with note</Select.Option> */}
+              {/* <Select.Option value={ETransactionStatus.CLOSED_WITH_SAR}>Closed with SAR</Select.Option> */}
+            </Select>
+          </Form.Item>
+
           <Form.Item name="blockchain" style={{ minWidth: 120, marginBottom: 8 }}>
             <Select 
               placeholder="Blockchain"

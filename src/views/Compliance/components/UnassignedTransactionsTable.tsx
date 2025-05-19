@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Table, Tag } from 'antd';
+import type { TableRowSelection } from 'antd/es/table/interface';
 import { colors } from '../../../styles/variables';
 import { ETransactionStatus, IComplianceTransaction } from '../../../typings/compliance';
 import { conversionRates, currencySymbols } from './CurrencySelector';
@@ -8,6 +9,7 @@ import { useAttribution } from '../../../context/AttributionContext';
 import { truncateAddress } from '../../../utils/crypto';
 import { getRiskScoreColor } from '../utils/compliance.utils';
 import { getBlockchainLabel } from '../../../utils/display-labels';
+import { useCryptoPrices } from '../../../hooks/useCryptoPrices';
 
 
 interface TransactionsTableProps {
@@ -18,6 +20,9 @@ interface TransactionsTableProps {
   loading: boolean;
   onTableChange: (pagination: any) => void;
   onEntityClick?: (record: IComplianceTransaction) => void;
+  // New props for selection
+  selectedRowKeys: React.Key[];
+  onSelectChange: (selectedRowKeys: React.Key[]) => void;
 }
 
 const UnassignedTransactionsTable: React.FC<TransactionsTableProps> = ({
@@ -27,16 +32,31 @@ const UnassignedTransactionsTable: React.FC<TransactionsTableProps> = ({
   pageSize,
   loading,
   onTableChange,
+  selectedRowKeys,
+  onSelectChange,
 }) => {
   const denom = 'USD';
   const { attributions } = useAttribution();
   const [isDetailsModalVisible, setIsDetailsModalVisible] = useState(false);
   const [selectedTransactionId, setSelectedTransactionId] = useState<string | null>(null);
+  const { getPrice } = useCryptoPrices();
+  const btcPrice = getPrice('BTC') || 0;
 
   // Function to handle row click to show transaction details
   const handleRowClick = (record: IComplianceTransaction) => {
     setSelectedTransactionId(record._id);
     setIsDetailsModalVisible(true);
+  };
+
+  // Configure row selection
+  const rowSelection: TableRowSelection<IComplianceTransaction> = {
+    selectedRowKeys,
+    onChange: onSelectChange,
+    selections: [
+      Table.SELECTION_ALL,
+      Table.SELECTION_INVERT,
+      Table.SELECTION_NONE,
+    ],
   };
 
   const columns = [
@@ -128,7 +148,7 @@ const UnassignedTransactionsTable: React.FC<TransactionsTableProps> = ({
         <span>
           {currencySymbols[denom]}
           {
-            ((record.amount / 100000000) * 83000)
+            ((record.amount / 100000000) * btcPrice)
               .toLocaleString(
                 'en-US',
                 { minimumFractionDigits: 0, maximumFractionDigits: 2 }
@@ -169,6 +189,7 @@ const UnassignedTransactionsTable: React.FC<TransactionsTableProps> = ({
         dataSource={transactions}
         columns={columns}
         rowKey="_id"
+        rowSelection={rowSelection}
         sticky={{
           offsetHeader: 0,
           offsetScroll: 0,
@@ -184,7 +205,13 @@ const UnassignedTransactionsTable: React.FC<TransactionsTableProps> = ({
         loading={loading}
         onChange={onTableChange}
         onRow={(record) => ({
-          onClick: () => handleRowClick(record),
+          onClick: (event) => {
+            // Don't trigger details modal if click was on a checkbox
+            const target = event.target as HTMLElement;
+            if (target.tagName.toLowerCase() !== 'input' && target.className.indexOf('ant-checkbox') === -1) {
+              handleRowClick(record);
+            }
+          },
         })}
         scroll={{ x: 1400 }}
       />

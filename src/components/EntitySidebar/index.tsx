@@ -1,19 +1,27 @@
 import React from 'react';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../store/store';
-import { getRelatedEntities } from '../../api/attribution';
-import { EntitySidebarProps, RelatedEntities } from './types';
+import { api } from '../../api/api';
+import { RelatedEntities } from './types';
 import { SidebarCard, ScrollableContent } from './styles';
 import { EntityListSection } from './EntityListSection';
 import { RelatedEntitySection } from './RelatedEntitySection';
+import { SOT } from '../../typings/interfaces';
 
-const EntitySidebar: React.FC<EntitySidebarProps> = ({ currentEntityId, onSelectSot }) => {
+// Explicitly declare the props matching the interface
+interface Props {
+  associatedSots: SOT[] | null;
+  currentEntityId?: string;
+  onSelectSot: (sot: SOT) => void;
+}
+
+const EntitySidebar: React.FC<Props> = ({ associatedSots, currentEntityId, onSelectSot }) => {
   const { itemsMap } = useSelector((state: RootState) => state.sot);
   const [relatedEntities, setRelatedEntities] = React.useState<RelatedEntities | null>(null);
 
   React.useEffect(() => {
     if (currentEntityId) {
-      getRelatedEntities(currentEntityId)
+      api.sot.getRelatedEntities(currentEntityId)
         .then(setRelatedEntities)
         .catch(() => setRelatedEntities(null));
     }
@@ -35,7 +43,8 @@ const EntitySidebar: React.FC<EntitySidebarProps> = ({ currentEntityId, onSelect
     (isParentEntity && childEntities.length > 0) ||
     (!isParentEntity && siblingEntities.length > 0) ||
     (relatedEntities?.unique_custodians && relatedEntities.unique_custodians.length > 0) ||
-    (relatedEntities?.unique_bos && relatedEntities.unique_bos.length > 0)
+    (relatedEntities?.unique_bos && relatedEntities.unique_bos.length > 0) ||
+    (associatedSots && associatedSots.length > 0)
   );
 
   if (!hasContent) return null;
@@ -67,6 +76,15 @@ const EntitySidebar: React.FC<EntitySidebarProps> = ({ currentEntityId, onSelect
             />
           )
         )}
+        
+        {associatedSots && associatedSots.length > 0 && (
+          <EntityListSection
+            entities={associatedSots}
+            title="Related Entities"
+            onSelectEntity={onSelectSot}
+          />
+        )}
+        
         {relatedEntities?.unique_custodians && relatedEntities.unique_custodians.length > 0 && (
           <RelatedEntitySection
             entities={relatedEntities.unique_custodians}

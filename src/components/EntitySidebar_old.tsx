@@ -8,7 +8,7 @@ import { RootState } from '../store/store';
 import { getEntityTypeLabel } from '../utils/display-labels';
 import { EEntityType } from '../typings/SOT';
 import { colors } from '../styles/variables';
-import { getRelatedEntities } from '../api/attribution';
+import { api } from '../api/api';
 
 const { Title } = Typography;
 
@@ -141,13 +141,13 @@ interface EntitySidebarProps {
   onSelectSot: (sot: SOT) => void;
 }
 
-const EntitySidebar: React.FC<EntitySidebarProps> = ({ currentEntityId, onSelectSot }) => {
+const EntitySidebar = ({ currentEntityId, onSelectSot }: EntitySidebarProps) => {
   const { itemsMap } = useSelector((state: RootState) => state.sot);
   const [relatedEntities, setRelatedEntities] = React.useState<{ unique_bos: string[]; unique_custodians: string[] } | null>(null);
 
   React.useEffect(() => {
     if (currentEntityId) {
-      getRelatedEntities(currentEntityId).then(setRelatedEntities).catch(() => setRelatedEntities(null));
+      api.sot.getRelatedEntities(currentEntityId).then(setRelatedEntities).catch(() => setRelatedEntities(null));
     }
   }, [currentEntityId]);
 

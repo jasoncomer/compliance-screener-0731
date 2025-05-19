@@ -173,7 +173,6 @@ const Address: React.FC = () => {
   const itemsPerPage = 20;
   const { fetchAttributions, attributions } = useAttribution();
   const organization = useAppSelector(selectCurrentOrganization);
-
   const { itemsMap } = useAppSelector((state: RootState) => state.sot);
 
   const [summary, setSummary] = React.useState<{
@@ -204,23 +203,23 @@ const Address: React.FC = () => {
   });
   const totalPages = Math.ceil(totalTxs / itemsPerPage);
 
-  const getAddressStats = async () => {
-    if (!address) return;
-    const blockStatsData = await api.blockchain.getAddressBlockStats(address);
-    setBlockStats(blockStatsData);
-  };
-
   useEffect(() => {
     // Fetch SOT data when component mounts
     dispatch(fetchSOT());
   }, [dispatch]);
 
   useEffect(() => {
+    const getAddressStats = async () => {
+      if (!address) return;
+      const blockStatsData = await api.blockchain.getAddressBlockStats(address);
+      setBlockStats(blockStatsData);
+    };
+    
     const fetchAddress = async () => {
       try {
         if (!address) return;
         setIsLoading(true);
-        getAddressStats();
+        await getAddressStats();
         const [{ data }, { txs, pagination }] = await Promise.all([
           api.blockchain.getAddress(address),
           api.blockchain.getAddressTransactions(address, {

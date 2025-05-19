@@ -1,7 +1,8 @@
 import {
   Route,
   Routes,
-  Navigate
+  Navigate,
+  useLocation
 } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { ThemeProvider as StyledThemeProvider } from 'styled-components';
@@ -26,6 +27,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import Welcome from './views/Welcome/index';
 import { useAppDispatch } from './store/hooks';
 import { fetchOrganizations } from './store/slices/organizationsSlice';
+import { useAnalytics } from './hooks/useAnalytics';
 
 function App() {
   const dispatch = useAppDispatch();
@@ -33,6 +35,8 @@ function App() {
   const { theme } = useTheme();
   const [isLoading, setIsLoading] = useState(true);
   const [messageApi, contextHolder] = message.useMessage();
+  const location = useLocation();
+  const { trackUser, trackPageView, clearUser } = useAnalytics();
 
   const currentTheme = theme === 'light' ? lightTheme : darkTheme;
 
@@ -40,6 +44,16 @@ function App() {
     // Set data-theme attribute on body
     document.body.setAttribute('data-theme', theme);
   }, [theme]);
+
+  // Track page views
+  useEffect(() => {
+    if (!isLoading) {
+      trackPageView(location.pathname, {
+        isAuthenticated: !!user,
+        theme
+      });
+    }
+  }, [location.pathname, isLoading, user, theme, trackPageView]);
 
   useEffect(() => {
     const loadUser = async () => {
@@ -59,14 +73,21 @@ function App() {
           // Set the auth token first
           await setAuthToken(storedToken);
           
-          // Then set the user
+          // Then set the user and track user identification
           setUser(parsedUser);
+          trackUser(parsedUser.id, {
+            email: parsedUser.email,
+            name: parsedUser.name,
+            role: parsedUser.role
+          });
+          
           dispatch(fetchOrganizations());
           
         } catch (parseError) {
           // Handle invalid stored data
           localStorage.removeItem(accessToken);
           localStorage.removeItem(userKey);
+          clearUser();
           messageApi.error('Session data corrupted. Please login again.');
         }
       } catch (error) {
@@ -77,7 +98,7 @@ function App() {
     };
 
     loadUser();
-  }, [setUser, messageApi, dispatch]);
+  }, [setUser, messageApi, dispatch, trackUser, clearUser]);
 
   if (isLoading) {
     return (

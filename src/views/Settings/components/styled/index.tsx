@@ -105,11 +105,12 @@ export const InfoList = styled.div`
 export const InfoItem = styled.div`
   display: flex;
   align-items: center;
+  justify-content: space-between;
   background: ${props => props.theme.theme === 'dark' ? '#141414' : '#f8f9fa'};
   padding: 12px 16px;
   border-radius: 8px;
   transition: all ${transitionLength} ease;
-  height: 50px;
+  min-height: 50px;
 
   &:hover {
     transform: translateY(-2px);
@@ -122,17 +123,21 @@ export const Label = styled.span`
   color: ${props => props.theme.theme === 'dark' ? '#a0a0a0' : '#7f8c8d'};
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  width: 300px;
+  min-width: 200px;
   text-align: left;
   line-height: 1.5;
 `;
 
-export const Value = styled.p`
+export const Value = styled.div`
   font-size: 16px;
   font-weight: 500;
   color: ${props => props.theme.theme === 'dark' ? '#ffffff' : '#2c3e50'};
   margin: 0;
   line-height: 1.5;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  
   &.capitalize {
     text-transform: capitalize;
   }
@@ -147,7 +152,6 @@ export const Button = styled.button`
   font-weight: 500;
   cursor: pointer;
   transition: background ${transitionLength} ease;
-  margin-top: 24px;
 
   &:hover {
     background: #2980b9;

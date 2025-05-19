@@ -1,5 +1,6 @@
 import { SOT } from '../../typings/interfaces';
 
+// Renamed interface for clarity
 export interface EntitySidebarProps {
   associatedSots: SOT[] | null;
   currentEntityId?: string;
@@ -9,4 +10,4 @@ export interface EntitySidebarProps {
 export interface RelatedEntities {
   unique_bos: string[];
   unique_custodians: string[];
-} 
+}

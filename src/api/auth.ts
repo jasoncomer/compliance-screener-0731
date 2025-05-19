@@ -32,9 +32,15 @@ const deleteAccount = async (userId: string): Promise<IBSApiResponse<null>> => {
   return res.data;
 }
 
+export const changePassword = async (currentPassword: string, newPassword: string): Promise<IBSApiResponse<null>> => {
+  const res = await axiosInstance.post(`/auth/change-password`, { currentPassword, newPassword });
+  return res.data;
+}
+
 // Other auth API functions...
 export const users = {
   authenticateUser,
+  changePassword,
   registerUser,
   resetPassword,
   deleteAccount,

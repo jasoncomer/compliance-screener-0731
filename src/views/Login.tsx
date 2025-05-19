@@ -6,6 +6,7 @@ import { api, setAuthToken } from '../api/api';
 import { useAppContext } from '../context/AppContext';
 import { storage } from '../utils/storage';
 import Input from '../components/common/Input';
+import { useAnalytics } from '../hooks/useAnalytics';
 
 import type { NotificationArgsProps } from 'antd';
 
@@ -16,6 +17,7 @@ const Login = () => {
   const location = useLocation();
   const { setUser } = useAppContext();
   const [notifApi, contextHolder] = notification.useNotification();
+  const { trackEvent, trackError } = useAnalytics();
 
   const [password, setPassword] = useState('');
   const [email, setEmail] = useState('');
@@ -33,6 +35,8 @@ const Login = () => {
   const handleLogin = async () => {
     setIsLoading(true);
     try {
+      trackEvent('Login Attempt', { email });
+      
       const res = await api.users.authenticateUser(email, password);
       if (res.success) {
         // Store auth data
@@ -43,11 +47,18 @@ const Login = () => {
         setAuthToken(res.data.accessToken);
         setUser(res.data.user);
         
+        // Track successful login
+        trackEvent('Login Success', {
+          userId: res.data.user._id,
+          email: res.data.user.email
+        });
+        
         // Navigate to the saved location or default route
         const from = (location.state as any)?.from?.pathname || '/home/cases';
         nav(from, { replace: true });
       }
     } catch (err) {
+      trackError(err as Error, { email });
       openNotification('topRight');
       console.error(err);
     } finally {
@@ -56,6 +67,7 @@ const Login = () => {
   };
 
   const navRegister = () => {
+    trackEvent('Navigate to Register');
     nav('/register');
   };
 

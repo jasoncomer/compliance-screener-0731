@@ -10,7 +10,7 @@ export const SidebarCard = styled(Card)<{ $hasContent: boolean }>`
   background-color: ${({ theme }) => theme.theme === 'dark' ? '#141414' : '#fff'};
   max-height: 80vh;
   overflow: hidden;
-  border-radius: 16px;
+  border-radius: 8px;
   .ant-card-body {
     flex: 1;
     display: flex;
@@ -22,7 +22,10 @@ export const SidebarCard = styled(Card)<{ $hasContent: boolean }>`
 `;
 
 export const ScrollableContent = styled.div`
+  display: flex;
+  flex-direction: column;
   flex: 1;
+  gap: 12px;
   overflow-y: auto;
   padding-right: 8px;
     &::-webkit-scrollbar {
@@ -49,7 +52,6 @@ export const Section = styled.div`
 
 export const SectionTitle = styled(Title)`
   &.ant-typography {
-    margin-bottom: 0px;
     margin-top: 0px;
     font-size: 16px;
   }

@@ -10,6 +10,7 @@ import { getUserDisplayName } from '../../../../utils/display-labels';
 import { selectTransactionById } from '../../../../store/slices/complianceTransactionsSlice';
 import EntityQuickView from '../../../../components/EntityQuickView';
 import { SOT } from '../../../../typings/interfaces';
+import { useCryptoPrices } from '../../../../hooks/useCryptoPrices';
 
 // Base Styled Components
 const Panel = {
@@ -117,6 +118,8 @@ export const LeftPanel: React.FC<LeftPanelProps> = ({
   const denom = 'USD';
   const { itemsMap } = useAppSelector(state => state.sot);
   const [_, setSelectedEntitySot] = useState<SOT | null>(null);
+  const { getPrice } = useCryptoPrices();
+  const btcPrice = getPrice('BTC') || 0;
   
   if (!transactionDetails) return null;
 
@@ -218,7 +221,7 @@ export const LeftPanel: React.FC<LeftPanelProps> = ({
           <Field.Label>CONVERTED AMOUNT</Field.Label>
           <Field.Bold>
             {currencySymbols[denom]}
-            {((transactionDetails.amount / 100000000) * 83000).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
+            {((transactionDetails.amount / 100000000) * btcPrice).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
           </Field.Bold>
         </Field.Container>
       </Amount.Container>
