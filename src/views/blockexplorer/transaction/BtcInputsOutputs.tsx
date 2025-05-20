@@ -404,13 +404,17 @@ const BtcInputsOutputs: React.FC<BtcInputsOutputsProps> = ({ data, type }) => {
 
   return (
     <Wrapper>
-      {displayData.map((item: BtcTransaction['inputs'][0] | BtcTransaction['outputs'][0], index: number) => {
+      {displayData.map((
+        item: BtcTransaction['inputs'][0] | BtcTransaction['outputs'][0], 
+        index: number,
+      ) => {
         const entityDisplayName = getEntityDisplayName(attributions[item.addr]?.entity);
         const boDisplayName = getEntityDisplayName(attributions[item.addr]?.bo);
         const shouldShowBO = attributions[item.addr]?.bo && attributions[item.addr]?.bo !== attributions[item.addr]?.entity;
         const titleText = shouldShowBO ? boDisplayName : entityDisplayName || '-';
         const displayEntityId = formatEntityId(entityDisplayName, boDisplayName);
         const isEntityTruncated = isEntityIdTruncated(entityDisplayName, boDisplayName);
+        const scriptType = attributions[item.addr]?.script_type;
 
         return (
           <Row key={index} className="row-container">
@@ -431,7 +435,7 @@ const BtcInputsOutputs: React.FC<BtcInputsOutputsProps> = ({ data, type }) => {
               {displayEntityId}
             </span>
 
-            <span className="script-type">{attributions[item.addr]?.script_type || '-'}</span>
+            <span className="script-type">{scriptType || '-'}</span>
             <Amount className="amount">{renderAmt(item.amt)}</Amount>
           </Row>
         );
