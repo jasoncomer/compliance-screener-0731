@@ -2,7 +2,7 @@ import { axiosInstance } from './api';
 import {
   ISubscriptionTier,
   IOrganizationSubscription,
-} from '@src/typings/subscription';
+} from '../typings/subscription';
 
 export const subscription = {
   /**
