@@ -5,6 +5,7 @@ import { sot } from './sot';
 import { compliance } from './compliance';
 import { organizations } from './organizations';
 import { crypto } from './crypto';
+import { subscription } from './subscription';
 
 const BASE_URL = process.env.NODE_ENV === 'production' ? 'https://api.blockscout.ai/api/v1' : 'http://localhost:8004/api/v1';
 
@@ -27,6 +28,7 @@ export const api = {
   crypto,
   organizations,
   sot,
+  subscription,
   users,
 };
 

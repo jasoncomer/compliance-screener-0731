@@ -18,6 +18,7 @@ import PreferencesSection from './components/PreferencesSection';
 import NotificationsSection from './components/NotificationsSection';
 import SecuritySection from './components/SecuritySection';
 import OrganizationSection from './components/OrganizationSection';
+import SubscriptionSection from './components/SubscriptionSection';
 import SettingsSidebar from './components/SettingsSidebar';
 import { SettingSection } from '../../typings/settings';
 import { EMemberRole, IOrganization } from '../../typings/organization';
@@ -138,23 +139,29 @@ const Settings = () => {
             onUpdateOrganization={handleUpdateOrganization}
           />
         );
+      case 'subscription':
+        return <SubscriptionSection theme={theme} />;
       default:
         return <ProfileSection user={user || undefined} enabled theme={theme} />;
     }
   };
 
+  // Only use full width for subscription section
+  const isFullWidth = activeSection === 'subscription';
+
   return (
     <ViewWrapper
       icon={<SettingOutlined />}
       title="Settings"
+      fullWidth={isFullWidth}
     >
-      <SettingsLayout>
+      <SettingsLayout className={isFullWidth ? 'full-width-layout' : ''}>
         <SettingsSidebar
           activeSection={activeSection}
           onSectionChange={setActiveSection}
           theme={theme}
         />
-        <ContentArea>
+        <ContentArea className={isFullWidth ? 'full-width-content' : ''}>
           {renderContent()}
         </ContentArea>
       </SettingsLayout>

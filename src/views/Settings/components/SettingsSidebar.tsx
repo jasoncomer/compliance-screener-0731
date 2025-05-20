@@ -3,7 +3,8 @@ import {
   SettingOutlined, 
   UserOutlined, 
   BellOutlined,
-  SecurityScanOutlined 
+  SecurityScanOutlined,
+  CrownOutlined
 } from '@ant-design/icons';
 import { Sidebar, SidebarItem } from './styled';
 import { SettingSection } from '../../../typings/settings';
@@ -37,6 +38,15 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
       >
         <SettingOutlined className="icon" />
         <span>Organization</span>
+      </SidebarItem>
+
+      <SidebarItem 
+        theme={{ theme }} 
+        data-active={activeSection === 'subscription'}
+        onClick={() => onSectionChange('subscription')}
+      >
+        <CrownOutlined className="icon" />
+        <span>Subscription</span>
       </SidebarItem>
 
       <SidebarItem 

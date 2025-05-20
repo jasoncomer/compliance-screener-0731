@@ -7,6 +7,7 @@ const ViewContainer = styled.div<{ $theme: 'light' | 'dark'; $fullWidth?: boolea
   width: 100%;
   height: auto;
   background-color: ${props => props.$theme === 'light' ? colors.white : 'inherit'};
+  max-width: ${props => props.$fullWidth ? '100%' : '1200px'};
 `;
 
 const TitleContainer = styled.div`

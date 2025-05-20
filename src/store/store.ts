@@ -3,6 +3,7 @@ import sotReducer from './slices/sotSlice';
 import complianceTransactionsReducer from './slices/complianceTransactionsSlice';
 import monitoredAddressesReducer from './slices/monitoredAddressesSlice';
 import organizationsReducer from './slices/organizationsSlice';
+import subscriptionReducer from './slices/subscriptionSlice';
 
 export const store = configureStore({
   reducer: {
@@ -10,6 +11,7 @@ export const store = configureStore({
     complianceTransactions: complianceTransactionsReducer,
     monitoredAddresses: monitoredAddressesReducer,
     organizations: organizationsReducer,
+    subscription: subscriptionReducer,
   },
 });
 

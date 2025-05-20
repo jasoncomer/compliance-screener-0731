@@ -7,6 +7,10 @@ export const SettingsLayout = styled.div`
   gap: 2rem;
   width: 100%;
   min-height: calc(100vh - 200px);
+  
+  &.full-width-layout {
+    max-width: 100%;
+  }
 `;
 
 export const Sidebar = styled.div`
@@ -64,7 +68,13 @@ export const SidebarItem = styled.div<{ 'data-active'?: boolean }>`
 
 export const ContentArea = styled.div`
   flex: 1;
+  min-width: 0; /* This prevents flex items from overflowing */
+  width: 100%;
   max-width: 800px;
+  
+  &.full-width-content {
+    max-width: none;
+  }
 `;
 
 export const Card = styled.div`
