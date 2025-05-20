@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Table, Tag } from 'antd';
 import type { TableRowSelection } from 'antd/es/table/interface';
 import { colors } from '../../../styles/variables';
@@ -39,8 +39,16 @@ const UnassignedTransactionsTable: React.FC<TransactionsTableProps> = ({
   const { attributions } = useAttribution();
   const [isDetailsModalVisible, setIsDetailsModalVisible] = useState(false);
   const [selectedTransactionId, setSelectedTransactionId] = useState<string | null>(null);
-  const { getPrice } = useCryptoPrices();
-  const btcPrice = getPrice('BTC') || 0;
+  const { getPrice, prices } = useCryptoPrices();
+  const [btcPrice, setBtcPrice] = useState<number>(0);
+
+  // Update BTC price when prices change
+  useEffect(() => {
+    const price = getPrice('BTC');
+    if (price !== null) {
+      setBtcPrice(price);
+    }
+  }, [prices, getPrice]);
 
   // Function to handle row click to show transaction details
   const handleRowClick = (record: IComplianceTransaction) => {
