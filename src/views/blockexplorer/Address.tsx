@@ -360,7 +360,7 @@ const Address: React.FC = () => {
                       <div className="field-group">
                         <div className='label'>{capitalizeFirstLetter('Name')}</div>
                         <div className="entity-name">
-                          {capitalizeFirstLetter(getEntityDisplayName(attributions[address].entity))}
+                          {getEntityDisplayName(attributions[address].entity)}
                         </div>
                       </div>
                       <div className="field-group">
@@ -390,7 +390,7 @@ const Address: React.FC = () => {
                       <div className="field-group">
                         <div className='label'>{capitalizeFirstLetter('Name')}</div>
                         <div className="entity-name">
-                          {capitalizeFirstLetter(getEntityDisplayName(attributions[address].bo))}
+                          {getEntityDisplayName(attributions[address].bo)}
                         </div>
                       </div>
                       <div className="field-group">
@@ -419,7 +419,7 @@ const Address: React.FC = () => {
                       <div className="field-group">
                         <div className='label'>{capitalizeFirstLetter('Name')}</div>
                         <div className="entity-name">
-                          {capitalizeFirstLetter(attributions[address].custodian)}
+                          {attributions[address].custodian}
                         </div>
                       </div>
                       <div className="field-group">
