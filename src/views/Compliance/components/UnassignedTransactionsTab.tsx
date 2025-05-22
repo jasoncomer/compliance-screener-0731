@@ -303,11 +303,11 @@ const UnassignedTransactionsTab: React.FC<UnassignedTransactionsTabProps> = ({ i
           </Form.Item>
           
           <Form.Item name="minAmount" style={{ width: 100 }}>
-            <Input type="number" placeholder="Min BTC" step="0.0001" size="small" />
+            <Input type="number" placeholder="Min BTC" step="0.0001" min="0" size="small" />
           </Form.Item>
           
           <Form.Item name="maxAmount" style={{ width: 100 }}>
-            <Input type="number" placeholder="Max BTC" step="0.0001" size="small" />
+            <Input type="number" placeholder="Max BTC" step="0.0001" min="0" size="small" />
           </Form.Item>
         </Form>
       </Card>
