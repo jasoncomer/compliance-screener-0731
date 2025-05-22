@@ -25,18 +25,21 @@ const AddressLayout = styled.div`
   display: flex;
   flex-direction: column;
   height: 100%;
+  width: 100%;
   overflow: hidden;
 `;
 
 const FixedAddressHeader = styled.div`
   position: sticky;
   top: 0;
+  width: 100%;
   background: ${props => props.theme.theme === 'dark' ? '#141414' : '#ffffff'};
   z-index: 9;
 `;
 
 const ScrollableAddressContent = styled.div`
   flex: 1;
+  width: 100%;
   overflow-y: auto;
   padding-top: 20px;
 

@@ -50,7 +50,11 @@ const ComplianceScreener: React.FC = () => {
   );
 
   return (
-    <ViewWrapper title="Compliance Screener" icon={<AuditOutlined style={{ fontSize: '28px', color: colors.attributionHover, fontWeight: 'bold' }} />}>
+    <ViewWrapper 
+      title="Compliance Screener" 
+      icon={<AuditOutlined style={{ fontSize: '28px', color: colors.attributionHover, fontWeight: 'bold' }} />}
+      fullWidth={true}
+    >
       <p style={{ marginTop: -15, color: theme === 'light' ? colors.black : colors.white }}>
         {activeTab === 'active-cases' 
           ? 'This page shows transactions under investigation that require compliance review or escalation.'

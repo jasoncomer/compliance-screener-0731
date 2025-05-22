@@ -151,7 +151,7 @@ const ActiveCasesTab: React.FC<ActiveCasesTabProps> = ({ isActive }) => {
   };
 
   return (
-    <>
+    <div style={{ width: '100%' }}>
       <HeaderActions>
         <h3 style={{ margin: 0, color: theme === 'light' ? colors.black : colors.white }}>
           <FileSearchOutlined style={{ marginRight: '8px' }} />
@@ -270,7 +270,7 @@ const ActiveCasesTab: React.FC<ActiveCasesTabProps> = ({ isActive }) => {
         loading={loading}
         onTableChange={handleTableChange}
       />
-    </>
+    </div>
   );
 };
 

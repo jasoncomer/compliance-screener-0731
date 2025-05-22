@@ -32,14 +32,23 @@ const RiskDetailsTable: React.FC<RiskDetailsTableProps> = ({ riskScores }) => {
       title: 'Risk Score',
       dataIndex: 'score',
       key: 'score',
-      render: (score: number) => (
-        <Progress 
-          percent={Number((score * 100).toFixed(2))} 
-          size="small" 
-          status={score * 100 > 70 ? 'exception' : 'normal'} 
-          strokeColor={score * 100 > 70 ? '#cf1322' : score * 100 > 40 ? '#faad14' : '#3f8600'}
-        />
-      ),
+      render: (score: number) => {
+        // Format function to ensure percentage is always visible
+        const formatPercent = (percent?: number) => {
+          if (percent === undefined) return '0%';
+          return `${percent}%`;
+        };
+        
+        return (
+          <Progress 
+            percent={Number((score * 100).toFixed(2))} 
+            size="small" 
+            status={score * 100 > 70 ? 'exception' : 'normal'} 
+            strokeColor={score * 100 > 70 ? '#cf1322' : score * 100 > 40 ? '#faad14' : '#3f8600'}
+            format={formatPercent}
+          />
+        );
+      },
     },
     {
       title: 'Description',
@@ -78,7 +87,7 @@ const RiskDetailsTable: React.FC<RiskDetailsTableProps> = ({ riskScores }) => {
   );
 
   return (
-    <Card style={{ marginTop: '24px' }}>
+    <Card style={{ marginTop: '24px', width: '100%' }}>
       <Tabs defaultActiveKey="transaction">
         <TabPane tab="Transaction Risk Factors" key="transaction">
           <Table 
@@ -87,6 +96,7 @@ const RiskDetailsTable: React.FC<RiskDetailsTableProps> = ({ riskScores }) => {
             pagination={false}
             rowKey="id"
             locale={{ emptyText: customTransactionEmptyState() }}
+            style={{ width: '100%' }}
           />
           {/* <TransactionDetails transactionInfo={riskScores.transactionInfo} /> */}
         </TabPane>
@@ -97,6 +107,7 @@ const RiskDetailsTable: React.FC<RiskDetailsTableProps> = ({ riskScores }) => {
             pagination={false}
             locale={{ emptyText: customEntityEmptyState() }}
             rowKey="id"
+            style={{ width: '100%' }}
           />
           {riskScores.sot && (
             <EntityDetails sot={riskScores.sot} />
@@ -109,6 +120,7 @@ const RiskDetailsTable: React.FC<RiskDetailsTableProps> = ({ riskScores }) => {
             pagination={false}
             locale={{ emptyText: customJurisdictionEmptyState() }}
             rowKey="id"
+            style={{ width: '100%' }}
           />
           {riskScores.sot?.associated_countries && riskScores.sot.associated_countries.length > 0 && (
             <JurisdictionMap 

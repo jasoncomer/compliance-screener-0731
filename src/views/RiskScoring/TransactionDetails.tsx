@@ -20,31 +20,40 @@ interface TransactionDetailsProps {
   transactionInfo: TransactionInfo;
 }
 
-const RiskFactorSection: React.FC<{ title: string; factor: RiskFactor }> = ({ title, factor }) => (
-  <div>
-    <Space align="center">
-      <Text strong>{title}</Text>
-      <Progress 
-        percent={factor.score * 100} 
-        size="small" 
-        status={factor.score * 100 > 70 ? 'exception' : 'normal'}
-        strokeColor={getRiskColor(factor.score * 100)}
-      />
-    </Space>
-    <Text type="secondary" style={{ display: 'block', marginTop: '4px' }}>
-      {factor.description}
-    </Text>
-    {factor.details && (
-      <DetailsList>
-        {factor.details.map((detail: string, index: number) => (
-          <li key={index}>
-            <Text type="secondary">{detail}</Text>
-          </li>
-        ))}
-      </DetailsList>
-    )}
-  </div>
-);
+const RiskFactorSection: React.FC<{ title: string; factor: RiskFactor }> = ({ title, factor }) => {
+  // Format function to ensure percentage is always visible
+  const formatPercent = (percent?: number) => {
+    if (percent === undefined) return '0%';
+    return `${percent}%`;
+  };
+  
+  return (
+    <div>
+      <Space align="center">
+        <Text strong>{title}</Text>
+        <Progress 
+          percent={factor.score * 100} 
+          size="small" 
+          status={factor.score * 100 > 70 ? 'exception' : 'normal'}
+          strokeColor={getRiskColor(factor.score * 100)}
+          format={formatPercent}
+        />
+      </Space>
+      <Text type="secondary" style={{ display: 'block', marginTop: '4px' }}>
+        {factor.description}
+      </Text>
+      {factor.details && (
+        <DetailsList>
+          {factor.details.map((detail: string, index: number) => (
+            <li key={index}>
+              <Text type="secondary">{detail}</Text>
+            </li>
+          ))}
+        </DetailsList>
+      )}
+    </div>
+  );
+};
 
 const TransactionDetails: React.FC<TransactionDetailsProps> = ({ transactionInfo }) => {
   return (
