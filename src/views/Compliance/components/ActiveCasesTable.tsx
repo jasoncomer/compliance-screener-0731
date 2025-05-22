@@ -229,7 +229,8 @@ const ActiveCasesTable: React.FC<ActiveCasesTableProps> = ({
         }}
         loading={loading}
         onChange={onTableChange}
-        scroll={{ x: 1300 }}
+        style={{ width: '100%' }}
+        scroll={{ x: 'max-content' }}
         footer={() => (
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div>

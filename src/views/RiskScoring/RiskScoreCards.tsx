@@ -29,10 +29,16 @@ const RiskScoreCards: React.FC<RiskScoreCardsProps> = ({ riskScores, getRiskColo
     jurisdiction: (jurisdictionRiskScore > 70 ? 'exception' : 'normal') as ProgressStatus,
   }), [overallRiskScore, transactionRiskScore, entityRiskScore, jurisdictionRiskScore]);
 
+  // Custom formatter to ensure percentage is always visible
+  const formatPercent = (percent?: number) => {
+    if (percent === undefined) return '0%';
+    return `${percent}%`;
+  };
+
   return (
-    <Row gutter={[16, 16]}>
+    <Row gutter={[16, 16]} style={{ width: '100%' }}>
       <Col span={6}>
-        <Card>
+        <Card style={{ width: '100%' }}>
           <Statistic
             title="Overall Risk Score"
             value={overallRiskScore}
@@ -45,11 +51,12 @@ const RiskScoreCards: React.FC<RiskScoreCardsProps> = ({ riskScores, getRiskColo
             percent={overallRiskScore}
             status={riskStatuses.overall}
             strokeColor={riskColors.overall}
+            format={formatPercent}
           />
         </Card>
       </Col>
       <Col span={6}>
-        <Card>
+        <Card style={{ width: '100%' }}>
           <Statistic
             title="Transaction Risk"
             value={transactionRiskScore}
@@ -62,11 +69,12 @@ const RiskScoreCards: React.FC<RiskScoreCardsProps> = ({ riskScores, getRiskColo
             percent={transactionRiskScore}
             status={riskStatuses.transaction}
             strokeColor={riskColors.transaction}
+            format={formatPercent}
           />
         </Card>
       </Col>
       <Col span={6}>
-        <Card>
+        <Card style={{ width: '100%' }}>
           <Statistic
             title="Entity Risk"
             value={entityRiskScore}
@@ -79,11 +87,12 @@ const RiskScoreCards: React.FC<RiskScoreCardsProps> = ({ riskScores, getRiskColo
             percent={entityRiskScore}
             status={riskStatuses.entity}
             strokeColor={riskColors.entity}
+            format={formatPercent}
           />
         </Card>
       </Col>
       <Col span={6}>
-        <Card>
+        <Card style={{ width: '100%' }}>
           <Statistic
             title="Jurisdiction Risk"
             value={jurisdictionRiskScore}
@@ -96,6 +105,7 @@ const RiskScoreCards: React.FC<RiskScoreCardsProps> = ({ riskScores, getRiskColo
             percent={jurisdictionRiskScore}
             status={riskStatuses.jurisdiction}
             strokeColor={riskColors.jurisdiction}
+            format={formatPercent}
           />
         </Card>
       </Col>

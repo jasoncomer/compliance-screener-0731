@@ -12,11 +12,13 @@ const BlockLayout = styled.div`
   display: flex;
   flex-direction: column;
   height: 100%;
+  width: 100%;
   overflow: hidden;
 `;
 
 const ScrollableContent = styled.div`
   flex: 1;
+  width: 100%;
   overflow-y: auto;
   padding-top: 20px;
 

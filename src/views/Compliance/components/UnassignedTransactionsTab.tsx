@@ -215,7 +215,7 @@ const UnassignedTransactionsTab: React.FC<UnassignedTransactionsTabProps> = ({ i
   };
 
   return (
-    <div>
+    <div style={{ width: '100%' }}>
       <ComplianceHeaderActions
         txCount={totalTransactions}
       />

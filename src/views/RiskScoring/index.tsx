@@ -45,6 +45,7 @@ const RiskScoring: React.FC = () => {
     <ViewWrapper
       icon={<SafetyOutlined style={{ fontSize: '28px', color: colors.attributionHover, fontWeight: 'bold' }} />}
       title="Risk Scoring Dashboard"
+      fullWidth={true}
     >
       <Paragraph>
         Analyze the risk profile of any blockchain address based on transaction patterns,
@@ -75,7 +76,7 @@ const RiskScoring: React.FC = () => {
       )}
 
       {riskScores && !loading && (
-        <div style={{ display: 'flex', flexDirection: 'column' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
           <RiskScoreCards riskScores={riskScores} getRiskColor={getRiskColor} />
           <RiskDetailsTable riskScores={riskScores} />
         </div>

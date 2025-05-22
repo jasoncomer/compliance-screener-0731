@@ -5,7 +5,6 @@ import { api } from '../../api/api';
 import { RelatedEntities } from './types';
 import { SidebarCard, ScrollableContent } from './styles';
 import { EntityListSection } from './EntityListSection';
-import { RelatedEntitySection } from './RelatedEntitySection';
 import { SOT } from '../../typings/interfaces';
 
 // Explicitly declare the props matching the interface
@@ -77,28 +76,6 @@ const EntitySidebar: React.FC<Props> = ({ associatedSots, currentEntityId, onSel
           )
         )}
         
-        {associatedSots && associatedSots.length > 0 && (
-          <EntityListSection
-            entities={associatedSots}
-            title="Related Entities"
-            onSelectEntity={onSelectSot}
-          />
-        )}
-        
-        {relatedEntities?.unique_custodians && relatedEntities.unique_custodians.length > 0 && (
-          <RelatedEntitySection
-            entities={relatedEntities.unique_custodians}
-            title="Custodian"
-            type="Custodian"
-          />
-        )}
-        {relatedEntities?.unique_bos && relatedEntities.unique_bos.length > 0 && (
-          <RelatedEntitySection
-            entities={relatedEntities.unique_bos}
-            title="Beneficial Owner"
-            type="Beneficial Owner"
-          />
-        )}
       </ScrollableContent>
     </SidebarCard>
   );

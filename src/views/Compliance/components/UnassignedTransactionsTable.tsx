@@ -221,7 +221,8 @@ const UnassignedTransactionsTable: React.FC<TransactionsTableProps> = ({
             }
           },
         })}
-        scroll={{ x: 1400 }}
+        style={{ width: '100%' }}
+        scroll={{ x: 'max-content' }}
       />
 
       <TransactionDetailsModal 

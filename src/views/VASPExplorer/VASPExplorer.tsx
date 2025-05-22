@@ -74,6 +74,8 @@ const StyledAutoComplete = styled(AutoComplete)`
 
 const MainContent = styled.div`
   flex: 1;
+  width: 100%;
+  margin-top: 20px;
 `;
 
 export interface PopulatedSOT extends SOT {
@@ -368,6 +370,7 @@ const BlockHam: React.FC = () => {
     <ViewWrapper
       icon={<DatabaseOutlined style={{ fontSize: '28px', color: colors.attributionHover, fontWeight: 'bold' }} />}
       title="Entity Explorer"
+      fullWidth={true}
     >
       <SearchWrapper>
         <StyledAutoComplete

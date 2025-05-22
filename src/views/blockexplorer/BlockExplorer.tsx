@@ -76,6 +76,7 @@ const BlockExplorer: React.FC = () => {
     <StyledViewWrapper
       icon={<GlobalOutlined style={{ fontSize: '28px', color: '#C74D1B', fontWeight: 'bold' }} />}
       title="Block Explorer"
+      fullWidth={true}
     >
       <ExplorerLayout>
         <FixedHeader>

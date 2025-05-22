@@ -29,7 +29,7 @@ const AddressesTab: React.FC<AddressesTabProps> = ({
   const { theme } = useTheme();
 
   return (
-    <>
+    <div style={{ width: '100%' }}>
       <HeaderActions>
         <h3 style={{ margin: 0, color: theme === 'light' ? colors.black : colors.white }}>
           <DatabaseOutlined style={{ marginRight: '8px' }} />
@@ -42,7 +42,7 @@ const AddressesTab: React.FC<AddressesTabProps> = ({
         onAddressesChange={onAddressesChange}
         organizationId={organizationId}
       />
-    </>
+    </div>
   );
 };
 
