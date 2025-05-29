@@ -19,9 +19,11 @@ export interface ITierFeatures {
   dataRetentionMonths: number;
 }
 
+export type TierId = 'free' | 'trial' | 'professional' | 'enterprise';
+
 // Define the subscription tier model
 export interface ISubscriptionTier {
-  _id?: string | Types.ObjectId;
+  id?: TierId;
   name: string;
   description?: string;
   price: IPrice;
@@ -43,9 +45,9 @@ export enum ESubscriptionStatus {
 
 // Define organization subscription
 export interface IOrganizationSubscription {
-  _id?: string | Types.ObjectId;
+  _id?: string;
   organizationId: string | Types.ObjectId;
-  tierId: string | Types.ObjectId | ISubscriptionTier;
+  tierId: TierId;
   status: ESubscriptionStatus;
   stripeCustomerId?: string;
   stripeSubscriptionId?: string;

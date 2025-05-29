@@ -9,7 +9,10 @@ import {
   Spin, 
   Modal, 
   Descriptions,
-  message
+  message,
+  Form,
+  Input,
+  Select
 } from 'antd';
 import { CrownOutlined, CheckCircleOutlined, CloseCircleOutlined } from '@ant-design/icons';
 import { useAppDispatch, useAppSelector } from '../../../store/hooks';
@@ -23,7 +26,9 @@ import {
   selectSubscriptionLoading
 } from '../../../store/slices/subscriptionSlice';
 import { selectCurrentOrganization } from '../../../store/slices/organizationsSlice';
-import { ISubscriptionTier, ESubscriptionStatus } from '../../../typings/subscription';
+import { ISubscriptionTier, ESubscriptionStatus, TierId } from '../../../typings/subscription';
+import { api } from '../../../api/api';
+import { IContactSalesFormData } from '../../../api/contactSales';
 import { format } from 'date-fns';
 
 const { Title, Text } = Typography;
@@ -41,7 +46,9 @@ const SubscriptionSection: React.FC<SubscriptionSectionProps> = ({ theme }) => {
   const [selectedTier, setSelectedTier] = useState<ISubscriptionTier | null>(null);
   const [confirmModalVisible, setConfirmModalVisible] = useState(false);
   const [cancelModalVisible, setCancelModalVisible] = useState(false);
+  const [contactSalesModalVisible, setContactSalesModalVisible] = useState(false);
   const [cancelImmediately, setCancelImmediately] = useState(false);
+  const [contactForm] = Form.useForm();
 
   useEffect(() => {
     dispatch(fetchSubscriptionTiers());
@@ -51,8 +58,12 @@ const SubscriptionSection: React.FC<SubscriptionSectionProps> = ({ theme }) => {
   }, [dispatch, organization?._id]);
 
   const handleTierSelect = (tier: ISubscriptionTier) => {
-    setSelectedTier(tier);
-    setConfirmModalVisible(true);
+    if (tier.id === 'enterprise') {
+      setContactSalesModalVisible(true);
+    } else {
+      setSelectedTier(tier);
+      setConfirmModalVisible(true);
+    }
   };
 
   const handleConfirmUpgrade = async () => {
@@ -61,7 +72,7 @@ const SubscriptionSection: React.FC<SubscriptionSectionProps> = ({ theme }) => {
     try {
       await dispatch(updateOrganizationSubscription({
         organizationId: organization._id,
-        tierId: selectedTier._id as string
+        tierId: selectedTier.id as TierId
       })).unwrap();
       message.success('Subscription updated successfully');
       setConfirmModalVisible(false);
@@ -86,6 +97,18 @@ const SubscriptionSection: React.FC<SubscriptionSectionProps> = ({ theme }) => {
       setCancelModalVisible(false);
     } catch (error) {
       message.error('Failed to cancel subscription');
+    }
+  };
+
+  const handleContactSalesSubmit = async (values: IContactSalesFormData) => {
+    try {
+      await api.contactSales.submit(values);
+      message.success('Thank you for your interest! Our sales team will contact you soon.');
+      setContactSalesModalVisible(false);
+      contactForm.resetFields();
+    } catch (error: any) {
+      console.error('Contact sales submission error:', error);
+      message.error(error.response?.data?.message || 'Failed to submit contact form. Please try again.');
     }
   };
 
@@ -115,9 +138,9 @@ const SubscriptionSection: React.FC<SubscriptionSectionProps> = ({ theme }) => {
     if (!currentSubscription?.tierId) return null;
     const tierId = typeof currentSubscription.tierId === 'string' 
       ? currentSubscription.tierId 
-      : (currentSubscription.tierId as ISubscriptionTier)._id;
+      : (currentSubscription.tierId as ISubscriptionTier).id;
     
-    return tiers.find(tier => tier._id === tierId) || null;
+    return tiers.find(tier => tier.id === tierId) || null;
   };
 
   const currentTier = getCurrentTier();
@@ -193,40 +216,54 @@ const SubscriptionSection: React.FC<SubscriptionSectionProps> = ({ theme }) => {
       >
         <Row gutter={[16, 16]}>
           {sortedTiers.map(tier => (
-            <Col xs={24} sm={24} md={12} lg={8} xl={8} xxl={6} key={String(tier._id)}>
+            <Col xs={24} sm={24} md={12} lg={8} xl={8} xxl={6} key={String(tier.id)}>
               <Card 
                 title={tier.name} 
                 bordered 
                 style={{ 
                   height: '100%',
-                  borderColor: currentTier?._id === tier._id ? '#1890ff' : undefined,
-                  boxShadow: currentTier?._id === tier._id ? '0 0 10px rgba(24,144,255,0.2)' : undefined
+                  borderColor: currentTier?.id === tier.id ? '#1890ff' : undefined,
+                  boxShadow: currentTier?.id === tier.id ? '0 0 10px rgba(24,144,255,0.2)' : undefined
                 }}
               >
                 <div style={{ marginBottom: '16px' }}>
-                  <Title level={4}>${tier.price.amount}/{tier.price.billingPeriod === 'monthly' ? 'mo' : 'yr'}</Title>
-                  <Text>{tier.description}</Text>
+                  {tier.id === 'enterprise' ? (
+                    <>
+                      <Title level={4}>Custom Pricing</Title>
+                      <Text>{tier.description}</Text>
+                    </>
+                  ) : (
+                    <>
+                      <Title level={4}>${tier.price.amount.toLocaleString()}/{tier.price.billingPeriod === 'monthly' ? 'mo' : 'yr'}</Title>
+                      <Text>{tier.description}</Text>
+                    </>
+                  )}
                 </div>
                 
                 <Descriptions column={1} size="small">
                   <Descriptions.Item label="Max Members">{tier.features.maxMembers}</Descriptions.Item>
-                  <Descriptions.Item label="Max Organizations">{tier.features.maxOrganizations}</Descriptions.Item>
-                  <Descriptions.Item label="Transactions per Month">{tier.features.maxTransactionsPerMonth}</Descriptions.Item>
+                  {/* <Descriptions.Item label="Max Organizations">{tier.features.maxOrganizations}</Descriptions.Item> */}
+                  <Descriptions.Item label="Compliance Transactions">{tier.features.maxTransactionsPerMonth.toLocaleString()}</Descriptions.Item>
                   <Descriptions.Item label="Data Retention">{tier.features.dataRetentionMonths} months</Descriptions.Item>
-                  <Descriptions.Item label="Support">{tier.features.support}</Descriptions.Item>
-                  <Descriptions.Item label="Custom Branding">{renderFeatureValue(tier.features.customBranding)}</Descriptions.Item>
+                  <Descriptions.Item label="Support" className='capitalize'>{tier.features.support}</Descriptions.Item>
+                  {/* <Descriptions.Item label="Custom Branding">{renderFeatureValue(tier.features.customBranding)}</Descriptions.Item> */}
                   <Descriptions.Item label="API Access">{renderFeatureValue(tier.features.apiAccess)}</Descriptions.Item>
-                  <Descriptions.Item label="CSAM Scanning">{renderFeatureValue(tier.features.allowCSAM)}</Descriptions.Item>
+                  {/* <Descriptions.Item label="CSAM Scanning">{renderFeatureValue(tier.features.allowCSAM)}</Descriptions.Item> */}
                 </Descriptions>
 
                 <Button 
                   type="primary" 
                   block 
                   style={{ marginTop: '16px' }}
-                  disabled={currentTier?._id === tier._id}
+                  disabled={currentTier?.id === tier.id}
                   onClick={() => handleTierSelect(tier)}
                 >
-                  {currentTier?._id === tier._id ? 'Current Plan' : 'Select Plan'}
+                  {currentTier?.id === tier.id 
+                    ? 'Current Plan' 
+                    : tier.id === 'enterprise' 
+                      ? 'Contact Sales' 
+                      : 'Select Plan'
+                  }
                 </Button>
               </Card>
             </Col>
@@ -273,6 +310,88 @@ const SubscriptionSection: React.FC<SubscriptionSectionProps> = ({ theme }) => {
             Cancel at End of Billing Period
           </Button>
         </Button.Group>
+      </Modal>
+
+      <Modal
+        title="Contact Sales"
+        open={contactSalesModalVisible}
+        onCancel={() => {
+          setContactSalesModalVisible(false);
+          contactForm.resetFields();
+        }}
+        footer={null}
+        width={600}
+      >
+        <div style={{ marginBottom: '16px' }}>
+          <Text>
+            Interested in our Enterprise plan? Fill out the form below and our sales team will get in touch with you shortly.
+          </Text>
+        </div>
+        
+        <Form
+          form={contactForm}
+          layout="vertical"
+          onFinish={handleContactSalesSubmit}
+        >
+          <Form.Item
+            label="Email"
+            name="email"
+            rules={[
+              { required: true, message: 'Please enter your email' },
+              { type: 'email', message: 'Please enter a valid email' }
+            ]}
+          >
+            <Input placeholder="john.doe@company.com" />
+          </Form.Item>
+          
+          <Form.Item
+            label="Company"
+            name="company"
+            rules={[{ required: true, message: 'Please enter your company name' }]}
+          >
+            <Input placeholder="Your Company Name" />
+          </Form.Item>
+          
+          <Form.Item
+            label="Company Size"
+            name="companySize"
+            rules={[{ required: true, message: 'Please select your company size' }]}
+          >
+            <Select placeholder="Select company size">
+              <Select.Option value="1-10">1-10 employees</Select.Option>
+              <Select.Option value="11-50">11-50 employees</Select.Option>
+              <Select.Option value="51-200">51-200 employees</Select.Option>
+              <Select.Option value="201-1000">201-1000 employees</Select.Option>
+              <Select.Option value="1000+">1000+ employees</Select.Option>
+            </Select>
+          </Form.Item>
+          
+          <Form.Item
+            label="How can we help you?"
+            name="message"
+            rules={[{ required: true, message: 'Please describe your needs' }]}
+          >
+            <Input.TextArea 
+              rows={4} 
+              placeholder="Tell us about your specific requirements, expected usage, or any questions you have about the Enterprise plan..."
+            />
+          </Form.Item>
+          
+          <Form.Item style={{ marginBottom: 0, textAlign: 'right' }}>
+            <Button 
+              onClick={() => {
+                setContactSalesModalVisible(false);
+                contactForm.resetFields();
+              }} 
+              style={{ marginRight: '8px' }}
+            >
+              Cancel
+            </Button>
+            <Button type="primary" htmlType="submit">
+              Submit Request
+            </Button>
+          </Form.Item>
+        </Form>
       </Modal>
     </div>
   );

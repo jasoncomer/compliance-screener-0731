@@ -6,6 +6,8 @@ import { compliance } from './compliance';
 import { organizations } from './organizations';
 import { crypto } from './crypto';
 import { subscription } from './subscription';
+import { contactSales } from './contactSales';
+import { storage } from '../utils/storage';
 
 const BASE_URL = process.env.NODE_ENV === 'production' ? 'https://api.blockscout.ai/api/v1' : 'http://localhost:8004/api/v1';
 
@@ -25,6 +27,7 @@ export const setAuthToken = (token: string) => {
 export const api = {
   blockchain,
   compliance,
+  contactSales,
   crypto,
   organizations,
   sot,
@@ -34,7 +37,7 @@ export const api = {
 
 // Add request interceptor to include auth token
 axiosInstance.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
+  const token = storage.auth.getAccessToken();
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
@@ -46,7 +49,7 @@ axiosInstance.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      localStorage.removeItem('token');
+      storage.auth.clearAuth();
       window.location.href = '/login';
     }
     return Promise.reject(error);

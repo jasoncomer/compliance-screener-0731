@@ -7,6 +7,7 @@ import BSLogo from '../assets/darkmode_logo.png';
 import { useAppContext } from '../context/AppContext';
 import { setAuthToken } from '../api/api';
 import { useTheme } from '../context/ThemeContext';
+import { storage } from '../utils/storage';
 import {
   StyledLayout,
   StyledHeader,
@@ -24,7 +25,7 @@ const Home: React.FC = () => {
   const location = useLocation();
 
   useEffect(() => {
-    const token = localStorage.getItem('accessToken');
+    const token = storage.auth.getAccessToken();
     if (token) setAuthToken(token);
   }, []);
 

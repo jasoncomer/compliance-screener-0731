@@ -1,5 +1,5 @@
 // AppContext.tsx
-import React, { createContext, useState, ReactNode, useContext, useCallback, useEffect } from 'react';
+import React, { createContext, useState, ReactNode, useContext, useCallback } from 'react';
 import { IUser } from '../typings/interfaces';
 import { IAttributionMap, ReferenceAttributionMap } from '../typings/ReferenceAttribution';
 import { storage } from '../utils/storage';
@@ -22,17 +22,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [attributions, setAttributions] = useState<IAttributionMap>({});
   const [referenceAttributions, setReferenceAttributions] = useState<ReferenceAttributionMap>({});
 
-  // Initialize app state from storage
-  useEffect(() => {
-    const storedUser = storage.auth.getUser();
-    const accessToken = storage.auth.getAccessToken();
-    
-    if (storedUser && accessToken) {
-      setUser(storedUser);
-      setAuthToken(accessToken);
-    }
-  }, []);
-
   const clearAppData = useCallback(() => {
     // Clear app state
     setUser(null);
@@ -53,7 +42,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   );
 };
 
- 
 export const useAppContext = (): AppContextProps => {
   const context = useContext(AppContext);
   if (!context) {
