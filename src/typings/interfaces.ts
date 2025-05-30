@@ -139,6 +139,7 @@ export interface SOT {
   ens_address: string;
   key_personnel: string; // can be an array (parse use comma as separator)
   ceo: string;
+  ofac: boolean; // indicates if the entity is OFAC sanctioned
 }
 
 export interface SOTV2 extends SOT {
