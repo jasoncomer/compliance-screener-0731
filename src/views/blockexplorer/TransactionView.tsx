@@ -54,7 +54,6 @@ const TransactionView: React.FC = () => {
         <div>
           {isSmallScreen ? truncateAddress(transaction.txid) : transaction.txid}
         </div>
-        
       </BsBlock>
 
       <BtcTransactionSummary transaction={transaction} theme={{ theme }} />

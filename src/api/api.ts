@@ -6,8 +6,11 @@ import { compliance } from './compliance';
 import { organizations } from './organizations';
 import { crypto } from './crypto';
 import { subscription } from './subscription';
+import { config } from '../config/config';
+
 import { contactSales } from './contactSales';
 import { storage } from '../utils/storage';
+
 
 const BASE_URL = process.env.NODE_ENV === 'production' ? 'https://api.blockscout.ai/api/v1' : 'http://localhost:8004/api/v1';
 
@@ -36,12 +39,13 @@ export const api = {
 };
 
 // Add request interceptor to include auth token
+
 axiosInstance.interceptors.request.use((config) => {
   const token = storage.auth.getAccessToken();
   if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+    reqConfig.headers.Authorization = `Bearer ${token}`;
   }
-  return config;
+  return reqConfig;
 });
 
 // Add response interceptor for error handling

@@ -10,8 +10,8 @@ import { satsToBTC } from '../../utils/crypto';
 import { useAttribution } from '../../context/AttributionContext';
 import Pagination from '../../components/common/Pagination';
 import { useTheme } from '../../context/ThemeContext';
-import { Avatar, Tag } from 'antd';
-import { UserOutlined } from '@ant-design/icons';
+import { Avatar, Tag,  } from 'antd';
+import { UserOutlined, } from '@ant-design/icons';
 import { getEntityTypeLabel, capitalizeFirstLetter } from '../../utils/display-labels';
 import { EEntityType } from '../../typings/SOT';
 import { getTagColor } from '../../utils/tag-colors';
@@ -163,6 +163,7 @@ const EntityInfo = styled.div`
     font-family: monospace;
   }
 `;
+
 
 const Address: React.FC = () => {
   const { address } = useParams();
@@ -331,6 +332,8 @@ const Address: React.FC = () => {
     }
     return tags;
   };
+
+
 
   return (
     <AddressLayout>
