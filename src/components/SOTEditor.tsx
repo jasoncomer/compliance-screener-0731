@@ -236,13 +236,7 @@ const SOTEditor: React.FC<SOTEditorProps> = ({ sot, onSelectAssociatedSot }) => 
     // Check if entity is an individual person
     // const isIndividualPerson = sot.entity_type?.toLowerCase() === EEntityType.INDIVIDUAL_PERSON;
 
-    // Check if entity is OFAC sanctioned
-    const isOfacSanctioned = Object.entries(sot)
-      .filter(([key, value]) => key.startsWith('entity_tag') && value)
-      .some(([_, value]) =>
-        String(value).toLowerCase().includes('ofac') &&
-        String(value).toLowerCase().includes('sanction')
-      );
+    const isOfacSanctioned = sot.ofac === true;
 
     if (isEditing) {
       return (
@@ -389,8 +383,7 @@ const SOTEditor: React.FC<SOTEditorProps> = ({ sot, onSelectAssociatedSot }) => 
               <Text type="secondary">{getEntityTypeLabel(sot.entity_type as EEntityType)}</Text>
             </div>
 
-
-            {isOfacSanctioned && sot.no_kyc_req && (
+            {isOfacSanctioned && (
               <SanctionedPill>
                 <WarningOutlined />
                 THIS ENTITY IS SANCTIONED BY OFAC

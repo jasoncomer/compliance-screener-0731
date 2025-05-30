@@ -128,9 +128,7 @@ const EntityDetails: React.FC<EntityDetailsProps> = ({ sot }) => {
   };
 
   // Check if entity is OFAC sanctioned
-  const isOfacSanctioned = sot.entity_tags?.some(tag => 
-    tag.toLowerCase().includes('ofac') && tag.toLowerCase().includes('sanction')
-  );
+  const isOfacSanctioned = sot.ofac === true;
 
   return (
     <Card style={{ border: 'none', marginTop: '24px' }}>
@@ -144,7 +142,7 @@ const EntityDetails: React.FC<EntityDetailsProps> = ({ sot }) => {
           <div style={{ display: 'block', marginBottom: '4px' }}>
             <Text type="secondary">{sot.entity_type}</Text>
           </div>
-          {isOfacSanctioned && sot.no_kyc_req && (
+          {isOfacSanctioned && (
             <SanctionedPill>
               <WarningOutlined />
               THIS ENTITY IS SANCTIONED BY OFAC
