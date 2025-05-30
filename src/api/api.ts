@@ -6,7 +6,7 @@ import { compliance } from './compliance';
 import { organizations } from './organizations';
 import { crypto } from './crypto';
 import { subscription } from './subscription';
-import { config } from '../config/config';
+
 
 import { contactSales } from './contactSales';
 import { storage } from '../utils/storage';
@@ -43,9 +43,9 @@ export const api = {
 axiosInstance.interceptors.request.use((config) => {
   const token = storage.auth.getAccessToken();
   if (token) {
-    reqConfig.headers.Authorization = `Bearer ${token}`;
+    config.headers.Authorization = `Bearer ${token}`;
   }
-  return reqConfig;
+  return config;
 });
 
 // Add response interceptor for error handling

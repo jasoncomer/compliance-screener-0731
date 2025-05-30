@@ -3,13 +3,6 @@ import { config } from '../config/config';
 
 const { accessToken, refreshToken, user } = config.localstorageKeys;
 
-// interface StorageKeys {
-//   accessToken: string;
-//   refreshToken: string;
-//   user: string;
-//   [key: string]: string;
-// }
-
 export const storage = {
   // Auth-related storage operations
   auth: {
