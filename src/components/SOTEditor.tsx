@@ -237,6 +237,11 @@ const SOTEditor: React.FC<SOTEditorProps> = ({ sot, onSelectAssociatedSot }) => 
     // const isIndividualPerson = sot.entity_type?.toLowerCase() === EEntityType.INDIVIDUAL_PERSON;
 
     // Check if entity is OFAC sanctioned
+    console.log('SOTEditor - SOT OFAC value:', {
+      entity_id: sot.entity_id,
+      ofac: sot.ofac,
+      type: typeof sot.ofac
+    });
     const isOfacSanctioned = sot.ofac === true;
 
     if (isEditing) {
@@ -290,6 +295,7 @@ const SOTEditor: React.FC<SOTEditorProps> = ({ sot, onSelectAssociatedSot }) => 
               <ToggleSwitch name="dead" label="Dead" />
               <ToggleSwitch name="centralized" label="Centralized" />
               <ToggleSwitch name="revisit_site" label="Revisit Site" />
+              <ToggleSwitch name="ofac" label="OFAC Sanctioned" />
 
               <Form.Item name="legal_info_url" label="Legal Info URL">
                 <Input />

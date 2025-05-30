@@ -128,6 +128,11 @@ const EntityDetails: React.FC<EntityDetailsProps> = ({ sot }) => {
   };
 
   // Check if entity is OFAC sanctioned
+  console.log('EntityDetails - SOT OFAC value:', {
+    entity_id: sot.entity_id,
+    ofac: sot.ofac,
+    type: typeof sot.ofac
+  });
   const isOfacSanctioned = sot.ofac === true;
 
   return (
