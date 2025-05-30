@@ -284,22 +284,6 @@ const Address: React.FC = () => {
     return entity?.proper_name || entityId;
   };
 
-  // Function to mask entity IDs related to CSAM
-  const getMaskedEntityId = (entityId: string) => {
-    if (!entityId) return '';
-    
-    // Get the entity from the SOT data
-    const entity = Object.values(itemsMap).find(sot => sot.entity_id === entityId);
-    
-    // If allowCSAM is false and the entity is CSAM-related, mask the ID
-    if (organization?.settings.allowCSAM === false && 
-        (entity?.entity_type === "csam" || entityId.toLowerCase().includes('csam'))) {
-      return 'CSAM Related Entity';
-    }
-    
-    return entityId;
-  };
-
   // Function to get the entity logo
   const getEntityLogo = (entityId: string) => {
     if (!entityId) return null;
@@ -358,7 +342,7 @@ const Address: React.FC = () => {
                     />
                     <EntityInfo theme={{ theme }}>
                       <div className="field-group">
-                        <div className='label'>{capitalizeFirstLetter('Name')}</div>
+                        <div className='label'>{capitalizeFirstLetter('Entity')}</div>
                         <div className="entity-name">
                           {getEntityDisplayName(attributions[address].entity)}
                         </div>
@@ -368,13 +352,7 @@ const Address: React.FC = () => {
                         <div className="entity-type">
                           {getEntityType(attributions[address].entity)}
                         </div>
-                      </div>
-                      <div className="field-group">
-                        <div className='label'>{capitalizeFirstLetter('entity id')}</div>
-                        <div className="entity-id">
-                          {getMaskedEntityId(attributions[address].entity)}
-                        </div>
-                      </div>
+                      </div>                   
                     </EntityInfo>
                   </EntityRow>
                 )}
@@ -388,7 +366,7 @@ const Address: React.FC = () => {
                     />
                     <EntityInfo theme={{ theme }}>
                       <div className="field-group">
-                        <div className='label'>{capitalizeFirstLetter('Name')}</div>
+                        <div className='label'>{capitalizeFirstLetter('Beneficial Owner')}</div>
                         <div className="entity-name">
                           {getEntityDisplayName(attributions[address].bo)}
                         </div>
@@ -397,12 +375,6 @@ const Address: React.FC = () => {
                         <div className='label'>{capitalizeFirstLetter('entity type')}</div>
                         <div className="entity-type">
                           {getEntityType(attributions[address].bo)}
-                        </div>
-                      </div>
-                      <div className="field-group">
-                        <div className='label'>{capitalizeFirstLetter('entity id')}</div>
-                        <div className="entity-id">
-                          {getMaskedEntityId(attributions[address].bo)}
                         </div>
                       </div>
                     </EntityInfo>
@@ -417,7 +389,7 @@ const Address: React.FC = () => {
                     />
                     <EntityInfo theme={{ theme }}>
                       <div className="field-group">
-                        <div className='label'>{capitalizeFirstLetter('Name')}</div>
+                        <div className='label'>{capitalizeFirstLetter('Custodian')}</div>
                         <div className="entity-name">
                           {attributions[address].custodian}
                         </div>
@@ -426,12 +398,6 @@ const Address: React.FC = () => {
                         <div className='label'>{capitalizeFirstLetter('entity type')}</div>
                         <div className="entity-type">
                           Custodian
-                        </div>
-                      </div>
-                      <div className="field-group">
-                        <div className='label'>{capitalizeFirstLetter('entity id')}</div>
-                        <div className="entity-id">
-                          {getMaskedEntityId(attributions[address].custodian)}
                         </div>
                       </div>
                     </EntityInfo>
