@@ -1,8 +1,6 @@
 import React from 'react';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../store/store';
-import { api } from '../../api/api';
-import { RelatedEntities } from './types';
 import { SidebarCard, ScrollableContent } from './styles';
 import { EntityListSection } from './EntityListSection';
 import { SOT } from '../../typings/interfaces';
@@ -14,17 +12,8 @@ interface Props {
   onSelectSot: (sot: SOT) => void;
 }
 
-const EntitySidebar: React.FC<Props> = ({ associatedSots, currentEntityId, onSelectSot }) => {
+const EntitySidebar: React.FC<Props> = ({currentEntityId, onSelectSot }) => {
   const { itemsMap } = useSelector((state: RootState) => state.sot);
-  const [relatedEntities, setRelatedEntities] = React.useState<RelatedEntities | null>(null);
-
-  React.useEffect(() => {
-    if (currentEntityId) {
-      api.sot.getRelatedEntities(currentEntityId)
-        .then(setRelatedEntities)
-        .catch(() => setRelatedEntities(null));
-    }
-  }, [currentEntityId]);
 
   if (!itemsMap || !currentEntityId) return null;
 
@@ -40,10 +29,7 @@ const EntitySidebar: React.FC<Props> = ({ associatedSots, currentEntityId, onSel
   const hasContent = Boolean(
     parentEntity ||
     (isParentEntity && childEntities.length > 0) ||
-    (!isParentEntity && siblingEntities.length > 0) ||
-    (relatedEntities?.unique_custodians && relatedEntities.unique_custodians.length > 0) ||
-    (relatedEntities?.unique_bos && relatedEntities.unique_bos.length > 0) ||
-    (associatedSots && associatedSots.length > 0)
+    (!isParentEntity && siblingEntities.length > 0)
   );
 
   if (!hasContent) return null;
@@ -75,7 +61,6 @@ const EntitySidebar: React.FC<Props> = ({ associatedSots, currentEntityId, onSel
             />
           )
         )}
-        
       </ScrollableContent>
     </SidebarCard>
   );

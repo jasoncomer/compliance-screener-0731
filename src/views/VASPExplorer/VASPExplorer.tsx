@@ -74,6 +74,9 @@ const StyledAutoComplete = styled(AutoComplete)`
 
 const MainContent = styled.div`
   flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
   width: 100%;
   margin-top: 20px;
 `;
@@ -392,7 +395,6 @@ const BlockHam: React.FC = () => {
       {selectedSot && (
         <MainContent>
           <SOTEditor sot={selectedSot} onSelectAssociatedSot={handleSelectAssociatedSot} />
-          {/* <RelatedEntities entity={selectedSot._id} onHasEntities={() => {}} /> */}
         </MainContent>
       )}
     </ViewWrapper>

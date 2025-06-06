@@ -11,6 +11,7 @@ import { colors } from '../styles/variables';
 import { useSelector } from 'react-redux';
 import { RootState } from '../store/store';
 import EntitySidebar from './EntitySidebar';
+import EntityBalanceSheet from './EntityBalanceSheet';
 
 
 
@@ -62,7 +63,7 @@ const DetailLabel = styled(Text)`
   display: block;
   color: #666666;
   margin-bottom: 4px;
-  font-size: 14px;
+  font-size: 16px;
   text-align: left;
 `; 
 
@@ -671,39 +672,52 @@ const SOTEditor: React.FC<SOTEditorProps> = ({ sot, onSelectAssociatedSot }) => 
             {(sot.year_founded || sot.ticker || sot.parent_id ||
               Object.entries(sot).some(([key, value]) => key.startsWith('associate_country_') && value) ||
               sot.legal_info_url) && (
-                <DetailItem>
-                  <DetailLabel style={{ marginTop: '24px' }}>Additional Information</DetailLabel>
-                  <DetailValue style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    {sot.year_founded && <span><strong>Founded:</strong> {sot.year_founded}</span>}
-                    {sot.ticker && (
-                      <span>
-                        <strong>Ticker:</strong>
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginTop: '4px' }}>
-                          {sot.ticker.split(',').map(t =>
-                            <Tag key={t.trim()}>{t.trim()}</Tag>
-                          )}
-                        </div>
-                      </span>
-                    )}
-                    {sot.parent_id && <span><strong>Parent ID:</strong> {sot.parent_id}</span>}
-
-                    {/* Associated Countries */}
-                    {Object.entries(sot)
-                      .filter(([key, value]) => key.startsWith('associate_country_') && value)
-                      .length > 0 && (
+                <>
+                  <DetailItem>
+                    <DetailLabel style={{ marginTop: '24px' }}>Additional Information</DetailLabel>
+                    <DetailValue style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      {sot.year_founded && <span><strong>Founded:</strong> {sot.year_founded}</span>}
+                      {sot.ticker && (
                         <span>
-                          <strong>Associated Countries:</strong>
+                          <strong>Ticker:</strong>
                           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginTop: '4px' }}>
-                            {Object.entries(sot)
-                              .filter(([key, value]) => key.startsWith('associate_country_') && value)
-                              .map(([key, value]) => (
-                                <Tag key={key}>{value}</Tag>
-                              ))}
+                            {sot.ticker.split(',').map(t =>
+                              <Tag key={t.trim()}>{t.trim()}</Tag>
+                            )}
                           </div>
                         </span>
                       )}
-                  </DetailValue>
-                </DetailItem>
+                      {sot.parent_id && <span><strong>Parent ID:</strong> {sot.parent_id}</span>}
+
+                      {/* Associated Countries */}
+                      {Object.entries(sot)
+                        .filter(([key, value]) => key.startsWith('associate_country_') && value)
+                        .length > 0 && (
+                          <span>
+                            <strong>Associated Countries:</strong>
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginTop: '4px' }}>
+                              {Object.entries(sot)
+                                .filter(([key, value]) => key.startsWith('associate_country_') && value)
+                                .map(([key, value]) => (
+                                  <Tag key={key}>{value}</Tag>
+                                ))}
+                            </div>
+                          </span>
+                        )}
+                    </DetailValue>
+                  </DetailItem>
+                  <DetailItem style={{ marginTop: 0, marginBottom: 0 }}>
+                    {(() => {
+                      const balanceSheet = <EntityBalanceSheet currentEntityId={sot.entity_id} />;
+                      return balanceSheet ? (
+                        <>
+                          <DetailLabel style={{ marginBottom: 0 }}>{sot.proper_name} Balances:</DetailLabel>
+                          {balanceSheet}
+                        </>
+                      ) : null;
+                    })()}
+                  </DetailItem>
+                </>
               )}
           </DetailColumn>
         </DetailSection>

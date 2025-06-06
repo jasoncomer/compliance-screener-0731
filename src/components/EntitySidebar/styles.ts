@@ -15,7 +15,7 @@ export const SidebarCard = styled(Card)<{ $hasContent: boolean }>`
     flex: 1;
     display: flex;
     flex-direction: column;
-    padding: 16px;
+    padding: 16px 16px 0 16px;
     overflow: hidden;
     background-color: inherit;
   }
@@ -25,10 +25,12 @@ export const ScrollableContent = styled.div`
   display: flex;
   flex-direction: column;
   flex: 1;
-  gap: 12px;
   overflow-y: auto;
   padding-right: 8px;
-    &::-webkit-scrollbar {
+  & > div.Section:last-of-type {
+    margin-bottom: 0;
+  }
+  &::-webkit-scrollbar {
     width: 6px;
   }
   &::-webkit-scrollbar-track {
@@ -44,7 +46,7 @@ export const ScrollableContent = styled.div`
 `;
 
 export const Section = styled.div`
-  margin-bottom: 0px;
+  margin-bottom: 12px;
   &:last-child {
     margin-bottom: 0;
   }
