@@ -57,7 +57,11 @@ const ArchivedCasesTab: React.FC<ArchivedCasesTabProps> = ({ isActive }) => {
       ...filters,
       page: currentPage,
       limit: pageSize,
-      statusExclude: ETransactionStatus.UNASSIGNED + ',' + ETransactionStatus.UNREVIEWED + ',' + ETransactionStatus.IN_REVIEW + ',' + ETransactionStatus.HOLD
+      status: [
+        ETransactionStatus.APPROVED,
+        ETransactionStatus.CLOSED_WITH_NOTE,
+        ETransactionStatus.CLOSED_WITH_SAR
+      ].join(',')
     };
     dispatch(fetchComplianceTransactions(mergedFilters));
   }, [dispatch, filters, organization, currentPage, pageSize, isActive]);
@@ -87,7 +91,11 @@ const ArchivedCasesTab: React.FC<ArchivedCasesTabProps> = ({ isActive }) => {
     dispatch(setFilters({
       page: 1,
       limit: pageSize,
-      statusExclude: ETransactionStatus.UNASSIGNED + ',' + ETransactionStatus.UNREVIEWED + ',' + ETransactionStatus.IN_REVIEW + ',' + ETransactionStatus.HOLD
+      status: [
+        ETransactionStatus.APPROVED,
+        ETransactionStatus.CLOSED_WITH_NOTE,
+        ETransactionStatus.CLOSED_WITH_SAR
+      ].join(',')
     }));
   };
 
@@ -100,9 +108,13 @@ const ArchivedCasesTab: React.FC<ArchivedCasesTabProps> = ({ isActive }) => {
       limit: pageSize
     };
 
-    // If no specific status is selected, exclude non-archived statuses
+    // If no specific status is selected, show all archived statuses
     if (!values.status) {
-      filters.statusExclude = ETransactionStatus.UNASSIGNED + ',' + ETransactionStatus.UNREVIEWED + ',' + ETransactionStatus.IN_REVIEW + ',' + ETransactionStatus.HOLD;
+      filters.status = [
+        ETransactionStatus.APPROVED,
+        ETransactionStatus.CLOSED_WITH_NOTE,
+        ETransactionStatus.CLOSED_WITH_SAR
+      ].join(',');
     }
 
     if (dateRange) {
