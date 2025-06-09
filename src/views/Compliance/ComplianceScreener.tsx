@@ -2,11 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { Tabs } from 'antd';
 import { useTheme } from '../../context/ThemeContext';
 import ViewWrapper from '../../components/ViewWrapper';
-import { AuditOutlined, DatabaseOutlined, TableOutlined, FileSearchOutlined } from '@ant-design/icons';
+import { AuditOutlined, DatabaseOutlined, TableOutlined, FileSearchOutlined, HistoryOutlined } from '@ant-design/icons';
 import { colors } from '../../styles/variables';
 import UnassignedTransactionsTab from './components/UnassignedTransactionsTab';
 import AddressesTab from './components/AddressesTab';
 import ActiveCasesTab from './components/ActiveCasesTab';
+import ArchivedCasesTab from './components/ArchivedCasesTab';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import { fetchMonitoredAddresses, selectAllAddresses } from '../../store/slices/monitoredAddressesSlice';
 
@@ -49,6 +50,13 @@ const ComplianceScreener: React.FC = () => {
     </span>
   );
 
+  const archivedCasesTabHeader = (
+    <span>
+      <HistoryOutlined style={{ marginRight: '8px' }} />
+      Archived Cases
+    </span>
+  );
+
   return (
     <ViewWrapper 
       title="Compliance Screener" 
@@ -58,9 +66,11 @@ const ComplianceScreener: React.FC = () => {
       <p style={{ marginTop: -15, color: theme === 'light' ? colors.black : colors.white }}>
         {activeTab === 'active-cases' 
           ? 'This page shows transactions under investigation that require compliance review or escalation.'
-          : activeTab === 'transactions'
-            ? 'This page shows new unassigned transactions that need to be assigned to a compliance officer for review.'
-            : 'This page monitors client defined wallets for incoming transactions and calculates risk scoring.'}
+          : activeTab === 'archived-cases'
+            ? 'This page shows completed and archived compliance cases for reference and auditing.'
+            : activeTab === 'transactions'
+              ? 'This page shows new unassigned transactions that need to be assigned to a compliance officer for review.'
+              : 'This page monitors client defined wallets for incoming transactions and calculates risk scoring.'}
       </p>
       <Tabs
         activeKey={activeTab}
@@ -87,6 +97,12 @@ const ComplianceScreener: React.FC = () => {
             addresses={monitoredAddresses}
             onAddressesChange={() => dispatch(fetchMonitoredAddresses())}
           />
+        </TabPane>
+        <TabPane
+          tab={archivedCasesTabHeader}
+          key="archived-cases"
+        >
+          <ArchivedCasesTab isActive={activeTab === 'archived-cases'} />
         </TabPane>
       </Tabs>
     </ViewWrapper>

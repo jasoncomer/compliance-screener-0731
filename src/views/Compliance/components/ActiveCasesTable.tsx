@@ -18,6 +18,7 @@ interface ActiveCasesTableProps {
   pageSize: number;
   loading: boolean;
   onTableChange: (pagination: any) => void;
+  isArchivedTab?: boolean;
 }
 
 const ActiveCasesTable: React.FC<ActiveCasesTableProps> = ({
@@ -27,6 +28,7 @@ const ActiveCasesTable: React.FC<ActiveCasesTableProps> = ({
   pageSize,
   loading,
   onTableChange,
+  isArchivedTab = false,
 }) => {
   const denom = 'USD';
   const [isDetailsModalVisible, setIsDetailsModalVisible] = useState(false);
@@ -231,7 +233,7 @@ const ActiveCasesTable: React.FC<ActiveCasesTableProps> = ({
         onChange={onTableChange}
         style={{ width: '100%' }}
         scroll={{ x: 'max-content' }}
-        footer={() => (
+        footer={() => !isArchivedTab ? (
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div>
               <strong>{totalTransactions}</strong> active cases requiring review
@@ -242,7 +244,7 @@ const ActiveCasesTable: React.FC<ActiveCasesTableProps> = ({
               </Button>
             </div>
           </div>
-        )}
+        ) : null}
       />
 
       <TransactionDetailsModal
