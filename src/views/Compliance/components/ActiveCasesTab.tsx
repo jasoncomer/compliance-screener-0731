@@ -56,9 +56,7 @@ const ActiveCasesTab: React.FC<ActiveCasesTabProps> = ({ isActive }) => {
     const mergedFilters = { 
       ...filters,
       page: currentPage,
-      limit: pageSize,
-      // Exclude UNASSIGNED and APPROVED transactions
-      statusExclude: [ETransactionStatus.UNASSIGNED, ETransactionStatus.APPROVED].join(',')
+      limit: pageSize
     };
     dispatch(fetchComplianceTransactions(mergedFilters));
     console.log('active cases tab', mergedFilters);
@@ -89,7 +87,6 @@ const ActiveCasesTab: React.FC<ActiveCasesTabProps> = ({ isActive }) => {
     dispatch(setFilters({
       page: 1,
       limit: pageSize,
-      statusExclude: [ETransactionStatus.UNASSIGNED, ETransactionStatus.APPROVED].join(',')
     }));
   };
   
@@ -100,7 +97,6 @@ const ActiveCasesTab: React.FC<ActiveCasesTabProps> = ({ isActive }) => {
     const newFilters: TransactionFilters = {
       ...filters,
       page: 1, // Reset to first page when applying new filters
-      statusExclude: [ETransactionStatus.UNASSIGNED, ETransactionStatus.APPROVED].join(','),
     };
     
     // Add form filters
