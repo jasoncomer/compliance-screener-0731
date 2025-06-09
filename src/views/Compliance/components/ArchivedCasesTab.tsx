@@ -32,6 +32,12 @@ interface ArchivedCasesTabProps {
   isActive: boolean;
 }
 
+const ARCHIVED_STATUSES = [
+  ETransactionStatus.APPROVED,
+  ETransactionStatus.CLOSED_WITH_NOTE,
+  ETransactionStatus.CLOSED_WITH_SAR
+];
+
 const ArchivedCasesTab: React.FC<ArchivedCasesTabProps> = ({ isActive }) => {
   const { theme } = useTheme();
   const organization = useAppSelector(selectCurrentOrganization);
@@ -57,11 +63,7 @@ const ArchivedCasesTab: React.FC<ArchivedCasesTabProps> = ({ isActive }) => {
       ...filters,
       page: currentPage,
       limit: pageSize,
-      status: [
-        ETransactionStatus.APPROVED,
-        ETransactionStatus.CLOSED_WITH_NOTE,
-        ETransactionStatus.CLOSED_WITH_SAR
-      ].join(',')
+      status: filters.status || ARCHIVED_STATUSES.join(',')
     };
     dispatch(fetchComplianceTransactions(mergedFilters));
   }, [dispatch, filters, organization, currentPage, pageSize, isActive]);
@@ -91,11 +93,7 @@ const ArchivedCasesTab: React.FC<ArchivedCasesTabProps> = ({ isActive }) => {
     dispatch(setFilters({
       page: 1,
       limit: pageSize,
-      status: [
-        ETransactionStatus.APPROVED,
-        ETransactionStatus.CLOSED_WITH_NOTE,
-        ETransactionStatus.CLOSED_WITH_SAR
-      ].join(',')
+      status: ARCHIVED_STATUSES.join(',')
     }));
   };
 
@@ -110,11 +108,7 @@ const ArchivedCasesTab: React.FC<ArchivedCasesTabProps> = ({ isActive }) => {
 
     // If no specific status is selected, show all archived statuses
     if (!values.status) {
-      filters.status = [
-        ETransactionStatus.APPROVED,
-        ETransactionStatus.CLOSED_WITH_NOTE,
-        ETransactionStatus.CLOSED_WITH_SAR
-      ].join(',');
+      filters.status = ARCHIVED_STATUSES.join(',');
     }
 
     if (dateRange) {
