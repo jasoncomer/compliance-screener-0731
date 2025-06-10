@@ -391,19 +391,20 @@ const Address: React.FC = () => {
                   <EntityRow theme={{ theme }}>
                     <Avatar
                       size={40}
-                      icon={<UserOutlined />}
+                      src={getEntityLogo(attributions[address].custodian)}
+                      icon={!getEntityLogo(attributions[address].custodian) && <UserOutlined />}
                     />
                     <EntityInfo theme={{ theme }}>
                       <div className="field-group">
                         <div className='label'>{capitalizeFirstLetter('Custodian')}</div>
                         <div className="entity-name">
-                          {attributions[address].custodian}
+                          {getEntityDisplayName(attributions[address].custodian)}
                         </div>
                       </div>
                       <div className="field-group">
                         <div className='label'>{capitalizeFirstLetter('entity type')}</div>
                         <div className="entity-type">
-                          Custodian
+                          {getEntityType(attributions[address].custodian) || 'Custodian'}
                         </div>
                       </div>
                     </EntityInfo>
