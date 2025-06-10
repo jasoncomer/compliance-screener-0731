@@ -19,9 +19,7 @@ const initialState: ComplianceTransactionsState = {
   transactions: {},
   loading: false,
   error: null,
-  filters: {
-    status: ETransactionStatus.UNASSIGNED,
-  },
+  filters: {},
   total: 0,
   page: 1,
   limit: 10,

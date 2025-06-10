@@ -10,7 +10,7 @@ import { selectCurrentOrganization } from '../../../store/slices/organizationsSl
 import { useAppDispatch, useAppSelector } from '../../../store/hooks';
 import { 
   fetchComplianceTransactions, 
-  selectActiveTransactions,
+  selectCompletedTransactions,
   selectPagination, 
   selectIsLoading,
   selectComplianceFilters,
@@ -28,17 +28,23 @@ const HeaderActions = styled.div`
   margin-bottom: 16px;
 `;
 
-interface ActiveCasesTabProps {
+interface ArchivedCasesTabProps {
   isActive: boolean;
 }
 
-const ActiveCasesTab: React.FC<ActiveCasesTabProps> = ({ isActive }) => {
+const ARCHIVED_STATUSES = [
+  ETransactionStatus.APPROVED,
+  ETransactionStatus.CLOSED_WITH_NOTE,
+  ETransactionStatus.CLOSED_WITH_SAR
+];
+
+const ArchivedCasesTab: React.FC<ArchivedCasesTabProps> = ({ isActive }) => {
   const { theme } = useTheme();
   const organization = useAppSelector(selectCurrentOrganization);
   const dispatch = useAppDispatch();
   
   // Use Redux store data
-  const transactions = useAppSelector(selectActiveTransactions);
+  const transactions = useAppSelector(selectCompletedTransactions);
   const { total: totalTransactions, page: currentPage, limit: pageSize } = useAppSelector(selectPagination);
   const loading = useAppSelector(selectIsLoading);
   const filters = useAppSelector(selectComplianceFilters);
@@ -56,10 +62,10 @@ const ActiveCasesTab: React.FC<ActiveCasesTabProps> = ({ isActive }) => {
     const mergedFilters = { 
       ...filters,
       page: currentPage,
-      limit: pageSize
+      limit: pageSize,
+      status: filters.status || ARCHIVED_STATUSES.join(',')
     };
     dispatch(fetchComplianceTransactions(mergedFilters));
-    console.log('active cases tab', mergedFilters);
   }, [dispatch, filters, organization, currentPage, pageSize, isActive]);
 
   // Extract unique filter options from transaction data
@@ -87,63 +93,32 @@ const ActiveCasesTab: React.FC<ActiveCasesTabProps> = ({ isActive }) => {
     dispatch(setFilters({
       page: 1,
       limit: pageSize,
+      status: ARCHIVED_STATUSES.join(',')
     }));
   };
-  
-  // Handle filter form submission
-  const handleFilterSubmit = (values: Record<string, any>) => {
-    console.log('handleFilterSubmit', values);
-    // Create new filter object
-    const newFilters: TransactionFilters = {
-      ...filters,
-      page: 1, // Reset to first page when applying new filters
+
+  // Handle filter submit
+  const handleFilterSubmit = (values: any) => {
+    const { dateRange, ...rest } = values;
+    const filters: TransactionFilters = {
+      ...rest,
+      page: 1,
+      limit: pageSize
     };
-    
-    // Add form filters
-    console.log('newFilters', newFilters);
-    if (values.status) {
-      newFilters.status = values.status;
-    } else {
-      delete newFilters.status;
+
+    // If no specific status is selected, show all archived statuses
+    if (!values.status) {
+      filters.status = ARCHIVED_STATUSES.join(',');
     }
 
-    if (values.blockchain) {
-      newFilters.blockchain = values.blockchain;
-    } else {
-      delete newFilters.blockchain;
-    }
-    
-    if (values.clientId) {
-      newFilters.clientId = values.clientId;
-    } else {
-      delete newFilters.clientId;
-    }
-    
-    // Date range filter
-    if (values.dateRange && values.dateRange.length === 2) {
-      newFilters.timestamp = {
-        from: values.dateRange[0].format('YYYY-MM-DD'),
-        to: values.dateRange[1].format('YYYY-MM-DD')
+    if (dateRange) {
+      filters.timestamp = {
+        from: dateRange[0].toISOString(),
+        to: dateRange[1].toISOString()
       };
-    } else {
-      delete newFilters.timestamp;
     }
-    
-    // Amount filters
-    if (values.minAmount) {
-      newFilters.minAmount = parseFloat(values.minAmount) * 100000000; // Convert to satoshis
-    }
-    
-    if (values.maxAmount) {
-      newFilters.maxAmount = parseFloat(values.maxAmount) * 100000000; // Convert to satoshis
-    }
-    
-    // Risk level filter
-    if (values.riskLevel) {
-      newFilters.riskLevel = values.riskLevel;
-    }
-    
-    dispatch(setFilters(newFilters));
+
+    dispatch(setFilters(filters));
   };
 
   return (
@@ -151,11 +126,11 @@ const ActiveCasesTab: React.FC<ActiveCasesTabProps> = ({ isActive }) => {
       <HeaderActions>
         <h3 style={{ margin: 0, color: theme === 'light' ? colors.black : colors.white }}>
           <FileSearchOutlined style={{ marginRight: '8px' }} />
-          Active Cases Management ({totalTransactions})
+          Archived Cases Management ({totalTransactions})
         </h3>
         <div>
           <span style={{ marginRight: '10px', color: theme === 'light' ? colors.primaryDark : colors.white }}>
-            Total Active Cases: <strong>{totalTransactions}</strong>
+            Total Archived Cases: <strong>{totalTransactions}</strong>
           </span>
         </div>
       </HeaderActions>
@@ -189,12 +164,9 @@ const ActiveCasesTab: React.FC<ActiveCasesTabProps> = ({ isActive }) => {
               style={{ width: 150 }}
               onChange={(value) => handleFilterSubmit({ status: value })}
             >
-              <Select.Option value={ETransactionStatus.UNREVIEWED}>Unreviewed</Select.Option>
-              <Select.Option value={ETransactionStatus.IN_REVIEW}>In Review</Select.Option>
-              <Select.Option value={ETransactionStatus.HOLD}>Hold</Select.Option>
-              {/* <Select.Option value={ETransactionStatus.APPROVED}>Approved</Select.Option> */}
-              {/* <Select.Option value={ETransactionStatus.CLOSED_WITH_NOTE}>Closed with note</Select.Option> */}
-              {/* <Select.Option value={ETransactionStatus.CLOSED_WITH_SAR}>Closed with SAR</Select.Option> */}
+              <Select.Option value={ETransactionStatus.APPROVED}>Approved</Select.Option>
+              <Select.Option value={ETransactionStatus.CLOSED_WITH_NOTE}>Closed with note</Select.Option>
+              <Select.Option value={ETransactionStatus.CLOSED_WITH_SAR}>Closed with SAR</Select.Option>
             </Select>
           </Form.Item>
 
@@ -265,9 +237,10 @@ const ActiveCasesTab: React.FC<ActiveCasesTabProps> = ({ isActive }) => {
         pageSize={pageSize}
         loading={loading}
         onTableChange={handleTableChange}
+        isArchivedTab={true}
       />
     </div>
   );
 };
 
-export default ActiveCasesTab;
+export default ArchivedCasesTab; 
