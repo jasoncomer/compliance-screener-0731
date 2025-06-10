@@ -88,18 +88,7 @@ const RiskDetailsTable: React.FC<RiskDetailsTableProps> = ({ riskScores }) => {
 
   return (
     <Card style={{ marginTop: '24px', width: '100%' }}>
-      <Tabs defaultActiveKey="transaction">
-        <TabPane tab="Transaction Risk Factors" key="transaction">
-          <Table 
-            dataSource={riskScores.transactionRisk.factors}
-            columns={columns}
-            pagination={false}
-            rowKey="id"
-            locale={{ emptyText: customTransactionEmptyState() }}
-            style={{ width: '100%' }}
-          />
-          {/* <TransactionDetails transactionInfo={riskScores.transactionInfo} /> */}
-        </TabPane>
+      <Tabs defaultActiveKey="entity">
         <TabPane tab="Entity Risk Factors" key="entity">
           <Table 
             dataSource={riskScores.entityRisk.factors}
@@ -112,6 +101,17 @@ const RiskDetailsTable: React.FC<RiskDetailsTableProps> = ({ riskScores }) => {
           {riskScores.sot && (
             <EntityDetails sot={riskScores.sot} />
           )}
+        </TabPane>
+        <TabPane tab="Transaction Risk Factors" key="transaction">
+          <Table 
+            dataSource={riskScores.transactionRisk.factors}
+            columns={columns}
+            pagination={false}
+            rowKey="id"
+            locale={{ emptyText: customTransactionEmptyState() }}
+            style={{ width: '100%' }}
+          />
+          {/* <TransactionDetails transactionInfo={riskScores.transactionInfo} /> */}
         </TabPane>
         <TabPane tab="Jurisdiction Risk Factors" key="jurisdiction">
           <Table 
