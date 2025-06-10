@@ -76,11 +76,35 @@ const AddressInfoWrapper = styled.div`
     display: flex;
     align-items: center;
     word-break: break-all;
+    gap: 2px;
     
     .address-value {
       font-family: monospace;
       font-size: 1rem;
       font-weight: 500;
+    }
+
+    .copy-button {
+      cursor: pointer;
+      color: #888;
+      font-size: 18px;
+      display: flex;
+      align-items: center;
+      flex-shrink: 0;
+      &:hover {
+        color: ${props => props.theme.theme === 'dark' ? '#ffffff' : '#000000'};
+      }
+    }
+
+    .copy-alert {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background-color: ${props => props.theme.theme === 'dark' ? '#2a2a2a' : '#f5f5f5'};
+      padding: 8px 16px;
+      border-radius: 4px;
+      z-index: 1000;
     }
   }
   
@@ -174,6 +198,8 @@ const Address: React.FC = () => {
   const [totalTxs, setTotalTxs] = React.useState<number>(0);
   const [currentPage, setCurrentPage] = React.useState<number>(1);
   const [isLoading, setIsLoading] = React.useState<boolean>(false);
+  const [copySuccess, setCopySuccess] = React.useState<boolean>(false);
+  const [showCopyAlert, setShowCopyAlert] = React.useState<boolean>(false);
   const itemsPerPage = 20;
   const { fetchAttributions, attributions } = useAttribution();
   const organization = useAppSelector(selectCurrentOrganization);
@@ -317,7 +343,22 @@ const Address: React.FC = () => {
     return tags;
   };
 
-
+  const copyToClipboard = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!address) return;
+    
+    navigator.clipboard.writeText(address)
+      .then(() => {
+        setCopySuccess(true);
+        setShowCopyAlert(true);
+        setTimeout(() => setCopySuccess(false), 2000);
+        setTimeout(() => setShowCopyAlert(false), 2000);
+      })
+      .catch(err => {
+        console.error('Failed to copy address: ', err);
+      });
+  };
 
   return (
     <AddressLayout>
@@ -326,7 +367,10 @@ const Address: React.FC = () => {
           <h3>Address</h3>
           <hr />
           <AddressInfoWrapper theme={{ theme }}>
-            <div className="address-row" style={{ gap: '12px' }}>
+            <div className="address-row">
+              <span className="copy-button" onClick={copyToClipboard} title="Copy address">
+                {copySuccess ? '✓' : '⧉'}
+              </span>
               <div className="address-value">{address}</div>
               {hasAttributionData && attributions[address]?.entity && (
                 <div style={{ display: 'flex', flexWrap: 'wrap' }}>
@@ -336,6 +380,7 @@ const Address: React.FC = () => {
                 </div>
               )}
             </div>
+            {showCopyAlert && <div className="copy-alert">Address copied</div>}
 
             {hasAttributionData && (
               <EntitiesContainer>
