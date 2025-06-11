@@ -91,7 +91,7 @@ export interface ConsolidatedEntity {
   _id: string;
   entity_id: string;
   proper_name: string;
-  url?: string;
+  urls: string[];
   contact_email?: string;
   contact_twitter?: string;
   contact_telegram?: string;
@@ -139,7 +139,7 @@ const BlockHam: React.FC = () => {
       _id: sotItem._id,
       entity_id: sotItem.entity_id,
       proper_name: sotItem.proper_name,
-      url: sotItem.url,
+      urls: sotItem.url ? [sotItem.url] : [],
       contact_email: sotItem.contact_email,
       contact_twitter: sotItem.contact_twitter,
       contact_telegram: sotItem.contact_telegram,
@@ -212,15 +212,14 @@ const BlockHam: React.FC = () => {
         sort: [{ field: 'score', direction: 'desc' }],
       });
 
-      // Consolidate results by entity ID
+      // Consolidate results by entity_id instead of _id
       const consolidatedEntities: Record<string, ConsolidatedEntity> = {};
 
       for (const result of results.items) {
         const sotItem = sot[result.id];
-        // Handle score_field property, which is not in the TypeScript type
         const scoreField = typeof (result as any).score_field === 'number' ? (result as any).score_field : 0;
         const fieldName = searchableFields[scoreField] || 'unknown';
-        const entityId = sotItem._id;
+        const entityId = sotItem.entity_id;
 
         // Skip CSAM-related entities if allowCSAM is false
         if (organization?.settings.allowCSAM === false) {
@@ -232,10 +231,14 @@ const BlockHam: React.FC = () => {
         }
 
         if (consolidatedEntities[entityId]) {
-          // Entity already in results, add matched field
+          // Entity already in results, add matched field and URL if new
           consolidatedEntities[entityId].matchedFields.push(fieldName);
           if (result.score > consolidatedEntities[entityId].searchScore) {
             consolidatedEntities[entityId].searchScore = result.score;
+          }
+          // Add URL if it exists and is not already in the array
+          if (sotItem.url && !consolidatedEntities[entityId].urls.includes(sotItem.url)) {
+            consolidatedEntities[entityId].urls.push(sotItem.url);
           }
         } else {
           // New entity, add to consolidated results
@@ -272,8 +275,8 @@ const BlockHam: React.FC = () => {
                       {getEntityTypeLabel(entity.entity_type as EEntityType)}
                     </InfoTag>
                   )}
-                  {entity.url && (
-                    <InfoTag color="green">{entity.url}</InfoTag>
+                  {entity.urls && entity.urls[0] && (
+                    <InfoTag color="green">{entity.urls[0]}</InfoTag>
                   )}
                   {entity.contact_twitter && (
                     <InfoTag color="cyan">Twitter</InfoTag>
