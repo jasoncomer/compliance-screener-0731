@@ -20,10 +20,18 @@ const loadLastUpdate = async () => {
 const getSOT = async () => {
   const res = await axiosInstance.get(`/sot`, { timeout: 20000 });
 
-  // TODO: fix the logo url for all SOTs in the sheet
   const sot = (res.data as SOT[]).map(item => {
-    if (item.logo && !item.logo.startsWith('https://')) {
-      item.logo = 'https://' + item.logo;
+    if (item.logo) {
+      // Remove any whitespace
+      item.logo = item.logo.trim();
+      
+      // If the URL doesn't start with http:// or https://, add https://
+      if (!item.logo.startsWith('http://') && !item.logo.startsWith('https://')) {
+        item.logo = 'https://' + item.logo;
+      }
+      
+      // Remove any trailing slashes
+      item.logo = item.logo.replace(/\/+$/, '');
     }
     return item;
   });
