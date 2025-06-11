@@ -10,11 +10,14 @@ import { satsToBTC } from '../../utils/crypto';
 import { useAttribution } from '../../context/AttributionContext';
 import Pagination from '../../components/common/Pagination';
 import { useTheme } from '../../context/ThemeContext';
-import { Avatar, Tag,  } from 'antd';
-import { UserOutlined, } from '@ant-design/icons';
+import { Avatar, Tag } from 'antd';
+import { UserOutlined, SafetyOutlined } from '@ant-design/icons';
 import { getEntityTypeLabel, capitalizeFirstLetter } from '../../utils/display-labels';
 import { EEntityType } from '../../typings/SOT';
 import { getTagColor } from '../../utils/tag-colors';
+import { calculateRiskScore } from '../../api/riskScoring';
+import { RiskScoringResponse } from '../../typings/riskScoring';
+import { colors } from '../../styles/variables';
 
 import { useAppSelector, useAppDispatch } from '../../store/hooks';
 import { selectCurrentOrganization } from '../../store/slices/organizationsSlice';
@@ -60,7 +63,7 @@ const SummaryWrapper = styled.div`
     padding: 10px;
     
     span {
-      margin-top: 10px;
+      margin-top: 4px;
       display: flex;
       justify-content: space-between;
     }
@@ -164,6 +167,20 @@ const EntityInfo = styled.div`
   }
 `;
 
+const RiskScoreLink = styled.div`
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  color: ${colors.primary};  
+  &:hover {
+    text-decoration: underline;
+  }
+
+  .risk-score {
+    font-weight: 500;
+    padding-top: 0;
+  }
+`;
 
 const Address: React.FC = () => {
   const { address } = useParams();
@@ -174,6 +191,8 @@ const Address: React.FC = () => {
   const [totalTxs, setTotalTxs] = React.useState<number>(0);
   const [currentPage, setCurrentPage] = React.useState<number>(1);
   const [isLoading, setIsLoading] = React.useState<boolean>(false);
+  const [riskScore, setRiskScore] = React.useState<RiskScoringResponse | null>(null);
+  const [isLoadingRiskScore, setIsLoadingRiskScore] = React.useState<boolean>(false);
   const itemsPerPage = 20;
   const { fetchAttributions, attributions } = useAttribution();
   const organization = useAppSelector(selectCurrentOrganization);
@@ -258,10 +277,37 @@ const Address: React.FC = () => {
     fetchAddress();
   }, [address, currentPage, fetchAttributions]);
 
+  useEffect(() => {
+    const fetchRiskScore = async () => {
+      if (!address) return;
+      try {
+        setIsLoadingRiskScore(true);
+        const scores = await calculateRiskScore(address, 'address');
+        setRiskScore(scores);
+      } catch (error) {
+        console.error('Error fetching risk score:', error);
+      } finally {
+        setIsLoadingRiskScore(false);
+      }
+    };
+
+    fetchRiskScore();
+  }, [address]);
+
   const handlePageChange = (newPage: number) => {
     if (newPage >= 1 && newPage <= totalPages) {
       setCurrentPage(newPage);
     }
+  };
+
+  const handleRiskScoreClick = () => {
+    window.open(`/home/risk-scoring?address=${address}`, '_blank');
+  };
+
+  const getRiskColor = (score: number) => {
+    if (score > 70) return colors.danger;
+    if (score > 40) return colors.warning;
+    return colors.success;
   };
 
   // Check if attribution data exists for this address
@@ -316,8 +362,6 @@ const Address: React.FC = () => {
     }
     return tags;
   };
-
-
 
   return (
     <AddressLayout>
@@ -424,6 +468,24 @@ const Address: React.FC = () => {
               <span><strong>Balance:</strong> {satsToBTC(summary?.balance || 0)} BTC</span>
               <span><strong>First block:</strong> {blockStats.firstBlock ? `${blockStats.firstBlock.blockNumber}` : 'N/A'}</span>
               <span><strong>Last block:</strong> {blockStats.lastBlock ? `${blockStats.lastBlock.blockNumber}` : 'N/A'}</span>
+              <span>
+                <strong>Risk Score:</strong>
+                {isLoadingRiskScore ? (
+                  'Loading...'
+                ) : riskScore ? (
+                  <RiskScoreLink onClick={handleRiskScoreClick}>
+                    <SafetyOutlined />
+                    <span 
+                      className="risk-score"
+                      style={{ color: getRiskColor(riskScore.overallRisk * 100) }}
+                    >
+                      {Math.round(riskScore.overallRisk * 100)}%
+                    </span>
+                  </RiskScoreLink>
+                ) : (
+                  'N/A'
+                )}
+              </span>
             </div>
 
             <div className='col'>

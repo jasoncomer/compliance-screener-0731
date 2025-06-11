@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Spin, Alert } from 'antd';
 import { SafetyOutlined } from '@ant-design/icons';
 import { colors } from '../../styles/variables';
@@ -9,15 +9,27 @@ import RiskDetailsTable from './RiskDetailsTable';
 import SearchBar from './SearchBar';
 import RiskScoreCards from './RiskScoreCards';
 import Paragraph from 'antd/es/typography/Paragraph';
+import { useLocation } from 'react-router-dom';
 
 const RiskScoring: React.FC = () => {
+  const location = useLocation();
   const [address, setAddress] = useState('');
   const [riskScores, setRiskScores] = useState<RiskScoringResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleAddressSubmit = async () => {
-    if (!address) {
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    const addressParam = searchParams.get('address');
+    if (addressParam) {
+      setAddress(addressParam);
+      handleAddressSubmit(addressParam);
+    }
+  }, [location.search]);
+
+  const handleAddressSubmit = async (addr?: string) => {
+    const addressToUse = addr || address;
+    if (!addressToUse) {
       setError('Please enter a blockchain address');
       return;
     }
@@ -26,7 +38,7 @@ const RiskScoring: React.FC = () => {
     setError(null);
 
     try {
-      const scores = await calculateRiskScore(address, 'address');
+      const scores = await calculateRiskScore(addressToUse, 'address');
       setRiskScores(scores);
     } catch (err) {
       setError('Failed to fetch risk scores. Please try again.');
@@ -56,7 +68,7 @@ const RiskScoring: React.FC = () => {
         address={address}
         loading={loading}
         onAddressChange={setAddress}
-        onSubmit={handleAddressSubmit}
+        onSubmit={() => handleAddressSubmit()}
       />
 
       {error && (
