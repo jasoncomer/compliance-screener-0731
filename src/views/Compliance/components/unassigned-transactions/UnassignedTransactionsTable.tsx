@@ -1,15 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { Table, Tag } from 'antd';
-import type { TableRowSelection } from 'antd/es/table/interface';
-import { colors } from '../../../styles/variables';
-import { ETransactionStatus, IComplianceTransaction } from '../../../typings/compliance';
-import { conversionRates, currencySymbols } from './CurrencySelector';
-import { TransactionDetailsModal } from '../modals/TransactionDetails/TransactionDetailsModal';
-import { useAttribution } from '../../../context/AttributionContext';
-import { truncateAddress } from '../../../utils/crypto';
-import { getRiskScoreColor } from '../utils/compliance.utils';
-import { getBlockchainLabel } from '../../../utils/display-labels';
-import { useCryptoPrices } from '../../../hooks/useCryptoPrices';
+import type { ColumnType, TableRowSelection } from 'antd/es/table/interface';
+import { colors } from '../../../../styles/variables';
+import { ETransactionStatus, IComplianceTransaction } from '../../../../typings/compliance';
+import { currencySymbols } from '../CurrencySelector';
+import { TransactionDetailsModal } from '../../modals/TransactionDetails/TransactionDetailsModal';
+import { useAttribution } from '../../../../context/AttributionContext';
+import { truncateAddress } from '../../../../utils/crypto';
+import { getRiskScoreColor } from '../../utils/compliance.utils';
+import { getBlockchainLabel } from '../../../../utils/display-labels';
+import { useCryptoPrices } from '../../../../hooks/useCryptoPrices';
 
 
 interface TransactionsTableProps {
@@ -18,11 +18,14 @@ interface TransactionsTableProps {
   currentPage: number;
   pageSize: number;
   loading: boolean;
-  onTableChange: (pagination: any) => void;
+  onTableChange: (pagination: any, filters: any, sorter: any) => void;
   onEntityClick?: (record: IComplianceTransaction) => void;
   // New props for selection
   selectedRowKeys: React.Key[];
   onSelectChange: (selectedRowKeys: React.Key[]) => void;
+  // Sorting props
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
 }
 
 const UnassignedTransactionsTable: React.FC<TransactionsTableProps> = ({
@@ -34,6 +37,8 @@ const UnassignedTransactionsTable: React.FC<TransactionsTableProps> = ({
   onTableChange,
   selectedRowKeys,
   onSelectChange,
+  sortBy = 'timestamp',
+  sortOrder = 'desc',
 }) => {
   const denom = 'USD';
   const { attributions } = useAttribution();
@@ -93,7 +98,7 @@ const UnassignedTransactionsTable: React.FC<TransactionsTableProps> = ({
       dataIndex: 'clientId',
       key: 'clientId',
       width: 100,
-      sorter: (a: IComplianceTransaction, b: IComplianceTransaction) => a.clientId.localeCompare(b.clientId),
+      sorter: false, // Disable sorting for Client ID
     },
     {
       title: 'Counterparty Entities',
@@ -116,7 +121,7 @@ const UnassignedTransactionsTable: React.FC<TransactionsTableProps> = ({
       dataIndex: 'txId',
       key: 'txId',
       width: 200,
-      sorter: (a: IComplianceTransaction, b: IComplianceTransaction) => a.txId.localeCompare(b.txId),
+      sorter: false, // Disable sorting for Transaction ID
       render: (txId: string) => {
         if (!txId) return null;
         return (
@@ -129,7 +134,7 @@ const UnassignedTransactionsTable: React.FC<TransactionsTableProps> = ({
       dataIndex: 'blockchain',
       key: 'blockchain',
       width: 100,
-      sorter: (a: IComplianceTransaction, b: IComplianceTransaction) => a.blockchain.localeCompare(b.blockchain),
+      sorter: false, // Disable sorting for Blockchain
       render: (blockchain: string) => {
         return getBlockchainLabel(blockchain);
       }
@@ -139,7 +144,8 @@ const UnassignedTransactionsTable: React.FC<TransactionsTableProps> = ({
       dataIndex: 'amount',
       key: 'amount',
       width: 150,
-      sorter: (a: IComplianceTransaction, b: IComplianceTransaction) => a.amount - b.amount,
+      sorter: true, // Enable server-side sorting
+      sortOrder: sortBy === 'amount' ? (sortOrder === 'asc' ? 'ascend' : 'descend') : null,
       render: (amount: number) => (
         <span>
           BTC {(amount / 100000000)}
@@ -150,8 +156,7 @@ const UnassignedTransactionsTable: React.FC<TransactionsTableProps> = ({
       title: 'Converted Amount',
       key: 'convertedAmount',
       width: 140,
-      sorter: (a: IComplianceTransaction, b: IComplianceTransaction) =>
-        (a.amount * conversionRates[denom]) - (b.amount * conversionRates[denom]),
+      sorter: false, // Disable sorting for calculated field
       render: (_: any, record: IComplianceTransaction) => (
         <span>
           {currencySymbols[denom]}
@@ -171,13 +176,16 @@ const UnassignedTransactionsTable: React.FC<TransactionsTableProps> = ({
       key: 'timestamp',
       width: 180,
       render: (timestamp: string) => new Date(timestamp).toLocaleString(),
-      sorter: (a: IComplianceTransaction, b: IComplianceTransaction) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(),
+      sorter: true, // Enable server-side sorting
+      sortOrder: sortBy === 'timestamp' ? (sortOrder === 'asc' ? 'ascend' : 'descend') : null,
     },
     {
       title: 'Risk Score',
       dataIndex: 'riskScores',
       key: 'riskScores',
       width: 80,
+      sorter: true, // Enable server-side sorting
+      sortOrder: sortBy === 'riskScores' ? (sortOrder === 'asc' ? 'ascend' : 'descend') : null,
       render: (scores: number[]) => {
         if (!scores || scores.length === 0) return 'N/A';
         const score = scores.reduce((acc, curr) => acc + curr, 0) / scores.length;
@@ -195,7 +203,7 @@ const UnassignedTransactionsTable: React.FC<TransactionsTableProps> = ({
       <Table
         className="compliance-table"
         dataSource={transactions}
-        columns={columns}
+        columns={columns as ColumnType<IComplianceTransaction>[]}
         rowKey="_id"
         rowSelection={rowSelection}
         sticky={{

@@ -4,19 +4,19 @@ import type { UploadFile } from 'antd/es/upload/interface';
 import type { 
   MonitoredAddress, 
   AddressUploadFormat, 
-  AddressFilters as AddressFiltersType,
-} from '../../typings/compliance';
-import { api } from '../../api/api';
+  IAddressFilters,
+} from '../../../../typings/compliance';
+import { api } from '../../../../api/api';
 
 // Import sub-components
-import AddressTable from './components/AddressTable';
-import AddressFilters from './components/AddressFilters';
-import AddressFormModal from './components/AddressFormModal';
-import AddressUploadModal from './components/AddressUploadModal';
-import AddressHistoryModal from './components/AddressHistoryModal';
-import TableActions from './components/TableActions';
+import MonitoredAddressesTable from './MonitoredAddressesTable';
+import AddressFilters from '../AddressFilters';
+import AddressFormModal from '../AddressFormModal';
+import MonitoredAddressUploadModal from './MonitoredAddressUploadModal';
+import MonitoredAddressHistoryModal from './MonitoredAddressHistoryModal';
+import MonitoredTableActions from '../MonitoredTableActions';
 
-interface AddressManagementProps {
+interface MonitoredAddressManagementProps {
   onClose?: () => void;
   visible?: boolean;
   addresses: MonitoredAddress[];
@@ -24,7 +24,7 @@ interface AddressManagementProps {
   organizationId?: string;
 }
 
-const AddressManagement: React.FC<AddressManagementProps> = ({ 
+const MonitoredAddressManagement: React.FC<MonitoredAddressManagementProps> = ({ 
   onClose, 
   visible, 
   addresses,
@@ -36,7 +36,7 @@ const AddressManagement: React.FC<AddressManagementProps> = ({
   const [uploadModalVisible, setUploadModalVisible] = useState(false);
   const [fileList, setFileList] = useState<UploadFile[]>([]);
   const [form] = Form.useForm();
-  const [filters, setFilters] = useState<AddressFiltersType>({});
+  const [filters, setFilters] = useState<IAddressFilters>({});
   const [loading, setLoading] = useState(false);
   const [historyModalVisible, setHistoryModalVisible] = useState(false);
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
@@ -216,7 +216,7 @@ const AddressManagement: React.FC<AddressManagementProps> = ({
   // Render the component content
   const renderContent = () => (
     <>
-      <TableActions 
+      <MonitoredTableActions 
         onAddAddress={handleAddAddress} 
         onUploadAddresses={() => setUploadModalVisible(true)}
       >
@@ -224,9 +224,9 @@ const AddressManagement: React.FC<AddressManagementProps> = ({
           filters={filters} 
           onFiltersChange={setFilters} 
         />
-      </TableActions>
+      </MonitoredTableActions>
 
-      <AddressTable
+      <MonitoredAddressesTable
         addresses={filteredAddresses}
         loading={loading}
         onEdit={handleEditAddress}
@@ -245,7 +245,7 @@ const AddressManagement: React.FC<AddressManagementProps> = ({
       />
 
       {/* Batch Upload Modal */}
-      <AddressUploadModal
+      <MonitoredAddressUploadModal
         visible={uploadModalVisible}
         onCancel={() => {
           setUploadModalVisible(false);
@@ -257,7 +257,7 @@ const AddressManagement: React.FC<AddressManagementProps> = ({
       />
 
       {/* History Modal */}
-      <AddressHistoryModal
+      <MonitoredAddressHistoryModal
         visible={historyModalVisible}
         onCancel={() => setHistoryModalVisible(false)}
         addressId={selectedAddressId}
@@ -286,4 +286,4 @@ const AddressManagement: React.FC<AddressManagementProps> = ({
   return renderContent();
 };
 
-export default AddressManagement; 
+export default MonitoredAddressManagement; 

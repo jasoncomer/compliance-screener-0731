@@ -1,8 +1,8 @@
 import React from 'react';
 import { Modal } from 'antd';
-import AddressChangeHistory from '../AddressChangeHistory';
+import MonitoredAddressChangeHistory from './MonitoredAddressChangeHistory';
 
-interface AddressHistoryModalProps {
+interface MonitoredAddressHistoryModalProps {
   visible: boolean;
   onCancel: () => void;
   addressId: string | null;
@@ -10,7 +10,7 @@ interface AddressHistoryModalProps {
   refreshKey?: number;
 }
 
-const AddressHistoryModal: React.FC<AddressHistoryModalProps> = ({
+const MonitoredAddressHistoryModal: React.FC<MonitoredAddressHistoryModalProps> = ({
   visible,
   onCancel,
   addressId,
@@ -26,7 +26,7 @@ const AddressHistoryModal: React.FC<AddressHistoryModalProps> = ({
       footer={null}
     >
       {addressId && (
-        <AddressChangeHistory 
+        <MonitoredAddressChangeHistory 
           addressId={addressId} 
           organizationId={organizationId}
           refreshKey={refreshKey} 
@@ -36,4 +36,4 @@ const AddressHistoryModal: React.FC<AddressHistoryModalProps> = ({
   );
 };
 
-export default AddressHistoryModal; 
+export default MonitoredAddressHistoryModal; 

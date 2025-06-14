@@ -4,10 +4,10 @@ import { InfoCircleOutlined, UserOutlined, LoadingOutlined } from '@ant-design/i
 import { ETransactionStatus } from '../../../../typings/compliance';
 import { IComplianceTransaction } from '../../../../typings/compliance';
 import { selectActiveOrgMembers } from '../../../../store/slices/organizationsSlice';
-import { useAppSelector, useAppDispatch } from '../../../../store/hooks';
+import { useAppSelector } from '../../../../store/hooks';
 import { EMemberStatus, IOrganizationMember } from '../../../../typings/organization';
 import { getUserDisplayName } from '../../../../utils/display-labels';
-import { updateTransactionAssignee, updateTransactionStatus, fetchComplianceTransactions } from '../../../../store/slices/complianceTransactionsSlice';
+import { useUpdateTransactionAssignee, useUpdateTransactionStatus } from '../../../../hooks/useComplianceTransactions';
 
 // CSS styles
 const highlightStyles = `
@@ -38,11 +38,12 @@ const TransactionDetailsHeader = forwardRef<{ highlightAssignSelector: () => voi
   transactionDetails,
   modalOpen = true,
 }, ref) => {
-  const dispatch = useAppDispatch();
   const organizationMembers = useAppSelector(selectActiveOrgMembers);
-  const filters = useAppSelector(state => state.complianceTransactions.filters);
-  const { page, limit } = useAppSelector(state => state.complianceTransactions);
   const selectRef = useRef<any>(null);
+  
+  // React Query mutations
+  const updateAssigneeMutation = useUpdateTransactionAssignee();
+  const updateStatusMutation = useUpdateTransactionStatus();
 
   // Initialize selectedUserId with the reviewerId from the transaction details
   const [selectedUserId, setSelectedUserId] = useState<string | null>(
@@ -99,38 +100,43 @@ const TransactionDetailsHeader = forwardRef<{ highlightAssignSelector: () => voi
   if (!transactionDetails || !organizationMembers) return null;
 
   const handleAssignTransaction = async (userId: any) => {
-    try {
-      setAssigningUser(true);
-      
-      // Assign to selected member
-      await dispatch(updateTransactionAssignee({
+    setAssigningUser(true);
+    
+    // First update the assignee
+    updateAssigneeMutation.mutate(
+      {
         transactionId: transactionDetails._id,
         assignee: userId
-      })).unwrap();
-
-      // Update status to assigned (in review) via Redux
-      await dispatch(updateTransactionStatus({ 
-        transactionId: transactionDetails._id, 
-        status: ETransactionStatus.IN_REVIEW 
-      })).unwrap();
-
-      // Re-fetch transactions with current filters to update the list
-      const mergedFilters = { 
-        ...filters,
-        page,
-        limit,
-      };
-      dispatch(fetchComplianceTransactions(mergedFilters));
-
-      message.success('Transaction assigned successfully');
-      // Update the selected user ID
-      setSelectedUserId(userId);
-    } catch (error) {
-      console.error('Failed to assign transaction:', error);
-      message.error('Failed to assign transaction');
-    } finally {
-      setAssigningUser(false);
-    }
+      },
+      {
+        onSuccess: () => {
+          // Then update status to IN_REVIEW
+          updateStatusMutation.mutate(
+            {
+              transactionId: transactionDetails._id,
+              status: ETransactionStatus.IN_REVIEW
+            },
+            {
+              onSuccess: () => {
+                message.success('Transaction assigned successfully');
+                setSelectedUserId(userId);
+                setAssigningUser(false);
+              },
+              onError: (error) => {
+                console.error('Failed to update transaction status:', error);
+                message.error('Failed to update transaction status');
+                setAssigningUser(false);
+              }
+            }
+          );
+        },
+        onError: (error) => {
+          console.error('Failed to assign transaction:', error);
+          message.error('Failed to assign transaction');
+          setAssigningUser(false);
+        }
+      }
+    );
   };
 
   return (
@@ -151,8 +157,8 @@ const TransactionDetailsHeader = forwardRef<{ highlightAssignSelector: () => voi
             size="middle"
             placeholder="Assign to..."
             value={selectedUserId}
-            loading={assigningUser}
-            disabled={assigningUser}
+            loading={assigningUser || updateAssigneeMutation.isPending || updateStatusMutation.isPending}
+            disabled={assigningUser || updateAssigneeMutation.isPending || updateStatusMutation.isPending}
             dropdownRender={(menu) => (
               <div>
                 <div style={{ padding: '8px 8px 0' }}>

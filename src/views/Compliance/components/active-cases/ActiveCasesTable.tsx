@@ -1,15 +1,15 @@
 import React, { useState } from 'react';
 import { Table, Tag, Button, Space, Tooltip } from 'antd';
 import { EyeOutlined, CheckOutlined, CloseOutlined } from '@ant-design/icons';
-import { ETransactionStatus, IComplianceTransaction } from '../../../typings/compliance';
-import { TransactionDetailsModal } from '../modals/TransactionDetails/TransactionDetailsModal';
-import { conversionRates, currencySymbols } from './CurrencySelector';
-import { getRiskScoreColor, getStatusColor } from '../utils/compliance.utils';
-import { getBlockchainLabel } from '../../../utils/display-labels';
-import { truncateAddress } from '../../../utils/crypto';
-import { useAppSelector } from '../../../store/hooks';
-import { IUser } from '../../../typings/interfaces';
-import { useCryptoPrices } from '../../../hooks/useCryptoPrices';
+import { ETransactionStatus, IComplianceTransaction } from '../../../../typings/compliance';
+import { TransactionDetailsModal } from '../../modals/TransactionDetails/TransactionDetailsModal';
+import { conversionRates, currencySymbols } from '../CurrencySelector';
+import { getRiskScoreColor, getStatusColor } from '../../utils/compliance.utils';
+import { getBlockchainLabel } from '../../../../utils/display-labels';
+import { truncateAddress } from '../../../../utils/crypto';
+import { useAppSelector } from '../../../../store/hooks';
+import { IUser } from '../../../../typings/interfaces';
+import { useCryptoPrices } from '../../../../hooks/useCryptoPrices';
 
 interface ActiveCasesTableProps {
   transactions: IComplianceTransaction[];

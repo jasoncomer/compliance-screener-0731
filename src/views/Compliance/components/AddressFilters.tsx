@@ -1,7 +1,7 @@
 import React from 'react';
 import { Select } from 'antd';
 import styled from 'styled-components';
-import { AddressFilters as AddressFiltersType } from '../../../typings/compliance';
+import { IAddressFilters as AddressFiltersType } from '../../../typings/compliance';
 
 const { Option } = Select;
 

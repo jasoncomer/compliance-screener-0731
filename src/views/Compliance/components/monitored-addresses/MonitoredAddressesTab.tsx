@@ -1,10 +1,10 @@
 import React from 'react';
 import { DatabaseOutlined } from '@ant-design/icons';
 import styled from 'styled-components';
-import { useTheme } from '../../../context/ThemeContext';
-import { colors } from '../../../styles/variables';
-import AddressManagement from '../AddressManagement';
-import { MonitoredAddress } from '../../../typings/compliance';
+import { useTheme } from '../../../../context/ThemeContext';
+import { colors } from '../../../../styles/variables';
+import MonitoredAddressManagement from './MonitoredAddressManagement';
+import { MonitoredAddress } from '../../../../typings/compliance';
 
 const HeaderActions = styled.div`
   display: flex;
@@ -13,14 +13,14 @@ const HeaderActions = styled.div`
   margin-bottom: 16px;
 `;
 
-interface AddressesTabProps {
+interface MonitoredAddressesTabProps {
   addresses: MonitoredAddress[];
   onAddressesChange: (addresses: MonitoredAddress[]) => void;
   organizationId?: string;
   isLoading?: boolean;
 }
 
-const AddressesTab: React.FC<AddressesTabProps> = ({
+const MonitoredAddressesTab: React.FC<MonitoredAddressesTabProps> = ({
   addresses,
   onAddressesChange,
   organizationId,
@@ -37,7 +37,7 @@ const AddressesTab: React.FC<AddressesTabProps> = ({
         </h3>
 
       </HeaderActions>
-      <AddressManagement
+      <MonitoredAddressManagement
         addresses={addresses}
         onAddressesChange={onAddressesChange}
         organizationId={organizationId}
@@ -46,4 +46,4 @@ const AddressesTab: React.FC<AddressesTabProps> = ({
   );
 };
 
-export default AddressesTab;
+export default MonitoredAddressesTab;

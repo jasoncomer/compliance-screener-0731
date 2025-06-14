@@ -13,24 +13,24 @@ import {
   LockOutlined,
   InboxOutlined
 } from '@ant-design/icons';
-import { compliance } from '../../api/compliance';
-import { MonitoredAddressChange } from '../../typings/compliance';
+import { compliance } from '../../../../api/compliance';
+import { MonitoredAddressChange } from '../../../../typings/compliance';
 
 const { Title, Text } = Typography;
 
-interface AddressChangeHistoryProps {
+interface MonitoredAddressChangeHistoryProps {
   addressId: string;
   organizationId?: string;
   refreshKey?: number;
 }
 
-const AddressChangeHistory: React.FC<AddressChangeHistoryProps> = ({ addressId, organizationId, refreshKey }) => {
+const MonitoredAddressChangeHistory: React.FC<MonitoredAddressChangeHistoryProps> = ({ addressId, organizationId, refreshKey }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [history, setHistory] = useState<MonitoredAddressChange[]>([]);
 
   useEffect(() => {
-    const fetchHistory = async () => {
+    const fetchHistory = async (): Promise<void> => {
       try {
         setLoading(true);
         const response = await compliance.getAddressChangeHistory(addressId);
@@ -157,4 +157,4 @@ const AddressChangeHistory: React.FC<AddressChangeHistoryProps> = ({ addressId, 
   );
 };
 
-export default AddressChangeHistory; 
+export default MonitoredAddressChangeHistory; 

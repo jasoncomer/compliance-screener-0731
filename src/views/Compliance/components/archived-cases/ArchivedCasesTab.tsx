@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Form, Button, Select, Input, DatePicker, Card } from 'antd';
 import { FilterOutlined, ClearOutlined, FileSearchOutlined } from '@ant-design/icons';
-import { ETransactionStatus, TransactionFilters } from '../../../typings/compliance';
+import { ETransactionStatus, TransactionFilters } from '../../../../typings/compliance';
 import styled from 'styled-components';
-import { useTheme } from '../../../context/ThemeContext';
-import { colors } from '../../../styles/variables';
-import ActiveCasesTable from './ActiveCasesTable';
-import { selectCurrentOrganization } from '../../../store/slices/organizationsSlice';
-import { useAppDispatch, useAppSelector } from '../../../store/hooks';
+import { useTheme } from '../../../../context/ThemeContext';
+import { colors } from '../../../../styles/variables';
+import ActiveCasesTable from '../active-cases/ActiveCasesTable';
+import { selectCurrentOrganization } from '../../../../store/slices/organizationsSlice';
+import { useAppDispatch, useAppSelector } from '../../../../store/hooks';
 import { 
   fetchComplianceTransactions, 
   selectCompletedTransactions,
@@ -17,7 +17,7 @@ import {
   setFilters,
   setPage,
   setLimit
-} from '../../../store/slices/complianceTransactionsSlice';
+} from '../../../../store/slices/complianceTransactionsSlice';
 
 const { RangePicker } = DatePicker;
 
@@ -99,8 +99,9 @@ const ArchivedCasesTab: React.FC<ArchivedCasesTabProps> = ({ isActive }) => {
 
   // Handle filter submit
   const handleFilterSubmit = (values: any) => {
-    const { dateRange, ...rest } = values;
-    const filters: TransactionFilters = {
+    const { dateRange, minAmount, maxAmount, ...rest } = values;
+    const newFilters: TransactionFilters = {
+      ...filters,
       ...rest,
       page: 1,
       limit: pageSize
@@ -108,17 +109,43 @@ const ArchivedCasesTab: React.FC<ArchivedCasesTabProps> = ({ isActive }) => {
 
     // If no specific status is selected, show all archived statuses
     if (!values.status) {
-      filters.status = ARCHIVED_STATUSES.join(',');
+      newFilters.status = ARCHIVED_STATUSES.join(',');
     }
 
-    if (dateRange) {
-      filters.timestamp = {
-        from: dateRange[0].toISOString(),
-        to: dateRange[1].toISOString()
+    // Date range filter
+    if (dateRange && dateRange.length === 2 && dateRange[0] && dateRange[1]) {
+      const startDate = dateRange[0].startOf('day');
+      const endDate = dateRange[1].endOf('day');
+      
+      newFilters.timestamp = {
+        from: startDate.toISOString(),
+        to: endDate.toISOString()
       };
+    } else {
+      delete newFilters.timestamp;
     }
 
-    dispatch(setFilters(filters));
+    // Amount filters
+    if (minAmount) {
+      newFilters.minAmount = parseFloat(minAmount) * 100000000; // Convert to satoshis
+    } else {
+      delete newFilters.minAmount;
+    }
+    
+    if (maxAmount) {
+      newFilters.maxAmount = parseFloat(maxAmount) * 100000000; // Convert to satoshis
+    } else {
+      delete newFilters.maxAmount;
+    }
+
+    // Clean up undefined values
+    Object.keys(newFilters).forEach(key => {
+      if (newFilters[key as keyof TransactionFilters] === undefined) {
+        delete newFilters[key as keyof TransactionFilters];
+      }
+    });
+
+    dispatch(setFilters(newFilters));
   };
 
   return (
@@ -199,7 +226,15 @@ const ArchivedCasesTab: React.FC<ArchivedCasesTabProps> = ({ isActive }) => {
           </Form.Item>
           
           <Form.Item name="dateRange" style={{ marginBottom: 8 }}>
-            <RangePicker size="small" placeholder={['From date', 'To date']} />
+            <RangePicker 
+              size="small" 
+              placeholder={['From date', 'To date']} 
+              onChange={(dates) => {
+                const values = form.getFieldsValue();
+                values.dateRange = dates;
+                handleFilterSubmit(values);
+              }}
+            />
           </Form.Item>
           
           <Form.Item name="riskLevel" style={{ minWidth: 120, marginBottom: 8 }}>

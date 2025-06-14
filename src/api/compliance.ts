@@ -82,6 +82,8 @@ export const compliance = {
       riskLevel?: 'high' | 'medium' | 'low';
       page?: number;
       limit?: number;
+      sortBy?: string;
+      sortOrder?: 'asc' | 'desc';
     },
   ): Promise<{
     transactions: IComplianceTransaction[];

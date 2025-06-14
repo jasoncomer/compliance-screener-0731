@@ -22,7 +22,7 @@ export interface AddressUploadResponse {
 
 export type AddressImportFormat = 'csv' | 'json';
 
-export interface AddressFilters {
+export interface IAddressFilters {
   blockchain?: string;
   entityName?: string;
   tags?: string[];
@@ -101,6 +101,8 @@ export interface TransactionFilters {
   riskLevel?: 'high' | 'medium' | 'low';
   page?: number;
   limit?: number;
+  sortBy?: string; // Field to sort by
+  sortOrder?: 'asc' | 'desc'; // Sort direction
 }
 
 export interface ComplianceTransactionResponse {

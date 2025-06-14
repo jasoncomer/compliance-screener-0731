@@ -2,8 +2,9 @@ import { Button, message } from 'antd';
 import { CheckOutlined } from '@ant-design/icons';
 import { ETransactionStatus } from '../../../../typings/compliance';
 import { useState } from 'react';
-import { selectTransactionById, updateTransactionStatus, fetchComplianceTransactions } from '../../../../store/slices/complianceTransactionsSlice';
-import { useAppDispatch, useAppSelector } from '../../../../store/hooks';
+import { selectTransactionById } from '../../../../store/slices/complianceTransactionsSlice';
+import { useAppSelector } from '../../../../store/hooks';
+import { useUpdateTransactionStatus } from '../../../../hooks/useComplianceTransactions';
 import ApproveTransactionModal from '../ApproveTransaction.modal';
 import { SearchOff } from '@mui/icons-material';
 
@@ -14,42 +15,32 @@ interface TransactionDetailsFooterProps {
   onHighlightAssignSelector?: () => void;
 }
 export const TransactionDetailsFooter = ({ transactionId, onClose, onHighlightAssignSelector }: TransactionDetailsFooterProps) => {
-  const dispatch = useAppDispatch();
   const transactionDetails = useAppSelector(state => selectTransactionById(state, transactionId));
-  const filters = useAppSelector(state => state.complianceTransactions.filters);
-  const { page, limit } = useAppSelector(state => state.complianceTransactions);
-  const [modalLoading, setModalLoading] = useState(false);
   const [showApproveModal, setShowApproveModal] = useState(false);
+  
+  // React Query mutation
+  const updateStatusMutation = useUpdateTransactionStatus();
 
   if (!transactionDetails) return null;
 
   const handleApproveTransaction = async () => {
-    try {
-      setModalLoading(true);
-      
-      // Update transaction status via Redux action
-      await dispatch(updateTransactionStatus({ 
-        transactionId: transactionDetails._id, 
-        status: ETransactionStatus.APPROVED 
-      })).unwrap();
-      
-      // Re-fetch transactions with current filters to update the list
-      const mergedFilters = { 
-        ...filters,
-        page,
-        limit,
-      };
-      dispatch(fetchComplianceTransactions(mergedFilters));
-      
-      message.success('Transaction approved successfully');
-      setShowApproveModal(false);
-      onClose();
-    } catch (error) {
-      console.error('Failed to approve transaction:', error);
-      message.error('Failed to approve transaction');
-    } finally {
-      setModalLoading(false);
-    }
+    updateStatusMutation.mutate(
+      {
+        transactionId: transactionDetails._id,
+        status: ETransactionStatus.APPROVED
+      },
+      {
+        onSuccess: () => {
+          message.success('Transaction approved successfully');
+          setShowApproveModal(false);
+          onClose();
+        },
+        onError: (error) => {
+          console.error('Failed to approve transaction:', error);
+          message.error('Failed to approve transaction');
+        }
+      }
+    );
   };
 
   const handleReviewTransaction = () => {
@@ -97,7 +88,7 @@ export const TransactionDetailsFooter = ({ transactionId, onClose, onHighlightAs
         isVisible={showApproveModal}
         onClose={() => setShowApproveModal(false)}
         onApprove={handleApproveTransaction}
-        loading={modalLoading}
+        loading={updateStatusMutation.isPending}
       />
     </>
   );

@@ -1,13 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Tabs } from 'antd';
 import { useTheme } from '../../context/ThemeContext';
 import ViewWrapper from '../../components/ViewWrapper';
 import { AuditOutlined, DatabaseOutlined, TableOutlined, FileSearchOutlined, HistoryOutlined } from '@ant-design/icons';
 import { colors } from '../../styles/variables';
-import UnassignedTransactionsTab from './components/UnassignedTransactionsTab';
-import AddressesTab from './components/AddressesTab';
-import ActiveCasesTab from './components/ActiveCasesTab';
-import ArchivedCasesTab from './components/ArchivedCasesTab';
+import UnassignedTransactionsTab from './components/unassigned-transactions/UnassignedTransactionsTab';
+import MonitoredAddressesTab from './components/monitored-addresses/MonitoredAddressesTab';
+import ActiveCasesTab from './components/active-cases/ActiveCasesTab';
+import ArchivedCasesTab from './components/archived-cases/ArchivedCasesTab';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import { fetchMonitoredAddresses, selectAllAddresses } from '../../store/slices/monitoredAddressesSlice';
 
@@ -52,6 +52,11 @@ const ComplianceScreener: React.FC = () => {
     setActiveTab(activeKey as TabKey);
   };
 
+  // Handle addresses change - memoized to prevent unnecessary re-renders
+  const handleAddressesChange = useCallback(() => {
+    dispatch(fetchMonitoredAddresses());
+  }, [dispatch]);
+
   const getTabDescription = (tab: TabKey): string => {
     switch (tab) {
       case 'active-cases':
@@ -67,17 +72,18 @@ const ComplianceScreener: React.FC = () => {
 
   const createTabHeader = (icon: React.ReactNode, label: string) => (
     <span>
-      {React.cloneElement(icon as React.ReactElement, { style: styles.icon })}
+      <span style={styles.icon}>{icon}</span>
       {label}
     </span>
   );
 
-  const tabConfig: TabConfig[] = [
+  // Memoize tabConfig to prevent recreation on every render
+  const tabConfig: TabConfig[] = useMemo(() => [
     {
       key: 'transactions',
       label: 'Unassigned Transactions',
       icon: <TableOutlined />,
-      component: <UnassignedTransactionsTab isActive={activeTab === 'transactions'} />,
+      component: <UnassignedTransactionsTab initialStatusFilter="UNASSIGNED" />,
     },
     {
       key: 'active-cases',
@@ -90,9 +96,9 @@ const ComplianceScreener: React.FC = () => {
       label: 'Monitored Addresses',
       icon: <DatabaseOutlined />,
       component: (
-        <AddressesTab
+        <MonitoredAddressesTab
           addresses={monitoredAddresses}
-          onAddressesChange={() => dispatch(fetchMonitoredAddresses())}
+          onAddressesChange={handleAddressesChange}
         />
       ),
     },
@@ -102,7 +108,7 @@ const ComplianceScreener: React.FC = () => {
       icon: <HistoryOutlined />,
       component: <ArchivedCasesTab isActive={activeTab === 'archived-cases'} />,
     },
-  ];
+  ], [monitoredAddresses, activeTab, handleAddressesChange]);
 
   return (
     <ViewWrapper 

@@ -10,13 +10,13 @@ const TableActionsContainer = styled.div`
   gap: 1px;
 `;
 
-interface TableActionsProps {
+interface MonitoredTableActionsProps {
   onAddAddress: () => void;
   onUploadAddresses: () => void;
   children?: React.ReactNode;
 }
 
-const TableActions: React.FC<TableActionsProps> = ({
+const MonitoredTableActions: React.FC<MonitoredTableActionsProps> = ({
   onAddAddress,
   onUploadAddresses,
   children,
@@ -36,4 +36,4 @@ const TableActions: React.FC<TableActionsProps> = ({
   );
 };
 
-export default TableActions; 
+export default MonitoredTableActions; 

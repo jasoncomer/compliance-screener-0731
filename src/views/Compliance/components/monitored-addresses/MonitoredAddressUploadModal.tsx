@@ -3,7 +3,7 @@ import { Modal, Upload, Button } from 'antd';
 import { UploadOutlined } from '@ant-design/icons';
 import type { UploadFile } from 'antd/es/upload/interface';
 
-interface AddressUploadModalProps {
+interface MonitoredAddressUploadModalProps {
   visible: boolean;
   onCancel: () => void;
   onUpload: () => void;
@@ -11,7 +11,7 @@ interface AddressUploadModalProps {
   onFileListChange: (fileList: UploadFile[]) => void;
 }
 
-const AddressUploadModal: React.FC<AddressUploadModalProps> = ({
+const MonitoredAddressUploadModal: React.FC<MonitoredAddressUploadModalProps> = ({
   visible,
   onCancel,
   onUpload,
@@ -48,4 +48,4 @@ const AddressUploadModal: React.FC<AddressUploadModalProps> = ({
   );
 };
 
-export default AddressUploadModal; 
+export default MonitoredAddressUploadModal; 

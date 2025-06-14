@@ -100,6 +100,7 @@ const Home: React.FC = () => {
                 onChange={handleTabChange}
                 items={[
                   { key: 'compliance-screener', label: 'Compliance Screener' },
+                  { key: 'compliance-dashboard', label: 'Compliance Dashboard' },
                   { key: 'block-explorer', label: 'Block Explorer' },
                   { key: 'risk-scoring', label: 'Risk Scoring' },
                   // { key: 'alerts', label: 'Alerts' },

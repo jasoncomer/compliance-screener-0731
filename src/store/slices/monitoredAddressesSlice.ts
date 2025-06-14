@@ -2,7 +2,7 @@ import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { api } from '../../api/api';
 import { 
   MonitoredAddress, 
-  AddressFilters, 
+  IAddressFilters, 
   MonitoredAddressChange,
   AddressUploadFormat,
   AddressUploadResponse 
@@ -19,7 +19,7 @@ interface MonitoredAddressesState {
   };
   loading: boolean;
   error: string | null;
-  filters: AddressFilters;
+  filters: IAddressFilters;
   uploadResponse: AddressUploadResponse | null;
 }
 
@@ -42,7 +42,7 @@ export const fetchMonitoredAddresses = createAsyncThunk(
 
 export const fetchFilteredAddresses = createAsyncThunk(
   'monitoredAddresses/fetchFilteredAddresses',
-  async (filters: AddressFilters) => {
+  async (filters: IAddressFilters) => {
     const response = await api.compliance.getFilteredAddresses(filters);
     return response;
   }
@@ -99,7 +99,7 @@ const monitoredAddressesSlice = createSlice({
   name: 'monitoredAddresses',
   initialState,
   reducers: {
-    setFilters: (state, action: PayloadAction<AddressFilters>) => {
+    setFilters: (state, action: PayloadAction<IAddressFilters>) => {
       state.filters = action.payload;
     },
     clearUploadResponse: (state) => {

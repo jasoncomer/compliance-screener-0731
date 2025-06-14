@@ -28,6 +28,7 @@ import Welcome from './views/Welcome/index';
 import { useAppDispatch } from './store/hooks';
 import { fetchOrganizations } from './store/slices/organizationsSlice';
 import { useAnalytics } from './hooks/useAnalytics';
+import ComplianceDashboard from "./views/compliance-v2/compliance-dashboard";
 
 function App() {
   const dispatch = useAppDispatch();
@@ -128,6 +129,7 @@ function App() {
           }>
             <Route index element={<ComplianceScreener />} />
             <Route path="compliance-screener" element={<ComplianceScreener />} />
+            <Route path="compliance-dashboard" element={<ComplianceDashboard />} />
             <Route path="admin" element={<Admin />} />
             <Route path="alerts" element={<Alerts />} />
             <Route path="blockham" element={<BlockHam />} />

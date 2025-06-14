@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Form, Button, Select, Input, DatePicker, Card } from 'antd';
 import { FilterOutlined, ClearOutlined, FileSearchOutlined } from '@ant-design/icons';
-import { ETransactionStatus, TransactionFilters } from '../../../typings/compliance';
+import { ETransactionStatus, TransactionFilters } from '../../../../typings/compliance';
 import styled from 'styled-components';
-import { useTheme } from '../../../context/ThemeContext';
-import { colors } from '../../../styles/variables';
+import { useTheme } from '../../../../context/ThemeContext';
+import { colors } from '../../../../styles/variables';
 import ActiveCasesTable from './ActiveCasesTable';
-import { selectCurrentOrganization } from '../../../store/slices/organizationsSlice';
-import { useAppDispatch, useAppSelector } from '../../../store/hooks';
+import { selectCurrentOrganization } from '../../../../store/slices/organizationsSlice';
+import { useAppDispatch, useAppSelector } from '../../../../store/hooks';
 import { 
   fetchComplianceTransactions, 
   selectActiveTransactions,
@@ -17,7 +17,7 @@ import {
   setFilters,
   setPage,
   setLimit
-} from '../../../store/slices/complianceTransactionsSlice';
+} from '../../../../store/slices/complianceTransactionsSlice';
 
 const { RangePicker } = DatePicker;
 
@@ -53,13 +53,20 @@ const ActiveCasesTab: React.FC<ActiveCasesTabProps> = ({ isActive }) => {
   useEffect(() => {
     if (!isActive) return;
 
+    // Define active statuses for this tab
+    const activeStatuses = [
+      ETransactionStatus.UNREVIEWED,
+      ETransactionStatus.IN_REVIEW,
+      ETransactionStatus.HOLD
+    ];
+
     const mergedFilters = { 
       ...filters,
+      status: filters.status || activeStatuses.join(','), // Always ensure active statuses are set
       page: currentPage,
       limit: pageSize
     };
     dispatch(fetchComplianceTransactions(mergedFilters));
-    console.log('active cases tab', mergedFilters);
   }, [dispatch, filters, organization, currentPage, pageSize, isActive]);
 
   // Extract unique filter options from transaction data
@@ -84,9 +91,15 @@ const ActiveCasesTab: React.FC<ActiveCasesTabProps> = ({ isActive }) => {
   // Clear all filters
   const handleClearFilters = () => {
     form.resetFields();
+    const activeStatuses = [
+      ETransactionStatus.UNREVIEWED,
+      ETransactionStatus.IN_REVIEW,
+      ETransactionStatus.HOLD
+    ];
     dispatch(setFilters({
       page: 1,
       limit: pageSize,
+      status: activeStatuses.join(',') // Maintain active status filter
     }));
   };
   
@@ -120,10 +133,13 @@ const ActiveCasesTab: React.FC<ActiveCasesTabProps> = ({ isActive }) => {
     }
     
     // Date range filter
-    if (values.dateRange && values.dateRange.length === 2) {
+    if (values.dateRange && values.dateRange.length === 2 && values.dateRange[0] && values.dateRange[1]) {
+      const startDate = values.dateRange[0].startOf('day');
+      const endDate = values.dateRange[1].endOf('day');
+      
       newFilters.timestamp = {
-        from: values.dateRange[0].format('YYYY-MM-DD'),
-        to: values.dateRange[1].format('YYYY-MM-DD')
+        from: startDate.toISOString(),
+        to: endDate.toISOString()
       };
     } else {
       delete newFilters.timestamp;
@@ -132,15 +148,21 @@ const ActiveCasesTab: React.FC<ActiveCasesTabProps> = ({ isActive }) => {
     // Amount filters
     if (values.minAmount) {
       newFilters.minAmount = parseFloat(values.minAmount) * 100000000; // Convert to satoshis
+    } else {
+      delete newFilters.minAmount;
     }
     
     if (values.maxAmount) {
       newFilters.maxAmount = parseFloat(values.maxAmount) * 100000000; // Convert to satoshis
+    } else {
+      delete newFilters.maxAmount;
     }
     
     // Risk level filter
     if (values.riskLevel) {
       newFilters.riskLevel = values.riskLevel;
+    } else {
+      delete newFilters.riskLevel;
     }
     
     dispatch(setFilters(newFilters));
@@ -227,7 +249,15 @@ const ActiveCasesTab: React.FC<ActiveCasesTabProps> = ({ isActive }) => {
           </Form.Item>
           
           <Form.Item name="dateRange" style={{ marginBottom: 8 }}>
-            <RangePicker size="small" placeholder={['From date', 'To date']} />
+            <RangePicker 
+              size="small" 
+              placeholder={['From date', 'To date']} 
+              onChange={(dates) => {
+                const values = form.getFieldsValue();
+                values.dateRange = dates;
+                handleFilterSubmit(values);
+              }}
+            />
           </Form.Item>
           
           <Form.Item name="riskLevel" style={{ minWidth: 120, marginBottom: 8 }}>

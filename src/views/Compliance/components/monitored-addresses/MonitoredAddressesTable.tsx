@@ -1,8 +1,8 @@
 import React from 'react';
 import { Table, Button, Space } from 'antd';
-import { MonitoredAddress } from '../../../typings/compliance';
+import { MonitoredAddress } from '../../../../typings/compliance';
 
-interface AddressTableProps {
+interface MonitoredAddressTableProps {
   addresses: MonitoredAddress[];
   loading: boolean;
   onEdit: (address: MonitoredAddress) => void;
@@ -10,7 +10,7 @@ interface AddressTableProps {
   onViewHistory: (id: string) => void;
 }
 
-const AddressTable: React.FC<AddressTableProps> = ({
+const MonitoredAddressesTable: React.FC<MonitoredAddressTableProps> = ({
   addresses,
   loading,
   onEdit,
@@ -64,4 +64,4 @@ const AddressTable: React.FC<AddressTableProps> = ({
   );
 };
 
-export default AddressTable; 
+export default MonitoredAddressesTable; 
