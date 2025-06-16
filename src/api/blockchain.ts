@@ -20,17 +20,15 @@ const getTransaction = async (txHash: string) => {
   return res.data;
 };
 
-const getBlock = async (blockNumber: number) => {
+const getBlock = async (height: number) => {
   try {
-    // Validate block number
-    if (!Number.isInteger(blockNumber) || blockNumber < 0) {
-      throw new Error('Invalid block number');
+    // Validate block height
+    if (!Number.isInteger(height) || height < 0) {
+      throw new Error('Invalid block height');
     }
 
-    const url = `/blockchain/block/${blockNumber}`;
-    console.log('Request URL:', url);
-    console.log('Request headers:', axiosInstance.defaults.headers);
-    
+    const url = `/blockchain/block/${height}`;
+
     const res = await axiosInstance.get(url);
     console.log('Full API response:', {
       status: res.status,
@@ -52,7 +50,7 @@ const getBlock = async (blockNumber: number) => {
     }
 
     // Validate the response data structure
-    if (!res.data.height || !res.data.hash) {
+    if (typeof res.data._id !== 'string' || typeof res.data.hash !== 'string') {
       console.error('Invalid block data structure:', res.data);
       throw new Error('Invalid block data structure received from API');
     }
@@ -94,6 +92,11 @@ const getAddressBlockStats = async (address: string) => {
   return res.data.data;
 };
 
+const getBlockTransactions = async (height: number, params: { page: number, limit: number }) => {
+  const res = await axiosInstance.get(`/blockchain/block/${height}/transactions?page=${params.page}&limit=${params.limit}`);
+  return res.data;
+};
+
 
 
 export const blockchain = {
@@ -105,4 +108,5 @@ export const blockchain = {
   getTransaction,
   getAddressTransactions,
   getAddressBlockStats,
+  getBlockTransactions,
 };
