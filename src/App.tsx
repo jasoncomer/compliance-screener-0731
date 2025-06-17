@@ -8,6 +8,7 @@ import { useEffect, useState } from "react";
 import { ThemeProvider as StyledThemeProvider } from 'styled-components';
 import Login from './views/Login';
 import Register from "./views/Register";
+import ResetPassword from "./views/ResetPassword";
 import Home from "./views/Home";
 import { ConfigProvider, Spin, message } from "antd";
 import { useAppContext } from "./context/AppContext";
@@ -117,6 +118,7 @@ function App() {
           <Route path="/" element={<Navigate to="/home/compliance-screener" replace />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={user ? <Navigate to="/home/compliance-screener" replace /> : <Register />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/welcome" element={
             <ProtectedRoute>
               <Welcome />
