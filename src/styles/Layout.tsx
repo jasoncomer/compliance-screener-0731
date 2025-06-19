@@ -37,7 +37,8 @@ export const Logo = styled.img<{ $theme: Theme }>`
 export const StyledContent = styled(Layout.Content)<{ $theme: Theme }>`
   background: ${props => props.$theme === 'light' ? '#fff' : '#141414'};
   padding: 24px;
-  overflow: scroll;
+  overflow: auto;
+  min-height: calc(100vh - 50px);
 `;
 
 export const UserMenuButton = styled.div<{ $theme: Theme }>`

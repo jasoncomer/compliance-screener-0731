@@ -1,0 +1,70 @@
+import React from 'react';
+import { Card, Statistic, Button, Typography, Spin } from 'antd';
+import { SafetyOutlined } from '@ant-design/icons';
+
+const { Title } = Typography;
+
+interface RiskAssessmentProps {
+  score: number;
+  level: string;
+  description: string;
+  isLoading?: boolean;
+  onSeeDetails?: () => void;
+}
+
+const RiskAssessment: React.FC<RiskAssessmentProps> = ({ 
+  score, 
+  level, 
+  description, 
+  isLoading = false,
+  onSeeDetails 
+}) => {
+  const getRiskColor = (score: number): string => {
+    if (score > 70) return '#cf1322'; // Red for high risk
+    if (score > 40) return '#faad14'; // Orange for medium risk
+    return '#3f8600'; // Green for low risk
+  };
+
+  const getRiskIconColor = (score: number): string => {
+    if (score > 70) return '#cf1322';
+    if (score > 40) return '#faad14';
+    return '#3f8600';
+  };
+
+  if (isLoading) {
+    return (
+      <Card className="bg-gray-800 rounded-2xl border-gray-700 h-full flex flex-col justify-center items-center">
+        <Title level={5} className="text-white mb-4">Risk Assessment</Title>
+        <Spin size="large" />
+        <div className="text-gray-500 text-sm mt-4">Loading risk data...</div>
+      </Card>
+    );
+  }
+
+  const riskColor = getRiskColor(score);
+  const iconColor = getRiskIconColor(score);
+
+  return (
+    <Card className="bg-gray-800 rounded-2xl border-gray-700 h-full flex flex-col justify-center items-center">
+      <Title level={5} className="text-white mb-4">Risk Assessment</Title>
+      <Statistic
+        value={score}
+        valueStyle={{ color: riskColor, fontSize: '3rem', fontWeight: 700 }}
+        prefix={<SafetyOutlined className="mr-2" style={{ color: iconColor }} />}
+        suffix={<span className="text-gray-500 text-lg">/100</span>}
+      />
+      <div className="font-semibold text-lg mt-2" style={{ color: riskColor }}>{level}</div>
+      <div className="text-gray-500 text-sm mb-4">{description}</div>
+      <Button 
+        type="default" 
+        className="w-full rounded-lg bg-gray-700 text-white border-none font-semibold"
+        onClick={onSeeDetails}
+        disabled={!onSeeDetails}
+      >
+        See Details
+      </Button>
+    </Card>
+  );
+};
+
+export default RiskAssessment; 

@@ -6,8 +6,10 @@ import { colors } from '../styles/variables';
 const ViewContainer = styled.div<{ $theme: 'light' | 'dark'; $fullWidth?: boolean }>`
   width: 100%;
   height: auto;
-  background-color: ${props => props.$theme === 'light' ? colors.white : 'inherit'};
+  background-color: ${props => props.$theme === 'light' ? colors.white : colors.gray[900]};
   max-width: ${props => props.$fullWidth ? '100%' : '1200px'};
+  padding: 20px;
+  min-height: 200px;
 `;
 
 const TitleContainer = styled.div`
@@ -41,6 +43,8 @@ const ViewWrapper: React.FC<ViewWrapperProps> = ({
   fullWidth = false
 }) => {
   const { theme } = useTheme();
+  
+  console.log('ViewWrapper: Rendering with theme:', theme, 'title:', title);
 
   return (
     <ViewContainer 

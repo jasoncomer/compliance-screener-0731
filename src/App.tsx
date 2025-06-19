@@ -21,6 +21,7 @@ import Alerts from './views/Alerts';
 import BlockHam from './views/VASPExplorer/VASPExplorer';
 import BlockExplorer from './views/blockexplorer/BlockExplorer';
 import RiskScoring from './views/RiskScoring/index';
+import RiskDashboard from './views/RiskDashboard/index';
 import Settings from './views/Settings';
 import FlowTrace from './views/FlowTrace';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -135,6 +136,7 @@ function App() {
             <Route path="blockham" element={<BlockHam />} />
             <Route path="block-explorer/*" element={<BlockExplorer />} />
             <Route path="risk-scoring" element={<RiskScoring />} />
+            <Route path="risk-dashboard" element={<RiskDashboard />} />
             <Route path="flow-trace" element={<FlowTrace />} />
             <Route path="settings" element={<Settings />} />
           </Route>
