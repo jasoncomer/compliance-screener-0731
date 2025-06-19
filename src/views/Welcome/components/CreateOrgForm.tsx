@@ -3,7 +3,7 @@ import { Form, Button } from 'antd';
 import { ArrowLeftOutlined } from '@ant-design/icons';
 import Input from '../../../components/common/Input';
 import { CreateOrgFormProps, CreateOrgFormData } from '../types';
-import { WelcomeHeader, ActionButtons, FormContainer } from '../styled';
+import { WelcomeHeader, ActionButtons, FormContainer } from '../WelcomeStyles';
 
 const CreateOrgForm: React.FC<CreateOrgFormProps> = ({ onBack, onSubmit }) => {
   const [form] = Form.useForm<CreateOrgFormData>();

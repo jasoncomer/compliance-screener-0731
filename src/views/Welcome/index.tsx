@@ -13,7 +13,7 @@ import {
   WelcomeHeader,
   LoadingWrapper,
   ContentWrapper
-} from './styled';
+} from './WelcomeStyles';
 
 const Welcome: React.FC = () => {
   const { theme } = useTheme();
@@ -143,7 +143,6 @@ const Welcome: React.FC = () => {
           <OptionCard
             selected={option === 'create'}
             onClick={() => handleOptionChange('create')}
-            theme={theme}
             icon={<TeamOutlined />}
             title="Create a new organization"
             description="Start fresh with your own organization and invite team members."
@@ -152,7 +151,6 @@ const Welcome: React.FC = () => {
           <OptionCard
             selected={option === 'join'}
             onClick={() => handleOptionChange('join')}
-            theme={theme}
             icon={<UserAddOutlined />}
             title="Join with invite code"
             description="Join your team's organization using an invite code."
@@ -161,7 +159,6 @@ const Welcome: React.FC = () => {
           <OptionCard
             selected={option === 'skip'}
             onClick={() => handleSkip()}
-            theme={theme}
             icon={<ArrowRightOutlined />}
             title="Skip for now"
             description="Continue without an organization. You can create or join one later in Settings."
@@ -194,13 +191,13 @@ const Welcome: React.FC = () => {
   };
 
   return (
-    <WelcomeContainer theme={{ theme }}>
+    <WelcomeContainer>
       <img
         src="https://framerusercontent.com/images/3djlle6W5wE61QQGlOQuLh5QvQ.jpg"
         alt="Blockscout Logo"
         style={{ position: 'absolute', top: '2em', left: '2em', objectFit: 'cover', width: '100px' }}
       />
-      <StyledCard className={option === 'create' || option === 'join' ? 'form-view' : ''}>
+      <StyledCard formView={option === 'create' || option === 'join'}>
         <ContentWrapper state={contentState}>
           {renderContent()}
         </ContentWrapper>

@@ -1,12 +1,11 @@
 import { Button, message } from 'antd';
-import { CheckOutlined } from '@ant-design/icons';
-import { ETransactionStatus } from '../../../../typings/compliance';
+import { CheckOutlined, SearchOutlined } from '@ant-design/icons';
+import { EComplianceTransactionStatus } from '../../../../typings/compliance';
 import { useState } from 'react';
 import { selectTransactionById } from '../../../../store/slices/complianceTransactionsSlice';
 import { useAppSelector } from '../../../../store/hooks';
 import { useUpdateTransactionStatus } from '../../../../hooks/useComplianceTransactions';
 import ApproveTransactionModal from '../ApproveTransaction.modal';
-import { SearchOff } from '@mui/icons-material';
 
 
 interface TransactionDetailsFooterProps {
@@ -27,7 +26,7 @@ export const TransactionDetailsFooter = ({ transactionId, onClose, onHighlightAs
     updateStatusMutation.mutate(
       {
         transactionId: transactionDetails._id,
-        status: ETransactionStatus.APPROVED
+        status: EComplianceTransactionStatus.APPROVED
       },
       {
         onSuccess: () => {
@@ -78,7 +77,7 @@ export const TransactionDetailsFooter = ({ transactionId, onClose, onHighlightAs
         <Button
           key="case"
           type="primary"
-          icon={<SearchOff />}
+          icon={<SearchOutlined />}
           onClick={handleReviewTransaction}
         >
           Review Transaction

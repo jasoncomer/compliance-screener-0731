@@ -1,7 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Card, Form, Button, Space, Typography, message, Avatar, Modal, Row, Col, Tag, Switch } from 'antd';
 import { UserOutlined, GlobalOutlined, TwitterOutlined, SendOutlined, GithubOutlined, LinkedinOutlined, FacebookOutlined, InstagramOutlined, YoutubeOutlined, RedditOutlined, MediumOutlined, WarningOutlined } from '@ant-design/icons';
-import styled from 'styled-components';
 import { SOT } from '../typings/interfaces';
 import { api } from '../api/api';
 import { getEntityTypeLabel } from '../utils/display-labels';
@@ -17,135 +16,176 @@ import EntityBalanceSheet from './EntityBalanceSheet';
 
 const { Title, Text } = Typography;
 
-const Container = styled.div`
-  width: 100%;
-  display: flex;
-  flex-direction: row;
-  gap: 24px;
-  padding-bottom: 2em;
-  margin-top: 3em;
-`;
+import { cn } from '../lib/utils';
 
-const EditorWrapper = styled(Card)`
-  flex: 1;
-`;
+interface ContainerProps {
+  children: React.ReactNode;
+  className?: string;
+}
 
-const ButtonGroup = styled(Space)`
-  margin-top: 24px;
-`;
+const Container: React.FC<ContainerProps> = ({ children, className }) => (
+  <div className={cn("w-full flex flex-row gap-6 pb-8 mt-12", className)}>
+    {children}
+  </div>
+);
 
-const DetailSection = styled.div`
-  display: flex;
-  gap: 24px;
-  padding-bottom: 2em;
-  text-align: left;
-`;
+interface EditorWrapperProps {
+  children: React.ReactNode;
+  className?: string;
+  style?: React.CSSProperties;
+}
 
-const DetailColumn = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  
-  &:first-child {
-    flex: 1;
-  }
-  
-  &:last-child {
-    flex: 1;
-  }
-`;
+const EditorWrapper: React.FC<EditorWrapperProps> = ({ children, className, style }) => (
+  <Card className={cn("flex-1", className)} style={style}>
+    {children}
+  </Card>
+);
 
-const DetailItem = styled.div`
-  margin-bottom: 16px;
-`;
+interface ButtonGroupProps {
+  children: React.ReactNode;
+  className?: string;
+}
 
-const DetailLabel = styled(Text)`
-  display: block;
-  color: #666666;
-  margin-bottom: 4px;
-  font-size: 16px;
-  text-align: left;
-`; 
+const ButtonGroup: React.FC<ButtonGroupProps> = ({ children, className }) => (
+  <Space className={cn("mt-6", className)}>
+    {children}
+  </Space>
+);
 
-const DetailValue = styled(Text)`
-  font-size: 16px;
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  text-align: left;
-  
-  .anticon {
-    color: #1890ff;
-  }
-  
-  a {
-    color: #1890ff;
-    text-decoration: none;
-    &:hover {
-      text-decoration: underline;
-    }
-  }
+interface DetailSectionProps {
+  children: React.ReactNode;
+  className?: string;
+}
 
-  &.address-line {
-    text-align: left;
-  }
-`;
+const DetailSection: React.FC<DetailSectionProps> = ({ children, className }) => (
+  <div className={cn("flex gap-6 pb-8 text-left", className)}>
+    {children}
+  </div>
+);
 
-const HeaderSection = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  margin-bottom: 1em;
-  text-align: left;
-`;
+interface DetailColumnProps {
+  children: React.ReactNode;
+  className?: string;
+}
 
-const HeaderInfo = styled.div`
-  flex: 1;
-  text-transform: capitalize;
-  text-align: left;
-`;
+const DetailColumn: React.FC<DetailColumnProps> = ({ children, className }) => (
+  <div className={cn("flex flex-col gap-3 flex-1", className)}>
+    {children}
+  </div>
+);
 
-const StyledAvatar = styled(Avatar)`
-  width: 64px;
-  height: 64px;
-`;
+interface DetailItemProps {
+  children: React.ReactNode;
+  className?: string;
+  style?: React.CSSProperties;
+}
 
-// Removed unused styled component
+const DetailItem: React.FC<DetailItemProps> = ({ children, className, style }) => (
+  <div className={cn("mb-4", className)} style={style}>
+    {children}
+  </div>
+);
 
-const SanctionedPill = styled.div`
-  display: inline-flex;
-  align-items: center;
-  background-color: ${colors.danger};
-  color: white;
-  padding: 6px 12px;
-  border-radius: 16px;
-  font-size: 12px;
-  font-weight: bold;
-  margin-top: 8px;
-  margin-bottom: 12px;
-  width: auto;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  
-  .anticon {
-    margin-right: 6px;
-    font-size: 14px;
-  }
-`;
+interface DetailLabelProps {
+  children: React.ReactNode;
+  className?: string;
+  style?: React.CSSProperties;
+}
 
+const DetailLabel: React.FC<DetailLabelProps> = ({ children, className, style }) => (
+  <Text className={cn("block text-gray-600 mb-1 text-base text-left", className)} style={style}>
+    {children}
+  </Text>
+);
 
-const ScrollableSocialLinks = styled.div`
-  max-height: 100px;
-  overflow-y: auto;
-`;
+interface DetailValueProps {
+  children: React.ReactNode;
+  className?: string;
+  style?: React.CSSProperties;
+}
 
-const ScrollableWebsiteLinks = styled.div`
-  max-height: 100px;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 0px;
-  padding-right: 4px;
-`;
+const DetailValue: React.FC<DetailValueProps> = ({ children, className, style }) => (
+  <Text className={cn(
+    "text-base flex items-start gap-2 text-left",
+    className
+  )} style={style}>
+    {children}
+  </Text>
+);
+
+interface HeaderSectionProps {
+  children: React.ReactNode;
+  className?: string;
+}
+
+const HeaderSection: React.FC<HeaderSectionProps> = ({ children, className }) => (
+  <div className={cn("flex items-center gap-4 mb-4 text-left", className)}>
+    {children}
+  </div>
+);
+
+interface HeaderInfoProps {
+  children: React.ReactNode;
+  className?: string;
+}
+
+const HeaderInfo: React.FC<HeaderInfoProps> = ({ children, className }) => (
+  <div className={cn("flex-1 capitalize text-left", className)}>
+    {children}
+  </div>
+);
+
+interface StyledAvatarProps {
+  src?: string;
+  icon?: React.ReactNode;
+  className?: string;
+}
+
+const StyledAvatar: React.FC<StyledAvatarProps> = ({ src, icon, className }) => (
+  <Avatar 
+    src={src}
+    icon={icon}
+    className={cn("w-16 h-16", className)}
+  />
+);
+
+interface SanctionedPillProps {
+  children: React.ReactNode;
+  className?: string;
+}
+
+const SanctionedPill: React.FC<SanctionedPillProps> = ({ children, className }) => (
+  <div className={cn(
+    "inline-flex items-center bg-danger text-white",
+    "px-3 py-1.5 rounded-2xl text-xs font-bold mt-2 mb-3 w-auto",
+    "shadow-md gap-1.5",
+    className
+  )}>
+    {children}
+  </div>
+);
+
+interface ScrollableSocialLinksProps {
+  children: React.ReactNode;
+  className?: string;
+}
+
+const ScrollableSocialLinks: React.FC<ScrollableSocialLinksProps> = ({ children, className }) => (
+  <div className={cn("max-h-25 overflow-y-auto", className)}>
+    {children}
+  </div>
+);
+
+interface ScrollableWebsiteLinksProps {
+  children: React.ReactNode;
+  className?: string;
+}
+
+const ScrollableWebsiteLinks: React.FC<ScrollableWebsiteLinksProps> = ({ children, className }) => (
+  <div className={cn("max-h-25 overflow-y-auto flex flex-col gap-0 pr-1", className)}>
+    {children}
+  </div>
+);
 
 
 interface SOTEditorProps {

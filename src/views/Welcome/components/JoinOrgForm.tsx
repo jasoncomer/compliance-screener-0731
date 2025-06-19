@@ -3,7 +3,7 @@ import { Form, Button } from 'antd';
 import { ArrowLeftOutlined } from '@ant-design/icons';
 import Input from '../../../components/common/Input';
 import { JoinOrgFormProps, JoinOrgFormData } from '../types';
-import { WelcomeHeader, ActionButtons, FormContainer } from '../styled';
+import { WelcomeHeader, ActionButtons, FormContainer } from '../WelcomeStyles';
 
 const JoinOrgForm: React.FC<JoinOrgFormProps> = ({ onBack, onSubmit }) => {
   const [form] = Form.useForm<JoinOrgFormData>();

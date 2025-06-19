@@ -13,20 +13,42 @@ interface TransactionDetailsModalProps {
   isVisible: boolean;
   onClose: () => void;
   transactionId: string | null;
+  transactionData?: IComplianceTransaction | null;
 }
 
 export const TransactionDetailsModal: FC<TransactionDetailsModalProps> = ({
   isVisible,
   onClose,
   transactionId,
+  transactionData,
 }) => {
   const { attributions } = useAttribution();
   const headerRef = useRef<{ highlightAssignSelector: () => void }>(null);
-  const transactionDetails = useAppSelector(state => 
+  
+  // Try to get transaction from props first, then fall back to Redux store
+  const transactionFromStore = useAppSelector(state => 
     transactionId ? selectTransactionById(state, transactionId) : null
   );
+  
+  const transactionDetails = transactionData || transactionFromStore;
 
-  if (!transactionDetails || !transactionId) return null;
+  console.log('TransactionDetailsModal render:', { 
+    isVisible, 
+    transactionId, 
+    transactionData: !!transactionData,
+    transactionFromStore: !!transactionFromStore,
+    transactionDetails: !!transactionDetails
+  });
+
+  if (!transactionDetails || !transactionId) {
+    console.log('Modal returning null because:', { 
+      hasTransactionData: !!transactionData,
+      hasTransactionFromStore: !!transactionFromStore,
+      hasTransactionDetails: !!transactionDetails, 
+      hasTransactionId: !!transactionId 
+    });
+    return null;
+  }
 
   // Entity click handler
   const handleEntityClick = (record: IComplianceTransaction) => {

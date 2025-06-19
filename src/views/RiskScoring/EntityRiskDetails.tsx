@@ -1,9 +1,5 @@
 import React from 'react';
 import { RiskScoringResponse } from '../../typings/riskScoring';
-import {
-  Box,
-  Card,
-} from '@mui/material';
 
 
 interface EntityRiskDetailsProps {
@@ -26,8 +22,8 @@ const EntityRiskDetails: React.FC<EntityRiskDetailsProps> = ({ riskScores }) => 
   // };
 
   return (
-    <Box>
-      <Card sx={{ mb: 3 }}>
+    <div>
+      <div style={{ marginBottom: '24px' }}>
         {/* <CardContent>
           <Grid container spacing={3}>
             <Grid item xs={12} md={3}>
@@ -173,8 +169,8 @@ const EntityRiskDetails: React.FC<EntityRiskDetailsProps> = ({ riskScores }) => 
           </Card>
         </Grid>
       </Grid>*/}
-      </Card>
-    </Box>
+      </div>
+    </div>
   );
 };
 

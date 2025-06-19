@@ -1,28 +1,20 @@
 import React from 'react';
 import { DatabaseOutlined } from '@ant-design/icons';
-import styled, { useTheme } from 'styled-components';
-import { colors } from '../../../styles/variables';
-
-const HeaderActionsContainer = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 16px;
-`;
+import { cn } from '../../../lib/utils';
 
 interface HeaderActionsProps {
   txCount: number;
+  className?: string;
 }
 
-const ComplianceHeaderActions: React.FC<HeaderActionsProps> = ({ txCount }) => {
-  const { theme } = useTheme();
+const ComplianceHeaderActions: React.FC<HeaderActionsProps> = ({ txCount, className }) => {
   return (
-    <HeaderActionsContainer>
-      <h3 style={{ margin: 0, color: theme === 'light' ? colors.black : colors.white }}>
-        <DatabaseOutlined style={{ marginRight: '8px' }} />
+    <div className={cn("flex justify-between items-center mb-4", className)}>
+      <h3 className="m-0 text-black dark:text-white">
+        <DatabaseOutlined className="mr-2" />
         Real-Time Compliance Monitoring ({txCount})
       </h3>
-    </HeaderActionsContainer>
+    </div>
   );
 };
 

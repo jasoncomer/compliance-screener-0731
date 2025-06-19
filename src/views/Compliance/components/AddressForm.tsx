@@ -1,7 +1,6 @@
 import React, { useEffect } from 'react';
-import { Form, Input, Select } from 'antd';
+import { Form, Input, Select, Row, Col } from 'antd';
 import { MonitoredAddress } from '../../../typings/compliance';
-import { Grid2 } from '@mui/material';
 
 const { Option } = Select;
 const { TextArea } = Input;
@@ -32,9 +31,9 @@ const AddressForm: React.FC<AddressFormProps> = ({ form, initialValues }) => {
         <Input />
       </Form.Item>
 
-      <Grid2 container sx={{ width: '100%', display: 'flex', justifyContent: 'space-between' }} >
+      <Row gutter={16} style={{ width: '100%' }}>
         {/* Blockchain */}
-        <Grid2 xs={6} md={6}>
+        <Col xs={12} md={12}>
           <Form.Item
             name="blockchain"
             label="Blockchain"
@@ -46,10 +45,10 @@ const AddressForm: React.FC<AddressFormProps> = ({ form, initialValues }) => {
               {/* Add more blockchains as needed */}
             </Select>
           </Form.Item>
-        </Grid2>
+        </Col>
 
         {/* Client ID */}
-        <Grid2 xs={6} md={6}>
+        <Col xs={12} md={12}>
           <Form.Item
             name="clientId"
             label="Client ID"
@@ -57,8 +56,8 @@ const AddressForm: React.FC<AddressFormProps> = ({ form, initialValues }) => {
           >
             <Input type="text" defaultValue={initialValues?.clientId} />
           </Form.Item>
-        </Grid2>
-      </Grid2>
+        </Col>
+      </Row>
 
       <Form.Item
         name="notes"

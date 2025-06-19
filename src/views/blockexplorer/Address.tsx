@@ -3,7 +3,6 @@ import { useParams } from 'react-router-dom';
 import { api } from '../../api/api';
 import { BsBlock } from '../../styles/Table';
 import { IBtcAddress } from '../../typings/BtcAddress';
-import styled from 'styled-components';
 import BtcTransactionTable from './transaction/BtcTransactionTable';
 import { BtcTransaction } from '../../typings/BtcTransaction';
 import { satsToBTC } from '../../utils/crypto';
@@ -23,188 +22,18 @@ import { useAppSelector, useAppDispatch } from '../../store/hooks';
 import { selectCurrentOrganization } from '../../store/slices/organizationsSlice';
 import { RootState } from '../../store/store';
 import { fetchSOT } from '../../store/slices/sotSlice';
+import {
+  AddressLayout,
+  FixedAddressHeader,
+  ScrollableAddressContent,
+  SummaryWrapper,
+  AddressInfoWrapper,
+  EntityRow,
+  EntitiesContainer,
+  EntityInfo,
+  RiskScoreLink
+} from './AddressStyles';
 
-const AddressLayout = styled.div`
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  width: 100%;
-  overflow: hidden;
-`;
-
-const FixedAddressHeader = styled.div`
-  position: sticky;
-  top: 0;
-  width: 100%;
-  background: ${props => props.theme.theme === 'dark' ? '#141414' : '#ffffff'};
-  z-index: 9;
-`;
-
-const ScrollableAddressContent = styled.div`
-  flex: 1;
-  width: 100%;
-  overflow-y: auto;
-  padding-top: 20px;
-
-  > :first-child {
-    margin-top: 0;
-  }
-`;
-
-const SummaryWrapper = styled.div`
-  display: flex;
-  justify-content: space-between;
-  flex-direction: row;
-
-  .col {
-    display: flex;
-    flex: 1;
-    flex-direction: column;
-    padding: 10px;
-    
-    span {
-      margin-top: 4px;
-      display: flex;
-      justify-content: space-between;
-    }
-  }
-`;
-
-const AddressInfoWrapper = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  
-  .address-row {
-    display: flex;
-    align-items: center;
-    word-break: break-all;
-    gap: 2px;
-    
-    .address-value {
-      font-family: monospace;
-      font-size: 1rem;
-      font-weight: 500;
-    }
-
-    .copy-button {
-      cursor: pointer;
-      color: #888;
-      font-size: 18px;
-      display: flex;
-      align-items: center;
-      flex-shrink: 0;
-      &:hover {
-        color: ${props => props.theme.theme === 'dark' ? '#ffffff' : '#000000'};
-      }
-    }
-
-    .copy-alert {
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      background-color: ${props => props.theme.theme === 'dark' ? '#2a2a2a' : '#f5f5f5'};
-      padding: 8px 16px;
-      border-radius: 4px;
-      z-index: 1000;
-    }
-  }
-  
-  .attribution-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 16px;
-    margin-top: 8px;
-    
-    .attribution-item {
-      display: flex;
-      flex-direction: column;
-      padding: 12px;
-      background-color: ${props => props.theme.theme === 'dark' ? '#2a2a2a' : '#f5f5f5'};
-      border-radius: 4px;
-      
-      .label {
-        font-size: 0.85rem;
-        color: ${props => props.theme.theme === 'dark' ? '#a0a0a0' : '#666666'};
-        margin-bottom: 4px;
-      }
-      
-      .value {
-        font-weight: 500;
-        font-size: 1rem;
-      }
-    }
-  }
-`;
-
-const EntityRow = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  padding: 12px;
-  background-color: ${props => props.theme.theme === 'dark' ? '#2a2a2a' : '#f5f5f5'};
-  border-radius: 4px;
-  margin-bottom: 8px;
-  flex: 1;
-  min-width: 0;
-`;
-
-const EntitiesContainer = styled.div`
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  width: 100%;
-`;
-
-const EntityInfo = styled.div`
-  display: flex;
-  gap: 3rem;
-  align-items: flex-start;
-
-  .field-group {
-    display: flex;
-    flex-direction: column;
-  }
-
-  .entity-name {
-    font-size: .9rem;
-    color: ${props => props.theme.theme === 'dark' ? 'white' : '#666666'};
-  
-  }
-
-  .label {
-    color: ${props => props.theme.theme === 'dark' ? '#a0a0a0' : '#666666'};
-    font-size: 0.85rem;
-
-    }
-
-  .entity-type {
-    color: ${props => props.theme.theme === 'dark' ? 'white' : '#666666'};
-    font-size: 0.9rem;
-  }
-
-  .entity-id {
-    color: ${props => props.theme.theme === 'dark' ? 'white' : '#666666'};
-    font-size: 0.9rem;
-    font-family: monospace;
-  }
-`;
-
-const RiskScoreLink = styled.div`
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  color: ${colors.primary};  
-  &:hover {
-    text-decoration: underline;
-  }
-
-  .risk-score {
-    font-weight: 500;
-    padding-top: 0;
-  }
-`;
 
 const Address: React.FC = () => {
   const { address } = useParams();
@@ -410,10 +239,10 @@ const Address: React.FC = () => {
   return (
     <AddressLayout>
       <FixedAddressHeader>
-        <BsBlock theme={{ theme }}>
+        <BsBlock>
           <h3>Address</h3>
           <hr />
-          <AddressInfoWrapper theme={{ theme }}>
+          <AddressInfoWrapper>
             <div className="address-row">
               <span className="copy-button" onClick={copyToClipboard} title="Copy address">
                 {copySuccess ? '✓' : '⧉'}
@@ -432,13 +261,13 @@ const Address: React.FC = () => {
             {hasAttributionData && (
               <EntitiesContainer>
                 {attributions[address]?.entity && (
-                  <EntityRow theme={{ theme }}>
+                  <EntityRow>
                     <Avatar
                       size={40}
                       src={getEntityLogo(attributions[address].entity)}
                       icon={!getEntityLogo(attributions[address].entity) && <UserOutlined />}
                     />
-                    <EntityInfo theme={{ theme }}>
+                    <EntityInfo>
                       <div className="field-group">
                         <div className='label'>{capitalizeFirstLetter('Entity')}</div>
                         <div className="entity-name">
@@ -456,13 +285,13 @@ const Address: React.FC = () => {
                 )}
 
                 {attributions[address]?.bo && (attributions[address]?.bo !== attributions[address]?.entity) && (
-                  <EntityRow theme={{ theme }}>
+                  <EntityRow>
                     <Avatar
                       size={40}
                       src={getEntityLogo(attributions[address].bo)}
                       icon={!getEntityLogo(attributions[address].bo) && <UserOutlined />}
                     />
-                    <EntityInfo theme={{ theme }}>
+                    <EntityInfo>
                       <div className="field-group">
                         <div className='label'>{capitalizeFirstLetter('Beneficial Owner')}</div>
                         <div className="entity-name">
@@ -480,13 +309,13 @@ const Address: React.FC = () => {
                 )}
 
                 {attributions[address]?.custodian && (
-                  <EntityRow theme={{ theme }}>
+                  <EntityRow>
                     <Avatar
                       size={40}
                       src={getEntityLogo(attributions[address].custodian)}
                       icon={!getEntityLogo(attributions[address].custodian) && <UserOutlined />}
                     />
-                    <EntityInfo theme={{ theme }}>
+                    <EntityInfo>
                       <div className="field-group">
                         <div className='label'>{capitalizeFirstLetter('Custodian')}</div>
                         <div className="entity-name">
@@ -509,7 +338,7 @@ const Address: React.FC = () => {
       </FixedAddressHeader>
 
       <ScrollableAddressContent>
-        <BsBlock theme={{ theme }} style={{ fontFamily: 'monospace' }}>
+        <BsBlock>
           <h3>Summary</h3>
           <hr />
           <SummaryWrapper>
@@ -545,7 +374,7 @@ const Address: React.FC = () => {
           </SummaryWrapper>
         </BsBlock>
 
-        <BsBlock theme={{ theme }} style={{ fontFamily: 'monospace' }}>
+        <BsBlock>
           <h3>Transactions ({totalTxs.toLocaleString()})</h3>
           <hr />
           {isLoading ? (

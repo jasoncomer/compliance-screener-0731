@@ -4,6 +4,7 @@
 
 @layer base {
   :root {
+    /* Shadcn/ui design system colors */
     --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
 
@@ -33,9 +34,45 @@
     --ring: 222.2 84% 4.9%;
 
     --radius: 0.5rem;
+    
+    /* Blockscout brand colors */
+    --bs-primary: #e87e4f;
+    --bs-primary-dark: #b6420f;
+    --bs-secondary: #f0f2f5;
+    
+    /* Semantic colors */
+    --bs-success: #52c41a;
+    --bs-success-dark: #327a0e;
+    --bs-warning: #faad14;
+    --bs-warning-dark: #d48806;
+    --bs-danger: #ff4d4f;
+    --bs-danger-dark: #d43838;
+    --bs-info: #1890ff;
+    --bs-info-dark: #1352ff;
+    
+    /* Gray scale */
+    --bs-gray-50: #f9f9f9;
+    --bs-gray-100: #f5f5f5;
+    --bs-gray-200: #f0f0f0;
+    --bs-gray-300: #e0e0e0;
+    --bs-gray-400: #ccc;
+    --bs-gray-500: #999;
+    --bs-gray-600: #666;
+    --bs-gray-700: #4a5568;
+    --bs-gray-800: #1f1f1f;
+    --bs-gray-900: #141414;
+    
+    /* Attribution colors */
+    --bs-attribution: #e87d4f;
+    --bs-attribution-light: #a34015;
+    --bs-attribution-hover: #c74d1a;
+    --bs-attribution-reference: #8d23b1;
+    --bs-attribution-reference-hover: #cf45fe;
   }
 
-  .dark {
+  .dark,
+  body[data-theme="dark"] {
+    /* Shadcn/ui dark mode colors */
     --background: 222.2 84% 4.9%;
     --foreground: 210 40% 98%;
 
@@ -63,6 +100,50 @@
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
     --ring: 212.7 26.8% 83.9%;
+    
+    /* Blockscout dark mode overrides - keeping same colors as they work in both modes */
+    --bs-primary: #e87e4f;
+    --bs-primary-dark: #b6420f;
+    --bs-secondary: #1f1f1f;
+    
+    /* Semantic colors - slightly adjusted for dark mode */
+    --bs-success: #52c41a;
+    --bs-success-dark: #327a0e;
+    --bs-warning: #faad14;
+    --bs-warning-dark: #d48806;
+    --bs-danger: #ff4d4f;
+    --bs-danger-dark: #d43838;
+    --bs-info: #1890ff;
+    --bs-info-dark: #1352ff;
+    
+    /* Gray scale - same as light mode as they're absolute values */
+    --bs-gray-50: #f9f9f9;
+    --bs-gray-100: #f5f5f5;
+    --bs-gray-200: #f0f0f0;
+    --bs-gray-300: #e0e0e0;
+    --bs-gray-400: #ccc;
+    --bs-gray-500: #999;
+    --bs-gray-600: #666;
+    --bs-gray-700: #4a5568;
+    --bs-gray-800: #1f1f1f;
+    --bs-gray-900: #141414;
+    
+    /* Attribution colors - same in both modes */
+    --bs-attribution: #e87d4f;
+    --bs-attribution-light: #a34015;
+    --bs-attribution-hover: #c74d1a;
+    --bs-attribution-reference: #8d23b1;
+    --bs-attribution-reference-hover: #cf45fe;
+  }
+  
+  /* Ensure light mode is explicitly defined */
+  body[data-theme="light"] {
+    /* Override dark mode variables back to light mode if needed */
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --bs-secondary: #f0f2f5;
   }
 }
 
