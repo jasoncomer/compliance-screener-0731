@@ -1,8 +1,7 @@
 import React from 'react';
-import { Card, Typography, Empty } from 'antd';
+import { Card, Empty } from 'antd';
 import { UserOutlined } from '@ant-design/icons';
 
-const { Title } = Typography;
 
 interface EntityDetailsProps {
   name: string;
