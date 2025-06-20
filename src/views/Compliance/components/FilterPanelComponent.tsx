@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { Form, Button, Select, Input, DatePicker, Card } from 'antd';
 import { FilterOutlined, ClearOutlined } from '@ant-design/icons';
-import { ETransactionStatus, TransactionFilters } from '../../../typings/compliance';
+import { EComplianceTransactionStatus, TransactionFilters } from '../../../typings/compliance';
 
 const { RangePicker } = DatePicker;
 
@@ -25,13 +25,13 @@ const FilterPanelComponent: React.FC<FilterPanelComponentProps> = ({
   onClearFiltersExceptStatus
 }) => {
   const statusOptions = [
-    { value: ETransactionStatus.UNASSIGNED, label: 'Unassigned', group: 'Unassigned' },
-    { value: ETransactionStatus.UNREVIEWED, label: 'Unreviewed', group: 'Active Cases' },
-    { value: ETransactionStatus.IN_REVIEW, label: 'In Review', group: 'Active Cases' },
-    { value: ETransactionStatus.HOLD, label: 'Hold', group: 'Active Cases' },
-    { value: ETransactionStatus.APPROVED, label: 'Approved', group: 'Archived Cases' },
-    { value: ETransactionStatus.CLOSED_WITH_NOTE, label: 'Closed with Note', group: 'Archived Cases' },
-    { value: ETransactionStatus.CLOSED_WITH_SAR, label: 'Closed with SAR', group: 'Archived Cases' },
+    { value: EComplianceTransactionStatus.UNASSIGNED, label: 'Unassigned', group: 'Unassigned' },
+    { value: EComplianceTransactionStatus.UNREVIEWED, label: 'Unreviewed', group: 'Active Cases' },
+    { value: EComplianceTransactionStatus.IN_REVIEW, label: 'In Review', group: 'Active Cases' },
+    { value: EComplianceTransactionStatus.HOLD, label: 'Hold', group: 'Active Cases' },
+    { value: EComplianceTransactionStatus.APPROVED, label: 'Approved', group: 'Archived Cases' },
+    { value: EComplianceTransactionStatus.CLOSED_WITH_NOTE, label: 'Closed with Note', group: 'Archived Cases' },
+    { value: EComplianceTransactionStatus.CLOSED_WITH_SAR, label: 'Closed with SAR', group: 'Archived Cases' },
   ];
 
   useEffect(() => {

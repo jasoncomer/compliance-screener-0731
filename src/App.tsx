@@ -29,7 +29,7 @@ import Welcome from './views/Welcome/index';
 import { useAppDispatch } from './store/hooks';
 import { fetchOrganizations } from './store/slices/organizationsSlice';
 import { useAnalytics } from './hooks/useAnalytics';
-import ComplianceDashboard from "./views/compliance-v2/compliance-dashboard";
+import { ComplianceDashboard } from "./views/compliance-v2/compliance-dashboard";
 
 function App() {
   const dispatch = useAppDispatch();

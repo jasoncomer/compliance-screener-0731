@@ -1,10 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Form, Button, Select, Input, DatePicker, Card } from 'antd';
 import { FilterOutlined, ClearOutlined, FileSearchOutlined } from '@ant-design/icons';
-import { ETransactionStatus, TransactionFilters } from '../../../../typings/compliance';
-import styled from 'styled-components';
-import { useTheme } from '../../../../context/ThemeContext';
-import { colors } from '../../../../styles/variables';
+import { EComplianceTransactionStatus, TransactionFilters } from '../../../../typings/compliance';
+import { cn } from '../../../../lib/utils';
 import ActiveCasesTable from './ActiveCasesTable';
 import { selectCurrentOrganization } from '../../../../store/slices/organizationsSlice';
 import { useAppDispatch, useAppSelector } from '../../../../store/hooks';
@@ -21,19 +19,12 @@ import {
 
 const { RangePicker } = DatePicker;
 
-const HeaderActions = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 16px;
-`;
-
 interface ActiveCasesTabProps {
   isActive: boolean;
+  className?: string;
 }
 
-const ActiveCasesTab: React.FC<ActiveCasesTabProps> = ({ isActive }) => {
-  const { theme } = useTheme();
+const ActiveCasesTab: React.FC<ActiveCasesTabProps> = ({ isActive, className }) => {
   const organization = useAppSelector(selectCurrentOrganization);
   const dispatch = useAppDispatch();
   
@@ -55,9 +46,9 @@ const ActiveCasesTab: React.FC<ActiveCasesTabProps> = ({ isActive }) => {
 
     // Define active statuses for this tab
     const activeStatuses = [
-      ETransactionStatus.UNREVIEWED,
-      ETransactionStatus.IN_REVIEW,
-      ETransactionStatus.HOLD
+      EComplianceTransactionStatus.UNREVIEWED,
+      EComplianceTransactionStatus.IN_REVIEW,
+      EComplianceTransactionStatus.HOLD
     ];
 
     const mergedFilters = { 
@@ -92,9 +83,9 @@ const ActiveCasesTab: React.FC<ActiveCasesTabProps> = ({ isActive }) => {
   const handleClearFilters = () => {
     form.resetFields();
     const activeStatuses = [
-      ETransactionStatus.UNREVIEWED,
-      ETransactionStatus.IN_REVIEW,
-      ETransactionStatus.HOLD
+      EComplianceTransactionStatus.UNREVIEWED,
+      EComplianceTransactionStatus.IN_REVIEW,
+      EComplianceTransactionStatus.HOLD
     ];
     dispatch(setFilters({
       page: 1,
@@ -169,18 +160,18 @@ const ActiveCasesTab: React.FC<ActiveCasesTabProps> = ({ isActive }) => {
   };
 
   return (
-    <div style={{ width: '100%' }}>
-      <HeaderActions>
-        <h3 style={{ margin: 0, color: theme === 'light' ? colors.black : colors.white }}>
-          <FileSearchOutlined style={{ marginRight: '8px' }} />
+    <div className={cn("w-full", className)}>
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="m-0 text-black dark:text-white">
+          <FileSearchOutlined className="mr-2" />
           Active Cases Management ({totalTransactions})
         </h3>
         <div>
-          <span style={{ marginRight: '10px', color: theme === 'light' ? colors.primaryDark : colors.white }}>
+          <span className="mr-2.5 text-brand-primary-dark dark:text-white">
             Total Active Cases: <strong>{totalTransactions}</strong>
           </span>
         </div>
-      </HeaderActions>
+      </div>
       
       {/* Filter Panel */}
       <Card 
@@ -211,9 +202,9 @@ const ActiveCasesTab: React.FC<ActiveCasesTabProps> = ({ isActive }) => {
               style={{ width: 150 }}
               onChange={(value) => handleFilterSubmit({ status: value })}
             >
-              <Select.Option value={ETransactionStatus.UNREVIEWED}>Unreviewed</Select.Option>
-              <Select.Option value={ETransactionStatus.IN_REVIEW}>In Review</Select.Option>
-              <Select.Option value={ETransactionStatus.HOLD}>Hold</Select.Option>
+              <Select.Option value={EComplianceTransactionStatus.UNREVIEWED}>Unreviewed</Select.Option>
+              <Select.Option value={EComplianceTransactionStatus.IN_REVIEW}>In Review</Select.Option>
+              <Select.Option value={EComplianceTransactionStatus.HOLD}>Hold</Select.Option>
               {/* <Select.Option value={ETransactionStatus.APPROVED}>Approved</Select.Option> */}
               {/* <Select.Option value={ETransactionStatus.CLOSED_WITH_NOTE}>Closed with note</Select.Option> */}
               {/* <Select.Option value={ETransactionStatus.CLOSED_WITH_SAR}>Closed with SAR</Select.Option> */}

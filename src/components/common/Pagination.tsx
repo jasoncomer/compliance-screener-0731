@@ -1,55 +1,5 @@
 import React from 'react';
-import styled from 'styled-components';
-import { useTheme } from '../../context/ThemeContext';
-import { colors } from '../../styles/variables';
-
-const PaginationWrapper = styled.div<{ $theme: 'light' | 'dark' }>`
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 0.5rem;
-  margin-top: 1rem;
-  font-size: 0.875rem;
-  color: ${props => props.$theme === 'light' ? colors.gray[700] : colors.gray[400]};
-`;
-
-const PageButton = styled.button<{ $active?: boolean; $theme: 'light' | 'dark' }>`
-  padding: 0.5rem 0.75rem;
-  border: 1px solid ${props => props.$active 
-    ? colors.primary 
-    : props.$theme === 'light' ? colors.gray[300] : colors.gray[700]};
-  border-radius: 4px;
-  background: ${props => props.$active 
-    ? colors.primary 
-    : props.$theme === 'light' ? colors.white : colors.gray[800]};
-  color: ${props => props.$active 
-    ? colors.white 
-    : props.$theme === 'light' ? colors.gray[700] : colors.gray[400]};
-  cursor: pointer;
-  min-width: 2.5rem;
-  transition: all 0.2s ease;
-  
-  &:disabled {
-    background: ${props => props.$theme === 'light' ? colors.gray[100] : colors.gray[900]};
-    color: ${props => props.$theme === 'light' ? colors.gray[400] : colors.gray[600]};
-    cursor: not-allowed;
-    border-color: ${props => props.$theme === 'light' ? colors.gray[200] : colors.gray[800]};
-  }
-  
-  &:hover:not(:disabled) {
-    background: ${props => props.$active 
-      ? colors.primaryDark 
-      : props.$theme === 'light' ? colors.gray[100] : colors.gray[700]};
-    border-color: ${props => props.$active 
-      ? colors.primaryDark 
-      : props.$theme === 'light' ? colors.gray[400] : colors.gray[600]};
-  }
-`;
-
-const PageEllipsis = styled.span<{ $theme: 'light' | 'dark' }>`
-  color: ${props => props.$theme === 'light' ? colors.gray[700] : colors.gray[400]};
-  padding: 0 0.25rem;
-`;
+import { cn } from '../../lib/utils';
 
 interface PaginationProps {
   currentPage: number;
@@ -62,7 +12,6 @@ const Pagination: React.FC<PaginationProps> = ({
   totalPages,
   onPageChange,
 }) => {
-  const { theme } = useTheme();
   
   const getPageNumbers = () => {
     const pages: (number | string)[] = [];
@@ -91,40 +40,70 @@ const Pagination: React.FC<PaginationProps> = ({
   };
 
   return (
-    <PaginationWrapper $theme={theme}>
-      <PageButton 
+    <div className="flex justify-center items-center gap-2 mt-4 text-sm text-gray-700 dark:text-gray-400">
+      <button 
         onClick={() => onPageChange(currentPage - 1)}
         disabled={currentPage === 1}
-        $theme={theme}
+        className={cn(
+          "px-3 py-2 border rounded min-w-10 transition-all duration-200",
+          "bg-white dark:bg-gray-800",
+          "text-gray-700 dark:text-gray-400",
+          "border-gray-300 dark:border-gray-700",
+          "disabled:bg-gray-100 dark:disabled:bg-gray-900",
+          "disabled:text-gray-400 dark:disabled:text-gray-600",
+          "disabled:cursor-not-allowed disabled:border-gray-200 dark:disabled:border-gray-800",
+          "hover:bg-gray-100 dark:hover:bg-gray-700 hover:border-gray-400 dark:hover:border-gray-600",
+          "disabled:hover:bg-gray-100 dark:disabled:hover:bg-gray-900 disabled:hover:border-gray-200 dark:disabled:hover:border-gray-800"
+        )}
       >
         ←
-      </PageButton>
+      </button>
       
       {getPageNumbers().map((page, index) => (
         typeof page === 'number' ? (
-          <PageButton
+          <button
             key={index}
-            $active={page === currentPage}
             onClick={() => onPageChange(page)}
-            $theme={theme}
+            className={cn(
+              "px-3 py-2 border rounded min-w-10 transition-all duration-200",
+              page === currentPage ? [
+                "bg-brand-primary text-white border-brand-primary",
+                "hover:bg-brand-primary-dark hover:border-brand-primary-dark"
+              ] : [
+                "bg-white dark:bg-gray-800",
+                "text-gray-700 dark:text-gray-400",
+                "border-gray-300 dark:border-gray-700",
+                "hover:bg-gray-100 dark:hover:bg-gray-700 hover:border-gray-400 dark:hover:border-gray-600"
+              ]
+            )}
           >
             {page}
-          </PageButton>
+          </button>
         ) : (
-          <PageEllipsis key={index} $theme={theme}>
+          <span key={index} className="text-gray-700 dark:text-gray-400 px-1">
             {page}
-          </PageEllipsis>
+          </span>
         )
       ))}
 
-      <PageButton 
+      <button 
         onClick={() => onPageChange(currentPage + 1)}
         disabled={currentPage === totalPages}
-        $theme={theme}
+        className={cn(
+          "px-3 py-2 border rounded min-w-10 transition-all duration-200",
+          "bg-white dark:bg-gray-800",
+          "text-gray-700 dark:text-gray-400",
+          "border-gray-300 dark:border-gray-700",
+          "disabled:bg-gray-100 dark:disabled:bg-gray-900",
+          "disabled:text-gray-400 dark:disabled:text-gray-600",
+          "disabled:cursor-not-allowed disabled:border-gray-200 dark:disabled:border-gray-800",
+          "hover:bg-gray-100 dark:hover:bg-gray-700 hover:border-gray-400 dark:hover:border-gray-600",
+          "disabled:hover:bg-gray-100 dark:disabled:hover:bg-gray-900 disabled:hover:border-gray-200 dark:disabled:hover:border-gray-800"
+        )}
       >
         →
-      </PageButton>
-    </PaginationWrapper>
+      </button>
+    </div>
   );
 };
 

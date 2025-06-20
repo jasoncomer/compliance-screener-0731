@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { Table, Tag, Button, Space, Tooltip } from 'antd';
 import { EyeOutlined, CheckOutlined, CloseOutlined } from '@ant-design/icons';
-import { ETransactionStatus, IComplianceTransaction } from '../../../../typings/compliance';
+import { EComplianceTransactionStatus, IComplianceTransaction } from '../../../../typings/compliance';
 import { TransactionDetailsModal } from '../../modals/TransactionDetails/TransactionDetailsModal';
 import { conversionRates, currencySymbols } from '../CurrencySelector';
-import { getRiskScoreColor, getStatusColor } from '../../utils/compliance.utils';
+import { getRiskScoreColor, getComplianceReportStatusColor } from '../../utils/compliance.utils';
 import { getBlockchainLabel } from '../../../../utils/display-labels';
 import { truncateAddress } from '../../../../utils/crypto';
 import { useAppSelector } from '../../../../store/hooks';
@@ -63,8 +63,8 @@ const ActiveCasesTable: React.FC<ActiveCasesTableProps> = ({
       dataIndex: 'status',
       key: 'status',
       width: 100,
-      render: (status: ETransactionStatus) => <div style={{ display: 'flex', justifyContent: 'right' }}>
-        <Tag color={getStatusColor(status)} style={{ fontWeight: 'bold' }}>{status}</Tag></div>,
+      render: (status: EComplianceTransactionStatus) => <div style={{ display: 'flex', justifyContent: 'right' }}>
+        <Tag color={getComplianceReportStatusColor(status)} style={{ fontWeight: 'bold' }}>{status}</Tag></div>,
     },
     {
       title: 'Transaction ID',

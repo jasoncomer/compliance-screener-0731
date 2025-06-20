@@ -1,20 +1,18 @@
 import React from 'react';
 import { OptionCardProps } from '../types';
-import { OptionCard as StyledOptionCard } from '../styled';
+import { OptionCard as StyledOptionCard } from '../WelcomeStyles';
 
 const OptionCard: React.FC<OptionCardProps> = ({
   selected,
   onClick,
   icon,
   title,
-  description,
-  theme
+  description
 }) => {
   return (
     <StyledOptionCard
       selected={selected}
       onClick={onClick}
-      theme={theme}
     >
       <h3>
         {icon} {title}

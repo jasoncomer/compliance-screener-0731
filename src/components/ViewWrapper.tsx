@@ -1,29 +1,6 @@
 import React, { ReactNode } from 'react';
 import { useTheme } from '../context/ThemeContext';
-import styled from 'styled-components';
-import { colors } from '../styles/variables';
-
-const ViewContainer = styled.div<{ $theme: 'light' | 'dark'; $fullWidth?: boolean }>`
-  width: 100%;
-  height: auto;
-  background-color: ${props => props.$theme === 'light' ? colors.white : 'inherit'};
-  max-width: ${props => props.$fullWidth ? '100%' : '1200px'};
-`;
-
-const TitleContainer = styled.div`
-  display: flex;
-  align-items: center;
-  margin-bottom: 16px;
-  margin-top: 0;
-  .icon {
-    margin-right: 8px;
-  }
-
-  h2 {
-    margin: 0;
-    font-size: 28px;
-  }
-`;
+import { cn } from '../lib/utils';
 
 interface ViewWrapperProps {
   icon?: ReactNode;
@@ -43,19 +20,23 @@ const ViewWrapper: React.FC<ViewWrapperProps> = ({
   const { theme } = useTheme();
 
   return (
-    <ViewContainer 
-      className={`view-wrapper ${className || ''}`}
-      $theme={theme}
-      $fullWidth={fullWidth}
+    <div 
+      className={cn(
+        "w-full h-auto",
+        theme === 'light' ? "bg-white" : "",
+        fullWidth ? "max-w-full" : "max-w-6xl",
+        "view-wrapper",
+        className
+      )}
     >
       {title && (
-        <TitleContainer>
-          {icon && <span className="icon">{icon}</span>}
-          <h2>{title}</h2>
-        </TitleContainer>
+        <div className="flex items-center mb-4 mt-0">
+          {icon && <span className="mr-2">{icon}</span>}
+          <h2 className="m-0 text-3xl">{title}</h2>
+        </div>
       )}
       {children}
-    </ViewContainer>
+    </div>
   );
 };
 

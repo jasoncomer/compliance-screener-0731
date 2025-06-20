@@ -1,28 +1,23 @@
 import React from 'react';
 import { Button, Space } from 'antd';
 import { PlusOutlined, UploadOutlined } from '@ant-design/icons';
-import styled from 'styled-components';
-
-const TableActionsContainer = styled.div`
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 24px;
-  gap: 1px;
-`;
+import { cn } from '../../../lib/utils';
 
 interface MonitoredTableActionsProps {
   onAddAddress: () => void;
   onUploadAddresses: () => void;
   children?: React.ReactNode;
+  className?: string;
 }
 
 const MonitoredTableActions: React.FC<MonitoredTableActionsProps> = ({
   onAddAddress,
   onUploadAddresses,
   children,
+  className,
 }) => {
   return (
-    <TableActionsContainer>
+    <div className={cn("flex justify-between mb-6 gap-px", className)}>
       <Space>
         <Button type="primary" icon={<PlusOutlined />} onClick={onAddAddress}>
           Add Address
@@ -32,7 +27,7 @@ const MonitoredTableActions: React.FC<MonitoredTableActionsProps> = ({
         </Button>
       </Space>
       {children}
-    </TableActionsContainer>
+    </div>
   );
 };
 

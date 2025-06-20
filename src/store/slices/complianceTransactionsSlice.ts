@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk, PayloadAction, createSelector } from '@reduxjs/toolkit';
 import { api } from '../../api/api';
-import { IComplianceTransaction, ComplianceTransactionResponse, TransactionFilters, ETransactionStatus } from '../../typings/compliance';
+import { IComplianceTransaction, ComplianceTransactionResponse, TransactionFilters, EComplianceTransactionStatus } from '../../typings/compliance';
 import { RootState } from '../store';
 
 interface ComplianceTransactionsState {
@@ -128,26 +128,26 @@ export const selectAllTransactions = createSelector(
 export const selectUnassignedTransactions = createSelector(
   (state: RootState) => state.complianceTransactions.transactions,
   (txs: Record<string, IComplianceTransaction>) => Object.values(txs).filter((tx) => 
-    tx.status === ETransactionStatus.UNASSIGNED
+    tx.status === EComplianceTransactionStatus.UNASSIGNED
   )
 );
 
 export const selectCompletedTransactions = createSelector(
   (state: RootState) => state.complianceTransactions.transactions,
   (txs: Record<string, IComplianceTransaction>) => Object.values(txs).filter((tx) => 
-    tx.status === ETransactionStatus.APPROVED || 
-    tx.status === ETransactionStatus.CLOSED_WITH_NOTE || 
-    tx.status === ETransactionStatus.CLOSED_WITH_SAR
+    tx.status === EComplianceTransactionStatus.APPROVED || 
+    tx.status === EComplianceTransactionStatus.CLOSED_WITH_NOTE || 
+    tx.status === EComplianceTransactionStatus.CLOSED_WITH_SAR
   )
 );
 
 export const selectActiveTransactions = createSelector(
   (state: RootState) => state.complianceTransactions.transactions,
   (txs: Record<string, IComplianceTransaction>) => Object.values(txs).filter((tx) => 
-    tx.status !== ETransactionStatus.UNASSIGNED && 
-    tx.status !== ETransactionStatus.APPROVED && 
-    tx.status !== ETransactionStatus.CLOSED_WITH_NOTE && 
-    tx.status !== ETransactionStatus.CLOSED_WITH_SAR
+    tx.status !== EComplianceTransactionStatus.UNASSIGNED && 
+    tx.status !== EComplianceTransactionStatus.APPROVED && 
+    tx.status !== EComplianceTransactionStatus.CLOSED_WITH_NOTE && 
+    tx.status !== EComplianceTransactionStatus.CLOSED_WITH_SAR
   )
 );
 

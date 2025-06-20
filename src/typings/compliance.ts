@@ -45,7 +45,7 @@ export interface MonitoredAddressChange {
   timestamp: string;
 }
 
-export enum ETransactionStatus {
+export enum EComplianceTransactionStatus {
   UNASSIGNED = 'UNASSIGNED', // Default. Transition to UNREVIEWED when assigned to compliance member
   UNREVIEWED = 'UNREVIEWED', // Transition to APPROVED
 
@@ -58,7 +58,7 @@ export enum ETransactionStatus {
   CLOSED_WITH_SAR = 'CLOSED_WITH_SAR', // Closed with SAR report
 }
 
-export type TTransactionStatus = keyof typeof ETransactionStatus;
+export type TTransactionStatus = keyof typeof EComplianceTransactionStatus;
 
 export interface IComplianceTransaction {
   _id: string;
@@ -82,9 +82,9 @@ export interface IComplianceTransaction {
 
   reviewerId?: string;
   reviewTimestamp?: Date;
-  status: ETransactionStatus;
+  status: EComplianceTransactionStatus;
   statusHistory: {
-    status: ETransactionStatus;
+    status: EComplianceTransactionStatus;
     timestamp: Date;
     reviewer?: string;
   }[];

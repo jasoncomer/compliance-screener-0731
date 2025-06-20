@@ -1,5 +1,5 @@
 import { colors } from '../../../styles/variables';
-import { ETransactionStatus } from '../../../typings/compliance';
+import { EComplianceTransactionStatus } from '../../../typings/compliance';
 
 export const getRiskScoreColor = (score: number): string => {
   if (score > 70) return colors.danger;
@@ -7,11 +7,16 @@ export const getRiskScoreColor = (score: number): string => {
   return colors.successDark;
 };
 
-export const getStatusColor = (status: ETransactionStatus): string => {
-  if (status === ETransactionStatus.IN_REVIEW) return colors.warningDark;
-  if (status === ETransactionStatus.UNREVIEWED) return colors.primaryDark;
-  if (status === ETransactionStatus.HOLD) return colors.dangerDark;
-  if (status === ETransactionStatus.CLOSED_WITH_NOTE || status === ETransactionStatus.CLOSED_WITH_SAR) return colors.dangerDark;
-  if (status === ETransactionStatus.APPROVED) return colors.successDark;
-  return colors.black;
+export const getComplianceReportStatusColor = (status: EComplianceTransactionStatus) => {
+  switch (status) {
+    case EComplianceTransactionStatus.CLOSED_WITH_NOTE:
+    case EComplianceTransactionStatus.CLOSED_WITH_SAR:
+      return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300";
+    case EComplianceTransactionStatus.HOLD:
+      return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300";
+    case EComplianceTransactionStatus.APPROVED:
+      return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300";
+    default:
+      return "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300";
+  }
 };
