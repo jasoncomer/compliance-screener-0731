@@ -9,6 +9,7 @@ export {
   HeaderSection, 
   Logo, 
   StyledContent, 
+  MainContent,
   UserMenuButton, 
   TabsContainer 
 } from '../../styles/Layout';
