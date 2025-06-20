@@ -1,4 +1,4 @@
-import React from 'react';
+// Removed: import React from 'react';
 import styled from 'styled-components';
 
 export const BtnDiv = styled.div`
