@@ -4,7 +4,7 @@ export interface WelcomeProps {
   theme: 'dark' | 'light';
 }
 
-export interface OptionCardProps extends WelcomeProps {
+export interface OptionCardProps {
   selected?: boolean;
   onClick: () => void;
   icon: React.ReactNode;

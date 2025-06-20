@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import styled from 'styled-components';
 import { colors } from '../../../../styles/variables';
 import { IComplianceTransaction } from '../../../../typings/compliance';
-import { getRiskScoreColor, getStatusColor } from '../../utils/compliance.utils';
+import { getRiskScoreColor, getComplianceReportStatusColor } from '../../utils/compliance.utils';
 import { Tag } from 'antd';
 import { useAppSelector } from '../../../../store/hooks';
 import { selectActiveOrgMembersMap } from '../../../../store/slices/organizationsSlice';
@@ -254,7 +254,7 @@ export const RightPanel: React.FC<RightPanelProps> = ({ transactionId }) => {
       <Field.Container>
         <Field.Label>Status</Field.Label>
         <Field.Value>
-          <Tag color={getStatusColor(transactionDetails.status)} style={{ marginRight: 0 }}>
+          <Tag color={getComplianceReportStatusColor(transactionDetails.status)} style={{ marginRight: 0 }}>
             {transactionDetails.status.replace(/_/g, ' ')}
           </Tag>
         </Field.Value>

@@ -1,21 +1,17 @@
 import React from 'react';
 import { Select } from 'antd';
-import styled from 'styled-components';
+import { cn } from '../../../lib/utils';
 import { IAddressFilters as AddressFiltersType } from '../../../typings/compliance';
 
 const { Option } = Select;
 
-const FilterSection = styled.div`
-  display: flex;
-  gap: 16px;
-`;
-
 interface AddressFiltersProps {
   filters: AddressFiltersType;
   onFiltersChange: (filters: AddressFiltersType) => void;
+  className?: string;
 }
 
-const AddressFilters: React.FC<AddressFiltersProps> = ({ filters, onFiltersChange }) => {
+const AddressFilters: React.FC<AddressFiltersProps> = ({ filters, onFiltersChange, className }) => {
   const handleBlockchainChange = (value: string | undefined) => {
     onFiltersChange({ ...filters, blockchain: value });
   };
@@ -29,7 +25,7 @@ const AddressFilters: React.FC<AddressFiltersProps> = ({ filters, onFiltersChang
   // };
 
   return (
-    <FilterSection>
+    <div className={cn("flex gap-4", className)}>
       <Select
         placeholder="Blockchain"
         style={{ width: 200 }}
@@ -60,7 +56,7 @@ const AddressFilters: React.FC<AddressFiltersProps> = ({ filters, onFiltersChang
         defaultValue={filters.entityName}
         size="large"
       /> */}
-    </FilterSection>
+    </div>
   );
 };
 

@@ -144,7 +144,7 @@ const BtcTransactionTable: React.FC<BtcTransactionTableProps> = ({ transaction, 
   const isSmallScreen = width < 1080;
 
   return (
-    <BsBlock theme={theme} style={{ fontFamily: 'monospace' }}>
+    <BsBlock>
       <BtcTransactionHeader
         txHash={transaction.txid}
         blockHeight={transaction.block}

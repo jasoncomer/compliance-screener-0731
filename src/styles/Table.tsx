@@ -1,18 +1,20 @@
-import styled from "styled-components";
+import React from 'react';
+import { cn } from '../lib/utils';
 
+interface BsBlockProps {
+  children: React.ReactNode;
+  className?: string;
+}
 
-export const BsBlock = styled.div`
-  border-radius: 5px;
-  padding: 10px;
-  background-color: ${props => props.theme.theme === 'dark' ? '#1f1f1f' : '#fff'};
-  margin-bottom: 20px;
-  color: ${props => props.theme.theme === 'dark' ? '#ffffff' : '#000000'};
-
-  h3 {
-    color: ${props => props.theme.theme === 'dark' ? '#ffffff' : '#000000'};
-  }
-
-  hr {
-    border-color: ${props => props.theme.theme === 'dark' ? '#303030' : '#f0f0f0'};
-  }
-`;
+export const BsBlock: React.FC<BsBlockProps> = ({ children, className }) => (
+  <div className={cn(
+    "rounded-md p-2.5 mb-5",
+    "bg-white dark:bg-gray-800",
+    "text-black dark:text-white",
+    "[&_h3]:text-black [&_h3]:dark:text-white",
+    "[&_hr]:border-gray-200 [&_hr]:dark:border-gray-700",
+    className
+  )}>
+    {children}
+  </div>
+);

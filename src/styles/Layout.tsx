@@ -1,75 +1,121 @@
-import styled from 'styled-components';
+import React from 'react';
 import { Layout } from 'antd';
-import { colors } from './variables';
+import { cn } from '../lib/utils';
 import { Theme } from '../context/ThemeContext';
 
 const { Header: AntHeader } = Layout;
 
-export const StyledLayout = styled(Layout)`
-  min-height: 100vh;
-`;
+interface StyledLayoutProps {
+  children: React.ReactNode;
+  className?: string;
+}
 
-export const StyledHeader = styled(AntHeader)<{ $theme: Theme }>`
-  position: sticky;
-  top: 0;
-  z-index: 1000;
-  background: ${props => props.$theme === 'light' ? '#fff' : '#141414'};
-  padding: 0 24px;
-  height: 50px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-`;
+export const StyledLayout: React.FC<StyledLayoutProps> = ({ children, className }) => (
+  <Layout className={cn("min-h-screen", className)}>
+    {children}
+  </Layout>
+);
 
-export const HeaderSection = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 24px;
-`;
+interface StyledHeaderProps {
+  children: React.ReactNode;
+  $theme: Theme;
+  className?: string;
+}
 
-export const Logo = styled.img<{ $theme: Theme }>`
-  height: 50px;
-  margin-top: 0;
-  filter: ${props => props.$theme === 'dark' ? 'brightness(0.9)' : 'none'};
-`;
+export const StyledHeader: React.FC<StyledHeaderProps> = ({ children, $theme, className }) => (
+  <AntHeader className={cn(
+    "sticky top-0 z-50 px-6 h-12 flex items-center justify-between shadow-lg",
+    $theme === 'light' ? "bg-white" : "bg-gray-900",
+    className
+  )}>
+    {children}
+  </AntHeader>
+);
 
-export const StyledContent = styled(Layout.Content)<{ $theme: Theme }>`
-  background: ${props => props.$theme === 'light' ? '#fff' : '#141414'};
-  padding: 24px;
-  overflow: auto;
-  min-height: calc(100vh - 50px);
-`;
+interface HeaderSectionProps {
+  children: React.ReactNode;
+  className?: string;
+}
 
-export const UserMenuButton = styled.div<{ $theme: Theme }>`
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  cursor: pointer;
-  color: ${colors.primary};
-  padding: 4px 8px;
-  height: 40px;
-  border-radius: 6px;
-  transition: all 0.3s ease;
-  background: transparent;
+export const HeaderSection: React.FC<HeaderSectionProps> = ({ children, className }) => (
+  <div className={cn("flex items-center gap-6", className)}>
+    {children}
+  </div>
+);
 
-  &:hover {
-    background: ${props => props.$theme === 'light' ? 'rgba(199, 77, 27, 0.1)' : 'rgba(199, 77, 27, 0.2)'};
-  }
+interface LogoProps {
+  src: string;
+  alt?: string;
+  $theme: Theme;
+  className?: string;
+}
 
-  .anticon {
-    font-size: 16px;
-  }
+export const Logo: React.FC<LogoProps> = ({ src, alt, $theme, className }) => (
+  <img 
+    src={src}
+    alt={alt}
+    className={cn(
+      "h-12 mt-0",
+      $theme === 'dark' ? "brightness-90" : "",
+      className
+    )}
+  />
+);
 
-  span {
-    font-size: 14px;
-    font-weight: 500;
-  }
-`;
+interface StyledContentProps {
+  children: React.ReactNode;
+  $theme: Theme;
+  className?: string;
+}
 
-export const TabsContainer = styled.div<{ $theme: Theme }>`
-  .ant-tabs-nav {
-    margin-bottom: 0;
-    background: ${props => props.$theme === 'light' ? '#fff' : '#141414'};
-  }
-`; 
+export const StyledContent: React.FC<StyledContentProps> = ({ children, $theme, className }) => (
+  <Layout.Content className={cn(
+    "p-6 overflow-auto min-h-[calc(100vh-50px)]",
+    $theme === 'light' ? "bg-white" : "bg-gray-900",
+    className
+  )}>
+    {children}
+  </Layout.Content>
+);
+
+interface UserMenuButtonProps {
+  children: React.ReactNode;
+  onClick?: () => void;
+  $theme: Theme;
+  className?: string;
+}
+
+export const UserMenuButton: React.FC<UserMenuButtonProps> = ({ children, onClick, $theme, className }) => (
+  <div 
+    onClick={onClick}
+    className={cn(
+      "flex items-center gap-2 cursor-pointer text-brand-primary px-2 py-1 h-10 rounded-md transition-all duration-300 bg-transparent",
+      $theme === 'light' 
+        ? "hover:bg-orange-100/50" 
+        : "hover:bg-orange-900/20",
+      "[&_.anticon]:text-base",
+      "[&_span]:text-sm [&_span]:font-medium",
+      className
+    )}
+  >
+    {children}
+  </div>
+);
+
+interface TabsContainerProps {
+  children: React.ReactNode;
+  $theme: Theme;
+  className?: string;
+}
+
+export const TabsContainer: React.FC<TabsContainerProps> = ({ children, $theme, className }) => (
+  <div className={cn(
+    "[&_.ant-tabs-nav]:mb-0",
+    $theme === 'light' 
+      ? "[&_.ant-tabs-nav]:bg-white" 
+      : "[&_.ant-tabs-nav]:bg-gray-900",
+    className
+  )}>
+    {children}
+  </div>
+); 

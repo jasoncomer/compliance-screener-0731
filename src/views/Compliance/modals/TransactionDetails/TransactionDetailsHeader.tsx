@@ -1,7 +1,7 @@
 import { useState, useRef, useImperativeHandle, forwardRef, useEffect } from 'react';
 import { Select, message } from 'antd';
 import { InfoCircleOutlined, UserOutlined, LoadingOutlined } from '@ant-design/icons';
-import { ETransactionStatus } from '../../../../typings/compliance';
+import { EComplianceTransactionStatus } from '../../../../typings/compliance';
 import { IComplianceTransaction } from '../../../../typings/compliance';
 import { selectActiveOrgMembers } from '../../../../store/slices/organizationsSlice';
 import { useAppSelector } from '../../../../store/hooks';
@@ -114,7 +114,7 @@ const TransactionDetailsHeader = forwardRef<{ highlightAssignSelector: () => voi
           updateStatusMutation.mutate(
             {
               transactionId: transactionDetails._id,
-              status: ETransactionStatus.IN_REVIEW
+              status: EComplianceTransactionStatus.IN_REVIEW
             },
             {
               onSuccess: () => {

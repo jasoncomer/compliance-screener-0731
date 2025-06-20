@@ -48,7 +48,7 @@ const TransactionView: React.FC = () => {
   return (
     <BsWrapper style={{ fontFamily: 'monospace' }}>
 
-      <BsBlock theme={{ theme }}>
+      <BsBlock>
         <h3>Transaction Hash</h3>
         <hr />
         <div>
@@ -56,7 +56,7 @@ const TransactionView: React.FC = () => {
         </div>
       </BsBlock>
 
-      <BtcTransactionSummary transaction={transaction} theme={{ theme }} />
+      <BtcTransactionSummary transaction={transaction} />
       
       <BtcTransactionTable transaction={transaction} theme={{ theme }} />
     </BsWrapper>

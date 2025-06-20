@@ -1,42 +1,32 @@
 import React from 'react';
 import { DatabaseOutlined } from '@ant-design/icons';
-import styled from 'styled-components';
-import { useTheme } from '../../../../context/ThemeContext';
-import { colors } from '../../../../styles/variables';
+import { cn } from '../../../../lib/utils';
 import MonitoredAddressManagement from './MonitoredAddressManagement';
 import { MonitoredAddress } from '../../../../typings/compliance';
-
-const HeaderActions = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 16px;
-`;
 
 interface MonitoredAddressesTabProps {
   addresses: MonitoredAddress[];
   onAddressesChange: (addresses: MonitoredAddress[]) => void;
   organizationId?: string;
   isLoading?: boolean;
+  className?: string;
 }
 
 const MonitoredAddressesTab: React.FC<MonitoredAddressesTabProps> = ({
   addresses,
   onAddressesChange,
   organizationId,
+  className,
   // isLoading = false,
 }) => {
-  const { theme } = useTheme();
-
   return (
-    <div style={{ width: '100%' }}>
-      <HeaderActions>
-        <h3 style={{ margin: 0, color: theme === 'light' ? colors.black : colors.white }}>
-          <DatabaseOutlined style={{ marginRight: '8px' }} />
+    <div className={cn("w-full", className)}>
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="m-0 text-black dark:text-white">
+          <DatabaseOutlined className="mr-2" />
           Monitored Addresses Management
         </h3>
-
-      </HeaderActions>
+      </div>
       <MonitoredAddressManagement
         addresses={addresses}
         onAddressesChange={onAddressesChange}
