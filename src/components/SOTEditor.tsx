@@ -187,6 +187,25 @@ const ScrollableWebsiteLinks: React.FC<ScrollableWebsiteLinksProps> = ({ childre
   </div>
 );
 
+const renderTextWithLinks = (text: string | null | undefined): React.ReactNode => {
+  if (!text) {
+    return text;
+  }
+
+  const urlRegex = /(https?:\/\/[^\s]+)/g;
+  const parts = text.split(urlRegex);
+
+  return parts.map((part, index) => {
+    if (part.match(urlRegex)) {
+      return (
+        <a href={part} key={index} target="_blank" rel="noopener noreferrer">
+          {part}
+        </a>
+      );
+    }
+    return part;
+  });
+};
 
 interface SOTEditorProps {
   sot: SOT | null;
@@ -496,8 +515,8 @@ const SOTEditor: React.FC<SOTEditorProps> = ({ sot, onSelectAssociatedSot }) => 
             {sot.description_merged && (
               <DetailItem>
                 <DetailLabel>Description</DetailLabel>
-                <DetailValue style={{ whiteSpace: 'pre-wrap', width: '70%' }}>
-                  {sot.description_merged}
+                <DetailValue style={{ display: 'block', whiteSpace: 'pre-wrap', width: '70%', wordBreak: 'break-word' }}>
+                  {renderTextWithLinks(sot.description_merged)}
                 </DetailValue>
               </DetailItem>
             )}
