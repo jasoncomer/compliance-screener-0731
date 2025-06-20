@@ -3,6 +3,8 @@ import { Input as AntInput, InputProps as AntInputProps } from 'antd';
 import { TextAreaProps } from 'antd/es/input';
 import { SizeType } from 'antd/es/config-provider/SizeContext';
 import { SearchProps } from 'antd/es/input';
+import { useTheme } from '../../context/ThemeContext';
+import { darkTokens, lightTokens } from '../../styles/variables';
 
 export interface CustomInputProps extends Omit<AntInputProps, 'size'> {
   error?: boolean;
@@ -26,10 +28,18 @@ const Input: React.FC<CustomInputProps> = ({
   enterButton,
   ...props
 }) => {
+  const { theme } = useTheme();
+  // Pick background and text color based on theme
+  const themedStyle = {
+    background: theme === 'dark' ? darkTokens.backgroundColor : lightTokens.backgroundColor,
+    color: theme === 'dark' ? darkTokens.textPrimary : lightTokens.textPrimary,
+    borderColor: theme === 'dark' ? darkTokens.borderColor : lightTokens.borderColor,
+  };
   const inputProps = {
     ...props,
     size,
     className: `${className || ''} ${error ? 'error' : ''}`,
+    style: { ...(props.style || {}), ...themedStyle },
   };
 
   if (onSearch) {

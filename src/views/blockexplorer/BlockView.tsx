@@ -146,7 +146,7 @@ const BlockView: React.FC = () => {
             </div>
           </div>
         </BlockSummaryCard>
-        <BsBlock theme={{ theme }} style={{ fontFamily: 'monospace' }}>
+        <BsBlock className="font-mono">
           <h3>Transactions ({totalTxs})</h3>
           <hr />
         </BsBlock>

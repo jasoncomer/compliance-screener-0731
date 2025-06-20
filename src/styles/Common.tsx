@@ -1,26 +1,18 @@
-import React from 'react';
-import { cn } from '../lib/utils';
+// Removed: import React from 'react';
+import styled from 'styled-components';
 
-interface BtnDivProps {
-  children: React.ReactNode;
-  className?: string;
-}
+export const BtnDiv = styled.div`
+  display: flex;
+  width: 100%;
+  gap: 16px;
+  justify-content: end;
+`;
 
-export const BtnDiv: React.FC<BtnDivProps> = ({ children, className }) => (
-  <div className={cn("flex w-full gap-4 justify-end mt-4", className)}>
-    {children}
-  </div>
-);
-
-interface FormWrapperProps {
-  children: React.ReactNode;
-  className?: string;
-}
-
-export const FormWrapper: React.FC<FormWrapperProps> = ({ children, className }) => (
-  <div className={cn("flex flex-col items-center mx-auto", className)}>
-    <div className={cn("flex flex-col w-96 gap-4", className)}>
-      {children}
-    </div>
-  </div>
-);
+export const FormWrapper = styled.div<{ theme?: any }>`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: auto;
+  background: ${({ theme }) => theme?.theme === 'dark' ? '#18191a' : '#fff'};
+  padding: 2.5em 2em;
+`;

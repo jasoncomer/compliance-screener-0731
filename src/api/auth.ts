@@ -21,8 +21,8 @@ const registerUser = async (data: IUserCreate): Promise<IRegisterUserResponse> =
 }
 
 // Function to reset a user's password
-const resetPassword = async (username: string): Promise<boolean> => {
-  const res = await axiosInstance.post('/users/reset-password', { username });
+const resetPassword = async (email: string): Promise<IBSApiResponse<null>> => {
+  const res = await axiosInstance.post('/auth/forget-password', { email });
   return res.data;
 }
 
@@ -37,6 +37,19 @@ export const changePassword = async (currentPassword: string, newPassword: strin
   return res.data;
 }
 
+export const resetPasswordWithToken = async (
+  userId: string,
+  token: string,
+  password: string,
+  confirmPassword: string
+): Promise<IBSApiResponse<null>> => {
+  const res = await axiosInstance.post(`/auth/reset-password/${userId}/${token}`, {
+    password,
+    confirmPassword
+  });
+  return res.data;
+};
+
 // Other auth API functions...
 export const users = {
   authenticateUser,
@@ -44,4 +57,14 @@ export const users = {
   registerUser,
   resetPassword,
   deleteAccount,
+  resetPasswordWithToken,
+};
+
+export default {
+  authenticateUser,
+  registerUser,
+  resetPassword,
+  resetPasswordWithToken,
+  changePassword,
+  // ... other exports ...
 };

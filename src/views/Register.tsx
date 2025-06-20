@@ -3,6 +3,8 @@ import { BtnDiv, FormWrapper } from '../styles/Common';
 import { Button, notification } from 'antd';
 import { api } from '../api/api';
 import Input from '../components/common/Input';
+import { useTheme } from '../context/ThemeContext';
+import { colors, darkTokens, lightTokens } from '../styles/variables';
 
 import type { NotificationArgsProps } from 'antd';
 
@@ -65,12 +67,23 @@ const Register = () => {
     window.location.href = '/login';
   }
 
+  const { theme } = useTheme();
+
   return (
-    <>
+    <div
+      style={{
+        minHeight: '100vh',
+        width: '100vw',
+        background: theme === 'dark' ? darkTokens.backgroundColor : lightTokens.backgroundColor,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
+    >
       {contextHolder}
-      <FormWrapper>
+      <FormWrapper theme={{ theme }}>
         <img src='https://framerusercontent.com/images/3djlle6W5wE61QQGlOQuLh5QvQ.jpg' style={{ width: '300px' }} />
-        <h2>Register</h2>
+        <h2 style={{ color: colors.primary }}>Register</h2>
         <form onSubmit={handleSubmit}>
 
           <div style={{ display: 'flex', flexDirection: 'row', width: '100%', gap: '1em' }}>
@@ -104,12 +117,31 @@ const Register = () => {
           </div>
 
           <BtnDiv>
-            <Button ghost type='default' onClick={navLogin}>Login</Button>
+            <Button 
+              ghost 
+              type='default' 
+              onClick={navLogin}
+              style={{
+                borderColor: colors.primary,
+                color: colors.primary,
+                fontWeight: 500,
+              }}
+              onMouseOver={e => {
+                e.currentTarget.style.borderColor = colors.secondary;
+                e.currentTarget.style.color = colors.secondary;
+              }}
+              onMouseOut={e => {
+                e.currentTarget.style.borderColor = colors.primary;
+                e.currentTarget.style.color = colors.primary;
+              }}
+            >
+              Login
+            </Button>
             <Button disabled={loading} type="primary" onClick={handleSubmit}>Register</Button>
           </BtnDiv>
         </form>
       </FormWrapper>
-    </>
+    </div>
   );
 };
 
