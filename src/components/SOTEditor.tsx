@@ -11,6 +11,7 @@ import { useSelector } from 'react-redux';
 import { RootState } from '../store/store';
 import EntitySidebar from './EntitySidebar';
 import EntityBalanceSheet from './EntityBalanceSheet';
+import { renderTextWithLinks } from '../utils/urls';
 
 
 
@@ -186,26 +187,6 @@ const ScrollableWebsiteLinks: React.FC<ScrollableWebsiteLinksProps> = ({ childre
     {children}
   </div>
 );
-
-const renderTextWithLinks = (text: string | null | undefined): React.ReactNode => {
-  if (!text) {
-    return text;
-  }
-
-  const urlRegex = /(https?:\/\/[^\s]+)/g;
-  const parts = text.split(urlRegex);
-
-  return parts.map((part, index) => {
-    if (part.match(urlRegex)) {
-      return (
-        <a href={part} key={index} target="_blank" rel="noopener noreferrer">
-          {part}
-        </a>
-      );
-    }
-    return part;
-  });
-};
 
 interface SOTEditorProps {
   sot: SOT | null;
