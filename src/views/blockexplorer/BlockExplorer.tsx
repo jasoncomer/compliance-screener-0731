@@ -1,5 +1,4 @@
 import { Route, Routes, useNavigate, useLocation } from 'react-router-dom';
-import styled from 'styled-components';
 import React, { useState, useEffect } from 'react';
 import { GlobalOutlined, MessageOutlined } from '@ant-design/icons';
 import Input from '../../components/common/Input';
@@ -11,79 +10,109 @@ import TransactionView from './TransactionView';
 import Address from './Address';
 import BlockView from './BlockView';
 import NotesModal from '../../components/common/NotesModal';
+import { cn } from '../../lib/utils';
 
-const ExplorerLayout = styled.div`
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-  overflow: hidden;
-`;
+interface ExplorerLayoutProps {
+  children: React.ReactNode;
+  className?: string;
+}
 
-const FixedHeader = styled.div`
-  position: sticky;
-  top: 0;
-  margin-bottom: 20px;
-  background: ${({ theme }) => theme.theme === 'dark' ? '#141414' : '#ffffff'};
-  z-index: 10;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0 20px;
+const ExplorerLayout: React.FC<ExplorerLayoutProps> = ({ children, className }) => (
+  <div className={cn("flex flex-col h-screen overflow-hidden", className)}>
+    {children}
+  </div>
+);
 
-  input {
-    margin: 10px 0px;
-  }
-`;
+interface FixedHeaderProps {
+  children: React.ReactNode;
+  className?: string;
+}
 
-const ContentWrapper = styled.div`
-  flex: 1;
-  overflow: hidden;
-`;
+const FixedHeader: React.FC<FixedHeaderProps> = ({ children, className }) => (
+  <div className={cn(
+    "sticky top-0 mb-5 bg-white dark:bg-[#141414] z-10 flex justify-between items-center px-5",
+    className
+  )}>
+    {children}
+  </div>
+);
 
-const Search = styled(Input)`
-  width: 400px;
-`;
+interface ContentWrapperProps {
+  children: React.ReactNode;
+  className?: string;
+}
 
-const StyledViewWrapper = styled(ViewWrapper)`
-  height: 100%;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
+const ContentWrapper: React.FC<ContentWrapperProps> = ({ children, className }) => (
+  <div className={cn("flex-1 overflow-hidden", className)}>
+    {children}
+  </div>
+);
 
-  > div:first-child {
-    position: sticky;
-    margin-bottom: 0px;
-    top: 0;
-    background: ${({ theme }) => theme.theme === 'dark' ? '#141414' : '#ffffff'};
-  }
-`;
+interface SearchProps {
+  placeholder: string;
+  value: string;
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onPressEnter: () => void;
+  className?: string;
+}
 
-const NotesButton = styled(Button)`
-  height: 40px;
-  border-radius: 20px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  background-color: #C74D1B;
-  border-color: #C74D1B;
-  margin-left: 10px;
-  padding: 0 16px;
-  transition: all 0.3s ease;
-  font-weight: 600;
-  
-  &:hover, &:focus {
-    background-color: #E35E29;
-    border-color: #E35E29;
-    transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
-  }
-  
-  .anticon {
-    margin-right: 0;
-    font-size: 18px;
-  }
-`;
+const Search: React.FC<SearchProps> = ({ placeholder, value, onChange, onPressEnter, className }) => (
+  <Input 
+    className={cn("w-[400px] my-2.5", className)}
+    placeholder={placeholder}
+    value={value}
+    onChange={onChange}
+    onPressEnter={onPressEnter}
+  />
+);
+
+interface StyledViewWrapperProps {
+  icon: React.ReactNode;
+  title: string;
+  fullWidth?: boolean;
+  children: React.ReactNode;
+  className?: string;
+}
+
+const StyledViewWrapper: React.FC<StyledViewWrapperProps> = ({ icon, title, fullWidth, children, className }) => (
+  <ViewWrapper 
+    icon={icon}
+    title={title}
+    fullWidth={fullWidth}
+    className={cn(
+      "h-full overflow-hidden flex flex-col",
+      className
+    )}
+  >
+    <div className="sticky mb-0 top-0 bg-white dark:bg-[#141414]">
+      {children}
+    </div>
+  </ViewWrapper>
+);
+
+interface NotesButtonProps {
+  type: "primary" | "default" | "dashed" | "link" | "text";
+  icon: React.ReactNode;
+  onClick: () => void;
+  title: string;
+  children: React.ReactNode;
+  className?: string;
+}
+
+const NotesButton: React.FC<NotesButtonProps> = ({ type, icon, onClick, title, children, className }) => (
+  <Button 
+    type={type}
+    icon={icon}
+    onClick={onClick}
+    title={title}
+    className={cn(
+      "h-10 rounded-[20px] flex items-center justify-center shadow-lg bg-[#C74D1B] border-[#C74D1B] ml-2.5 px-4 transition-all duration-300 ease-in-out font-semibold hover:bg-[#E35E29] hover:border-[#E35E29] hover:-translate-y-0.5 hover:shadow-xl",
+      className
+    )}
+  >
+    {children}
+  </Button>
+);
 
 const BlockExplorer: React.FC = () => {
   const navigate = useNavigate();

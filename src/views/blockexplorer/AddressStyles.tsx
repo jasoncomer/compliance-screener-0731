@@ -7,7 +7,10 @@ interface AddressLayoutProps {
 }
 
 export const AddressLayout: React.FC<AddressLayoutProps> = ({ children, className }) => (
-  <div className={cn("flex flex-col h-full w-full overflow-hidden", className)}>
+  <div className={cn(
+    "flex flex-col h-screen w-full overflow-hidden font-mono",
+    className
+  )}>
     {children}
   </div>
 );
@@ -18,7 +21,10 @@ interface FixedAddressHeaderProps {
 }
 
 export const FixedAddressHeader: React.FC<FixedAddressHeaderProps> = ({ children, className }) => (
-  <div className={cn("sticky top-0 w-full bg-white dark:bg-gray-900 z-10", className)}>
+  <div className={cn(
+    "sticky top-0 w-full z-10",
+    className
+  )}>
     {children}
   </div>
 );
@@ -29,7 +35,10 @@ interface ScrollableAddressContentProps {
 }
 
 export const ScrollableAddressContent: React.FC<ScrollableAddressContentProps> = ({ children, className }) => (
-  <div className={cn("flex-1 w-full overflow-y-auto pt-5", className)}>
+  <div className={cn(
+    "flex-1 w-full overflow-y-auto pt-5",
+    className
+  )}>
     {children}
   </div>
 );
@@ -40,7 +49,38 @@ interface SummaryWrapperProps {
 }
 
 export const SummaryWrapper: React.FC<SummaryWrapperProps> = ({ children, className }) => (
-  <div className={cn("flex justify-between flex-row", className)}>
+  <div className={cn(
+    "flex justify-between flex-row text-sm pt-2.5 gap-8",
+    className
+  )}>
+    {children}
+  </div>
+);
+
+interface SummaryColumnProps {
+  children: React.ReactNode;
+  className?: string;
+}
+
+export const SummaryColumn: React.FC<SummaryColumnProps> = ({ children, className }) => (
+  <div className={cn(
+    "flex flex-col items-start gap-6 flex-1",
+    className
+  )}>
+    {children}
+  </div>
+);
+
+interface SummaryRowProps {
+  children: React.ReactNode;
+  className?: string;
+}
+
+export const SummaryRow: React.FC<SummaryRowProps> = ({ children, className }) => (
+  <div className={cn(
+    "flex justify-between w-full",
+    className
+  )}>
     {children}
   </div>
 );
@@ -51,7 +91,10 @@ interface AddressInfoWrapperProps {
 }
 
 export const AddressInfoWrapper: React.FC<AddressInfoWrapperProps> = ({ children, className }) => (
-  <div className={cn("flex flex-col gap-3", className)}>
+  <div className={cn(
+    "flex flex-col gap-2",
+    className
+  )}>
     {children}
   </div>
 );
