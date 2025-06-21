@@ -11,189 +11,11 @@ import {
   PaginationState,
 } from '@tanstack/react-table';
 import { Table, Input, Select, Spin, Typography } from 'antd';
-import styled from 'styled-components';
 import { truncateStringMiddle } from '../../utils/generic';
+import styles from './DataTable.module.css';
 
 const { Title } = Typography;
 const { Search } = Input;
-
-// Styled components
-const TableContainer = styled.div`
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  min-height: 0;
-  
-  .ant-table {
-    background: transparent;
-    flex: 1;
-    overflow: hidden;
-    
-    .ant-table-thead > tr > th {
-      background: #374151;
-      border-bottom: 1px solid #4b5563;
-      color: #d1d5db;
-      font-weight: 600;
-      padding: 8px 12px;
-      font-size: 12px;
-      
-      &:hover {
-        background: #4b5563;
-      }
-    }
-    
-    .ant-table-tbody > tr > td {
-      background: transparent;
-      border-bottom: 1px solid #374151;
-      color: #e5e7eb;
-      padding: 6px 12px;
-      font-size: 12px;
-      
-      &:hover {
-        background: #374151;
-      }
-    }
-    
-    .ant-table-tbody > tr:hover > td {
-      background: #374151;
-    }
-    
-    .ant-table-container {
-      height: 100%;
-    }
-    
-    .ant-table-body {
-      overflow-y: auto;
-      max-height: calc(100vh - 400px);
-    }
-  }
-  
-  .ant-pagination {
-    margin-top: 12px;
-    flex-shrink: 0;
-    
-    .ant-pagination-item {
-      background: #374151;
-      border: 1px solid #4b5563;
-      
-      a {
-        color: #e5e7eb;
-      }
-      
-      &:hover {
-        border-color: #60a5fa;
-        
-        a {
-          color: #60a5fa;
-        }
-      }
-      
-      &.ant-pagination-item-active {
-        background: #3b82f6;
-        border-color: #3b82f6;
-        
-        a {
-          color: white;
-        }
-      }
-    }
-    
-    .ant-pagination-prev,
-    .ant-pagination-next {
-      background: #374151;
-      border: 1px solid #4b5563;
-      color: #e5e7eb;
-      
-      &:hover {
-        border-color: #60a5fa;
-        color: #60a5fa;
-      }
-    }
-  }
-`;
-
-const TableHeader = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 12px;
-  flex-wrap: wrap;
-  gap: 12px;
-  flex-shrink: 0;
-`;
-
-const TableControls = styled.div`
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  flex-wrap: wrap;
-`;
-
-const SearchContainer = styled.div`
-  min-width: 180px;
-  
-  .ant-input-search {
-    .ant-input {
-      background: #1f2937;
-      border: 1px solid #374151;
-      color: #fff;
-      border-radius: 6px;
-      font-size: 12px;
-      
-      &:hover, &:focus {
-        border-color: #60a5fa;
-        box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.2);
-      }
-      
-      &::placeholder {
-        color: #9ca3af;
-      }
-    }
-    
-    .ant-input-search-button {
-      background: #3b82f6;
-      border: 1px solid #3b82f6;
-      border-radius: 6px;
-      
-      &:hover {
-        background: #2563eb;
-        border-color: #2563eb;
-      }
-    }
-  }
-`;
-
-const PageSizeSelect = styled(Select)`
-  min-width: 70px;
-  
-  .ant-select-selector {
-    background: #1f2937 !important;
-    border: 1px solid #374151 !important;
-    color: #fff !important;
-    border-radius: 6px !important;
-    font-size: 12px !important;
-  }
-  
-  .ant-select-arrow {
-    color: #9ca3af;
-  }
-`;
-
-const LoadingContainer = styled.div`
-  text-align: center;
-  padding: 40px;
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  
-  .ant-spin-text {
-    color: #9ca3af;
-    margin-top: 12px;
-    font-size: 14px;
-  }
-`;
 
 // Generic interface for table data
 export interface DataTableProps<TData> {
@@ -219,8 +41,8 @@ export function DataTable<TData>({
   searchable = true,
   searchPlaceholder = "Search...",
   pagination = true,
-  pageSize = 10,
-  pageSizeOptions = [10, 20, 50, 100],
+  pageSize = 5,
+  pageSizeOptions = [5, 8, 12, 20, 50, 100],
   emptyText = "No data found",
   className,
 }: DataTableProps<TData>) {
@@ -253,31 +75,34 @@ export function DataTable<TData>({
   });
 
   return (
-    <TableContainer className={className}>
+    <div className={`flex flex-col h-[270px] min-h-0 ${className}`}>
       {(title || searchable) && (
-        <TableHeader>
-          {title && <Title level={5} style={{ color: '#fff', margin: 0 }}>{title}</Title>}
-          <TableControls>
+        <div className="flex justify-between items-center mb-3 flex-wrap gap-3 flex-shrink-0">
+          {title && <Title level={5} className="text-white m-0">{title}</Title>}
+          <div className="flex gap-2 items-center flex-wrap">
             {searchable && (
-              <SearchContainer>
+              <div className="min-w-[180px]">
                 <Search
                   placeholder={searchPlaceholder}
                   allowClear
                   value={globalFilter}
                   onChange={(e) => setGlobalFilter(e.target.value)}
-                  style={{ width: 250 }}
+                  style={{ 
+                    width: 250,
+                  }}
+                  className={styles.customSearch}
                 />
-              </SearchContainer>
+              </div>
             )}
-          </TableControls>
-        </TableHeader>
+          </div>
+        </div>
       )}
 
       {loading ? (
-        <LoadingContainer>
+        <div className="text-center py-10 flex-1 flex flex-col justify-center items-center">
           <Spin size="large" />
-          <div className="ant-spin-text">Loading data...</div>
-        </LoadingContainer>
+          <div className="text-gray-400 mt-3 text-sm">Loading data...</div>
+        </div>
       ) : (
         <div className="flex-1 overflow-hidden">
           <Table
@@ -354,8 +179,9 @@ export function DataTable<TData>({
             bordered={false}
             showHeader={true}
             tableLayout="fixed"
-            scroll={{ x: 600, y: 'calc(100vh - 450px)' }}
+            scroll={{ x: 600, y: 180 }}
             locale={{ emptyText }}
+            className={`${styles.customTable} h-full`}
             pagination={pagination ? {
               current: table.getState().pagination.pageIndex + 1,
               pageSize: table.getState().pagination.pageSize,
@@ -364,24 +190,24 @@ export function DataTable<TData>({
                 table.setPageIndex(page - 1);
                 table.setPageSize(pageSize);
               },
-              showSizeChanger: false, // We handle this with the select below
+              showSizeChanger: false,
               showQuickJumper: false,
-              showTotal: (total, range) => `${range[0]}-${range[1]} of ${total} items`,
+              className: styles.customPagination,
+              showTotal: (total, range) => (
+                <div className="flex items-center gap-4">
+                  <span>{`${range[0]}-${range[1]} of ${total} items`}</span>
+                  <Select
+                    className={`min-w-[70px] ${styles.customSelect}`}
+                    value={table.getState().pagination.pageSize}
+                    onChange={(value) => table.setPageSize(Number(value))}
+                    options={pageSizeOptions.map(size => ({ value: size, label: `${size} per page` }))}
+                  />
+                </div>
+              ),
             } : false}
-            className="h-full"
           />
-          {pagination && (
-            <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', marginTop: '12px', padding: '0 12px' }}>
-              <PageSizeSelect
-                value={table.getState().pagination.pageSize}
-                onChange={(value) => table.setPageSize(Number(value))}
-                options={pageSizeOptions.map(size => ({ value: size, label: `${size} per page` }))}
-                style={{ minWidth: '100px' }}
-              />
-            </div>
-          )}
         </div>
       )}
-    </TableContainer>
+    </div>
   );
 } 
