@@ -1,6 +1,6 @@
 import React from 'react';
 import { Card, Statistic, Button, Typography, Spin } from 'antd';
-import { SafetyOutlined } from '@ant-design/icons';
+import { SafetyOutlined, EyeOutlined } from '@ant-design/icons';
 
 const { Title } = Typography;
 
@@ -57,11 +57,12 @@ const RiskAssessment: React.FC<RiskAssessmentProps> = ({
       <div className="text-gray-500 text-sm mb-4">{description}</div>
       <Button 
         type="default" 
-        className="w-full rounded-lg bg-gray-700 text-white border-none font-semibold"
+        className="w-full rounded-lg bg-orange-500 text-white border-none font-semibold hover:bg-orange-600 hover:border-orange-600 transition-colors duration-200"
         onClick={onSeeDetails}
         disabled={!onSeeDetails}
+        icon={<EyeOutlined />}
       >
-        See Details
+        View Details
       </Button>
     </Card>
   );

@@ -141,10 +141,14 @@ const TransactionHistory: React.FC<TransactionHistoryProps> = ({
 
   return (
     <div className="flex-1 min-w-[320px] flex flex-col justify-stretch">
-      <Card className="bg-gray-800 rounded-2xl border-gray-700 h-full flex flex-col justify-stretch">
-        <div className="flex justify-between items-center px-6 pt-6 pb-4">
+      <Card 
+        className="bg-gray-800 rounded-2xl border-gray-700 h-full flex flex-col"
+        title={
           <Title level={5} className="text-white m-0">Transaction History</Title>
+        }
+        extra={
           <Button 
+            size="small"
             type="primary" 
             className="rounded-lg bg-blockscout-orange border-none"
             onClick={handleViewInBlockScout}
@@ -152,36 +156,51 @@ const TransactionHistory: React.FC<TransactionHistoryProps> = ({
           >
             View in BlockScout Explorer
           </Button>
-        </div>
-        <div className="px-6 pb-6 flex-1 flex flex-col min-h-0">
+        }
+        headStyle={{ padding: '16px', borderBottom: 0 }}
+        bodyStyle={{
+          padding: '0',
+          flex: 1,
+          minHeight: 0,
+          display: 'flex',
+          flexDirection: 'column'
+        }}
+      >
+        <div className="border-b border-gray-700">
           <Tabs 
             activeKey={txTab} 
             onChange={k => setTxTab(k as any)} 
-            className="mb-4 flex-shrink-0" 
+            className="
+              px-4
+              [&_.ant-tabs-nav]:mb-0
+              [&_.ant-tabs-tab]:py-3
+              [&_.ant-tabs-tab]:text-sm
+              [&_.ant-tabs-tab-btn]:text-gray-400 
+              [&_.ant-tabs-tab-btn]:hover:text-white
+              [&_.ant-tabs-tab-active_.ant-tabs-tab-btn]:text-blockscout-orange
+              [&_.ant-tabs-ink-bar]:bg-blockscout-orange
+            "
             items={[
               { key: 'all', label: 'All Transactions' },
               { key: 'in', label: 'Inflows (Received)' },
               { key: 'out', label: 'Outflows (Sent)' },
             ]} 
           />
-          
-          {error && (
+        </div>
+        
+        <div className="flex-1 px-4 pt-4 pb-4 min-h-0">
+          {error ? (
             <Alert
               message="Error loading transactions"
               description={error.message}
               type="error"
               showIcon
-              style={{ marginBottom: 16 }}
-              className="flex-shrink-0"
             />
-          )}
-          
-          <div className="flex-1 overflow-hidden min-h-0">
+          ) : (
             <DataTable
               data={filteredTx}
               columns={columns}
               loading={loading}
-              error={error}
               searchable={false}
               pagination={true}
               pageSize={5}
@@ -189,7 +208,7 @@ const TransactionHistory: React.FC<TransactionHistoryProps> = ({
               emptyText="No transactions found"
               className="h-full"
             />
-          </div>
+          )}
         </div>
       </Card>
     </div>

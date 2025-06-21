@@ -2,7 +2,7 @@
 export { AddressHeader, AddressSummary } from './address';
 
 // Risk analysis components
-export { RiskAssessment, TransactionActivity } from './risk-analysis';
+export { RiskAssessment, TransactionActivity, RiskScoreModal } from './risk-analysis';
 
 // Transaction analysis components
 export { TopCounterparties, TransactionHistory, CombinedFundsFlow } from './transaction-analysis';

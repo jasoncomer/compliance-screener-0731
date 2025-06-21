@@ -9,7 +9,8 @@ import {
   TopCounterparties, 
   TransactionHistory, 
   CombinedFundsFlow,
-  EntityDetails
+  EntityDetails,
+  RiskScoreModal
 } from './components';
 import TwitterTimeline from './components/entity-intelligence/TwitterTimeline';
 import { AddressSummary } from './components/AddressSummary';
@@ -143,6 +144,7 @@ const RiskDashboard: React.FC = () => {
   const [hasData, setHasData] = useState(false); // Changed to false to only show searchbar by default
   const [address, setAddress] = useState('bc1qxy2kgdygjrsqtzqzn0yrf2493p83kkfjhx0wlh');
   const [searchValue, setSearchValue] = useState('');
+  const [riskScoreModalVisible, setRiskScoreModalVisible] = useState(false);
 
   // React Query hooks
   const { data: transactionData, isLoading: isLoadingTransactions, error: transactionError } = useAddressTransactions(address, 1, 100);
@@ -165,6 +167,85 @@ const RiskDashboard: React.FC = () => {
     console.log('RiskDashboard - transformed transactions:', transformed);
     return transformed;
   }, [transactionData?.txs, address, btcPrice]);
+
+  // Function to get entity display name
+  const getEntityDisplayName = (entityId: string) => {
+    if (!entityId) return '';
+    const entity = Object.values(itemsMap).find(sot => sot.entity_id === entityId);
+    return entity?.proper_name || entityId;
+  };
+
+  // Generate counterparty data from transaction history
+  const counterpartyData = React.useMemo(() => {
+    if (!transformedTransactions.length) {
+      return { incoming: [], outgoing: [] };
+    }
+
+    // Group transactions by counterparty address
+    const incomingByAddress: { [key: string]: { totalAmount: number; count: number; addresses: string[] } } = {};
+    const outgoingByAddress: { [key: string]: { totalAmount: number; count: number; addresses: string[] } } = {};
+
+    transformedTransactions.forEach(tx => {
+      if (tx.type === 'in' && tx.from !== 'Unknown') {
+        if (!incomingByAddress[tx.from]) {
+          incomingByAddress[tx.from] = { totalAmount: 0, count: 0, addresses: [] };
+        }
+        incomingByAddress[tx.from].totalAmount += tx.value;
+        incomingByAddress[tx.from].count += 1;
+        if (!incomingByAddress[tx.from].addresses.includes(tx.from)) {
+          incomingByAddress[tx.from].addresses.push(tx.from);
+        }
+      } else if (tx.type === 'out' && tx.to !== 'Unknown') {
+        if (!outgoingByAddress[tx.to]) {
+          outgoingByAddress[tx.to] = { totalAmount: 0, count: 0, addresses: [] };
+        }
+        outgoingByAddress[tx.to].totalAmount += tx.value;
+        outgoingByAddress[tx.to].count += 1;
+        if (!outgoingByAddress[tx.to].addresses.includes(tx.to)) {
+          outgoingByAddress[tx.to].addresses.push(tx.to);
+        }
+      }
+    });
+
+    // Convert to array and sort by total amount
+    const incomingCounterparties = Object.entries(incomingByAddress)
+      .map(([address, data]) => {
+        const entityId = attributions[address]?.entity || attributions[address]?.bo || attributions[address]?.custodian;
+        const entityName = entityId ? getEntityDisplayName(entityId) : 'Unknown Wallet';
+        
+        return {
+          entity: entityName,
+          direction: 'inflow' as const,
+          amount: `$${(data.totalAmount * btcPrice).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+          txns: data.count,
+          address: address,
+          totalAmount: data.totalAmount * btcPrice // For sorting
+        };
+      })
+      .sort((a, b) => b.totalAmount - a.totalAmount)
+      .slice(0, 5)
+      .map(({ totalAmount, ...rest }) => rest); // Remove totalAmount from final result
+
+    const outgoingCounterparties = Object.entries(outgoingByAddress)
+      .map(([address, data]) => {
+        const entityId = attributions[address]?.entity || attributions[address]?.bo || attributions[address]?.custodian;
+        const entityName = entityId ? getEntityDisplayName(entityId) : 'Unknown Wallet';
+        
+        return {
+          entity: entityName,
+          direction: 'outflow' as const,
+          amount: `$${(data.totalAmount * btcPrice).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+          txns: data.count,
+          address: address,
+          totalAmount: data.totalAmount * btcPrice // For sorting
+        };
+      })
+      .sort((a, b) => b.totalAmount - a.totalAmount)
+      .slice(0, 5)
+      .map(({ totalAmount, ...rest }) => rest); // Remove totalAmount from final result
+
+    return { incoming: incomingCounterparties, outgoing: outgoingCounterparties };
+  }, [transformedTransactions, attributions, btcPrice, getEntityDisplayName]);
 
   // Prepare address summary data for the component
   const addressSummaryProps = React.useMemo(() => {
@@ -224,13 +305,6 @@ const RiskDashboard: React.FC = () => {
 
   // Get Twitter handle for display
   const twitterHandle = getTwitterHandle();
-
-  // Function to get entity display name
-  const getEntityDisplayName = (entityId: string) => {
-    if (!entityId) return '';
-    const entity = Object.values(itemsMap).find(sot => sot.entity_id === entityId);
-    return entity?.proper_name || entityId;
-  };
 
   // Function to get entity type
   const getEntityType = (entityId: string) => {
@@ -336,6 +410,14 @@ const RiskDashboard: React.FC = () => {
     return 'Low risk profile';
   };
 
+  // Mock data for TransactionActivity
+  const mockTransactionActivity = Array.from({ length: 365 }, (_, i) => ({
+    day: i % 7,
+    week: Math.floor(i / 7),
+    active: Math.random() > 0.7
+  }));
+
+  // Mock data for Funds Flow Analysis
   const mockIncomingData = [
     { name: 'Exchange A', value: 50000, entityType: 'Exchange' },
     { name: 'Wallet B', value: 25000, entityType: 'Wallet' },
@@ -346,26 +428,6 @@ const RiskDashboard: React.FC = () => {
     { name: 'Exchange C', value: 30000, entityType: 'Exchange' },
     { name: 'Wallet D', value: 20000, entityType: 'Wallet' },
     { name: 'NFT Marketplace', value: 10000, entityType: 'NFT' }
-  ];
-
-  // Mock data for TransactionActivity
-  const mockTransactionActivity = Array.from({ length: 365 }, (_, i) => ({
-    day: i % 7,
-    week: Math.floor(i / 7),
-    active: Math.random() > 0.7
-  }));
-
-  // Mock data for TopCounterparties
-  const mockIncomingCounterparties = [
-    { entity: 'Binance', risk: 25, amount: '$125,000', txns: 15, address: '0x1234...abcd' },
-    { entity: 'Coinbase', risk: 15, amount: '$85,000', txns: 8, address: '0x5678...efgh' },
-    { entity: 'Unknown Wallet', risk: 85, amount: '$45,000', txns: 3, address: '0x9abc...1234' }
-  ];
-
-  const mockOutgoingCounterparties = [
-    { entity: 'Uniswap', risk: 35, amount: '$75,000', txns: 12, address: '0xdef0...5678' },
-    { entity: 'NFT Marketplace', risk: 45, amount: '$35,000', txns: 5, address: '0x1234...9abc' },
-    { entity: 'Suspicious Address', risk: 95, amount: '$25,000', txns: 2, address: '0x5678...def0' }
   ];
 
   const handleAddressSearch = async (value: string) => {
@@ -394,7 +456,16 @@ const RiskDashboard: React.FC = () => {
   };
 
   const handleRiskScoreClick = () => {
-    window.open(`/home/risk-scoring?address=${address}`, '_blank');
+    setRiskScoreModalVisible(true);
+  };
+
+  // Handle counterparty click to navigate to that address
+  const handleCounterpartyClick = (address: string) => {
+    if (address && address.trim()) {
+      setAddress(address);
+      setSearchValue(address);
+      setHasData(true);
+    }
   };
 
   return (
@@ -477,7 +548,12 @@ const RiskDashboard: React.FC = () => {
 
           {/* Top Counterparties and Transaction History - Half Width Each */}
           <FlexCol className="half-width">
-            <TopCounterparties incoming={mockIncomingCounterparties} outgoing={mockOutgoingCounterparties} />
+            <TopCounterparties 
+              incoming={counterpartyData.incoming} 
+              outgoing={counterpartyData.outgoing} 
+              onCounterpartyClick={handleCounterpartyClick}
+              transactions={transformedTransactions}
+            />
           </FlexCol>
           <FlexCol className="half-width">
             <TransactionHistory 
@@ -627,6 +703,16 @@ const RiskDashboard: React.FC = () => {
           type="warning"
           showIcon
           style={{ marginBottom: 16 }}
+        />
+      )}
+
+      {riskScoreModalVisible && (
+        <RiskScoreModal
+          visible={riskScoreModalVisible}
+          onClose={() => setRiskScoreModalVisible(false)}
+          riskScores={riskScore}
+          address={address}
+          loading={isLoadingRiskScore}
         />
       )}
     </ViewWrapper>
