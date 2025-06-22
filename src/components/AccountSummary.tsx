@@ -25,6 +25,37 @@ const AccountSummaryWrapper = styled.div`
   }
 `;
 
+const SummaryContent = styled.div`
+  display: flex;
+  flex-direction: row;
+  width: 100%;
+  gap: 20px;
+`;
+
+const Column = styled.div`
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  gap: 8px;
+`;
+
+const SummaryRow = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 0;
+`;
+
+const Label = styled.span`
+  color: #aaa;
+  font-weight: 500;
+`;
+
+const Value = styled.span`
+  color: #fff;
+  text-align: right;
+`;
+
 interface AccountSummaryProps {
   data: IApiResponse;
 }
@@ -33,22 +64,32 @@ const AccountSummary: React.FC<AccountSummaryProps> = ({ data }) => {
   return (
     <AccountSummaryWrapper>
       <span style={{ fontWeight: 'bold' }}>Account Summary</span>
-      <div style={{ display: 'flex', flexDirection: 'row'}}>
-        <div style={{ display:'flex', flexDirection: 'column', alignItems: 'start', marginRight: '1em' }}>
-          <span>Address:</span>
-          <span>Current Balance:</span>
-          <span>Transactions:</span>
-          <span>Total Received:</span>
-          <span>Total Sent:</span>
-        </div>
-        <div style={{ display:'flex', flexDirection: 'column', alignItems: 'start'  }}>
-          <span>{data.address}</span>
-          <span>{data.balance} BTC</span>
-          <span>{data.txs.length}</span>
-          <span>{data.total_received / 10e8} BTC</span>
-          <span>{data.total_sent / 10e8} BTC</span>
-        </div>
-      </div>
+      <SummaryContent>
+        <Column>
+          <SummaryRow>
+            <Label>Address:</Label>
+            <Value>{data.address}</Value>
+          </SummaryRow>
+          <SummaryRow>
+            <Label>Current Balance:</Label>
+            <Value>{data.balance} BTC</Value>
+          </SummaryRow>
+          <SummaryRow>
+            <Label>Transactions:</Label>
+            <Value>{data.txs.length}</Value>
+          </SummaryRow>
+        </Column>
+        <Column>
+          <SummaryRow>
+            <Label>Total Received:</Label>
+            <Value>{(data.total_received / 10e8).toFixed(8)} BTC</Value>
+          </SummaryRow>
+          <SummaryRow>
+            <Label>Total Sent:</Label>
+            <Value>{(data.total_sent / 10e8).toFixed(8)} BTC</Value>
+          </SummaryRow>
+        </Column>
+      </SummaryContent>
     </AccountSummaryWrapper>
   );
 };

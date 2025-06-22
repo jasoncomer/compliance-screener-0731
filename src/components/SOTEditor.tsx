@@ -11,6 +11,7 @@ import { useSelector } from 'react-redux';
 import { RootState } from '../store/store';
 import EntitySidebar from './EntitySidebar';
 import EntityBalanceSheet from './EntityBalanceSheet';
+import { renderTextWithLinks } from '../utils/urls';
 
 
 
@@ -186,7 +187,6 @@ const ScrollableWebsiteLinks: React.FC<ScrollableWebsiteLinksProps> = ({ childre
     {children}
   </div>
 );
-
 
 interface SOTEditorProps {
   sot: SOT | null;
@@ -496,8 +496,8 @@ const SOTEditor: React.FC<SOTEditorProps> = ({ sot, onSelectAssociatedSot }) => 
             {sot.description_merged && (
               <DetailItem>
                 <DetailLabel>Description</DetailLabel>
-                <DetailValue style={{ whiteSpace: 'pre-wrap', width: '70%' }}>
-                  {sot.description_merged}
+                <DetailValue style={{ display: 'block', whiteSpace: 'pre-wrap', width: '70%', wordBreak: 'break-word' }}>
+                  {renderTextWithLinks(sot.description_merged)}
                 </DetailValue>
               </DetailItem>
             )}

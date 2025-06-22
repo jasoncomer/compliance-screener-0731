@@ -1,6 +1,7 @@
 /** @type {import('tailwindcss').Config} */
 export default {
-  content: [
+    darkMode: ["class"],
+    content: [
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
   ],
@@ -42,11 +43,28 @@ export default {
           foreground: "hsl(var(--card-foreground))",
         },
         
+        // Table header color
+        'table-header': '#282828',
+        
+        // Chart colors for Risk Dashboard
+        chart: {
+          '1': 'hsl(var(--chart-1))',
+          '2': 'hsl(var(--chart-2))',
+          '3': 'hsl(var(--chart-3))',
+          '4': 'hsl(var(--chart-4))',
+          '5': 'hsl(var(--chart-5))'
+        },
+        
         // Blockscout brand colors (from Ant Design variables)
         brand: {
           primary: "var(--bs-primary)",
           "primary-dark": "var(--bs-primary-dark)",
           secondary: "var(--bs-secondary)",
+        },
+        
+        // Blockscout orange for Risk Dashboard
+        blockscout: {
+          orange: '#F58B2C',
         },
         
         // Semantic colors matching Ant Design
@@ -123,5 +141,5 @@ export default {
       },
     },
   },
-  plugins: [],
+  plugins: [require("tailwindcss-animate")],
 } 

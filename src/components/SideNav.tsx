@@ -107,6 +107,11 @@ const SideNav: React.FC<SideNavProps> = ({ theme, collapsed, onCollapse }) => {
       label: 'Risk Scoring',
     },
     {
+      key: 'risk-dashboard',
+      icon: <BarChartOutlined />,
+      label: 'Risk Dashboard',
+    },
+    {
       key: 'blockham',
       icon: <DatabaseOutlined />,
       label: 'VASP Entity Explorer',

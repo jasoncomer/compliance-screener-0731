@@ -1,0 +1,90 @@
+.risk-score-modal .ant-modal-content {
+  background-color: #111827;
+  border: 1px solid #374151;
+  border-radius: 16px;
+}
+
+.risk-score-modal .ant-modal-header {
+  background-color: #111827;
+  border-bottom: 1px solid #374151;
+  border-radius: 16px 16px 0 0;
+}
+
+.risk-score-modal .ant-modal-title {
+  color: #e5e7eb;
+}
+
+.risk-score-modal .ant-modal-close {
+  color: #9ca3af;
+}
+
+.risk-score-modal .ant-modal-close:hover {
+  color: #e5e7eb;
+}
+
+.risk-score-modal .ant-tabs-tab {
+  color: #9ca3af;
+}
+
+.risk-score-modal .ant-tabs-tab:hover {
+  color: #e5e7eb;
+}
+
+.risk-score-modal .ant-tabs-tab.ant-tabs-tab-active {
+  color: #3b82f6;
+}
+
+.risk-score-modal .ant-tabs-ink-bar {
+  background-color: #3b82f6;
+}
+
+.risk-score-modal .ant-table {
+  background-color: #1f2937;
+  color: #e5e7eb;
+}
+
+.risk-score-modal .ant-table-thead > tr > th {
+  background-color: #374151;
+  color: #e5e7eb;
+  border-bottom: 1px solid #4b5563;
+}
+
+.risk-score-modal .ant-table-tbody > tr > td {
+  background-color: #1f2937;
+  color: #e5e7eb;
+  border-bottom: 1px solid #374151;
+}
+
+.risk-score-modal .ant-table-tbody > tr:hover > td {
+  background-color: #374151;
+}
+
+.risk-score-modal .ant-progress-text {
+  color: #e5e7eb;
+}
+
+.risk-score-modal .ant-statistic-title {
+  color: #e5e7eb;
+}
+
+.risk-score-modal .ant-statistic-content {
+  color: #e5e7eb;
+}
+
+.risk-score-modal .ant-card {
+  background-color: #1f2937;
+  border: 1px solid #374151;
+  border-radius: 12px;
+}
+
+.risk-score-modal .ant-card-body {
+  background-color: #1f2937;
+}
+
+.risk-score-modal .ant-empty-description {
+  color: #9ca3af;
+}
+
+.risk-score-modal .ant-spin-dot-item {
+  background-color: #3b82f6;
+} 

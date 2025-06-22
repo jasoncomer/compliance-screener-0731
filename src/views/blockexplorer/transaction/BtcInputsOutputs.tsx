@@ -387,19 +387,17 @@ const BtcInputsOutputs: React.FC<BtcInputsOutputsProps> = ({ data, type }) => {
   const getEntityDisplayName = (entityId: string) => {
     if (!entityId) return '';
 
-
-    // Get the entity type from the SOT data
+    // Get the entity from the SOT data
     const entity = Object.values(itemsMap).find(sot => sot.entity_id === entityId);
     const entityType = entity?.entity_type;
 
     // If allowCSAM is false and the entity is CSAM-related, show "CSAM Related Entity"
     if (organization?.settings.allowCSAM === false && entityType === "csam") {
-
       return 'CSAM Related Entity';
     }
 
-    // Otherwise show the original entity name
-    return entityId;
+    // Return proper_name if available, otherwise entity_id
+    return entity?.proper_name || entityId;
   };
 
   return (

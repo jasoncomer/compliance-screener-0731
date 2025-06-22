@@ -1,5 +1,5 @@
 import React from 'react';
-import { Card, Space } from 'antd';
+import { Card, Space, Button } from 'antd';
 import Input from '../../components/common/Input';
 
 interface SearchBarProps {
@@ -15,9 +15,16 @@ const SearchBar: React.FC<SearchBarProps> = ({
   onAddressChange,
   onSubmit,
 }) => {
+  const handleViewInExplorer = () => {
+    if (address) {
+      const url = `/home/block-explorer/address/${address}`;
+      window.open(url, '_blank');
+    }
+  };
+
   return (
     <Card style={{ marginBottom: '24px' }}>
-      <Space.Compact>
+      <Space>
         <Input
           placeholder="Enter blockchain address"
           value={address}
@@ -28,7 +35,15 @@ const SearchBar: React.FC<SearchBarProps> = ({
           loading={loading}
           onSearch={onSubmit}
         />
-      </Space.Compact>
+        <Button
+          type="default"
+          size="middle"
+          onClick={handleViewInExplorer}
+          disabled={!address}
+        >
+          View in Block Explorer
+        </Button>
+      </Space>
     </Card>
   );
 };
