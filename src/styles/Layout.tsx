@@ -78,6 +78,23 @@ export const StyledContent: React.FC<StyledContentProps> = ({ children, $theme, 
   </Layout.Content>
 );
 
+interface MainContentProps {
+  children: React.ReactNode;
+  $theme: Theme;
+  sidebarCollapsed: boolean;
+  className?: string;
+}
+
+export const MainContent: React.FC<MainContentProps> = ({ children, $theme, className }) => (
+  <Layout.Content className={cn(
+    "transition-all duration-300 p-8 overflow-auto",
+    $theme === 'light' ? "bg-gray-50" : "bg-gray-800",
+    className
+  )}>
+    {children}
+  </Layout.Content>
+);
+
 interface UserMenuButtonProps {
   children: React.ReactNode;
   onClick?: () => void;
