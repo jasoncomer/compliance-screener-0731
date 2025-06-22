@@ -103,6 +103,7 @@ const Home: React.FC = () => {
                   { key: 'compliance-dashboard', label: 'Compliance Dashboard' },
                   { key: 'block-explorer', label: 'Block Explorer' },
                   { key: 'risk-scoring', label: 'Risk Scoring' },
+                  { key: 'risk-dashboard', label: 'Risk Dashboard' },
                   // { key: 'alerts', label: 'Alerts' },
                   // { key: 'cases', label: 'Cases' },
                   { key: 'blockham', label: 'VASP Entity Explorer' },

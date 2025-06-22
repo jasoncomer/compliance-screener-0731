@@ -70,7 +70,7 @@ interface StyledContentProps {
 
 export const StyledContent: React.FC<StyledContentProps> = ({ children, $theme, className }) => (
   <Layout.Content className={cn(
-    "p-6 overflow-auto",
+    "p-6 overflow-auto min-h-[calc(100vh-50px)]",
     $theme === 'light' ? "bg-white" : "bg-gray-900",
     className
   )}>
