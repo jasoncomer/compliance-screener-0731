@@ -256,7 +256,7 @@ const TopCounterparties: React.FC<TopCounterpartiesProps> = ({
             })}
             tableLayout="fixed"
             scroll={{ y: 200 }}
-            rowClassName="h-8 cursor-pointer hover:bg-gray-700"
+            rowClassName="h-8 cursor-pointer hover:bg-gray-800"
             components={{
               header: {
                 cell: (props: any) => <th {...props} className="bg-gray-900 text-gray-500 font-semibold text-xs p-2" />,
@@ -295,7 +295,7 @@ const TopCounterparties: React.FC<TopCounterpartiesProps> = ({
       >
         {selectedCounterparty && (
           <div className="space-y-6">
-            <div className="bg-gray-900 p-4 rounded-lg grid grid-cols-2 gap-x-6 gap-y-4">
+            <div className="bg-gray-800 p-4 rounded-lg grid grid-cols-2 gap-x-6 gap-y-4">
               <div>
                 <Text className="text-gray-400 block text-sm">Entity</Text>
                 <Text className="text-white text-base">{selectedCounterparty.entity}</Text>

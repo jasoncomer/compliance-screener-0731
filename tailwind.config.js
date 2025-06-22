@@ -43,6 +43,9 @@ export default {
           foreground: "hsl(var(--card-foreground))",
         },
         
+        // Table header color
+        'table-header': '#282828',
+        
         // Chart colors for Risk Dashboard
         chart: {
           '1': 'hsl(var(--chart-1))',

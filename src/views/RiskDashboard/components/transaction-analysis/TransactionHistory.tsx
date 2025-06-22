@@ -1,6 +1,5 @@
 import React, { useState, useMemo } from 'react';
 import { Card, Typography, Button, Tabs, Alert } from 'antd';
-import { ColumnDef } from '@tanstack/react-table';
 import { DataTable } from '../../../../components/DataTable';
 import { TransformedTransaction } from '../../../../utils/transactionTransformers';
 import { truncateStringMiddle } from '../../../../utils/generic';
@@ -31,65 +30,66 @@ const TransactionHistory: React.FC<TransactionHistoryProps> = ({
     }
   };
 
-  // Define columns using TanStack React Table
-  const columns: ColumnDef<TransformedTransaction>[] = useMemo(() => [
+  // Define columns using the new DataTable structure
+  const columns = useMemo(() => [
     {
-      accessorKey: 'time',
-      header: 'Time',
-      cell: ({ getValue }) => (
-        <span className="text-gray-500 text-xs">{getValue() as string}</span>
+      key: 'time',
+      title: 'Time',
+      width: 130,
+      render: (value: string) => (
+        <span className="text-gray-500 text-xs whitespace-nowrap">{value}</span>
       ),
     },
     {
-      accessorKey: 'direction',
-      header: 'Direction',
-      cell: ({ getValue }) => {
-        const direction = getValue() as string;
-        return (
-          <span className={`px-1.5 py-0.5 rounded text-xs font-medium ${
-            direction === 'inflow' 
-              ? 'bg-green-900 text-green-300' 
-              : 'bg-red-900 text-red-300'
-          }`}>
-            {direction === 'inflow' ? '↗' : '↘'}
-          </span>
-        );
-      },
-    },
-    {
-      accessorKey: 'description',
-      header: 'Amount',
-      cell: ({ getValue }) => (
-        <span className="text-white text-xs font-mono">{getValue() as string}</span>
+      key: 'direction',
+      title: 'Direction',
+      width: 70,
+      render: (value: string) => (
+        <span className={`px-1.5 py-0.5 rounded text-xs font-medium ${
+          value === 'inflow' 
+            ? 'bg-green-900 text-green-300' 
+            : 'bg-red-900 text-red-300'
+        }`}>
+          {value === 'inflow' ? '↗' : '↘'}
+        </span>
       ),
     },
     {
-      accessorKey: 'from',
-      header: 'From',
-      cell: ({ getValue }) => {
-        const from = getValue() as string;
-        const displayText = from === 'Unknown' ? from : truncateStringMiddle(from, 16);
+      key: 'description',
+      title: 'Amount',
+      width: 110,
+      render: (value: string) => (
+        <span className="text-white text-xs font-mono">{value}</span>
+      ),
+    },
+    {
+      key: 'from',
+      title: 'From',
+      width: 110,
+      render: (value: string) => {
+        const displayText = value === 'Unknown' ? value : truncateStringMiddle(value, 16);
         return (
-          <span className="text-gray-400 text-xs" title={from}>{displayText}</span>
+          <span className="text-gray-400 text-xs" title={value}>{displayText}</span>
         );
       },
     },
     {
-      accessorKey: 'to',
-      header: 'To',
-      cell: ({ getValue }) => {
-        const to = getValue() as string;
-        const displayText = to === 'Unknown' ? to : truncateStringMiddle(to, 16);
+      key: 'to',
+      title: 'To',
+      width: 110,
+      render: (value: string) => {
+        const displayText = value === 'Unknown' ? value : truncateStringMiddle(value, 16);
         return (
-          <span className="text-gray-400 text-xs" title={to}>{displayText}</span>
+          <span className="text-gray-400 text-xs" title={value}>{displayText}</span>
         );
       },
     },
     {
-      accessorKey: 'usd',
-      header: 'USD',
-      cell: ({ getValue }) => (
-        <span className="text-gray-500 text-xs">{getValue() as string}</span>
+      key: 'usd',
+      title: 'USD',
+      width: 70,
+      render: (value: string) => (
+        <span className="text-gray-500 text-xs">{value}</span>
       ),
     },
   ], []);
