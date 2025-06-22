@@ -18,12 +18,14 @@ const ViewWrapper: React.FC<ViewWrapperProps> = ({
   fullWidth = false
 }) => {
   const { theme } = useTheme();
+  
+  console.log('ViewWrapper: Rendering with theme:', theme, 'title:', title);
 
   return (
     <div 
       className={cn(
-        "w-full h-auto",
-        theme === 'light' ? "bg-white" : "",
+        "w-full h-auto p-5",
+        theme === 'light' ? "bg-white" : "bg-gray-900",
         fullWidth ? "max-w-full" : "max-w-6xl",
         "view-wrapper",
         className

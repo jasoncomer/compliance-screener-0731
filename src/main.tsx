@@ -9,6 +9,7 @@ import './index.css'
 import { AppProvider } from './context/AppContext.tsx';
 import { AttributionProvider } from './context/AttributionContext.tsx'
 import { ThemeProvider } from './context/ThemeContext.tsx'
+import './styles/globals.css';
 
 // Create a client for React Query
 const queryClient = new QueryClient({

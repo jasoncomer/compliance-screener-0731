@@ -9,7 +9,7 @@ import { satsToBTC } from '../../utils/crypto';
 import { useAttribution } from '../../context/AttributionContext';
 import Pagination from '../../components/common/Pagination';
 import { useTheme } from '../../context/ThemeContext';
-import { Avatar, Tag } from 'antd';
+import { Avatar, Tag, Card } from 'antd';
 import { UserOutlined, SafetyOutlined } from '@ant-design/icons';
 import { getEntityTypeLabel, capitalizeFirstLetter } from '../../utils/display-labels';
 import { EEntityType } from '../../typings/SOT';
@@ -27,6 +27,8 @@ import {
   FixedAddressHeader,
   ScrollableAddressContent,
   SummaryWrapper,
+  SummaryColumn,
+  SummaryRow,
   AddressInfoWrapper,
   EntityRow,
   EntitiesContainer,
@@ -243,25 +245,30 @@ const Address: React.FC = () => {
           <h3>Address</h3>
           <hr />
           <AddressInfoWrapper>
-            <div className="address-row">
-              <span className="copy-button" onClick={copyToClipboard} title="Copy address">
+            <div className="flex items-center gap-x-2 my-2">
+              <span className="cursor-pointer" onClick={copyToClipboard} title="Copy address">
                 {copySuccess ? '✓' : '⧉'}
               </span>
-              <div className="address-value">{address}</div>
-              {hasAttributionData && attributions[address]?.entity && (
-                <div style={{ display: 'flex', flexWrap: 'wrap' }}>
-                  {getEntityTags(attributions[address].entity).map((tag: string, index: number) => (
-                    <Tag key={index} color={getTagColor(tag)}>{tag}</Tag>
-                  ))}
-                </div>
-              )}
+              <div>{address}</div>
+              <div className="flex gap-x-1">
+                {address && attributions[address] && getEntityTags(attributions[address]?.entity || '').map(tag => (
+                  <Tag key={tag} color={getTagColor(tag.toLowerCase())}>{tag.toUpperCase()}</Tag>
+                ))}
+              </div>
             </div>
             {showCopyAlert && <div className="copy-alert">Address copied</div>}
+          </AddressInfoWrapper>
 
-            {hasAttributionData && (
-              <EntitiesContainer>
-                {attributions[address]?.entity && (
-                  <EntityRow>
+          {hasAttributionData && (
+            <EntitiesContainer>
+              {attributions[address]?.entity && (
+                <Card
+                  style={{ width: '100%', backgroundColor: theme === 'dark' ? '#1f2937' : '#f3f4f6' }}
+                  className="rounded-lg"
+                  bodyStyle={{ padding: '0.75rem' }}
+                  bordered={false}
+                >
+                  <EntityRow className="!bg-transparent dark:!bg-transparent !p-0 !mb-0">
                     <Avatar
                       size={40}
                       src={getEntityLogo(attributions[address].entity)}
@@ -282,58 +289,58 @@ const Address: React.FC = () => {
                       </div>                   
                     </EntityInfo>
                   </EntityRow>
-                )}
+                </Card>
+              )}
 
-                {attributions[address]?.bo && (attributions[address]?.bo !== attributions[address]?.entity) && (
-                  <EntityRow>
-                    <Avatar
-                      size={40}
-                      src={getEntityLogo(attributions[address].bo)}
-                      icon={!getEntityLogo(attributions[address].bo) && <UserOutlined />}
-                    />
-                    <EntityInfo>
-                      <div className="field-group">
-                        <div className='label'>{capitalizeFirstLetter('Beneficial Owner')}</div>
-                        <div className="entity-name">
-                          {getEntityDisplayName(attributions[address].bo)}
-                        </div>
+              {attributions[address]?.bo && (attributions[address]?.bo !== attributions[address]?.entity) && (
+                <EntityRow>
+                  <Avatar
+                    size={40}
+                    src={getEntityLogo(attributions[address].bo)}
+                    icon={!getEntityLogo(attributions[address].bo) && <UserOutlined />}
+                  />
+                  <EntityInfo>
+                    <div className="field-group">
+                      <div className='label'>{capitalizeFirstLetter('Beneficial Owner')}</div>
+                      <div className="entity-name">
+                        {getEntityDisplayName(attributions[address].bo)}
                       </div>
-                      <div className="field-group">
-                        <div className='label'>{capitalizeFirstLetter('entity type')}</div>
-                        <div className="entity-type">
-                          {getEntityType(attributions[address].bo)}
-                        </div>
+                    </div>
+                    <div className="field-group">
+                      <div className='label'>{capitalizeFirstLetter('entity type')}</div>
+                      <div className="entity-type">
+                        {getEntityType(attributions[address].bo)}
                       </div>
-                    </EntityInfo>
-                  </EntityRow>
-                )}
+                    </div>
+                  </EntityInfo>
+                </EntityRow>
+              )}
 
-                {attributions[address]?.custodian && (
-                  <EntityRow>
-                    <Avatar
-                      size={40}
-                      src={getEntityLogo(attributions[address].custodian)}
-                      icon={!getEntityLogo(attributions[address].custodian) && <UserOutlined />}
-                    />
-                    <EntityInfo>
-                      <div className="field-group">
-                        <div className='label'>{capitalizeFirstLetter('Custodian')}</div>
-                        <div className="entity-name">
-                          {getEntityDisplayName(attributions[address].custodian)}
-                        </div>
+              {attributions[address]?.custodian && (
+                <EntityRow>
+                  <Avatar
+                    size={40}
+                    src={getEntityLogo(attributions[address].custodian)}
+                    icon={!getEntityLogo(attributions[address].custodian) && <UserOutlined />}
+                  />
+                  <EntityInfo>
+                    <div className="field-group">
+                      <div className='label'>{capitalizeFirstLetter('Custodian')}</div>
+                      <div className="entity-name">
+                        {getEntityDisplayName(attributions[address].custodian)}
                       </div>
-                      <div className="field-group">
-                        <div className='label'>{capitalizeFirstLetter('entity type')}</div>
-                        <div className="entity-type">
-                          {getEntityType(attributions[address].custodian) || 'Custodian'}
-                        </div>
+                    </div>
+                    <div className="field-group">
+                      <div className='label'>{capitalizeFirstLetter('entity type')}</div>
+                      <div className="entity-type">
+                        {getEntityType(attributions[address].custodian) || 'Custodian'}
                       </div>
-                    </EntityInfo>
-                  </EntityRow>
-                )}
-              </EntitiesContainer>
-            )}
-          </AddressInfoWrapper>
+                    </div>
+                  </EntityInfo>
+                </EntityRow>
+              )}
+            </EntitiesContainer>
+          )}
         </BsBlock>
       </FixedAddressHeader>
 
@@ -342,11 +349,20 @@ const Address: React.FC = () => {
           <h3>Summary</h3>
           <hr />
           <SummaryWrapper>
-            <div className='col'>
-              <span><strong>Balance:</strong> {satsToBTC(summary?.balance || 0)} BTC</span>
-              <span><strong>First block:</strong> {blockStats.firstBlock ? `${blockStats.firstBlock.blockNumber}` : 'N/A'}</span>
-              <span><strong>Last block:</strong> {blockStats.lastBlock ? `${blockStats.lastBlock.blockNumber}` : 'N/A'}</span>
-              <span>
+            <SummaryColumn>
+              <SummaryRow>
+                <strong>Balance:</strong>
+                <span>{satsToBTC(summary?.balance || 0)} BTC</span>
+              </SummaryRow>
+              <SummaryRow>
+                <strong>First block:</strong>
+                <span>{blockStats.firstBlock ? `${blockStats.firstBlock.blockNumber}` : 'N/A'}</span>
+              </SummaryRow>
+              <SummaryRow>
+                <strong>Last block:</strong>
+                <span>{blockStats.lastBlock ? `${blockStats.lastBlock.blockNumber}` : 'N/A'}</span>
+              </SummaryRow>
+              <SummaryRow>
                 <strong>Risk Score:</strong>
                 {isLoadingRiskScore ? (
                   'Loading...'
@@ -363,14 +379,23 @@ const Address: React.FC = () => {
                 ) : (
                   'N/A'
                 )}
-              </span>
-            </div>
+              </SummaryRow>
+            </SummaryColumn>
 
-            <div className='col'>
-              <span><strong>Script Type:</strong> {addrData?.script_type}</span>
-              <span><strong>Total received:</strong> {satsToBTC(summary?.total_received || 0)} BTC</span>
-              <span><strong>Total spent:</strong> {satsToBTC(summary?.total_spent || 0)} BTC</span>
-            </div>
+            <SummaryColumn>
+              <SummaryRow>
+                <strong>Script Type:</strong>
+                <span>{addrData?.script_type}</span>
+              </SummaryRow>
+              <SummaryRow>
+                <strong>Total received:</strong>
+                <span>{satsToBTC(summary?.total_received || 0)} BTC</span>
+              </SummaryRow>
+              <SummaryRow>
+                <strong>Total spent:</strong>
+                <span>{satsToBTC(summary?.total_spent || 0)} BTC</span>
+              </SummaryRow>
+            </SummaryColumn>
           </SummaryWrapper>
         </BsBlock>
 
