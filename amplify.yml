@@ -1,0 +1,29 @@
+version: 1
+frontend:
+  phases:
+    preBuild:
+      commands:
+        - echo "=== AWS Amplify Build Started ==="
+        - echo "Node.js version: $(node --version)"
+        - echo "NPM version: $(npm --version)"
+        - echo "Platform: $(uname -a)"
+        - echo "Installing dependencies for AWS Amplify..."
+        - npm ci --platform=linux --arch=x64 || (echo "Platform-specific install failed, trying regular install..." && npm install)
+        - echo "Dependencies installed successfully"
+        - echo "Verifying critical dependencies..."
+        - ls -la node_modules/@rollup/ || echo "Rollup modules not found, will use fallback"
+    build:
+      commands:
+        - echo "Building the application for AWS Amplify..."
+        - npm run build:amplify || (echo "Amplify build failed, trying fallback..." && npm run build:clean)
+        - echo "Build completed successfully"
+        - echo "Build artifacts:"
+        - ls -la dist/
+  artifacts:
+    baseDirectory: dist
+    files:
+      - '**/*'
+  cache:
+    paths:
+      - node_modules/**/*
+      - .npm-cache/**/* 
