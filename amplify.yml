@@ -7,9 +7,12 @@ frontend:
         - echo "Node.js version: $(node --version)"
         - echo "NPM version: $(npm --version)"
         - echo "Platform: $(uname -a)"
-        - echo "Installing dependencies for AWS Amplify..."
-        - 'npm ci --platform=linux --arch=x64 || (echo "Platform-specific install failed, trying regular install..." && npm install)'
-        - echo "Dependencies installed successfully"
+        - echo "Cleaning install..."
+        - rm -rf node_modules package-lock.json
+        - echo "Installing dependencies..."
+        - npm install --legacy-peer-deps
+        - npm rebuild
+        - echo "Dependencies installed and rebuilt"
         - echo "Verifying critical dependencies..."
         - 'ls -la node_modules/@rollup/ || echo "Rollup modules not found, will use fallback"'
     build:
@@ -26,4 +29,4 @@ frontend:
   cache:
     paths:
       - node_modules/**/*
-      - .npm-cache/**/* 
+      - .npm-cache/**/*
