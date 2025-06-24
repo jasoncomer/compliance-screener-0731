@@ -10,7 +10,7 @@ import { useAttribution } from '../../context/AttributionContext';
 import Pagination from '../../components/common/Pagination';
 import { useTheme } from '../../context/ThemeContext';
 import { Avatar, Tag, Card } from 'antd';
-import { UserOutlined, SafetyOutlined } from '@ant-design/icons';
+import { User, Shield } from 'lucide-react';
 import { getEntityTypeLabel, capitalizeFirstLetter } from '../../utils/display-labels';
 import { EEntityType } from '../../typings/SOT';
 import { getTagColor } from '../../utils/tag-colors';
@@ -272,7 +272,7 @@ const Address: React.FC = () => {
                     <Avatar
                       size={40}
                       src={getEntityLogo(attributions[address].entity)}
-                      icon={!getEntityLogo(attributions[address].entity) && <UserOutlined />}
+                      icon={!getEntityLogo(attributions[address].entity) && <User className="w-5 h-5" />}
                     />
                     <EntityInfo>
                       <div className="field-group">
@@ -297,7 +297,7 @@ const Address: React.FC = () => {
                   <Avatar
                     size={40}
                     src={getEntityLogo(attributions[address].bo)}
-                    icon={!getEntityLogo(attributions[address].bo) && <UserOutlined />}
+                    icon={!getEntityLogo(attributions[address].bo) && <User className="w-5 h-5" />}
                   />
                   <EntityInfo>
                     <div className="field-group">
@@ -321,7 +321,7 @@ const Address: React.FC = () => {
                   <Avatar
                     size={40}
                     src={getEntityLogo(attributions[address].custodian)}
-                    icon={!getEntityLogo(attributions[address].custodian) && <UserOutlined />}
+                    icon={!getEntityLogo(attributions[address].custodian) && <User className="w-5 h-5" />}
                   />
                   <EntityInfo>
                     <div className="field-group">
@@ -368,7 +368,7 @@ const Address: React.FC = () => {
                   'Loading...'
                 ) : riskScore ? (
                   <RiskScoreLink onClick={handleRiskScoreClick}>
-                    <SafetyOutlined />
+                    <Shield className="w-4 h-4" />
                     <span 
                       className="risk-score"
                       style={{ color: getRiskColor(riskScore.overallRisk * 100) }}

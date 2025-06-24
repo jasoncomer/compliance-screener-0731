@@ -1,9 +1,6 @@
 import React from 'react';
-import { Layout } from 'antd';
 import { cn } from '../lib/utils';
 import { Theme } from '../context/ThemeContext';
-
-const { Header: AntHeader } = Layout;
 
 interface StyledLayoutProps {
   children: React.ReactNode;
@@ -11,9 +8,9 @@ interface StyledLayoutProps {
 }
 
 export const StyledLayout: React.FC<StyledLayoutProps> = ({ children, className }) => (
-  <Layout className={cn("min-h-screen", className)}>
+  <div className={cn("min-h-screen", className)}>
     {children}
-  </Layout>
+  </div>
 );
 
 interface StyledHeaderProps {
@@ -23,13 +20,13 @@ interface StyledHeaderProps {
 }
 
 export const StyledHeader: React.FC<StyledHeaderProps> = ({ children, $theme, className }) => (
-  <AntHeader className={cn(
+  <header className={cn(
     "sticky top-0 z-50 px-6 h-12 flex items-center justify-between shadow-lg",
     $theme === 'light' ? "bg-white" : "bg-gray-900",
     className
   )}>
     {children}
-  </AntHeader>
+  </header>
 );
 
 interface HeaderSectionProps {
@@ -69,13 +66,13 @@ interface StyledContentProps {
 }
 
 export const StyledContent: React.FC<StyledContentProps> = ({ children, $theme, className }) => (
-  <Layout.Content className={cn(
+  <main className={cn(
     "p-6 overflow-auto min-h-[calc(100vh-50px)]",
     $theme === 'light' ? "bg-white" : "bg-gray-900",
     className
   )}>
     {children}
-  </Layout.Content>
+  </main>
 );
 
 interface MainContentProps {
@@ -86,13 +83,13 @@ interface MainContentProps {
 }
 
 export const MainContent: React.FC<MainContentProps> = ({ children, $theme, className }) => (
-  <Layout.Content className={cn(
-    "transition-all duration-300 p-8 overflow-auto",
+  <main className={cn(
+    "transition-all duration-300 p-8 overflow-auto flex-1",
     $theme === 'light' ? "bg-gray-50" : "bg-gray-800",
     className
   )}>
     {children}
-  </Layout.Content>
+  </main>
 );
 
 interface UserMenuButtonProps {

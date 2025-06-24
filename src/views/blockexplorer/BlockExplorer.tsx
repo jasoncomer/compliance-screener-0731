@@ -1,10 +1,9 @@
 import { Route, Routes, useNavigate, useLocation } from 'react-router-dom';
 import React, { useState, useEffect } from 'react';
-import { GlobalOutlined, MessageOutlined } from '@ant-design/icons';
+import { Globe, MessageSquare, Box, ArrowLeftRight, Wallet } from 'lucide-react';
 import Input from '../../components/common/Input';
 import { Button } from 'antd';
 
-import ViewWrapper from '../../components/ViewWrapper';
 import { determineInputType } from '../../utils/crypto';
 import TransactionView from './TransactionView';
 import Address from './Address';
@@ -30,7 +29,7 @@ interface FixedHeaderProps {
 
 const FixedHeader: React.FC<FixedHeaderProps> = ({ children, className }) => (
   <div className={cn(
-    "sticky top-0 mb-5 bg-white dark:bg-[#141414] z-10 flex justify-between items-center px-5",
+    "sticky top-0 mb-3 bg-white dark:bg-[#141414] z-10 flex justify-between items-center px-5 py-2",
     className
   )}>
     {children}
@@ -58,7 +57,7 @@ interface SearchProps {
 
 const Search: React.FC<SearchProps> = ({ placeholder, value, onChange, onPressEnter, className }) => (
   <Input 
-    className={cn("w-[400px] my-2.5", className)}
+    className={cn("w-[400px] my-1", className)}
     placeholder={placeholder}
     value={value}
     onChange={onChange}
@@ -66,28 +65,95 @@ const Search: React.FC<SearchProps> = ({ placeholder, value, onChange, onPressEn
   />
 );
 
-interface StyledViewWrapperProps {
+interface CustomHeaderProps {
   icon: React.ReactNode;
   title: string;
-  fullWidth?: boolean;
   children: React.ReactNode;
   className?: string;
 }
 
-const StyledViewWrapper: React.FC<StyledViewWrapperProps> = ({ icon, title, fullWidth, children, className }) => (
-  <ViewWrapper 
-    icon={icon}
-    title={title}
-    fullWidth={fullWidth}
-    className={cn(
-      "h-full overflow-hidden flex flex-col",
-      className
-    )}
-  >
-    <div className="sticky mb-0 top-0 bg-white dark:bg-[#141414]">
-      {children}
+const CustomHeader: React.FC<CustomHeaderProps> = ({ icon, title, children, className }) => (
+  <div className={cn(
+    "w-full min-h-screen bg-background text-foreground font-['Inter']",
+    "px-6 py-6 lg:px-8 max-w-full",
+    "overflow-hidden flex flex-col",
+    className
+  )}>
+    <header className="mb-4">
+      <div className="flex items-center gap-3">
+        {icon && (
+          <div className="flex items-center justify-center w-8 h-8 text-muted-foreground">
+            {icon}
+          </div>
+        )}
+        <h1 className="text-2xl font-semibold tracking-tight text-foreground font-['Inter']">
+          {title}
+        </h1>
+      </div>
+    </header>
+    <main className="flex-1 overflow-hidden">
+      <div className="sticky mb-0 top-0 bg-white dark:bg-[#141414]">
+        {children}
+      </div>
+    </main>
+  </div>
+);
+
+interface EmptyStateProps {
+  className?: string;
+}
+
+const EmptyState: React.FC<EmptyStateProps> = ({ className }) => (
+  <div className={cn(
+    "flex flex-col items-center justify-center py-12 px-6 text-center",
+    className
+  )}>
+    <h2 className="text-xl font-semibold text-foreground mb-3">
+      Search the Blockchain
+    </h2>
+    
+    <p className="text-muted-foreground mb-6 max-w-md">
+      Use the search bar above to explore transactions, addresses, and blocks on the blockchain.
+    </p>
+    
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-2xl">
+      <div className="p-4 rounded-lg border border-border bg-card hover:shadow-md transition-shadow">
+        <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/20 flex items-center justify-center mb-3 mx-auto">
+          <ArrowLeftRight className="text-blue-600 dark:text-blue-400 w-5 h-5" />
+        </div>
+        <h3 className="font-medium text-foreground mb-2">Transactions</h3>
+        <p className="text-sm text-muted-foreground">
+          Search by transaction hash to view details
+        </p>
+      </div>
+      
+      <div className="p-4 rounded-lg border border-border bg-card hover:shadow-md transition-shadow">
+        <div className="w-10 h-10 rounded-full bg-green-100 dark:bg-green-900/20 flex items-center justify-center mb-3 mx-auto">
+          <Wallet className="text-green-600 dark:text-green-400 w-5 h-5" />
+        </div>
+        <h3 className="font-medium text-foreground mb-2">Addresses</h3>
+        <p className="text-sm text-muted-foreground">
+          Explore wallet addresses and their activity
+        </p>
+      </div>
+      
+      <div className="p-4 rounded-lg border border-border bg-card hover:shadow-md transition-shadow">
+        <div className="w-10 h-10 rounded-full bg-purple-100 dark:bg-purple-900/20 flex items-center justify-center mb-3 mx-auto">
+          <Box className="text-purple-600 dark:text-purple-400 w-5 h-5" />
+        </div>
+        <h3 className="font-medium text-foreground mb-2">Blocks</h3>
+        <p className="text-sm text-muted-foreground">
+          View block information by block number
+        </p>
+      </div>
     </div>
-  </ViewWrapper>
+    
+    <div className="mt-6 p-3 rounded-lg bg-muted/50 border border-border max-w-md">
+      <p className="text-sm text-muted-foreground">
+        <strong>Tip:</strong> Simply paste a transaction hash, wallet address, or block number in the search bar above to get started.
+      </p>
+    </div>
+  </div>
 );
 
 interface NotesButtonProps {
@@ -165,11 +231,14 @@ const BlockExplorer: React.FC = () => {
 
   const searchPlaceholder = 'Search by block number, tx hash or address';
 
+  const isEmptyState = !location.pathname.includes('/transaction/') && 
+                       !location.pathname.includes('/address/') && 
+                       !location.pathname.includes('/block/');
+
   return (
-    <StyledViewWrapper
-      icon={<GlobalOutlined style={{ fontSize: '28px', color: '#C74D1B', fontWeight: 'bold' }} />}
+    <CustomHeader
+      icon={<Globe className="w-7 h-7 text-[#C74D1B]" />}
       title="Block Explorer"
-      fullWidth={true}
     >
       <ExplorerLayout>
         <FixedHeader>
@@ -182,7 +251,7 @@ const BlockExplorer: React.FC = () => {
           {(currentContext.type === 'transaction' || currentContext.type === 'address') && (
             <NotesButton 
               type="primary" 
-              icon={<MessageOutlined style={{ fontSize: 20 }} />} 
+              icon={<MessageSquare className="w-5 h-5" />} 
               onClick={showNotesModal} 
               title="View Notes"
             >
@@ -192,11 +261,15 @@ const BlockExplorer: React.FC = () => {
         </FixedHeader>
 
         <ContentWrapper>
-          <Routes>
-            <Route path="/transaction/:txid" element={<TransactionView />} />
-            <Route path="/block/:block" element={<BlockView />} />
-            <Route path="/address/:address" element={<Address />} />
-          </Routes>
+          {isEmptyState ? (
+            <EmptyState />
+          ) : (
+            <Routes>
+              <Route path="/transaction/:txid" element={<TransactionView />} />
+              <Route path="/block/:block" element={<BlockView />} />
+              <Route path="/address/:address" element={<Address />} />
+            </Routes>
+          )}
         </ContentWrapper>
       </ExplorerLayout>
 
@@ -209,7 +282,7 @@ const BlockExplorer: React.FC = () => {
           address={currentContext.type === 'address' ? currentContext.id : undefined}
         />
       )}
-    </StyledViewWrapper>
+    </CustomHeader>
   );
 };
 

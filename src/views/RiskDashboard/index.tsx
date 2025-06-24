@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Card, Input, Spin, Alert, Typography, Skeleton } from 'antd';
 import { SearchOutlined, BarChartOutlined } from '@ant-design/icons';
 import { colors } from '../../styles/variables';
+import { useTheme } from '../../context/ThemeContext';
 import ViewWrapper from '../../components/ViewWrapper';
 import { 
   RiskAssessment, 
@@ -139,6 +140,7 @@ const LoadingCard = styled(Card)`
 `;
 
 const RiskDashboard: React.FC = () => {
+  const { theme } = useTheme();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hasData, setHasData] = useState(false); // Changed to false to only show searchbar by default
@@ -519,7 +521,7 @@ const RiskDashboard: React.FC = () => {
         <FlexRow>
           {/* Address Header - Full Width */}
           <FlexCol className="full-width">
-            <Card className="bg-gray-800 rounded-2xl border-gray-700">
+            <Card className={`${theme === 'light' ? 'bg-white border-gray-200' : 'bg-gray-800 border-gray-700'} rounded-2xl`}>
               <AddressHeader 
                 address={address}
                 entityTags={entityTags}
@@ -669,7 +671,7 @@ const RiskDashboard: React.FC = () => {
           {/* Loading indicator */}
           <div style={{ textAlign: 'center', padding: '20px', marginTop: '16px' }}>
             <Spin size="large" />
-            <div style={{ marginTop: '12px', color: '#9ca3af', fontSize: '14px' }}>
+            <div style={{ marginTop: '12px', color: theme === 'light' ? '#6b7280' : '#9ca3af', fontSize: '14px' }}>
               Analyzing blockchain address and gathering risk intelligence...
             </div>
           </div>

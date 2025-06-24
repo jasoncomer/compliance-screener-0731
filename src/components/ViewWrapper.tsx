@@ -1,5 +1,4 @@
 import React, { ReactNode } from 'react';
-import { useTheme } from '../context/ThemeContext';
 import { cn } from '../lib/utils';
 
 interface ViewWrapperProps {
@@ -17,27 +16,32 @@ const ViewWrapper: React.FC<ViewWrapperProps> = ({
   className,
   fullWidth = false
 }) => {
-  const { theme } = useTheme();
-  
-  console.log('ViewWrapper: Rendering with theme:', theme, 'title:', title);
-
   return (
     <div 
       className={cn(
-        "w-full h-auto p-5",
-        theme === 'light' ? "bg-white" : "bg-gray-900",
-        fullWidth ? "max-w-full" : "max-w-6xl",
-        "view-wrapper",
+        "w-full min-h-screen bg-background text-foreground font-['Inter']",
+        "px-6 py-8 lg:px-8",
+        fullWidth ? "max-w-full" : "max-w-7xl mx-auto",
         className
       )}
     >
       {title && (
-        <div className="flex items-center mb-4 mt-0">
-          {icon && <span className="mr-2">{icon}</span>}
-          <h2 className="m-0 text-3xl">{title}</h2>
-        </div>
+        <header className="mb-8">
+          <div className="flex items-center gap-3">
+            {icon && (
+              <div className="flex items-center justify-center w-8 h-8 text-muted-foreground">
+                {icon}
+              </div>
+            )}
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground font-['Inter']">
+              {title}
+            </h1>
+          </div>
+        </header>
       )}
-      {children}
+      <main className="space-y-6 font-['Inter']">
+        {children}
+      </main>
     </div>
   );
 };

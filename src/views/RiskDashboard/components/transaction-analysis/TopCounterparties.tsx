@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Card, Typography, Space, Button, Table, Tooltip, Modal, Tabs } from 'antd';
-
+import { useTheme } from '../../../../context/ThemeContext';
 import { TransformedTransaction } from '../../../../utils/transactionTransformers';
 
 const { Title, Text } = Typography;
@@ -26,6 +26,7 @@ const TopCounterparties: React.FC<TopCounterpartiesProps> = ({
   onCounterpartyClick,
   transactions = []
 }) => {
+  const { theme } = useTheme();
   const [activeTab, setActiveTab] = useState('all');
   const [counterpartyMode, setCounterpartyMode] = useState<'volume' | 'txns'>('volume');
   const [selectedCounterparty, setSelectedCounterparty] = useState<Counterparty | null>(null);
@@ -53,7 +54,7 @@ const TopCounterparties: React.FC<TopCounterpartiesProps> = ({
       dataIndex: 'time',
       key: 'time',
       width: 150,
-      render: (text: string) => <span className="text-gray-400 text-xs">{text}</span>
+      render: (text: string) => <span className={`${theme === 'light' ? 'text-gray-500' : 'text-gray-400'} text-xs`}>{text}</span>
     },
     {
       title: 'Direction',
@@ -74,13 +75,13 @@ const TopCounterparties: React.FC<TopCounterpartiesProps> = ({
       title: 'Amount',
       dataIndex: 'description',
       key: 'description',
-      render: (text: string) => <span className="text-white text-xs font-mono">{text}</span>
+      render: (text: string) => <span className={`${theme === 'light' ? 'text-gray-900' : 'text-white'} text-xs font-mono`}>{text}</span>
     },
     {
         title: 'USD Value',
         dataIndex: 'usd',
         key: 'usd',
-        render: (text: string) => <span className="text-gray-400 text-xs">{text}</span>
+        render: (text: string) => <span className={`${theme === 'light' ? 'text-gray-500' : 'text-gray-400'} text-xs`}>{text}</span>
     }
   ];
 
@@ -92,7 +93,7 @@ const TopCounterparties: React.FC<TopCounterpartiesProps> = ({
       key: 'entity', 
       width: 150,
       render: (text: string, row: any) => {
-        if (!row.entity) return <span className="text-gray-500 text-xs">-</span>;
+        if (!row.entity) return <span className={`${theme === 'light' ? 'text-gray-500' : 'text-gray-500'} text-xs`}>-</span>;
         
         return (
           <Tooltip 
@@ -100,7 +101,7 @@ const TopCounterparties: React.FC<TopCounterpartiesProps> = ({
             placement="top"
           >
             <span 
-              className="text-white text-xs cursor-pointer hover:text-blockscout-orange transition-colors"
+              className={`${theme === 'light' ? 'text-gray-900' : 'text-white'} text-xs cursor-pointer hover:text-blockscout-orange transition-colors`}
               onClick={(e) => {
                 e.stopPropagation();
                 onCounterpartyClick?.(row.address);
@@ -119,7 +120,7 @@ const TopCounterparties: React.FC<TopCounterpartiesProps> = ({
       key: 'direction', 
       width: 80,
       render: (direction: 'inflow' | 'outflow', row: any) => {
-        if (!row.entity) return <span className="text-gray-500 text-xs">-</span>;
+        if (!row.entity) return <span className={`${theme === 'light' ? 'text-gray-500' : 'text-gray-500'} text-xs`}>-</span>;
         
         return (
           <span className={`px-1.5 py-0.5 rounded text-xs font-medium ${
@@ -138,8 +139,8 @@ const TopCounterparties: React.FC<TopCounterpartiesProps> = ({
       key: 'amount', 
       width: 80,
       render: (amt: string, row: any) => {
-        if (!row.entity) return <span className="text-gray-500 text-xs">-</span>;
-        return <span className="text-gray-500 text-xs font-mono">{amt}</span>;
+        if (!row.entity) return <span className={`${theme === 'light' ? 'text-gray-500' : 'text-gray-500'} text-xs`}>-</span>;
+        return <span className={`${theme === 'light' ? 'text-gray-500' : 'text-gray-500'} text-xs font-mono`}>{amt}</span>;
       }
     },
     { 
@@ -148,8 +149,8 @@ const TopCounterparties: React.FC<TopCounterpartiesProps> = ({
       key: 'txns', 
       width: 60,
       render: (txns: number, row: any) => {
-        if (!row.entity) return <span className="text-gray-500 text-xs">-</span>;
-        return <span className="text-gray-400 text-xs">{txns} txns</span>;
+        if (!row.entity) return <span className={`${theme === 'light' ? 'text-gray-500' : 'text-gray-500'} text-xs`}>-</span>;
+        return <span className={`${theme === 'light' ? 'text-gray-500' : 'text-gray-400'} text-xs`}>{txns} txns</span>;
       }
     },
   ];
@@ -180,9 +181,9 @@ const TopCounterparties: React.FC<TopCounterpartiesProps> = ({
   return (
     <div className="flex-1 min-w-[320px] flex flex-col justify-stretch">
       <Card
-        className="bg-gray-800 rounded-2xl border-gray-700 h-full flex flex-col"
+        className={`${theme === 'light' ? 'bg-white border-gray-200' : 'bg-gray-800 border-gray-700'} rounded-2xl h-full flex flex-col`}
         title={
-          <Title level={5} className="text-white m-0">
+          <Title level={5} className={`${theme === 'light' ? 'text-gray-900' : 'text-white'} m-0`}>
             Top Counterparties
           </Title>
         }
@@ -195,8 +196,8 @@ const TopCounterparties: React.FC<TopCounterpartiesProps> = ({
               className={`rounded-lg ${
                 counterpartyMode === 'volume'
                   ? 'bg-blockscout-orange'
-                  : 'bg-gray-700'
-              } text-white border-none`}
+                  : theme === 'light' ? 'bg-gray-200' : 'bg-gray-700'
+              } ${theme === 'light' ? 'text-gray-900' : 'text-white'} border-none`}
             >
               By Volume
             </Button>
@@ -207,8 +208,8 @@ const TopCounterparties: React.FC<TopCounterpartiesProps> = ({
               className={`rounded-lg ${
                 counterpartyMode === 'txns'
                   ? 'bg-blockscout-orange'
-                  : 'bg-gray-700'
-              } text-white border-none`}
+                  : theme === 'light' ? 'bg-gray-200' : 'bg-gray-700'
+              } ${theme === 'light' ? 'text-gray-900' : 'text-white'} border-none`}
             >
               By Transactions
             </Button>
@@ -223,20 +224,20 @@ const TopCounterparties: React.FC<TopCounterpartiesProps> = ({
           flexDirection: 'column'
         }}
       >
-        <div className="border-b border-gray-700">
+        <div className={`border-b ${theme === 'light' ? 'border-gray-200' : 'border-gray-700'}`}>
           <Tabs 
               activeKey={activeTab} 
               onChange={setActiveTab} 
-              className="
+              className={`
                 px-4
                 [&_.ant-tabs-nav]:mb-0
                 [&_.ant-tabs-tab]:py-3
                 [&_.ant-tabs-tab]:text-sm
-                [&_.ant-tabs-tab-btn]:text-gray-400 
-                [&_.ant-tabs-tab-btn]:hover:text-white
+                [&_.ant-tabs-tab-btn]:${theme === 'light' ? 'text-gray-500' : 'text-gray-400'}
+                [&_.ant-tabs-tab-btn]:hover:${theme === 'light' ? 'text-gray-900' : 'text-white'}
                 [&_.ant-tabs-tab-active_.ant-tabs-tab-btn]:text-blockscout-orange
                 [&_.ant-tabs-ink-bar]:bg-blockscout-orange
-              "
+              `}
               items={[
                 { key: 'all', label: `All (${allCounterparties.length})` },
                 { key: 'inflow', label: `Inflow (${incoming.length})` },
@@ -256,13 +257,13 @@ const TopCounterparties: React.FC<TopCounterpartiesProps> = ({
             })}
             tableLayout="fixed"
             scroll={{ y: 200 }}
-            rowClassName="h-8 cursor-pointer hover:bg-gray-800"
+            rowClassName={`h-8 cursor-pointer hover:${theme === 'light' ? 'bg-gray-50' : 'bg-gray-800'}`}
             components={{
               header: {
-                cell: (props: any) => <th {...props} className="bg-gray-900 text-gray-500 font-semibold text-xs p-2" />,
+                cell: (props: any) => <th {...props} className={`${theme === 'light' ? 'bg-gray-50 text-gray-600' : 'bg-gray-900 text-gray-500'} font-semibold text-xs p-2`} />,
               },
               body: {
-                cell: (props: any) => <td {...props} className="p-2 text-xs border-b border-gray-700" />,
+                cell: (props: any) => <td {...props} className={`p-2 text-xs border-b ${theme === 'light' ? 'border-gray-200' : 'border-gray-700'}`} />,
               },
             }}
           />
@@ -295,27 +296,27 @@ const TopCounterparties: React.FC<TopCounterpartiesProps> = ({
       >
         {selectedCounterparty && (
           <div className="space-y-6">
-            <div className="bg-gray-800 p-4 rounded-lg grid grid-cols-2 gap-x-6 gap-y-4">
+            <div className={`${theme === 'light' ? 'bg-gray-50' : 'bg-gray-800'} p-4 rounded-lg grid grid-cols-2 gap-x-6 gap-y-4`}>
               <div>
-                <Text className="text-gray-400 block text-sm">Entity</Text>
-                <Text className="text-white text-base">{selectedCounterparty.entity}</Text>
+                <Text className={`${theme === 'light' ? 'text-gray-500' : 'text-gray-400'} block text-sm`}>Entity</Text>
+                <Text className={`${theme === 'light' ? 'text-gray-900' : 'text-white'} text-base`}>{selectedCounterparty.entity}</Text>
               </div>
               <div>
-                <Text className="text-gray-400 block text-sm">Total Amount</Text>
-                <Text className="text-white text-base font-mono">{selectedCounterparty.amount}</Text>
+                <Text className={`${theme === 'light' ? 'text-gray-500' : 'text-gray-400'} block text-sm`}>Total Amount</Text>
+                <Text className={`${theme === 'light' ? 'text-gray-900' : 'text-white'} text-base font-mono`}>{selectedCounterparty.amount}</Text>
               </div>
               <div>
-                <Text className="text-gray-400 block text-sm">Address</Text>
-                <Text className="text-white text-base font-mono">{selectedCounterparty.address}</Text>
+                <Text className={`${theme === 'light' ? 'text-gray-500' : 'text-gray-400'} block text-sm`}>Address</Text>
+                <Text className={`${theme === 'light' ? 'text-gray-900' : 'text-white'} text-base font-mono`}>{selectedCounterparty.address}</Text>
               </div>
               <div>
-                <Text className="text-gray-400 block text-sm">Transactions</Text>
-                <Text className="text-white text-base">{selectedCounterparty.txns}</Text>
+                <Text className={`${theme === 'light' ? 'text-gray-500' : 'text-gray-400'} block text-sm`}>Transactions</Text>
+                <Text className={`${theme === 'light' ? 'text-gray-900' : 'text-white'} text-base`}>{selectedCounterparty.txns}</Text>
               </div>
             </div>
             
             <div>
-              <Title level={5} className="text-white mb-3">Recent Transactions</Title>
+              <Title level={5} className={`${theme === 'light' ? 'text-gray-900' : 'text-white'} mb-3`}>Recent Transactions</Title>
               <Table
                 columns={transactionColumns}
                 dataSource={getCounterpartyTransactions(selectedCounterparty.address)}
@@ -325,10 +326,10 @@ const TopCounterparties: React.FC<TopCounterpartiesProps> = ({
                 className="bg-transparent"
                 components={{
                   header: {
-                    cell: (props: any) => <th {...props} className="bg-gray-900 text-gray-500 font-semibold text-xs p-2" />,
+                    cell: (props: any) => <th {...props} className={`${theme === 'light' ? 'bg-gray-50 text-gray-600' : 'bg-gray-900 text-gray-500'} font-semibold text-xs p-2`} />,
                   },
                   body: {
-                    cell: (props: any) => <td {...props} className="p-2 text-xs border-b border-gray-700" />,
+                    cell: (props: any) => <td {...props} className={`p-2 text-xs border-b ${theme === 'light' ? 'border-gray-200' : 'border-gray-700'}`} />,
                   },
                 }}
               />
