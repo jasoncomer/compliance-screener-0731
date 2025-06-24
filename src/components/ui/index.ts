@@ -19,7 +19,9 @@ export { default as Pagination } from '../common/Pagination';
 // Re-export existing UI components
 export * from './button';
 export * from './dialog';
+export * from './dropdown-menu';
 export * from './label';
 export * from './select';
 export * from './switch';
 export * from './tabs';
+export * from './tooltip';
