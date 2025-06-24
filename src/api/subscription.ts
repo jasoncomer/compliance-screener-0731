@@ -26,11 +26,13 @@ export const subscription = {
    */
   createOrganizationSubscription: async (
     organizationId: string,
-    tierId: string
+    tierId: string,
+    billingPeriod: 'monthly' | 'yearly'
   ): Promise<IOrganizationSubscription> => {
     const response = await axiosInstance.post('/subscriptions/organizations', {
       organizationId,
       tierId,
+      billingPeriod,
     });
     return response.data.data;
   },
@@ -40,10 +42,12 @@ export const subscription = {
    */
   updateOrganizationSubscription: async (
     organizationId: string,
-    tierId: string
+    tierId: string,
+    billingPeriod: 'monthly' | 'yearly'
   ): Promise<IOrganizationSubscription> => {
     const response = await axiosInstance.put(`/subscriptions/organizations/${organizationId}`, {
       tierId,
+      billingPeriod,
     });
     return response.data.data;
   },

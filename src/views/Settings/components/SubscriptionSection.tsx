@@ -80,7 +80,8 @@ const SubscriptionSection: React.FC<SubscriptionSectionProps> = ({ theme }) => {
     try {
       await dispatch(updateOrganizationSubscription({
         organizationId: organization._id,
-        tierId: selectedTier.id as TierId
+        tierId: selectedTier.id as TierId,
+        billingPeriod: billingPeriod
       })).unwrap();
       message.success('Subscription updated successfully');
       setConfirmModalVisible(false);
@@ -184,18 +185,6 @@ const SubscriptionSection: React.FC<SubscriptionSectionProps> = ({ theme }) => {
         <Text>Manage your organization's subscription plan and billing</Text>
       </div>
 
-      <div style={{ marginBottom: 16, textAlign: 'right' }}>
-        <Radio.Group
-          value={billingPeriod}
-          onChange={e => setBillingPeriod(e.target.value)}
-          optionType="button"
-          buttonStyle="solid"
-        >
-          <Radio.Button value="monthly">Monthly</Radio.Button>
-          <Radio.Button value="yearly">Yearly</Radio.Button>
-        </Radio.Group>
-      </div>
-
       {currentSubscription && (
         <Card 
           title={
@@ -211,15 +200,12 @@ const SubscriptionSection: React.FC<SubscriptionSectionProps> = ({ theme }) => {
             <Descriptions.Item label="Plan">{currentTier?.name || 'Unknown'}</Descriptions.Item>
             <Descriptions.Item label="Status">{getStatusTag(currentSubscription.status)}</Descriptions.Item>
             <Descriptions.Item label="Billing Period">
-              {(() => {
-                const priceObj = currentTier?.prices.find(p => p.billingPeriod === billingPeriod);
-                return priceObj ? (billingPeriod === 'monthly' ? 'Monthly' : 'Yearly') : 'N/A';
-              })()}
+              {currentSubscription.billingPeriod === 'monthly' ? 'Monthly' : 'Yearly'}
             </Descriptions.Item>
             <Descriptions.Item label="Price">
               {(() => {
-                const priceObj = currentTier?.prices.find(p => p.billingPeriod === billingPeriod);
-                return priceObj ? `$${priceObj.amount} ${priceObj.currency}` : 'N/A';
+                const currentPrice = currentTier?.prices.find(p => p.billingPeriod === currentSubscription.billingPeriod);
+                return currentPrice ? `$${currentPrice.amount} ${currentPrice.currency}` : 'N/A';
               })()}
             </Descriptions.Item>
             <Descriptions.Item label="Current Period">
@@ -243,7 +229,21 @@ const SubscriptionSection: React.FC<SubscriptionSectionProps> = ({ theme }) => {
       )}
 
       <Card 
-        title="Available Plans" 
+        title={
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span>Available Plans</span>
+            <Radio.Group
+              value={billingPeriod}
+              onChange={e => setBillingPeriod(e.target.value)}
+              optionType="button"
+              buttonStyle="solid"
+              size="small"
+            >
+              <Radio.Button value="monthly">Monthly</Radio.Button>
+              <Radio.Button value="yearly">Yearly</Radio.Button>
+            </Radio.Group>
+          </div>
+        }
         bordered={false}
         className={theme === 'dark' ? 'dark-card' : ''}
       >

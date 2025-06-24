@@ -48,6 +48,7 @@ export interface IOrganizationSubscription {
   _id?: string;
   organizationId: string | Types.ObjectId;
   tierId: TierId;
+  billingPeriod: 'monthly' | 'yearly';
   status: ESubscriptionStatus;
   stripeCustomerId?: string;
   stripeSubscriptionId?: string;
