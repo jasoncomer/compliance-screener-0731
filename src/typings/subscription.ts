@@ -19,14 +19,14 @@ export interface ITierFeatures {
   dataRetentionMonths: number;
 }
 
-export type TierId = 'free' | 'trial' | 'professional' | 'enterprise';
+export type TierId = 'free' | 'starter' | 'growth' | 'custom';
 
 // Define the subscription tier model
 export interface ISubscriptionTier {
   id?: TierId;
   name: string;
   description?: string;
-  price: IPrice;
+  prices: IPrice[];
   features: ITierFeatures;
   isActive: boolean;
   sortOrder: number;
