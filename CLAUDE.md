@@ -7,8 +7,7 @@ Blockscout App is a comprehensive blockchain monitoring and compliance platform 
    - React 18 with TypeScript
    - Vite as build tool
    - Redux Toolkit for state management
-   - Styled-components for styling
-   - UI libraries: Ant Design and Material UI
+   - UI libraries: Tailwind CSS, Shadcn components, Lucide React
    - React Router for navigation
 
 2. **Core Features**:
@@ -56,7 +55,7 @@ The API is a Node.js/Express application written in TypeScript that serves as th
 - **TypeScript**: Strict mode enabled, with noUnusedLocals and noUnusedParameters checks
 - **Imports**: Use named imports for clarity, organize imports by external/internal/types
 - **Components**: Use functional components with React hooks
-- **Styling**: Uses styled-components for CSS-in-JS styling
+- **Styling**: Tailwind CSS. Shadcn components. Lucide React for icons.
 - **State Management**: Uses Redux Toolkit (@reduxjs/toolkit)
 - **Error Handling**: Use try/catch for async operations, proper error propagation
 - **Naming**:
