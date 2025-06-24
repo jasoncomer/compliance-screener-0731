@@ -18,7 +18,6 @@ import { cn } from '../lib/utils';
 import { Theme } from '../context/ThemeContext';
 import { useAppContext } from '../context/AppContext';
 import BSLogo from '../assets/darkmode_logo.png';
-import './SideNav.css';
 
 const { Sider } = Layout;
 
@@ -127,8 +126,8 @@ const SideNav: React.FC<SideNavProps> = ({ theme, collapsed, onCollapse }) => {
         "sticky top-0 h-screen transition-all duration-300",
         theme === 'light' ? "bg-white border-r border-gray-200" : "bg-gray-900 border-r border-gray-700"
       )}
-      width={288}
-      collapsedWidth={96}
+      width={238}
+      collapsedWidth={56}
     >
       <div className="flex flex-col h-full">
         <div className={cn(
