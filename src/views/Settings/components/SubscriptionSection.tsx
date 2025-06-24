@@ -12,7 +12,7 @@ import {
   message,
   Form,
   Input,
-  Select
+  Select,
 } from 'antd';
 import { CrownOutlined, CheckCircleOutlined, CloseCircleOutlined } from '@ant-design/icons';
 import { useAppDispatch, useAppSelector } from '../../../store/hooks';
@@ -30,6 +30,7 @@ import { ISubscriptionTier, ESubscriptionStatus, TierId } from '../../../typings
 import { api } from '../../../api/api';
 import { IContactSalesFormData } from '../../../api/contactSales';
 import { format } from 'date-fns';
+import { useAppContext } from '../../../context/AppContext';
 
 const { Title, Text } = Typography;
 
@@ -39,6 +40,7 @@ interface SubscriptionSectionProps {
 
 const SubscriptionSection: React.FC<SubscriptionSectionProps> = ({ theme }) => {
   const dispatch = useAppDispatch();
+  const { user } = useAppContext();
   const tiers = useAppSelector(selectSubscriptionTiers);
   const currentSubscription = useAppSelector(selectCurrentSubscription);
   const loading = useAppSelector(selectSubscriptionLoading);
@@ -59,6 +61,10 @@ const SubscriptionSection: React.FC<SubscriptionSectionProps> = ({ theme }) => {
 
   const handleTierSelect = (tier: ISubscriptionTier) => {
     if (tier.id === 'enterprise') {
+      contactForm.setFieldsValue({
+        email: user?.email || '',
+        company: organization?.name || ''
+      });
       setContactSalesModalVisible(true);
     } else {
       setSelectedTier(tier);
@@ -155,6 +161,9 @@ const SubscriptionSection: React.FC<SubscriptionSectionProps> = ({ theme }) => {
   // Sort tiers by sortOrder
   const sortedTiers = [...tiers].sort((a, b) => a.sortOrder - b.sortOrder);
 
+  // Debug: Log the tiers being displayed
+  console.log('Available tiers:', sortedTiers.map(tier => ({ id: tier.id, name: tier.name, isActive: tier.isActive })));
+
   if (loading) {
     return (
       <div style={{ textAlign: 'center', padding: '40px' }}>
@@ -175,7 +184,11 @@ const SubscriptionSection: React.FC<SubscriptionSectionProps> = ({ theme }) => {
 
       {currentSubscription && (
         <Card 
-          title="Current Subscription" 
+          title={
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span>Current Plan</span>
+            </div>
+          }
           style={{ marginBottom: '24px' }} 
           bordered={false}
           className={theme === 'dark' ? 'dark-card' : ''}
@@ -214,61 +227,97 @@ const SubscriptionSection: React.FC<SubscriptionSectionProps> = ({ theme }) => {
         bordered={false}
         className={theme === 'dark' ? 'dark-card' : ''}
       >
-        <Row gutter={[16, 16]}>
-          {sortedTiers.map(tier => (
-            <Col xs={24} sm={24} md={12} lg={8} xl={8} xxl={6} key={String(tier.id)}>
-              <Card 
-                title={tier.name} 
-                bordered 
-                style={{ 
-                  height: '100%',
-                  borderColor: currentTier?.id === tier.id ? '#1890ff' : undefined,
-                  boxShadow: currentTier?.id === tier.id ? '0 0 10px rgba(24,144,255,0.2)' : undefined
-                }}
-              >
-                <div style={{ marginBottom: '16px' }}>
-                  {tier.id === 'enterprise' ? (
-                    <>
-                      <Title level={4}>Custom Pricing</Title>
-                      <Text>{tier.description}</Text>
-                    </>
-                  ) : (
-                    <>
-                      <Title level={4}>${tier.price.amount.toLocaleString()}/{tier.price.billingPeriod === 'monthly' ? 'mo' : 'yr'}</Title>
-                      <Text>{tier.description}</Text>
-                    </>
-                  )}
-                </div>
-                
-                <Descriptions column={1} size="small">
-                  <Descriptions.Item label="Max Members">{tier.features.maxMembers}</Descriptions.Item>
-                  {/* <Descriptions.Item label="Max Organizations">{tier.features.maxOrganizations}</Descriptions.Item> */}
-                  <Descriptions.Item label="Compliance Transactions">{tier.features.maxTransactionsPerMonth.toLocaleString()}</Descriptions.Item>
-                  <Descriptions.Item label="Data Retention">{tier.features.dataRetentionMonths} months</Descriptions.Item>
-                  <Descriptions.Item label="Support" className='capitalize'>{tier.features.support}</Descriptions.Item>
-                  {/* <Descriptions.Item label="Custom Branding">{renderFeatureValue(tier.features.customBranding)}</Descriptions.Item> */}
-                  <Descriptions.Item label="API Access">{renderFeatureValue(tier.features.apiAccess)}</Descriptions.Item>
-                  {/* <Descriptions.Item label="CSAM Scanning">{renderFeatureValue(tier.features.allowCSAM)}</Descriptions.Item> */}
-                </Descriptions>
-
-                <Button 
-                  type="primary" 
-                  block 
-                  style={{ marginTop: '16px' }}
-                  disabled={currentTier?.id === tier.id}
-                  onClick={() => handleTierSelect(tier)}
+        {sortedTiers.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '40px' }}>
+            <Text type="secondary">No subscription plans available at the moment.</Text>
+          </div>
+        ) : (
+          <Row gutter={[16, 16]}>
+            {sortedTiers.map(tier => (
+              <Col xs={24} sm={24} md={8} lg={8} xl={8} xxl={8} key={String(tier.id)}>
+                <Card 
+                  title={tier.name} 
+                  bordered 
+                  style={{ 
+                    height: '100%',
+                    borderColor: currentTier?.id === tier.id ? '#1890ff' : undefined,
+                    boxShadow: currentTier?.id === tier.id ? '0 0 10px rgba(24,144,255,0.2)' : undefined,
+                    position: 'relative',
+                    minHeight: '400px',
+                    display: 'flex',
+                    flexDirection: 'column'
+                  }}
+                  bodyStyle={{
+                    flex: 1,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    padding: '16px'
+                  }}
                 >
-                  {currentTier?.id === tier.id 
-                    ? 'Current Plan' 
-                    : tier.id === 'enterprise' 
-                      ? 'Contact Sales' 
-                      : 'Select Plan'
-                  }
-                </Button>
-              </Card>
-            </Col>
-          ))}
-        </Row>
+                  {currentTier?.id === tier.id && (
+                    <div style={{
+                      position: 'absolute',
+                      top: '8px',
+                      right: '8px',
+                      zIndex: 1
+                    }}>
+                      <CheckCircleOutlined style={{ 
+                        color: '#52c41a', 
+                        fontSize: '20px',
+                        backgroundColor: 'white',
+                        borderRadius: '50%',
+                        padding: '2px'
+                      }} />
+                    </div>
+                  )}
+                  
+                  <div style={{ marginBottom: '16px' }}>
+                    {tier.id === 'enterprise' ? (
+                      <>
+                        <Title level={4}>Custom Pricing</Title>
+                        <Text>{tier.description}</Text>
+                      </>
+                    ) : (
+                      <>
+                        <Title level={4}>${tier.price.amount.toLocaleString()}/{tier.price.billingPeriod === 'monthly' ? 'mo' : 'yr'}</Title>
+                        <Text>{tier.description}</Text>
+                      </>
+                    )}
+                  </div>
+                  
+                  <Descriptions column={1} size="small" style={{ flex: 1 }}>
+                    <Descriptions.Item label="Max Members">{tier.features.maxMembers}</Descriptions.Item>
+                    {/* <Descriptions.Item label="Max Organizations">{tier.features.maxOrganizations}</Descriptions.Item> */}
+                    <Descriptions.Item label="Compliance Transactions">{tier.features.maxTransactionsPerMonth.toLocaleString()}</Descriptions.Item>
+                    <Descriptions.Item label="Data Retention">{tier.features.dataRetentionMonths} months</Descriptions.Item>
+                    <Descriptions.Item label="Support" className='capitalize'>{tier.features.support}</Descriptions.Item>
+                    {/* <Descriptions.Item label="Custom Branding">{renderFeatureValue(tier.features.customBranding)}</Descriptions.Item> */}
+                    <Descriptions.Item label="API Access">{renderFeatureValue(tier.features.apiAccess)}</Descriptions.Item>
+                    {/* <Descriptions.Item label="CSAM Scanning">{renderFeatureValue(tier.features.allowCSAM)}</Descriptions.Item> */}
+                  </Descriptions>
+
+                  <Button 
+                    type="primary" 
+                    block 
+                    style={{ 
+                      marginTop: 'auto',
+                      marginBottom: '0'
+                    }}
+                    disabled={currentTier?.id === tier.id}
+                    onClick={() => handleTierSelect(tier)}
+                  >
+                    {currentTier?.id === tier.id 
+                      ? 'Current Plan' 
+                      : tier.id === 'enterprise' 
+                        ? 'Contact Sales' 
+                        : 'Select Plan'
+                    }
+                  </Button>
+                </Card>
+              </Col>
+            ))}
+          </Row>
+        )}
       </Card>
 
       <Modal
