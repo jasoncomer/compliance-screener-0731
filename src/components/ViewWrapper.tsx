@@ -19,7 +19,7 @@ const ViewWrapper: React.FC<ViewWrapperProps> = ({
 }) => {
   const { theme } = useTheme();
   
-  console.log('ViewWrapper: Rendering with theme:', theme, 'title:', title);
+  
 
   return (
     <div 

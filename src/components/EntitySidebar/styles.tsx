@@ -12,9 +12,10 @@ interface SidebarCardProps {
 
 export const SidebarCard: React.FC<SidebarCardProps> = ({ children, className }) => (
   <Card className={cn(
-    "flex flex-col overflow-hidden rounded-lg bg-white dark:bg-gray-900",
+    "flex flex-col h-full overflow-hidden rounded-lg bg-white dark:bg-gray-900",
+    "max-h-[calc(100vh-200px)] min-h-[400px]",
     className
-  )} style={{ maxHeight: '80vh' }}>
+  )}>
     {children}
   </Card>
 );
@@ -25,7 +26,16 @@ interface ScrollableContentProps {
 }
 
 export const ScrollableContent: React.FC<ScrollableContentProps> = ({ children, className }) => (
-  <div className={cn("flex flex-col flex-1 overflow-y-auto pr-2", className)}>
+  <div className={cn(
+    "flex flex-col flex-1 min-h-0 overflow-y-auto overflow-x-hidden",
+    "pr-2",
+    "scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600",
+    "scrollbar-track-transparent",
+    className
+  )} style={{ 
+    maxHeight: 'calc(100vh - 250px)',
+    minHeight: '350px'
+  }}>
     {children}
   </div>
 );
@@ -119,9 +129,11 @@ interface ScrollableSectionProps {
 
 export const ScrollableSection: React.FC<ScrollableSectionProps> = ({ children, className }) => (
   <div className={cn(
-    "overflow-y-auto relative",
+    "overflow-y-auto overflow-x-hidden relative",
+    "scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600",
+    "scrollbar-track-transparent",
     className
-  )} style={{ maxHeight: '500px' }}>
+  )} style={{ maxHeight: '400px' }}>
     {children}
   </div>
 );

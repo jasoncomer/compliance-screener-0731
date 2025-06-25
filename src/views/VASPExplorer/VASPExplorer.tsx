@@ -70,6 +70,24 @@ const StyledAutoComplete = styled(AutoComplete)`
   .ant-select-dropdown {
     z-index: 1000;
   }
+  
+  /* Remove the outer orange box shadow on focus */
+  &.ant-select-focused .ant-select-selector,
+  &:focus .ant-select-selector {
+    box-shadow: none !important;
+  }
+  
+  /* Also remove box shadow from the input inside */
+  .ant-input:focus,
+  .ant-input-focused {
+    box-shadow: none !important;
+  }
+  
+  /* Remove box shadow from input group wrapper */
+  .ant-input-group-wrapper:focus,
+  .ant-input-group-wrapper-focused {
+    box-shadow: none !important;
+  }
 `;
 
 const MainContent = styled.div`

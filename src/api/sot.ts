@@ -53,11 +53,9 @@ const deleteSOT = async (id: string): Promise<void> => {
 };
 
 const getRelatedEntities = async (entityId: string): Promise<RelatedEntitiesResponse> => {
-  console.log('🔍 API: Making request to:', `/attribution/entity/${entityId}/unique-values`);
+  
   const response = await axiosInstance.get(`/attribution/entity/${entityId}/unique-values`);
-  console.log('📦 API: Full response:', response);
-  console.log('📦 API: response.data:', response.data);
-  console.log('📦 API: response.data.data:', response.data.data);
+ 
   
   // Try different response structures
   if (response.data.data) {
