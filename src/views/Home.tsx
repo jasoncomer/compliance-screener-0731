@@ -5,7 +5,6 @@ import { useTheme } from '../context/ThemeContext';
 import { storage } from '../utils/storage';
 import { setAuthToken } from '../api/api';
 import SideNav from '../components/SideNav';
-import { MainContent } from '../styles/Layout';
 
 const Home: React.FC = () => {
   const { theme } = useTheme();
@@ -17,18 +16,15 @@ const Home: React.FC = () => {
   }, []);
 
   return (
-    <div className="flex h-screen w-full overflow-hidden font-mono bg-background">
+    <div className="flex h-screen w-full overflow-hidden bg-gray-100 dark:bg-gray-900">
       <SideNav
         theme={theme}
         collapsed={sidebarCollapsed}
         onCollapse={setSidebarCollapsed}
       />
-      <MainContent
-        $theme={theme}
-        sidebarCollapsed={sidebarCollapsed}
-      >
+      <div className="flex-1 flex flex-col overflow-hidden">
         <Outlet />
-      </MainContent>
+      </div>
     </div>
   );
 };

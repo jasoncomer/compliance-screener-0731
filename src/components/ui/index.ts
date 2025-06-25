@@ -8,8 +8,7 @@ export {
   StyledHeader, 
   HeaderSection, 
   Logo, 
-  StyledContent, 
-  MainContent,
+  StyledContent,
   UserMenuButton, 
   TabsContainer 
 } from '../../styles/Layout';
@@ -24,4 +23,6 @@ export * from './label';
 export * from './select';
 export * from './switch';
 export * from './tabs';
+export * from './toast';
+export * from './toaster';
 export * from './tooltip';

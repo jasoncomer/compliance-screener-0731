@@ -24,6 +24,7 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { IComplianceTransaction, EComplianceTransactionStatus } from "@/typings/compliance"
 import { getComplianceReportStatusColor } from "../../utils/compliance.utils"
+import { useTheme } from "@/context/ThemeContext"
 
 interface UnassignedTransactionModalProps {
   transaction: IComplianceTransaction | null
@@ -40,6 +41,7 @@ export function UnassignedTransactionModal({
   onAssign,
   teamMembers,
 }: UnassignedTransactionModalProps) {
+  const { theme } = useTheme();
   const [selectedReviewer, setSelectedReviewer] = useState<string>("")
   const [assignmentNotes, setAssignmentNotes] = useState("")
 
@@ -106,28 +108,41 @@ export function UnassignedTransactionModal({
 
   const riskLevel = getRiskLevel(transaction.riskScores)
 
+  // Theme-based styling
+  const isDark = theme === 'dark';
+  const bgColor = isDark ? 'bg-gray-900' : 'bg-white';
+  const borderColor = isDark ? 'border-gray-800' : 'border-gray-200';
+  const textColor = isDark ? 'text-gray-100' : 'text-gray-900';
+  const cardBgColor = isDark ? 'bg-gray-800' : 'bg-gray-50';
+  const cardBorderColor = isDark ? 'border-gray-700' : 'border-gray-200';
+  const mutedTextColor = isDark ? 'text-gray-400' : 'text-gray-600';
+  const selectBgColor = isDark ? 'bg-gray-800' : 'bg-white';
+  const selectBorderColor = isDark ? 'border-gray-700' : 'border-gray-300';
+  const textareaBgColor = isDark ? 'bg-gray-700' : 'bg-white';
+  const textareaBorderColor = isDark ? 'border-gray-600' : 'border-gray-300';
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-gray-900 border-gray-800 text-gray-100">
+      <DialogContent className={`max-w-4xl max-h-[90vh] overflow-y-auto ${bgColor} ${borderColor} ${textColor}`}>
         <DialogHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-          <DialogTitle className="text-xl font-semibold text-gray-100">Transaction Details</DialogTitle>
+          <DialogTitle className={`text-xl font-semibold ${textColor}`}>Transaction Details</DialogTitle>
           <div className="flex items-center gap-3">
             <Select value={selectedReviewer} onValueChange={setSelectedReviewer}>
-              <SelectTrigger className="w-48 bg-gray-800 border-gray-700 text-gray-100">
+              <SelectTrigger className={`w-48 ${selectBgColor} ${selectBorderColor} ${textColor}`}>
                 <SelectValue placeholder="Assign to..." />
               </SelectTrigger>
-              <SelectContent className="bg-gray-800 border-gray-700">
+              <SelectContent className={`${selectBgColor} ${selectBorderColor}`}>
                 {teamMembers.map((member) => (
-                  <SelectItem key={member.id} value={member.id} className="text-gray-100">
+                  <SelectItem key={member.id} value={member.id} className={textColor}>
                     <div className="flex flex-col">
                       <span>{member.name}</span>
-                      <span className="text-xs text-gray-400">{member.role}</span>
+                      <span className={`text-xs ${mutedTextColor}`}>{member.role}</span>
                     </div>
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
-            <Button onClick={onClose} variant="ghost" size="icon" className="text-gray-400 hover:text-gray-100">
+            <Button onClick={onClose} variant="ghost" size="icon" className={`${mutedTextColor} hover:${textColor}`}>
               <X className="h-4 w-4" />
             </Button>
           </div>
@@ -136,9 +151,9 @@ export function UnassignedTransactionModal({
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Main Transaction Info */}
           <div className="lg:col-span-2 space-y-6">
-            <Card className="bg-gray-800 border-gray-700">
+            <Card className={`${cardBgColor} ${cardBorderColor}`}>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-gray-100">
+                <CardTitle className={`flex items-center gap-2 ${textColor}`}>
                   <Hash className="h-4 w-4" />
                   Transaction Information
                 </CardTitle>
@@ -146,28 +161,28 @@ export function UnassignedTransactionModal({
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <Label className="text-xs text-gray-400 uppercase tracking-wide">Transaction ID</Label>
-                    <p className="font-mono text-sm text-gray-100 break-all mt-1">{transaction.txId}</p>
+                    <Label className={`text-xs ${mutedTextColor} uppercase tracking-wide`}>Transaction ID</Label>
+                    <p className={`font-mono text-sm ${textColor} break-all mt-1`}>{transaction.txId}</p>
                   </div>
                   <div>
-                    <Label className="text-xs text-gray-400 uppercase tracking-wide">Client ID</Label>
-                    <p className="text-sm text-gray-100 mt-1">{transaction.clientId}</p>
+                    <Label className={`text-xs ${mutedTextColor} uppercase tracking-wide`}>Client ID</Label>
+                    <p className={`text-sm ${textColor} mt-1`}>{transaction.clientId}</p>
                   </div>
                   <div>
-                    <Label className="text-xs text-gray-400 uppercase tracking-wide">Blockchain</Label>
-                    <p className="text-sm text-gray-100 mt-1 capitalize">{transaction.blockchain}</p>
+                    <Label className={`text-xs ${mutedTextColor} uppercase tracking-wide`}>Blockchain</Label>
+                    <p className={`text-sm ${textColor} mt-1 capitalize`}>{transaction.blockchain}</p>
                   </div>
                   <div>
-                    <Label className="text-xs text-gray-400 uppercase tracking-wide">Timestamp</Label>
-                    <p className="text-sm text-gray-100 mt-1">{transaction.timestamp.toLocaleString()}</p>
+                    <Label className={`text-xs ${mutedTextColor} uppercase tracking-wide`}>Timestamp</Label>
+                    <p className={`text-sm ${textColor} mt-1`}>{transaction.timestamp.toLocaleString()}</p>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="bg-gray-800 border-gray-700">
+            <Card className={`${cardBgColor} ${cardBorderColor}`}>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-gray-100">
+                <CardTitle className={`flex items-center gap-2 ${textColor}`}>
                   <Building2 className="h-4 w-4" />
                   Counterparty Information
                 </CardTitle>
@@ -187,22 +202,22 @@ export function UnassignedTransactionModal({
               </CardContent>
             </Card>
 
-            <Card className="bg-gray-800 border-gray-700">
+            <Card className={`${cardBgColor} ${cardBorderColor}`}>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-gray-100">
+                <CardTitle className={`flex items-center gap-2 ${textColor}`}>
                   <Coins className="h-4 w-4" />
                   Amount Details
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
                 <div className="flex justify-between items-center">
-                  <span className="text-gray-400">Amount</span>
-                  <span className="text-lg font-semibold text-gray-100">
+                  <span className={mutedTextColor}>Amount</span>
+                  <span className={`text-lg font-semibold ${textColor}`}>
                     {transaction.blockchain.toUpperCase()} {transaction.amount}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-gray-400">Converted Amount</span>
+                  <span className={mutedTextColor}>Converted Amount</span>
                   <span className="text-lg font-semibold text-green-400">
                     {formatCurrency(transaction.amount, transaction.blockchain)}
                   </span>
@@ -211,9 +226,9 @@ export function UnassignedTransactionModal({
             </Card>
 
             {/* Status History */}
-            <Card className="bg-gray-800 border-gray-700">
+            <Card className={`${cardBgColor} ${cardBorderColor}`}>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-gray-100">
+                <CardTitle className={`flex items-center gap-2 ${textColor}`}>
                   <Calendar className="h-4 w-4" />
                   Status History
                 </CardTitle>
@@ -223,16 +238,16 @@ export function UnassignedTransactionModal({
                   {transaction.statusHistory.map((history, index) => (
                     <div
                       key={index}
-                      className="flex items-center justify-between py-2 border-b border-gray-700 last:border-b-0"
+                      className={`flex items-center justify-between py-2 border-b ${isDark ? 'border-gray-700' : 'border-gray-200'} last:border-b-0`}
                     >
                       <div className="flex items-center gap-3">
                         <Badge className={`${getStatusColor(history.status)} flex items-center gap-1`}>
                           {getStatusIcon(history.status)}
                           {history.status.replace("_", " ")}
                         </Badge>
-                        {history.reviewer && <span className="text-sm text-gray-400">by {history.reviewer}</span>}
+                        {history.reviewer && <span className={`text-sm ${mutedTextColor}`}>by {history.reviewer}</span>}
                       </div>
-                      <span className="text-xs text-gray-500">{history.timestamp.toLocaleString()}</span>
+                      <span className={`text-xs ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>{history.timestamp.toLocaleString()}</span>
                     </div>
                   ))}
                 </div>
@@ -243,9 +258,9 @@ export function UnassignedTransactionModal({
           {/* Sidebar */}
           <div className="space-y-6">
             {/* Current Status */}
-            <Card className="bg-gray-800 border-gray-700">
+            <Card className={`${cardBgColor} ${cardBorderColor}`}>
               <CardHeader>
-                <CardTitle className="text-gray-100">Current Status</CardTitle>
+                <CardTitle className={textColor}>Current Status</CardTitle>
               </CardHeader>
               <CardContent>
                 <Badge className={`${getStatusColor(transaction.status)} flex items-center gap-2 w-fit`}>
@@ -256,20 +271,20 @@ export function UnassignedTransactionModal({
             </Card>
 
             {/* Risk Assessment */}
-            <Card className="bg-gray-800 border-gray-700">
+            <Card className={`${cardBgColor} ${cardBorderColor}`}>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-gray-100">
+                <CardTitle className={`flex items-center gap-2 ${textColor}`}>
                   <TrendingUp className="h-4 w-4" />
                   Risk Assessment
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
                 <div className="flex justify-between items-center">
-                  <span className="text-gray-400">Risk Level</span>
+                  <span className={mutedTextColor}>Risk Level</span>
                   <span className={`font-semibold ${riskLevel.color}`}>{riskLevel.level}</span>
                 </div>
                 <div className="space-y-2">
-                  <span className="text-sm text-gray-400">Risk Scores</span>
+                  <span className={`text-sm ${mutedTextColor}`}>Risk Scores</span>
                   <div className="flex flex-wrap gap-1">
                     {transaction.riskScores.map((score, index) => (
                       <Badge key={index} variant="outline" className="text-xs">
@@ -283,9 +298,9 @@ export function UnassignedTransactionModal({
 
             {/* SAR Information */}
             {transaction.sarSubmitted && (
-              <Card className="bg-gray-800 border-gray-700">
+              <Card className={`${cardBgColor} ${cardBorderColor}`}>
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-gray-100">
+                  <CardTitle className={`flex items-center gap-2 ${textColor}`}>
                     <FileText className="h-4 w-4" />
                     SAR Report
                   </CardTitle>
@@ -293,7 +308,7 @@ export function UnassignedTransactionModal({
                 <CardContent>
                   <div className="space-y-2">
                     <Badge className="bg-purple-500/20 text-purple-400 border-purple-500/30">SAR Submitted</Badge>
-                    {transaction.sarReport && <p className="text-sm text-gray-300">{transaction.sarReport}</p>}
+                    {transaction.sarReport && <p className={`text-sm ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>{transaction.sarReport}</p>}
                   </div>
                 </CardContent>
               </Card>
@@ -301,16 +316,16 @@ export function UnassignedTransactionModal({
 
             {/* Assignment Section */}
             {selectedReviewer && (
-              <Card className="bg-gray-800 border-gray-700">
+              <Card className={`${cardBgColor} ${cardBorderColor}`}>
                 <CardHeader>
-                  <CardTitle className="text-gray-100">Assignment Notes</CardTitle>
+                  <CardTitle className={textColor}>Assignment Notes</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <Textarea
                     placeholder="Add notes for the assigned reviewer..."
                     value={assignmentNotes}
                     onChange={(e) => setAssignmentNotes(e.target.value)}
-                    className="bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-400"
+                    className={`${textareaBgColor} ${textareaBorderColor} ${textColor} placeholder-gray-400`}
                     rows={3}
                   />
                   <Button onClick={handleAssign} className="w-full">
@@ -322,12 +337,12 @@ export function UnassignedTransactionModal({
 
             {/* Notes */}
             {transaction.notes && (
-              <Card className="bg-gray-800 border-gray-700">
+              <Card className={`${cardBgColor} ${cardBorderColor}`}>
                 <CardHeader>
-                  <CardTitle className="text-gray-100">Notes</CardTitle>
+                  <CardTitle className={textColor}>Notes</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-sm text-gray-300">{transaction.notes}</p>
+                  <p className={`text-sm ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>{transaction.notes}</p>
                 </CardContent>
               </Card>
             )}

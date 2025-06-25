@@ -4,6 +4,7 @@ import { FilterOutlined, ClearOutlined, FileSearchOutlined } from '@ant-design/i
 import { EComplianceTransactionStatus, TransactionFilters } from '../../../../typings/compliance';
 import { cn } from '../../../../lib/utils';
 import ActiveCasesTable from './ActiveCasesTable';
+import ErrorBoundary from '../../../../components/ErrorBoundary';
 import { selectCurrentOrganization } from '../../../../store/slices/organizationsSlice';
 import { useAppDispatch, useAppSelector } from '../../../../store/hooks';
 import { 
@@ -40,6 +41,28 @@ const ActiveCasesTab: React.FC<ActiveCasesTabProps> = ({ isActive, className }) 
   const [availableBlockchains, setAvailableBlockchains] = useState<string[]>([]);
   const [availableClientIds, setAvailableClientIds] = useState<string[]>([]);
 
+  // Validate and sanitize transactions data
+  const validatedTransactions = React.useMemo(() => {
+    if (!Array.isArray(transactions)) {
+      console.warn('Transactions is not an array:', transactions);
+      return [];
+    }
+    
+    return transactions.filter(tx => {
+      if (!tx || typeof tx !== 'object') {
+        console.warn('Invalid transaction object:', tx);
+        return false;
+      }
+      
+      if (!tx._id || typeof tx._id !== 'string') {
+        console.warn('Transaction missing _id:', tx);
+        return false;
+      }
+      
+      return true;
+    });
+  }, [transactions]);
+
   // Load transactions from Redux store
   useEffect(() => {
     if (!isActive) return;
@@ -62,16 +85,16 @@ const ActiveCasesTab: React.FC<ActiveCasesTabProps> = ({ isActive, className }) 
 
   // Extract unique filter options from transaction data
   useEffect(() => {
-    if (transactions.length > 0) {
+    if (validatedTransactions.length > 0) {
       // Extract unique blockchains
-      const blockchains = [...new Set(transactions.map(tx => tx.blockchain))];
+      const blockchains = [...new Set(validatedTransactions.map(tx => tx.blockchain).filter(Boolean))];
       setAvailableBlockchains(blockchains);
       
       // Extract unique client IDs
-      const clientIds = [...new Set(transactions.map(tx => tx.clientId))];
+      const clientIds = [...new Set(validatedTransactions.map(tx => tx.clientId).filter(Boolean))];
       setAvailableClientIds(clientIds);
     }
-  }, [transactions]);
+  }, [validatedTransactions]);
 
   // Handle table change (pagination, sorting)
   const handleTableChange = (pagination: any) => {
@@ -279,14 +302,16 @@ const ActiveCasesTab: React.FC<ActiveCasesTabProps> = ({ isActive, className }) 
         </Form>
       </Card>
       
-      <ActiveCasesTable
-        transactions={transactions}
-        totalTransactions={totalTransactions}
-        currentPage={currentPage}
-        pageSize={pageSize}
-        loading={loading}
-        onTableChange={handleTableChange}
-      />
+      <ErrorBoundary>
+        <ActiveCasesTable
+          transactions={validatedTransactions}
+          totalTransactions={totalTransactions}
+          currentPage={currentPage}
+          pageSize={pageSize}
+          loading={loading}
+          onTableChange={handleTableChange}
+        />
+      </ErrorBoundary>
     </div>
   );
 };

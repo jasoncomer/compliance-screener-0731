@@ -81,16 +81,52 @@ const complianceTransactionsSlice = createSlice({
         state.loading = false;
         
         const response = action.payload as ComplianceTransactionResponse;
+        
+        // Validate response structure
+        if (!response || !Array.isArray(response.transactions)) {
+          console.error('Invalid API response structure:', response);
+          state.error = 'Invalid response structure from API';
+          return;
+        }
+        
         const transactionsById: Record<string, IComplianceTransaction> = {};
         
+        // Validate and filter transactions
         response.transactions.forEach((transaction) => {
-          transactionsById[transaction._id] = transaction;
+          if (transaction && transaction._id && typeof transaction._id === 'string') {
+            // Ensure all required fields are present
+            const validatedTransaction: IComplianceTransaction = {
+              _id: transaction._id,
+              txId: transaction.txId || '',
+              clientId: transaction.clientId || '',
+              monitoredAddressId: transaction.monitoredAddressId || '',
+              counterpartyEntities: Array.isArray(transaction.counterpartyEntities) ? transaction.counterpartyEntities : [],
+              blockchain: transaction.blockchain || '',
+              amount: typeof transaction.amount === 'number' ? transaction.amount : 0,
+              timestamp: transaction.timestamp || new Date(),
+              riskScores: Array.isArray(transaction.riskScores) ? transaction.riskScores : [],
+              organizationId: transaction.organizationId || '',
+              notes: transaction.notes,
+              sarSubmitted: Boolean(transaction.sarSubmitted),
+              sarReport: transaction.sarReport,
+              reviewerId: transaction.reviewerId,
+              reviewTimestamp: transaction.reviewTimestamp,
+              status: transaction.status || EComplianceTransactionStatus.UNASSIGNED,
+              statusHistory: Array.isArray(transaction.statusHistory) ? transaction.statusHistory : [],
+              approvedBy: transaction.approvedBy,
+              approvedAt: transaction.approvedAt,
+            };
+            
+            transactionsById[transaction._id] = validatedTransaction;
+          } else {
+            console.warn('Skipping invalid transaction:', transaction);
+          }
         });
         
         state.transactions = transactionsById;
-        state.total = response.total;
-        state.page = response.page;
-        state.limit = response.limit;
+        state.total = typeof response.total === 'number' ? response.total : 0;
+        state.page = typeof response.page === 'number' ? response.page : 1;
+        state.limit = typeof response.limit === 'number' ? response.limit : 10;
       })
       .addCase(fetchComplianceTransactions.rejected, (state, action) => {
         state.loading = false;

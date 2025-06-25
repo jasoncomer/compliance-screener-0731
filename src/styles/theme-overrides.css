@@ -1,5 +1,46 @@
 /* Theme overrides for components */
 
+/* Compliance table specific styles */
+.compliance-table .ant-table-tbody > tr > td {
+  padding: 8px 12px !important;
+  line-height: 1.2 !important;
+}
+
+.compliance-table .ant-table-thead > tr > th {
+  padding: 8px 12px !important;
+  line-height: 1.2 !important;
+}
+
+.compliance-table .ant-table-row {
+  height: auto !important;
+}
+
+.compliance-table .ant-table-tbody > tr.ant-table-row:hover > td {
+  background-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+/* Ensure table container has proper height and scrolling */
+.compliance-table .ant-table-container {
+  height: 100% !important;
+  overflow: auto !important;
+}
+
+.compliance-table .ant-table-wrapper {
+  height: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.compliance-table .ant-table {
+  flex: 1 !important;
+  overflow: auto !important;
+}
+
+.compliance-table .ant-table-content {
+  height: 100% !important;
+  overflow: auto !important;
+}
+
 /* Light theme overrides for tables */
 .light-theme-table {
   background-color: #fff !important;
