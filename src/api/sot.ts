@@ -53,8 +53,21 @@ const deleteSOT = async (id: string): Promise<void> => {
 };
 
 const getRelatedEntities = async (entityId: string): Promise<RelatedEntitiesResponse> => {
+  console.log('🔍 API: Making request to:', `/attribution/entity/${entityId}/unique-values`);
   const response = await axiosInstance.get(`/attribution/entity/${entityId}/unique-values`);
-  return response.data.data;
+  console.log('📦 API: Full response:', response);
+  console.log('📦 API: response.data:', response.data);
+  console.log('📦 API: response.data.data:', response.data.data);
+  
+  // Try different response structures
+  if (response.data.data) {
+    return response.data.data;
+  } else if (response.data) {
+    return response.data;
+  } else {
+    console.error('❌ API: Unexpected response structure:', response);
+    return { unique_bos: [], unique_custodians: [] };
+  }
 };
 
 export const sot = {
