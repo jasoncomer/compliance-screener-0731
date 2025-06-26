@@ -1,90 +1,121 @@
-import { Card, Typography, Skeleton } from 'antd';
-import { satsToBTC } from "../../../utils/crypto"
-
-const { Title } = Typography;
+import { useTheme } from "../../../context/ThemeContext";
 
 interface AddressSummaryProps {
-  balance?: number
-  total_received?: number
-  total_spent?: number
-  script_type?: string
-  firstBlock?: number
-  lastBlock?: number
-  isLoading?: boolean
+  totalTransactions: number;
+  totalVolume: number;
+  firstSeen: string;
+  lastSeen: string;
+  averageTransactionSize: number;
+  inputAmount?: number;
+  outputAmount?: number;
+  balance?: number;
+  topCounterparty?: string;
+  isLoading?: boolean;
 }
 
 export function AddressSummary({
+  totalTransactions = 0,
+  totalVolume = 0,
+  firstSeen = '',
+  lastSeen = '',
+  averageTransactionSize = 0,
+  inputAmount = 0,
+  outputAmount = 0,
   balance = 0,
-  total_received = 0,
-  total_spent = 0,
-  script_type = 'Unknown',
-  firstBlock,
-  lastBlock,
+  topCounterparty = 'N/A',
   isLoading = false
 }: AddressSummaryProps) {
+  const { theme } = useTheme();
+
   if (isLoading) {
     return (
-      <Card className="bg-gray-800 rounded-2xl border-gray-700 h-full">
-        <Title level={4} className="text-white mb-6">Summary</Title>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6 text-base">
+      <div className={`rounded-2xl border p-6 h-full ${
+        theme === 'dark' 
+          ? 'bg-gray-800/50 border-gray-700' 
+          : 'bg-gray-50 border-gray-200'
+      }`}>
+        <h4 className={`text-xl font-semibold mb-6 ${
+          theme === 'dark' ? 'text-white' : 'text-gray-900'
+        }`}>Summary</h4>
+        <div className="space-y-4">
           <div className="flex justify-between items-center">
-            <span className="text-gray-400 text-base">Balance:</span>
-            <Skeleton.Input active size="small" style={{ width: 100 }} />
+            <span className={`text-base ${
+              theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
+            }`}>Input Amount:</span>
+            <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-24 animate-pulse"></div>
           </div>
           <div className="flex justify-between items-center">
-            <span className="text-gray-400 text-base">Script Type:</span>
-            <Skeleton.Input active size="small" style={{ width: 80 }} />
+            <span className={`text-base ${
+              theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
+            }`}>Output Amount:</span>
+            <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-24 animate-pulse"></div>
           </div>
           <div className="flex justify-between items-center">
-            <span className="text-gray-400 text-base">First block:</span>
-            <Skeleton.Input active size="small" style={{ width: 80 }} />
+            <span className={`text-base ${
+              theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
+            }`}>Balance:</span>
+            <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-20 animate-pulse"></div>
           </div>
           <div className="flex justify-between items-center">
-            <span className="text-gray-400 text-base">Total received:</span>
-            <Skeleton.Input active size="small" style={{ width: 100 }} />
-          </div>
-          <div className="flex justify-between items-center">
-            <span className="text-gray-400 text-base">Last block:</span>
-            <Skeleton.Input active size="small" style={{ width: 80 }} />
-          </div>
-          <div className="flex justify-between items-center">
-            <span className="text-gray-400 text-base">Total spent:</span>
-            <Skeleton.Input active size="small" style={{ width: 100 }} />
+            <span className={`text-base ${
+              theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
+            }`}>Top Counterparty:</span>
+            <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-32 animate-pulse"></div>
           </div>
         </div>
-      </Card>
+      </div>
     )
   }
 
+  const formatCurrency = (value: number) => {
+    if (value >= 1000000) return `$${(value / 1000000).toFixed(1)}M`;
+    if (value >= 1000) return `$${(value / 1000).toFixed(0)}k`;
+    return `$${value.toFixed(2)}`;
+  };
+
   return (
-    <Card className="bg-gray-800 rounded-2xl border-gray-700 h-full">
-      <Title level={4} className="text-white mb-6">Summary</Title>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6 text-base">
+    <div className={`rounded-2xl border p-6 h-full ${
+      theme === 'dark' 
+        ? 'bg-gray-800/50 border-gray-700' 
+        : 'bg-gray-50 border-gray-200'
+    }`}>
+      <h4 className={`text-xl font-semibold mb-6 ${
+        theme === 'dark' ? 'text-white' : 'text-gray-900'
+      }`}>Summary</h4>
+      <div className="space-y-4">
         <div className="flex justify-between items-center">
-          <span className="text-gray-400 text-base">Balance:</span>
-          <span className="font-mono text-white text-lg">{satsToBTC(balance)} BTC</span>
+          <span className={`text-base ${
+            theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
+          }`}>Input Amount:</span>
+          <span className={`font-mono text-lg ${
+            theme === 'dark' ? 'text-white' : 'text-gray-900'
+          }`}>{formatCurrency(inputAmount)}</span>
         </div>
         <div className="flex justify-between items-center">
-          <span className="text-gray-400 text-base">Script Type:</span>
-          <span className="font-mono text-white text-lg">{script_type}</span>
+          <span className={`text-base ${
+            theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
+          }`}>Output Amount:</span>
+          <span className={`font-mono text-lg ${
+            theme === 'dark' ? 'text-white' : 'text-gray-900'
+          }`}>{formatCurrency(outputAmount)}</span>
         </div>
         <div className="flex justify-between items-center">
-          <span className="text-gray-400 text-base">First block:</span>
-          <span className="font-mono text-white text-lg">{firstBlock || 'N/A'}</span>
+          <span className={`text-base ${
+            theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
+          }`}>Balance:</span>
+          <span className={`font-mono text-lg ${
+            theme === 'dark' ? 'text-white' : 'text-gray-900'
+          }`}>{formatCurrency(balance)}</span>
         </div>
         <div className="flex justify-between items-center">
-          <span className="text-gray-400 text-base">Total received:</span>
-          <span className="font-mono text-white text-lg">{satsToBTC(total_received)} BTC</span>
-        </div>
-        <div className="flex justify-between items-center">
-          <span className="text-gray-400 text-base">Last block:</span>
-          <span className="font-mono text-white text-lg">{lastBlock || 'N/A'}</span>
-        </div>
-        <div className="flex justify-between items-center">
-          <span className="text-gray-400 text-base">Total spent:</span>
-          <span className="font-mono text-white text-lg">{satsToBTC(total_spent)} BTC</span>
+          <span className={`text-base ${
+            theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
+          }`}>Top Counterparty:</span>
+          <span className={`font-mono text-lg ${
+            theme === 'dark' ? 'text-white' : 'text-gray-900'
+          }`}>{topCounterparty}</span>
         </div>
       </div>
-    </Card>
+    </div>
   )
 } 
