@@ -7,6 +7,7 @@ interface Counterparty {
   entity: string;
   direction: 'inflow' | 'outflow';
   amount: string;
+  btcAmount: string;
   txns: number;
   address: string;
 }
@@ -118,7 +119,9 @@ const TopCounterparties: React.FC<TopCounterpartiesProps> = ({
                 onClick={() => setCounterpartyMode('volume')}
                 className={`px-3 py-1 text-xs font-medium rounded-lg transition-colors ${
                   counterpartyMode === 'volume'
-                    ? 'bg-orange-600 dark:bg-blockscout-orange text-white'
+                    ? theme === 'dark' 
+                      ? 'bg-blockscout-orange text-white hover:bg-blockscout-orange/90'
+                      : 'bg-orange-600 text-white hover:bg-orange-700'
                     : theme === 'dark' 
                       ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' 
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -131,7 +134,9 @@ const TopCounterparties: React.FC<TopCounterpartiesProps> = ({
                 onClick={() => setCounterpartyMode('txns')}
                 className={`px-3 py-1 text-xs font-medium rounded-lg transition-colors ${
                   counterpartyMode === 'txns'
-                    ? 'bg-orange-600 dark:bg-blockscout-orange text-white'
+                    ? theme === 'dark' 
+                      ? 'bg-blockscout-orange text-white hover:bg-blockscout-orange/90'
+                      : 'bg-orange-600 text-white hover:bg-orange-700'
                     : theme === 'dark' 
                       ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' 
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -159,7 +164,7 @@ const TopCounterparties: React.FC<TopCounterpartiesProps> = ({
                   className={`py-3 px-4 text-sm font-medium transition-colors ${
                     activeTab === tab.key
                       ? 'text-orange-600 dark:text-blockscout-orange border-b-2 border-orange-600 dark:border-blockscout-orange'
-                      : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                      : 'text-gray-600 dark:text-gray-400 hover:text-orange-600 dark:hover:text-blockscout-orange'
                   }`}
                 >
                   {tab.label}
@@ -192,6 +197,9 @@ const TopCounterparties: React.FC<TopCounterpartiesProps> = ({
                           <th className={`text-left py-3 px-2 text-xs font-semibold ${
                             theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
                           }`}>USD</th>
+                          <th className={`text-left py-3 px-2 text-xs font-semibold ${
+                            theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
+                          }`}>BTC</th>
                           <th className={`text-left py-3 px-2 text-xs font-semibold ${
                             theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
                           }`}>Txns</th>
@@ -235,6 +243,11 @@ const TopCounterparties: React.FC<TopCounterpartiesProps> = ({
                               theme === 'dark' ? 'text-gray-300' : 'text-gray-700'
                             }`}>
                               {counterparty.amount}
+                            </td>
+                            <td className={`py-3 px-2 text-xs font-mono ${
+                              theme === 'dark' ? 'text-gray-300' : 'text-gray-700'
+                            }`}>
+                              {counterparty.btcAmount}
                             </td>
                             <td className={`py-3 px-2 text-xs ${
                               theme === 'dark' ? 'text-gray-300' : 'text-gray-700'
@@ -295,10 +308,18 @@ const TopCounterparties: React.FC<TopCounterpartiesProps> = ({
                 <div>
                   <label className={`block text-sm font-medium mb-1 ${
                     theme === 'dark' ? 'text-gray-300' : 'text-gray-700'
-                  }`}>Total Amount</label>
+                  }`}>USD Amount</label>
                   <div className={`text-base font-mono ${
                     theme === 'dark' ? 'text-white' : 'text-gray-900'
                   }`}>{selectedCounterparty.amount}</div>
+                </div>
+                <div>
+                  <label className={`block text-sm font-medium mb-1 ${
+                    theme === 'dark' ? 'text-gray-300' : 'text-gray-700'
+                  }`}>BTC Amount</label>
+                  <div className={`text-base font-mono ${
+                    theme === 'dark' ? 'text-white' : 'text-gray-900'
+                  }`}>{selectedCounterparty.btcAmount}</div>
                 </div>
                 <div>
                   <label className={`block text-sm font-medium mb-1 ${

@@ -57,10 +57,10 @@ export function AddressSummary({
     )
   }
 
-  const formatCurrency = (value: number) => {
-    if (value >= 1000000) return `$${(value / 1000000).toFixed(1)}M`;
-    if (value >= 1000) return `$${(value / 1000).toFixed(0)}k`;
-    return `$${value.toFixed(2)}`;
+  const formatBitcoin = (value: number) => {
+    if (value >= 1000) return `${(value / 1000).toFixed(3)}k BTC`;
+    if (value >= 1) return `${value.toFixed(4)} BTC`;
+    return `${(value * 1000).toFixed(4)}`;
   };
 
   return (
@@ -79,7 +79,7 @@ export function AddressSummary({
           }`}>Input Amount:</span>
           <span className={`font-mono text-lg ${
             theme === 'dark' ? 'text-white' : 'text-gray-900'
-          }`}>{formatCurrency(inputAmount)}</span>
+          }`}>{formatBitcoin(inputAmount)}</span>
         </div>
         <div className="flex justify-between items-center">
           <span className={`text-base ${
@@ -87,7 +87,7 @@ export function AddressSummary({
           }`}>Output Amount:</span>
           <span className={`font-mono text-lg ${
             theme === 'dark' ? 'text-white' : 'text-gray-900'
-          }`}>{formatCurrency(outputAmount)}</span>
+          }`}>{formatBitcoin(outputAmount)}</span>
         </div>
         <div className="flex justify-between items-center">
           <span className={`text-base ${
@@ -95,7 +95,7 @@ export function AddressSummary({
           }`}>Balance:</span>
           <span className={`font-mono text-lg ${
             theme === 'dark' ? 'text-white' : 'text-gray-900'
-          }`}>{formatCurrency(balance)}</span>
+          }`}>{formatBitcoin(balance)}</span>
         </div>
         <div className="flex justify-between items-center">
           <span className={`text-base ${

@@ -82,6 +82,12 @@ const RiskDashboard: React.FC = () => {
     return entity?.proper_name || entityId;
   }, [itemsMap]);
 
+  // Function to truncate addresses for display
+  const truncateAddress = (address: string, startLength: number = 6, endLength: number = 4) => {
+    if (address.length <= startLength + endLength + 3) return address;
+    return `${address.slice(0, startLength)}...${address.slice(-endLength)}`;
+  };
+
   // Generate counterparty data from transaction history
   const counterpartyData = React.useMemo(() => {
     if (!transformedTransactions.length) {
@@ -118,12 +124,13 @@ const RiskDashboard: React.FC = () => {
     const incomingCounterparties = Object.entries(incomingByAddress)
       .map(([address, data]) => {
         const entityId = attributions[address]?.entity || attributions[address]?.bo || attributions[address]?.custodian;
-        const entityName = entityId ? getEntityDisplayName(entityId) : 'Unknown Wallet';
+        const entityName = entityId ? getEntityDisplayName(entityId) : truncateAddress(address);
         
         return {
           entity: entityName,
           direction: 'inflow' as const,
           amount: `$${(data.totalAmount * btcPrice).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+          btcAmount: `${data.totalAmount.toFixed(8)} BTC`,
           txns: data.count,
           address: address
         };
@@ -138,12 +145,13 @@ const RiskDashboard: React.FC = () => {
     const outgoingCounterparties = Object.entries(outgoingByAddress)
       .map(([address, data]) => {
         const entityId = attributions[address]?.entity || attributions[address]?.bo || attributions[address]?.custodian;
-        const entityName = entityId ? getEntityDisplayName(entityId) : 'Unknown Wallet';
+        const entityName = entityId ? getEntityDisplayName(entityId) : truncateAddress(address);
         
         return {
           entity: entityName,
           direction: 'outflow' as const,
           amount: `$${(data.totalAmount * btcPrice).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+          btcAmount: `${data.totalAmount.toFixed(8)} BTC`,
           txns: data.count,
           address: address
         };
@@ -223,13 +231,13 @@ const RiskDashboard: React.FC = () => {
 
     return {
       totalTransactions: totalTxns,
-      totalVolume: totalVolume * btcPrice, // Convert to USD
+      totalVolume: totalVolume, // Keep in BTC
       firstSeen,
       lastSeen,
-      averageTransactionSize: avgTxSize * btcPrice, // Convert to USD
-      inputAmount: inputAmount * btcPrice, // Convert to USD
-      outputAmount: outputAmount * btcPrice, // Convert to USD
-      balance: balance * btcPrice, // Convert to USD
+      averageTransactionSize: avgTxSize, // Keep in BTC
+      inputAmount: inputAmount, // Keep in BTC
+      outputAmount: outputAmount, // Keep in BTC
+      balance: balance, // Keep in BTC
       topCounterparty,
       isLoading: isLoadingAddressSummary || isLoadingAddressBlockStats
     };
@@ -314,6 +322,106 @@ const RiskDashboard: React.FC = () => {
     return tags;
   };
 
+  // Additional entity helper functions
+  const getEntityEmail = (entityId: string) => {
+    const entity = Object.values(itemsMap).find(sot => sot.entity_id === entityId);
+    return entity?.contact_email || '';
+  };
+
+  const getEntityTwitter = (entityId: string) => {
+    const entity = Object.values(itemsMap).find(sot => sot.entity_id === entityId);
+    return entity?.contact_twitter || '';
+  };
+
+  const getEntityTelegram = (entityId: string) => {
+    const entity = Object.values(itemsMap).find(sot => sot.entity_id === entityId);
+    return entity?.contact_telegram || '';
+  };
+
+  const getEntityEnsAddress = (entityId: string) => {
+    const entity = Object.values(itemsMap).find(sot => sot.entity_id === entityId);
+    return entity?.ens_address || '';
+  };
+
+  const getEntityLegalInfoUrl = (entityId: string) => {
+    const entity = Object.values(itemsMap).find(sot => sot.entity_id === entityId);
+    return entity?.legal_info_url || '';
+  };
+
+  const getEntityCeo = (entityId: string) => {
+    const entity = Object.values(itemsMap).find(sot => sot.entity_id === entityId);
+    return entity?.ceo || '';
+  };
+
+  const getEntityKeyPersonnel = (entityId: string) => {
+    const entity = Object.values(itemsMap).find(sot => sot.entity_id === entityId);
+    return entity?.key_personnel || '';
+  };
+
+  const getEntityTicker = (entityId: string) => {
+    const entity = Object.values(itemsMap).find(sot => sot.entity_id === entityId);
+    return entity?.ticker || '';
+  };
+
+  const getEntityParentId = (entityId: string) => {
+    const entity = Object.values(itemsMap).find(sot => sot.entity_id === entityId);
+    return entity?.parent_id || '';
+  };
+
+  const getEntitySocialMediaProfiles = (entityId: string): string[] => {
+    const entity = Object.values(itemsMap).find(sot => sot.entity_id === entityId);
+    if (!entity) return [];
+    
+    const profiles: string[] = [];
+    for (let i = 1; i <= 4; i++) {
+      const profile = entity[`social_media_profile${i === 1 ? '' : '_' + i}` as keyof typeof entity];
+      if (profile && typeof profile === 'string' && profile.trim() !== '') {
+        profiles.push(profile);
+      }
+    }
+    return profiles;
+  };
+
+  const getEntityIsCentralized = (entityId: string): boolean | undefined => {
+    const entity = Object.values(itemsMap).find(sot => sot.entity_id === entityId);
+    return entity?.centralized ?? undefined;
+  };
+
+  const getEntityNoKycRequired = (entityId: string) => {
+    const entity = Object.values(itemsMap).find(sot => sot.entity_id === entityId);
+    return entity?.no_kyc_req || false;
+  };
+
+  const getEntityIsDead = (entityId: string) => {
+    const entity = Object.values(itemsMap).find(sot => sot.entity_id === entityId);
+    return entity?.dead || false;
+  };
+
+  const getEntityIsOfacSanctioned = (entityId: string) => {
+    const entity = Object.values(itemsMap).find(sot => sot.entity_id === entityId);
+    return entity?.ofac || false;
+  };
+
+  const getEntityNote = (entityId: string) => {
+    const entity = Object.values(itemsMap).find(sot => sot.entity_id === entityId);
+    return entity?.note || '';
+  };
+
+  const getEntityLastUpdated = (entityId: string) => {
+    const entity = Object.values(itemsMap).find(sot => sot.entity_id === entityId);
+    return entity?.date_updated || '';
+  };
+
+  const getEntityLastModifiedBy = (entityId: string) => {
+    const entity = Object.values(itemsMap).find(sot => sot.entity_id === entityId);
+    return entity?.user || '';
+  };
+
+  const getEntityRevisitSite = (entityId: string) => {
+    const entity = Object.values(itemsMap).find(sot => sot.entity_id === entityId);
+    return entity?.revisit_site || false;
+  };
+
   // Risk level helper functions
   const getRiskLevel = (score: number): string => {
     if (score >= 80) return 'High';
@@ -393,7 +501,7 @@ const RiskDashboard: React.FC = () => {
     transformedTransactions.forEach(tx => {
       if (tx.type === 'in' && tx.from !== 'Unknown') {
         const entityId = attributions[tx.from]?.entity || attributions[tx.from]?.bo || attributions[tx.from]?.custodian;
-        const entityName = entityId ? getEntityDisplayName(entityId) : 'Unknown Wallet';
+        const entityName = entityId ? getEntityDisplayName(entityId) : tx.from;
         
         if (!incomingByEntity[entityName]) {
           incomingByEntity[entityName] = 0;
@@ -401,7 +509,7 @@ const RiskDashboard: React.FC = () => {
         incomingByEntity[entityName] += tx.value * btcPrice;
       } else if (tx.type === 'out' && tx.to !== 'Unknown') {
         const entityId = attributions[tx.to]?.entity || attributions[tx.to]?.bo || attributions[tx.to]?.custodian;
-        const entityName = entityId ? getEntityDisplayName(entityId) : 'Unknown Wallet';
+        const entityName = entityId ? getEntityDisplayName(entityId) : tx.to;
         
         if (!outgoingByEntity[entityName]) {
           outgoingByEntity[entityName] = 0;
@@ -617,12 +725,31 @@ const RiskDashboard: React.FC = () => {
               type={primaryEntityId ? getEntityType(primaryEntityId) : "Unknown"}
               description={primaryEntityId ? getEntityDescription(primaryEntityId) : "No description available"}
               website={primaryEntityId ? getEntityWebsite(primaryEntityId) : ""}
-              contact={primaryEntityId ? getEntityWebsite(primaryEntityId) : ""}
               phone={primaryEntityId ? getEntityPhone(primaryEntityId) : ""}
               address={primaryEntityId ? getEntityAddress(primaryEntityId) : ""}
               founded={primaryEntityId ? getEntityFounded(primaryEntityId) : 0}
               logo={primaryEntityId ? getEntityLogo(primaryEntityId) || "" : ""}
               countries={primaryEntityId ? getEntityCountries(primaryEntityId) : []}
+              entityId={primaryEntityId || ""}
+              email={primaryEntityId ? getEntityEmail(primaryEntityId) : ""}
+              twitter={primaryEntityId ? getEntityTwitter(primaryEntityId) : ""}
+              telegram={primaryEntityId ? getEntityTelegram(primaryEntityId) : ""}
+              ensAddress={primaryEntityId ? getEntityEnsAddress(primaryEntityId) : ""}
+              legalInfoUrl={primaryEntityId ? getEntityLegalInfoUrl(primaryEntityId) : ""}
+              ceo={primaryEntityId ? getEntityCeo(primaryEntityId) : ""}
+              keyPersonnel={primaryEntityId ? getEntityKeyPersonnel(primaryEntityId) : ""}
+              ticker={primaryEntityId ? getEntityTicker(primaryEntityId) : ""}
+              parentId={primaryEntityId ? getEntityParentId(primaryEntityId) : ""}
+              entityTags={primaryEntityId ? getEntityTags(primaryEntityId) : []}
+              socialMediaProfiles={primaryEntityId ? getEntitySocialMediaProfiles(primaryEntityId) : []}
+              isCentralized={primaryEntityId ? getEntityIsCentralized(primaryEntityId) : undefined}
+              noKycRequired={primaryEntityId ? getEntityNoKycRequired(primaryEntityId) : false}
+              isDead={primaryEntityId ? getEntityIsDead(primaryEntityId) : false}
+              isOfacSanctioned={primaryEntityId ? getEntityIsOfacSanctioned(primaryEntityId) : false}
+              note={primaryEntityId ? getEntityNote(primaryEntityId) : ""}
+              lastUpdated={primaryEntityId ? getEntityLastUpdated(primaryEntityId) : ""}
+              lastModifiedBy={primaryEntityId ? getEntityLastModifiedBy(primaryEntityId) : ""}
+              revisitSite={primaryEntityId ? getEntityRevisitSite(primaryEntityId) : false}
             />
           </div>
           

@@ -151,7 +151,7 @@ const TransactionHistory: React.FC<TransactionHistoryProps> = ({
                   className={`py-3 px-4 text-sm font-medium transition-colors ${
                     txTab === tab.key
                       ? 'text-orange-600 dark:text-blockscout-orange border-b-2 border-orange-600 dark:border-blockscout-orange'
-                      : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                      : 'text-gray-600 dark:text-gray-400 hover:text-orange-600 dark:hover:text-blockscout-orange'
                   }`}
                 >
                   {tab.label}

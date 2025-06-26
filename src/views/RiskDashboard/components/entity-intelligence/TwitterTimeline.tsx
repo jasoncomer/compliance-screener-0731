@@ -99,7 +99,7 @@ const TwitterTimeline: React.FC<TwitterTimelineProps> = ({
           ? 'bg-gray-800/50 border-gray-700' 
           : 'bg-gray-50 border-gray-200'
       }`}>
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between">
           <h4 className={`text-xl font-semibold ${
             theme === 'dark' ? 'text-white' : 'text-gray-900'
           }`}>
@@ -135,7 +135,7 @@ const TwitterTimeline: React.FC<TwitterTimelineProps> = ({
         ? 'bg-gray-800/50 border-gray-700' 
         : 'bg-gray-50 border-gray-200'
     }`}>
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-4">
         <h4 className={`text-xl font-semibold ${
           theme === 'dark' ? 'text-white' : 'text-gray-900'
         }`}>
