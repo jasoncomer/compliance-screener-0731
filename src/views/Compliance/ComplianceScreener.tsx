@@ -71,7 +71,6 @@ const styles = {
 };
 
 const ComplianceScreener: React.FC = () => {
-  const { theme } = useTheme();
   const dispatch = useAppDispatch();
   const monitoredAddresses = useAppSelector(selectAllAddresses);
   const [activeTab, setActiveTab] = useState<TabKey>('transactions');

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { Table, Tag, Button, Space, Tooltip } from 'antd';
 import { EyeOutlined, CheckOutlined, CloseOutlined } from '@ant-design/icons';
 import { EComplianceTransactionStatus, IComplianceTransaction } from '../../../../typings/compliance';
@@ -21,7 +21,7 @@ interface ActiveCasesTableProps {
   isArchivedTab?: boolean;
 }
 
-const ActiveCasesTable: React.FC<ActiveCasesTableProps> = ({
+const ActiveCasesTable: React.FC<ActiveCasesTableProps> = React.memo(({
   transactions,
   totalTransactions,
   currentPage,
@@ -38,26 +38,28 @@ const ActiveCasesTable: React.FC<ActiveCasesTableProps> = ({
   const btcPrice = getPrice('BTC') || 0;
 
   // Function to handle row click to show transaction details
-  const handleViewDetails = (record: IComplianceTransaction) => {
+  const handleViewDetails = useCallback((record: IComplianceTransaction) => {
     if (!record || !record._id) {
       console.warn('Invalid transaction record:', record);
       return;
     }
     setSelectedTransactionId(record._id);
     setIsDetailsModalVisible(true);
-  };
+  }, []);
 
   // Function to get user name from ID
-  const getReviewerName = (users: { [id: string]: IUser }, reviewerId?: string) => {
+  const getReviewerName = useCallback((users: { [id: string]: IUser }, reviewerId?: string) => {
     if (!reviewerId) return 'Unassigned';
 
+    // For demo purposes. In a real app, you'd fetch this from your users list
+    // This is just a placeholder - you should replace with actual user data
     const user = users[reviewerId];
     if (user) {
       return `${user.name} ${user.surname}`;
     }
 
     return `User ${reviewerId.substring(0, 8)}`;
-  };
+  }, []);
 
   // Safe render functions with error handling
   const renderStatus = (status: EComplianceTransactionStatus) => {
@@ -171,7 +173,15 @@ const ActiveCasesTable: React.FC<ActiveCasesTableProps> = ({
     }
   };
 
-  const columns = [
+  // Ensure transactions is an array and filter out invalid entries
+  const validTransactions = useMemo(() => {
+    return Array.isArray(transactions) 
+      ? transactions.filter(tx => tx && tx._id) 
+      : [];
+  }, [transactions]);
+
+  // Memoize columns to prevent unnecessary re-renders
+  const columns = useMemo(() => [
     {
       title: 'Status',
       dataIndex: 'status',
@@ -300,12 +310,7 @@ const ActiveCasesTable: React.FC<ActiveCasesTableProps> = ({
         }
       },
     },
-  ];
-
-  // Ensure transactions is an array and filter out invalid entries
-  const validTransactions = Array.isArray(transactions) 
-    ? transactions.filter(tx => tx && tx._id) 
-    : [];
+  ], [renderStatus, renderTransactionId, renderBlockchain, renderAmount, renderConvertedAmount, renderReviewer, renderRiskScore, renderLastUpdated, handleViewDetails, denom, conversionRates]);
 
   try {
     return (
@@ -361,6 +366,6 @@ const ActiveCasesTable: React.FC<ActiveCasesTableProps> = ({
       </div>
     );
   }
-};
+});
 
 export default ActiveCasesTable;

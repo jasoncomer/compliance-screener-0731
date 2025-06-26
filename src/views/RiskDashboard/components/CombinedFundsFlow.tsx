@@ -1,4 +1,3 @@
-"use client"
 
 import { Card, Typography } from 'antd';
 import type { FC } from "react"
