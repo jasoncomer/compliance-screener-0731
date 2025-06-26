@@ -1,11 +1,6 @@
 import { useTheme } from "../../../context/ThemeContext";
 
 interface AddressSummaryProps {
-  totalTransactions: number;
-  totalVolume: number;
-  firstSeen: string;
-  lastSeen: string;
-  averageTransactionSize: number;
   inputAmount?: number;
   outputAmount?: number;
   balance?: number;
@@ -14,11 +9,6 @@ interface AddressSummaryProps {
 }
 
 export function AddressSummary({
-  totalTransactions = 0,
-  totalVolume = 0,
-  firstSeen = '',
-  lastSeen = '',
-  averageTransactionSize = 0,
   inputAmount = 0,
   outputAmount = 0,
   balance = 0,

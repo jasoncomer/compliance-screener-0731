@@ -31,9 +31,9 @@ import { useTheme } from '../../context/ThemeContext';
 const RiskDashboard: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [hasData, setHasData] = useState(false); // Changed to false to only show searchbar by default
-  const [address, setAddress] = useState('bc1qxy2kgdygjrsqtzqzn0yrf2493p83kkfjhx0wlh');
-  const [searchValue, setSearchValue] = useState('bc1qxy2kgdygjrsqtzqzn0yrf2493p83kkfjhx0wlh');
+  const [hasData, setHasData] = useState(false);
+  const [address, setAddress] = useState('');
+  const [searchValue, setSearchValue] = useState('');
   const [riskScoreModalVisible, setRiskScoreModalVisible] = useState(false);
   const { theme } = useTheme();
 
@@ -334,34 +334,111 @@ const RiskDashboard: React.FC = () => {
     }
   };
 
-  // Mock data for components that need it
-  const mockTransactionActivity = Array.from({ length: 365 }, (_, i) => ({
-    day: i % 7,
-    week: Math.floor(i / 7),
-    active: Math.random() > 0.7
-  }));
+  // Generate transaction activity data from real transaction data
+  const transactionActivityData = React.useMemo(() => {
+    if (!transformedTransactions.length) {
+      return Array.from({ length: 365 }, (_, i) => ({
+        day: i % 7,
+        week: Math.floor(i / 7),
+        active: false
+      }));
+    }
 
-  const mockIncomingData = [
-    { name: 'Binance', value: 125000, entityType: 'Exchange' },
-    { name: 'Coinbase', value: 89000, entityType: 'Exchange' },
-    { name: 'Kraken', value: 45000, entityType: 'Exchange' },
-    { name: 'Other', value: 21000, entityType: 'Wallet' }
-  ];
+    // Create a map of dates to transaction counts
+    const dateMap = new Map<string, number>();
+    const now = new Date();
+    
+    // Initialize all dates in the last year with 0 transactions
+    for (let i = 0; i < 365; i++) {
+      const date = new Date(now);
+      date.setDate(date.getDate() - i);
+      const dateKey = date.toISOString().split('T')[0];
+      dateMap.set(dateKey, 0);
+    }
 
-  const mockOutgoingData = [
-    { name: 'Unknown Wallet', value: 95000, entityType: 'Wallet' },
-    { name: 'DeFi Protocol', value: 75000, entityType: 'DeFi' },
-    { name: 'Exchange', value: 45000, entityType: 'Exchange' },
-    { name: 'Other', value: 35000, entityType: 'Wallet' }
-  ];
+    // Count transactions per day
+    transformedTransactions.forEach(tx => {
+      const txDate = new Date(tx.time);
+      const dateKey = txDate.toISOString().split('T')[0];
+      if (dateMap.has(dateKey)) {
+        dateMap.set(dateKey, (dateMap.get(dateKey) || 0) + 1);
+      }
+    });
+
+    // Convert to the expected format
+    return Array.from({ length: 365 }, (_, i) => {
+      const date = new Date(now);
+      date.setDate(date.getDate() - i);
+      const dateKey = date.toISOString().split('T')[0];
+      const txCount = dateMap.get(dateKey) || 0;
+      
+      return {
+        day: date.getDay(),
+        week: Math.floor(i / 7),
+        active: txCount > 0
+      };
+    }).reverse(); // Reverse to show oldest to newest
+  }, [transformedTransactions]);
+
+  // Generate funds flow data from real transaction data
+  const fundsFlowData = React.useMemo(() => {
+    if (!transformedTransactions.length) {
+      return { incoming: [], outgoing: [] };
+    }
+
+    // Group transactions by entity type
+    const incomingByEntity: { [key: string]: number } = {};
+    const outgoingByEntity: { [key: string]: number } = {};
+
+    transformedTransactions.forEach(tx => {
+      if (tx.type === 'in' && tx.from !== 'Unknown') {
+        const entityId = attributions[tx.from]?.entity || attributions[tx.from]?.bo || attributions[tx.from]?.custodian;
+        const entityName = entityId ? getEntityDisplayName(entityId) : 'Unknown Wallet';
+        
+        if (!incomingByEntity[entityName]) {
+          incomingByEntity[entityName] = 0;
+        }
+        incomingByEntity[entityName] += tx.value * btcPrice;
+      } else if (tx.type === 'out' && tx.to !== 'Unknown') {
+        const entityId = attributions[tx.to]?.entity || attributions[tx.to]?.bo || attributions[tx.to]?.custodian;
+        const entityName = entityId ? getEntityDisplayName(entityId) : 'Unknown Wallet';
+        
+        if (!outgoingByEntity[entityName]) {
+          outgoingByEntity[entityName] = 0;
+        }
+        outgoingByEntity[entityName] += tx.value * btcPrice;
+      }
+    });
+
+    // Convert to the expected format
+    const incomingData = Object.entries(incomingByEntity)
+      .map(([name, value]) => ({
+        name,
+        value,
+        entityType: 'Exchange' // Default to Exchange for now
+      }))
+      .sort((a, b) => b.value - a.value)
+      .slice(0, 5);
+
+    const outgoingData = Object.entries(outgoingByEntity)
+      .map(([name, value]) => ({
+        name,
+        value,
+        entityType: 'Wallet' // Default to Wallet for outgoing
+      }))
+      .sort((a, b) => b.value - a.value)
+      .slice(0, 5);
+
+    return { incoming: incomingData, outgoing: outgoingData };
+  }, [transformedTransactions, attributions, btcPrice, getEntityDisplayName]);
 
   // Get primary entity and tags
   const primaryEntityId = getEntityFromAddress();
   const entityTags = primaryEntityId ? getEntityTags(primaryEntityId) : [];
   const twitterHandle = getTwitterHandle();
 
-  // Check if we have data to display (either from search or from default address with data)
-  const shouldShowData = hasData || (address && !isLoadingAnyData && (counterpartyTransactionData || addressSummaryData || addressBlockStatsData));
+  // Check if we have data to display (only when hasData is true)
+  const shouldShowData = hasData && address && !isLoadingAnyData && (counterpartyTransactionData || addressSummaryData || addressBlockStatsData);
 
   // Handle address search
   const handleAddressSearch = async (value: string) => {
@@ -416,10 +493,10 @@ const RiskDashboard: React.FC = () => {
             value={searchValue}
             onChange={(e) => setSearchValue(e.target.value)}
             onKeyPress={(e) => e.key === 'Enter' && handleSearch(searchValue)}
-            className={`w-full px-4 py-3 pr-12 rounded-lg border transition-colors ${
+            className={`w-full px-4 py-3 pr-12 rounded-lg border transition-colors focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 focus:outline-none ${
               theme === 'dark' 
-                ? 'bg-gray-800 border-gray-700 text-white placeholder-gray-400 focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20' 
-                : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500 focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20'
+                ? 'bg-gray-800 border-gray-700 text-white placeholder-gray-400' 
+                : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
             }`}
             disabled={loading}
           />
@@ -450,18 +527,22 @@ const RiskDashboard: React.FC = () => {
           <h3 className={`text-2xl font-semibold mb-4 ${
             theme === 'dark' ? 'text-gray-100' : 'text-gray-900'
           }`}>
-            Risk Dashboard
+            Welcome to Risk Dashboard
           </h3>
           <p className={`text-base leading-relaxed mb-6 ${
             theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
           }`}>
-            Enter a blockchain address above to analyze its risk profile, transaction patterns, and associated entities.
+            Analyze blockchain addresses for risk assessment, transaction patterns, and entity intelligence. 
+            Get comprehensive insights into address behavior, counterparty analysis, and risk scoring.
           </p>
-          <p className={`text-sm opacity-80 ${
+          <div className={`text-sm space-y-2 ${
             theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
           }`}>
-            Supports Bitcoin (bc1q...), Ethereum (0x...), and other major blockchain addresses
-          </p>
+            <p>• Supports Bitcoin (bc1q...), Ethereum (0x...), and other major blockchain addresses</p>
+            <p>• Real-time risk scoring and transaction analysis</p>
+            <p>• Entity attribution and counterparty intelligence</p>
+            <p>• Funds flow visualization and transaction history</p>
+          </div>
         </div>
       )}
 
@@ -496,9 +577,11 @@ const RiskDashboard: React.FC = () => {
           </div>
 
           {/* Transaction Activity - Full Width */}
-          <div className="lg:col-span-2">
-            <TransactionActivity transactionActivity={mockTransactionActivity} />
-          </div>
+          {transformedTransactions.length > 0 && (
+            <div className="lg:col-span-2">
+              <TransactionActivity transactionActivity={transactionActivityData} />
+            </div>
+          )}
 
           {/* Top Counterparties */}
           <div className="h-[500px]">
@@ -518,12 +601,14 @@ const RiskDashboard: React.FC = () => {
           </div>
 
           {/* Funds Flow Analysis - Full Width */}
-          <div className="lg:col-span-2">
-            <CombinedFundsFlow 
-              incomingData={mockIncomingData}
-              outgoingData={mockOutgoingData}
-            />
-          </div>
+          {(fundsFlowData.incoming.length > 0 || fundsFlowData.outgoing.length > 0) && (
+            <div className="lg:col-span-2">
+              <CombinedFundsFlow 
+                incomingData={fundsFlowData.incoming}
+                outgoingData={fundsFlowData.outgoing}
+              />
+            </div>
+          )}
 
           {/* Entity Details */}
           <div>
