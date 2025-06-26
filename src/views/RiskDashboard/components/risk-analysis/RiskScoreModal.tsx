@@ -3,6 +3,7 @@ import { Modal, Card, Statistic, Progress, Table, Tabs, Space, Typography, Empty
 import { UserOutlined, TransactionOutlined, GlobalOutlined, SafetyOutlined } from '@ant-design/icons';
 import { RiskScoringResponse, RiskFactor } from '../../../../typings/riskScoring';
 import { colors } from '../../../../styles/variables';
+import { useTheme } from '../../../../context/ThemeContext';
 import './RiskScoreModal.css';
 
 const { Text } = Typography;
@@ -22,6 +23,8 @@ const RiskScoreModal: React.FC<RiskScoreModalProps> = ({
   address,
   loading = false 
 }) => {
+  const { theme } = useTheme();
+
   const getRiskColor = (score: number): string => {
     if (score > 70) return '#cf1322';
     if (score > 40) return '#faad14';
@@ -42,7 +45,7 @@ const RiskScoreModal: React.FC<RiskScoreModalProps> = ({
       render: (text: string, record: RiskFactor) => (
         <Space>
           {getRiskIcon(record.severity)}
-          <Text style={{ color: '#e5e7eb' }}>{text}</Text>
+          <Text style={{ color: theme === 'light' ? '#374151' : '#e5e7eb' }}>{text}</Text>
         </Space>
       ),
     },
@@ -71,7 +74,7 @@ const RiskScoreModal: React.FC<RiskScoreModalProps> = ({
       title: 'Description',
       dataIndex: 'description',
       key: 'description',
-      render: (text: string) => <Text style={{ color: '#9ca3af' }}>{text}</Text>,
+      render: (text: string) => <Text style={{ color: theme === 'light' ? '#6b7280' : '#9ca3af' }}>{text}</Text>,
     },
   ];
 
@@ -85,9 +88,9 @@ const RiskScoreModal: React.FC<RiskScoreModalProps> = ({
 
     return (
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '24px' }}>
-        <Card className="bg-gray-800 border-gray-700">
+        <Card className={`${theme === 'light' ? 'bg-white border-gray-200' : 'bg-gray-800 border-gray-700'}`}>
           <Statistic
-            title={<Text style={{ color: '#e5e7eb' }}>Overall Risk Score</Text>}
+            title={<Text style={{ color: theme === 'light' ? '#374151' : '#e5e7eb' }}>Overall Risk Score</Text>}
             value={overallRiskScore}
             suffix="/100"
             valueStyle={{
@@ -102,9 +105,9 @@ const RiskScoreModal: React.FC<RiskScoreModalProps> = ({
           />
         </Card>
         
-        <Card className="bg-gray-800 border-gray-700">
+        <Card className={`${theme === 'light' ? 'bg-white border-gray-200' : 'bg-gray-800 border-gray-700'}`}>
           <Statistic
-            title={<Text style={{ color: '#e5e7eb' }}>Transaction Risk</Text>}
+            title={<Text style={{ color: theme === 'light' ? '#374151' : '#e5e7eb' }}>Transaction Risk</Text>}
             value={transactionRiskScore}
             suffix="/100"
             valueStyle={{
@@ -119,9 +122,9 @@ const RiskScoreModal: React.FC<RiskScoreModalProps> = ({
           />
         </Card>
         
-        <Card className="bg-gray-800 border-gray-700">
+        <Card className={`${theme === 'light' ? 'bg-white border-gray-200' : 'bg-gray-800 border-gray-700'}`}>
           <Statistic
-            title={<Text style={{ color: '#e5e7eb' }}>Entity Risk</Text>}
+            title={<Text style={{ color: theme === 'light' ? '#374151' : '#e5e7eb' }}>Entity Risk</Text>}
             value={entityRiskScore}
             suffix="/100"
             valueStyle={{
@@ -136,9 +139,9 @@ const RiskScoreModal: React.FC<RiskScoreModalProps> = ({
           />
         </Card>
         
-        <Card className="bg-gray-800 border-gray-700">
+        <Card className={`${theme === 'light' ? 'bg-white border-gray-200' : 'bg-gray-800 border-gray-700'}`}>
           <Statistic
-            title={<Text style={{ color: '#e5e7eb' }}>Jurisdiction Risk</Text>}
+            title={<Text style={{ color: theme === 'light' ? '#374151' : '#e5e7eb' }}>Jurisdiction Risk</Text>}
             value={jurisdictionRiskScore}
             suffix="/100"
             valueStyle={{
@@ -169,7 +172,7 @@ const RiskScoreModal: React.FC<RiskScoreModalProps> = ({
       title={
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <SafetyOutlined style={{ color: colors.attributionHover }} />
-          <span style={{ color: '#e5e7eb' }}>Risk Score Details</span>
+          <span style={{ color: theme === 'light' ? '#374151' : '#e5e7eb' }}>Risk Score Details</span>
         </div>
       }
       open={visible}
@@ -178,16 +181,16 @@ const RiskScoreModal: React.FC<RiskScoreModalProps> = ({
       width={1000}
       style={{ top: 20 }}
       bodyStyle={{ 
-        backgroundColor: '#111827', 
-        color: '#e5e7eb',
+        backgroundColor: theme === 'light' ? '#ffffff' : '#111827', 
+        color: theme === 'light' ? '#374151' : '#e5e7eb',
         maxHeight: '80vh',
         overflowY: 'auto'
       }}
-      className="risk-score-modal"
+      className={`risk-score-modal ${theme === 'light' ? 'light-theme' : 'dark-theme'}`}
     >
       <div style={{ marginBottom: '16px' }}>
-        <Text style={{ color: '#9ca3af' }}>Address: </Text>
-        <Text code style={{ color: '#e5e7eb' }}>{address}</Text>
+        <Text style={{ color: theme === 'light' ? '#6b7280' : '#9ca3af' }}>Address: </Text>
+        <Text code style={{ color: theme === 'light' ? '#374151' : '#e5e7eb' }}>{address}</Text>
       </div>
 
       {loading ? (
@@ -200,21 +203,21 @@ const RiskScoreModal: React.FC<RiskScoreModalProps> = ({
               <i className="ant-spin-dot-item"></i>
             </span>
           </div>
-          <div style={{ marginTop: '16px', color: '#9ca3af' }}>Loading risk analysis...</div>
+          <div style={{ marginTop: '16px', color: theme === 'light' ? '#6b7280' : '#9ca3af' }}>Loading risk analysis...</div>
         </div>
       ) : riskScores ? (
         <div>
           {renderRiskScoreCards()}
           
-          <Card className="bg-gray-800 border-gray-700">
+          <Card className={`${theme === 'light' ? 'bg-white border-gray-200' : 'bg-gray-800 border-gray-700'}`}>
             <Tabs 
               defaultActiveKey="entity"
-              style={{ color: '#e5e7eb' }}
+              style={{ color: theme === 'light' ? '#374151' : '#e5e7eb' }}
               items={[
                 {
                   key: 'entity',
                   label: (
-                    <span style={{ color: '#e5e7eb' }}>
+                    <span style={{ color: theme === 'light' ? '#374151' : '#e5e7eb' }}>
                       <UserOutlined style={{ marginRight: '8px' }} />
                       Entity Risk Factors
                     </span>
@@ -234,7 +237,7 @@ const RiskScoreModal: React.FC<RiskScoreModalProps> = ({
                 {
                   key: 'transaction',
                   label: (
-                    <span style={{ color: '#e5e7eb' }}>
+                    <span style={{ color: theme === 'light' ? '#374151' : '#e5e7eb' }}>
                       <TransactionOutlined style={{ marginRight: '8px' }} />
                       Transaction Risk Factors
                     </span>
@@ -254,7 +257,7 @@ const RiskScoreModal: React.FC<RiskScoreModalProps> = ({
                 {
                   key: 'jurisdiction',
                   label: (
-                    <span style={{ color: '#e5e7eb' }}>
+                    <span style={{ color: theme === 'light' ? '#374151' : '#e5e7eb' }}>
                       <GlobalOutlined style={{ marginRight: '8px' }} />
                       Jurisdiction Risk Factors
                     </span>
@@ -264,6 +267,7 @@ const RiskScoreModal: React.FC<RiskScoreModalProps> = ({
                       dataSource={riskScores.jurisdictionRisk.factors}
                       columns={columns}
                       pagination={false}
+                      rowKey="id"
                       locale={{ emptyText: customEmptyState(<GlobalOutlined />, 'No jurisdiction risk data available for this address') }}
                       style={{ width: '100%' }}
                       className="risk-table"
@@ -275,7 +279,7 @@ const RiskScoreModal: React.FC<RiskScoreModalProps> = ({
           </Card>
         </div>
       ) : (
-        <div style={{ textAlign: 'center', padding: '40px', color: '#9ca3af' }}>
+        <div style={{ textAlign: 'center', padding: '40px', color: theme === 'light' ? '#6b7280' : '#9ca3af' }}>
           No risk score data available for this address.
         </div>
       )}

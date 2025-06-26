@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Card, Typography, Button, Tabs, Alert } from 'antd';
+import { useTheme } from '../../../../context/ThemeContext';
 import { DataTable } from '../../../../components/DataTable';
 import { TransformedTransaction } from '../../../../utils/transactionTransformers';
 import { truncateStringMiddle } from '../../../../utils/generic';
@@ -19,6 +20,7 @@ const TransactionHistory: React.FC<TransactionHistoryProps> = ({
   error = null,
   address = ''
 }) => {
+  const { theme } = useTheme();
   const [txTab, setTxTab] = useState<'all' | 'in' | 'out'>('all');
 
   // Function to open BlockScout explorer
@@ -37,7 +39,7 @@ const TransactionHistory: React.FC<TransactionHistoryProps> = ({
       title: 'Time',
       width: 130,
       render: (value: string) => (
-        <span className="text-gray-500 text-xs whitespace-nowrap">{value}</span>
+        <span className={`${theme === 'light' ? 'text-gray-500' : 'text-gray-500'} text-xs whitespace-nowrap`}>{value}</span>
       ),
     },
     {
@@ -59,7 +61,7 @@ const TransactionHistory: React.FC<TransactionHistoryProps> = ({
       title: 'Amount',
       width: 110,
       render: (value: string) => (
-        <span className="text-white text-xs font-mono">{value}</span>
+        <span className={`${theme === 'light' ? 'text-gray-900' : 'text-white'} text-xs font-mono`}>{value}</span>
       ),
     },
     {
@@ -69,7 +71,7 @@ const TransactionHistory: React.FC<TransactionHistoryProps> = ({
       render: (value: string) => {
         const displayText = value === 'Unknown' ? value : truncateStringMiddle(value, 16);
         return (
-          <span className="text-gray-400 text-xs" title={value}>{displayText}</span>
+          <span className={`${theme === 'light' ? 'text-gray-500' : 'text-gray-400'} text-xs`} title={value}>{displayText}</span>
         );
       },
     },
@@ -80,7 +82,7 @@ const TransactionHistory: React.FC<TransactionHistoryProps> = ({
       render: (value: string) => {
         const displayText = value === 'Unknown' ? value : truncateStringMiddle(value, 16);
         return (
-          <span className="text-gray-400 text-xs" title={value}>{displayText}</span>
+          <span className={`${theme === 'light' ? 'text-gray-500' : 'text-gray-400'} text-xs`} title={value}>{displayText}</span>
         );
       },
     },
@@ -89,10 +91,10 @@ const TransactionHistory: React.FC<TransactionHistoryProps> = ({
       title: 'USD',
       width: 70,
       render: (value: string) => (
-        <span className="text-gray-500 text-xs">{value}</span>
+        <span className={`${theme === 'light' ? 'text-gray-500' : 'text-gray-500'} text-xs`}>{value}</span>
       ),
     },
-  ], []);
+  ], [theme]);
 
   // Filtered tx data
   const filteredTx = useMemo(() => {
@@ -142,9 +144,9 @@ const TransactionHistory: React.FC<TransactionHistoryProps> = ({
   return (
     <div className="flex-1 min-w-[320px] flex flex-col justify-stretch">
       <Card 
-        className="bg-gray-800 rounded-2xl border-gray-700 h-full flex flex-col"
+        className={`${theme === 'light' ? 'bg-white border-gray-200' : 'bg-gray-800 border-gray-700'} rounded-2xl h-full flex flex-col`}
         title={
-          <Title level={5} className="text-white m-0">Transaction History</Title>
+          <Title level={5} className={`${theme === 'light' ? 'text-gray-900' : 'text-white'} m-0`}>Transaction History</Title>
         }
         extra={
           <Button 
@@ -166,20 +168,20 @@ const TransactionHistory: React.FC<TransactionHistoryProps> = ({
           flexDirection: 'column'
         }}
       >
-        <div className="border-b border-gray-700">
+        <div className={`border-b ${theme === 'light' ? 'border-gray-200' : 'border-gray-700'}`}>
           <Tabs 
             activeKey={txTab} 
             onChange={k => setTxTab(k as any)} 
-            className="
+            className={`
               px-4
               [&_.ant-tabs-nav]:mb-0
               [&_.ant-tabs-tab]:py-3
               [&_.ant-tabs-tab]:text-sm
-              [&_.ant-tabs-tab-btn]:text-gray-400 
-              [&_.ant-tabs-tab-btn]:hover:text-white
+              [&_.ant-tabs-tab-btn]:${theme === 'light' ? 'text-gray-500' : 'text-gray-400'}
+              [&_.ant-tabs-tab-btn]:hover:${theme === 'light' ? 'text-gray-900' : 'text-white'}
               [&_.ant-tabs-tab-active_.ant-tabs-tab-btn]:text-blockscout-orange
               [&_.ant-tabs-ink-bar]:bg-blockscout-orange
-            "
+            `}
             items={[
               { key: 'all', label: 'All Transactions' },
               { key: 'in', label: 'Inflows (Received)' },

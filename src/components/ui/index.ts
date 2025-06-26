@@ -8,8 +8,7 @@ export {
   StyledHeader, 
   HeaderSection, 
   Logo, 
-  StyledContent, 
-  MainContent,
+  StyledContent,
   UserMenuButton, 
   TabsContainer 
 } from '../../styles/Layout';
@@ -19,7 +18,11 @@ export { default as Pagination } from '../common/Pagination';
 // Re-export existing UI components
 export * from './button';
 export * from './dialog';
+export * from './dropdown-menu';
 export * from './label';
 export * from './select';
 export * from './switch';
 export * from './tabs';
+export * from './toast';
+export * from './toaster';
+export * from './tooltip';

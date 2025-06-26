@@ -1,9 +1,9 @@
-"use client"
 
 import { Card, Typography } from 'antd';
 import type { FC } from "react"
 import { useMemo } from "react"
 import { ResponsiveContainer, Sankey, Tooltip, Layer } from "recharts"
+import { useTheme } from "../../../context/ThemeContext";
 import { riskScores } from "../../../lib/risk-scores"
 import { getColorForEntityType, getEmojiForEntityType } from "../../../lib/entity-types"
 
@@ -92,6 +92,7 @@ const CustomSankeyLink = (props: any) => {
 }
 
 export const CombinedFundsFlow = ({ incomingData, outgoingData, title }: CombinedFundsFlowProps) => {
+  const { theme } = useTheme();
   const { nodes, links, uniqueEntityTypes } = useMemo(() => {
     const nodeMap = new Map<string, number>()
     const currentNodes: { name: string; color: string; riskScore?: number; entityType: string }[] = []
@@ -182,20 +183,20 @@ export const CombinedFundsFlow = ({ incomingData, outgoingData, title }: Combine
       if (data.source && data.target) {
         // Link tooltip
         return (
-          <div className="bg-gray-800 border border-gray-600 rounded-lg shadow-lg text-sm p-3">
-            <p className="font-semibold text-white">{data.label}</p>
-            {data.riskScore !== undefined && <p className="text-gray-300">Risk Score: {Math.round(data.riskScore)}</p>}
+          <div className={`${theme === 'light' ? 'bg-white border-gray-300' : 'bg-gray-800 border-gray-600'} border rounded-lg shadow-lg text-sm p-3`}>
+            <p className={`font-semibold ${theme === 'light' ? 'text-gray-900' : 'text-white'}`}>{data.label}</p>
+            {data.riskScore !== undefined && <p className={`${theme === 'light' ? 'text-gray-600' : 'text-gray-300'}`}>Risk Score: {Math.round(data.riskScore)}</p>}
           </div>
         )
       }
       if (data.name) {
         // Node tooltip
         return (
-          <div className="bg-gray-800 border border-gray-600 rounded-lg shadow-lg text-sm p-3">
-            <p className="font-semibold text-white">
+          <div className={`${theme === 'light' ? 'bg-white border-gray-300' : 'bg-gray-800 border-gray-600'} border rounded-lg shadow-lg text-sm p-3`}>
+            <p className={`font-semibold ${theme === 'light' ? 'text-gray-900' : 'text-white'}`}>
               {data.name.replace(/In: |Out: /g, "")}: {formatCurrency(data.value)}
             </p>
-            {data.riskScore !== undefined && <p className="text-gray-300">Risk Score: {Math.round(data.riskScore)}</p>}
+            {data.riskScore !== undefined && <p className={`${theme === 'light' ? 'text-gray-600' : 'text-gray-300'}`}>Risk Score: {Math.round(data.riskScore)}</p>}
           </div>
         )
       }
@@ -204,9 +205,9 @@ export const CombinedFundsFlow = ({ incomingData, outgoingData, title }: Combine
   }
 
   return (
-    <Card className="bg-gray-800 rounded-2xl border-gray-700">
-      <Title level={5} className="text-white mb-4">{title || "Funds Flow Analysis"}</Title>
-      <div className="p-6 bg-gray-800">
+    <Card className={`${theme === 'light' ? 'bg-white border-gray-200' : 'bg-gray-800 border-gray-700'} rounded-2xl`}>
+      <Title level={5} className={`${theme === 'light' ? 'text-gray-900' : 'text-white'} mb-4`}>{title || "Funds Flow Analysis"}</Title>
+      <div className={`p-6 ${theme === 'light' ? 'bg-white' : 'bg-gray-800'}`}>
         {sankeyData.links.length > 0 ? (
           <>
             <div
@@ -241,8 +242,8 @@ export const CombinedFundsFlow = ({ incomingData, outgoingData, title }: Combine
                 </Sankey>
               </ResponsiveContainer>
             </div>
-            <div className="mt-4 pt-4 border-t border-gray-600">
-              <h3 className="text-sm font-semibold mb-2 text-white">Legend</h3>
+            <div className={`mt-4 pt-4 border-t ${theme === 'light' ? 'border-gray-200' : 'border-gray-600'}`}>
+              <h3 className={`text-sm font-semibold mb-2 ${theme === 'light' ? 'text-gray-900' : 'text-white'}`}>Legend</h3>
               <div className="flex flex-wrap gap-x-4 gap-y-2">
                 {uniqueEntityTypes.map((type) => (
                   <div key={type} className="flex items-center gap-2 text-xs">
@@ -256,7 +257,7 @@ export const CombinedFundsFlow = ({ incomingData, outgoingData, title }: Combine
                             : getColorForEntityType(type.toLowerCase()),
                       }}
                     />
-                    <span className="capitalize text-gray-300">{type}</span>
+                    <span className={`capitalize ${theme === 'light' ? 'text-gray-600' : 'text-gray-300'}`}>{type}</span>
                   </div>
                 ))}
               </div>
@@ -264,7 +265,7 @@ export const CombinedFundsFlow = ({ incomingData, outgoingData, title }: Combine
           </>
         ) : (
           <div className="flex items-center justify-center h-64">
-            <p className="text-gray-500">No transaction data available for flow analysis.</p>
+            <p className={`${theme === 'light' ? 'text-gray-500' : 'text-gray-500'}`}>No transaction data available for flow analysis.</p>
           </div>
         )}
       </div>

@@ -1,6 +1,7 @@
 import React from 'react';
 import { Card, Typography, Empty, Tag, Spin, Alert } from 'antd';
 import { TwitterOutlined, ReloadOutlined } from '@ant-design/icons';
+import { useTheme } from '../../../../context/ThemeContext';
 
 const { Title } = Typography;
 
@@ -34,11 +35,13 @@ const SocialMediaFeed: React.FC<SocialMediaFeedProps> = ({
   isMockData,
   title = "Social Media Feed"
 }) => {
+  const { theme } = useTheme();
+
   if (loading) {
     return (
-      <Card className="bg-gray-800 rounded-2xl border-gray-700">
+      <Card className={`${theme === 'light' ? 'bg-white border-gray-200' : 'bg-gray-800 border-gray-700'} rounded-2xl`}>
         <div className="flex items-center justify-between mb-4">
-          <Title level={5} className="text-white mb-0">
+          <Title level={5} className={`${theme === 'light' ? 'text-gray-900' : 'text-white'} mb-0`}>
             <TwitterOutlined /> {title}
           </Title>
           {isRealData && !isMockData && (
@@ -54,7 +57,7 @@ const SocialMediaFeed: React.FC<SocialMediaFeedProps> = ({
         </div>
         <div className="flex justify-center items-center py-8">
           <Spin size="large" />
-          <span className="ml-3 text-gray-500">Fetching posts...</span>
+          <span className={`ml-3 ${theme === 'light' ? 'text-gray-500' : 'text-gray-500'}`}>Fetching posts...</span>
         </div>
       </Card>
     );
@@ -62,9 +65,9 @@ const SocialMediaFeed: React.FC<SocialMediaFeedProps> = ({
 
   if (error) {
     return (
-      <Card className="bg-gray-800 rounded-2xl border-gray-700">
+      <Card className={`${theme === 'light' ? 'bg-white border-gray-200' : 'bg-gray-800 border-gray-700'} rounded-2xl`}>
         <div className="flex items-center justify-between mb-4">
-          <Title level={5} className="text-white mb-0">
+          <Title level={5} className={`${theme === 'light' ? 'text-gray-900' : 'text-white'} mb-0`}>
             <TwitterOutlined /> {title}
           </Title>
           {isRealData && !isMockData && (
@@ -100,9 +103,9 @@ const SocialMediaFeed: React.FC<SocialMediaFeedProps> = ({
   }
 
   return (
-    <Card className="bg-gray-800 rounded-2xl border-gray-700">
+    <Card className={`${theme === 'light' ? 'bg-white border-gray-200' : 'bg-gray-800 border-gray-700'} rounded-2xl`}>
       <div className="flex items-center justify-between mb-4">
-        <Title level={5} className="text-white mb-0">
+        <Title level={5} className={`${theme === 'light' ? 'text-gray-900' : 'text-white'} mb-0`}>
           <TwitterOutlined /> {title}
         </Title>
         {isRealData && !isMockData && (
@@ -118,25 +121,25 @@ const SocialMediaFeed: React.FC<SocialMediaFeedProps> = ({
       </div>
       {posts.length > 0 ? (
         posts.map((post) => (
-          <div key={post.id} className="mb-4 text-gray-500">
-            <div className="text-white font-semibold">
-              @{post.user} <span className="text-gray-500 font-normal text-xs">· {post.time}</span>
+          <div key={post.id} className={`mb-4 ${theme === 'light' ? 'text-gray-500' : 'text-gray-500'}`}>
+            <div className={`${theme === 'light' ? 'text-gray-900' : 'text-white'} font-semibold`}>
+              @{post.user} <span className={`${theme === 'light' ? 'text-gray-500' : 'text-gray-500'} font-normal text-xs`}>· {post.time}</span>
             </div>
             <div className="my-1">{post.text}</div>
-            <div className="text-xs text-gray-500">
+            <div className={`text-xs ${theme === 'light' ? 'text-gray-500' : 'text-gray-500'}`}>
               💬 {post.replies}  🔁 {post.retweets}  ❤️ {post.likes}
             </div>
           </div>
         ))
       ) : (
         <Empty
-          image={<TwitterOutlined style={{ fontSize: 40, color: '#6b7280' }} />}
+          image={<TwitterOutlined style={{ fontSize: 40, color: theme === 'light' ? '#6b7280' : '#6b7280' }} />}
           description={
-            <span className="text-gray-500">
+            <span className={`${theme === 'light' ? 'text-gray-500' : 'text-gray-500'}`}>
               {isRealData ? 'No recent posts available for this entity' : 'No posts available'}
             </span>
           }
-          className="text-gray-500"
+          className={`${theme === 'light' ? 'text-gray-500' : 'text-gray-500'}`}
         />
       )}
     </Card>

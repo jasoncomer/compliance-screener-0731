@@ -292,6 +292,11 @@ const BtcInputsOutputs: React.FC<BtcInputsOutputsProps> = ({ data, type }) => {
 
   const { itemsMap } = useSelector((state: RootState) => state.sot);
 
+  const renderAmt = useCallback((amt: number) => {
+    const sats = satsToBTC(amt);
+    return sats.toFixed(8);
+  }, []);
+
   // Show mining reward message if no inputs and type is 'inputs'
   if (type === 'inputs' && data.length === 0) {
     return (
@@ -304,11 +309,6 @@ const BtcInputsOutputs: React.FC<BtcInputsOutputsProps> = ({ data, type }) => {
   const toggleExpand = () => {
     setIsExpanded(!isExpanded);
   };
-
-  const renderAmt = useCallback((amt: number) => {
-    const sats = satsToBTC(amt);
-    return sats.toFixed(8);
-  }, []);
 
   const copyCospendId = (cospendId: string) => {
     navigator.clipboard.writeText(cospendId)

@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Card, Typography, Empty, Tag, Spin } from 'antd';
 import { TwitterOutlined } from '@ant-design/icons';
+import { useTheme } from '../../../../context/ThemeContext';
 
 const { Title } = Typography;
 
@@ -19,6 +20,7 @@ const TwitterTimeline: React.FC<TwitterTimelineProps> = ({
   username,
   title = "Twitter Feed"
 }) => {
+  const { theme } = useTheme();
   const containerRef = useRef<HTMLDivElement>(null);
   const [loading, setLoading] = useState(true);
 
@@ -62,13 +64,13 @@ const TwitterTimeline: React.FC<TwitterTimelineProps> = ({
         
         // This creates a blockquote for the user's timeline
         tweetsContainer.innerHTML = `
-          <blockquote class="twitter-tweet" data-theme="dark" data-cards="hidden">
+          <blockquote class="twitter-tweet" data-theme="${theme}" data-cards="hidden">
             <a href="${userUrl}"></a>
           </blockquote>
-          <blockquote class="twitter-tweet" data-theme="dark" data-cards="hidden">
+          <blockquote class="twitter-tweet" data-theme="${theme}" data-cards="hidden">
             <a href="${userUrl}"></a>
           </blockquote>
-          <blockquote class="twitter-tweet" data-theme="dark" data-cards="hidden">
+          <blockquote class="twitter-tweet" data-theme="${theme}" data-cards="hidden">
             <a href="${userUrl}"></a>
           </blockquote>
         `;
@@ -91,31 +93,31 @@ const TwitterTimeline: React.FC<TwitterTimelineProps> = ({
         containerRef.current.innerHTML = '';
       }
     };
-  }, [username]);
+  }, [username, theme]);
 
   if (!username) {
     return (
-      <Card className="bg-gray-800 rounded-2xl border-gray-700">
-        <Title level={5} className="text-white mb-4">
+      <Card className={`${theme === 'light' ? 'bg-white border-gray-200' : 'bg-gray-800 border-gray-700'} rounded-2xl`}>
+        <Title level={5} className={`${theme === 'light' ? 'text-gray-900' : 'text-white'} mb-4`}>
           <TwitterOutlined /> {title}
         </Title>
         <Empty
-          image={<TwitterOutlined style={{ fontSize: 40, color: '#6b7280' }} />}
+          image={<TwitterOutlined style={{ fontSize: 40, color: theme === 'light' ? '#6b7280' : '#6b7280' }} />}
           description={
-            <span className="text-gray-500">
+            <span className={`${theme === 'light' ? 'text-gray-500' : 'text-gray-500'}`}>
               No Twitter handle available for this entity
             </span>
           }
-          className="text-gray-500"
+          className={`${theme === 'light' ? 'text-gray-500' : 'text-gray-500'}`}
         />
       </Card>
     );
   }
 
   return (
-    <Card className="bg-gray-800 rounded-2xl border-gray-700">
+    <Card className={`${theme === 'light' ? 'bg-white border-gray-200' : 'bg-gray-800 border-gray-700'} rounded-2xl`}>
       <div className="flex items-center justify-between mb-4">
-        <Title level={5} className="text-white mb-0">
+        <Title level={5} className={`${theme === 'light' ? 'text-gray-900' : 'text-white'} mb-0`}>
           <TwitterOutlined /> {title}
         </Title>
         <Tag color="green" className="text-xs">
@@ -125,7 +127,7 @@ const TwitterTimeline: React.FC<TwitterTimelineProps> = ({
       {loading ? (
         <div className="flex justify-center items-center py-8">
           <Spin size="large" />
-          <span className="ml-3 text-gray-500">Loading tweets...</span>
+          <span className={`ml-3 ${theme === 'light' ? 'text-gray-500' : 'text-gray-500'}`}>Loading tweets...</span>
         </div>
       ) : (
         <div 
