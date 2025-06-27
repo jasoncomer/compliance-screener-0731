@@ -64,7 +64,6 @@ const UnassignedTransactionsTab: React.FC<UnassignedTransactionsTabProps> = ({ i
         sortOrder,
       };
       
-      console.log('🔄 Filters changing:', newFilters);
       return newFilters;
     });
   }, [organization, currentPage, pageSize, initialStatusFilter, sortBy, sortOrder]);
@@ -92,8 +91,6 @@ const UnassignedTransactionsTab: React.FC<UnassignedTransactionsTabProps> = ({ i
 
   // Handle table change (pagination, sorting)
   const handleTableChange = (pagination: any, _filters: any, sorter: any) => {
-    console.log('🔍 handleTableChange:', { sorter, currentSortBy: sortBy, currentSortOrder: sortOrder });
-    
     // Handle pagination
     setCurrentPage(pagination.current);
     setPageSize(pagination.pageSize);
@@ -102,26 +99,21 @@ const UnassignedTransactionsTab: React.FC<UnassignedTransactionsTabProps> = ({ i
     if (sorter && sorter.field) {
       if (sorter.order) {
         // Active sorting on a specific field
-        console.log(`Setting sort: ${sorter.field} ${sorter.order}`);
         setSortBy(sorter.field);
         setSortOrder(sorter.order === 'ascend' ? 'asc' : 'desc');
       } else {
         // Sorting cancelled
-        console.log('Sorting cancelled for field:', sorter.field);
         if (sorter.field === 'timestamp') {
           // For timestamp, cycle to ascending when cancelled from descending
           if (sortBy === 'timestamp' && sortOrder === 'desc') {
-            console.log('Cycling timestamp to ascending');
             setSortBy('timestamp');
             setSortOrder('asc');
           } else {
-            console.log('Resetting to default sort: timestamp desc');
             setSortBy('timestamp');
             setSortOrder('desc');
           }
         } else {
           // For other fields, reset to default
-          console.log('Resetting to default sort: timestamp desc');
           setSortBy('timestamp');
           setSortOrder('desc');
         }
@@ -129,7 +121,6 @@ const UnassignedTransactionsTab: React.FC<UnassignedTransactionsTabProps> = ({ i
     } else {
       // No sorter at all - reset to default if not already there
       if (sortBy !== 'timestamp' || sortOrder !== 'desc') {
-        console.log('No sorter - resetting to default sort: timestamp desc');
         setSortBy('timestamp');
         setSortOrder('desc');
       }
@@ -138,25 +129,21 @@ const UnassignedTransactionsTab: React.FC<UnassignedTransactionsTabProps> = ({ i
 
   // Handle row selection change
   const handleSelectChange = (selectedKeys: React.Key[]) => {
-    console.log('handleSelectChange', initialStatusFilter);
     setSelectedRowKeys(selectedKeys);
   };
 
   // Handle clearing selection
   const handleClearSelection = () => {
-    console.log('handleClearSelection', initialStatusFilter);
     setSelectedRowKeys([]);
   };
 
   // Handle bulk action completion (refetch handled automatically by React Query)
   const handleBulkActionComplete = async () => {
-    console.log('handleBulkActionComplete', initialStatusFilter);
     // React Query will automatically refetch after mutations
   };
   
   // Clear all filters
   const handleClearFilters = () => {
-    console.log('handleClearFilters', initialStatusFilter);
     form.resetFields();
     setCurrentPage(1);
     setSortBy('timestamp');
@@ -173,7 +160,6 @@ const UnassignedTransactionsTab: React.FC<UnassignedTransactionsTabProps> = ({ i
 
   // Handle filter changes from the filter panel
   const handleFilterChange = (newFilters: TransactionFilters) => {
-    console.log('handleFilterChange', newFilters);
     setCurrentPage(1); // Reset to first page when filtering
     const mergedFilters = {
       ...newFilters,
@@ -188,7 +174,6 @@ const UnassignedTransactionsTab: React.FC<UnassignedTransactionsTabProps> = ({ i
 
   // Handle clearing filters except status (called when compliance screener buttons are clicked)
   const handleClearFiltersExceptStatus = () => {
-    console.log('handleClearFiltersExceptStatus', initialStatusFilter);
     setCurrentPage(1);
     setSortBy('timestamp');
     setSortOrder('desc');
@@ -203,7 +188,7 @@ const UnassignedTransactionsTab: React.FC<UnassignedTransactionsTabProps> = ({ i
   };
 
   return (
-    <div style={{ width: '100%' }}>
+    <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
       <ComplianceHeaderActions
         txCount={totalTransactions}
       />
@@ -224,18 +209,20 @@ const UnassignedTransactionsTab: React.FC<UnassignedTransactionsTabProps> = ({ i
         onClearFiltersExceptStatus={handleClearFiltersExceptStatus}
       />
 
-      <UnassignedTransactionsTable
-        transactions={transactions}
-        totalTransactions={totalTransactions}
-        currentPage={currentPage}
-        pageSize={pageSize}
-        loading={loading}
-        onTableChange={handleTableChange}
-        selectedRowKeys={selectedRowKeys}
-        onSelectChange={handleSelectChange}
-        sortBy={sortBy}
-        sortOrder={sortOrder}
-      />
+      <div className="flex-1 min-h-0 overflow-hidden">
+        <UnassignedTransactionsTable
+          transactions={transactions}
+          totalTransactions={totalTransactions}
+          currentPage={currentPage}
+          pageSize={pageSize}
+          loading={loading}
+          onTableChange={handleTableChange}
+          selectedRowKeys={selectedRowKeys}
+          onSelectChange={handleSelectChange}
+          sortBy={sortBy}
+          sortOrder={sortOrder}
+        />
+      </div>
       
       {/* Entity Modal */}
       <EntityModal

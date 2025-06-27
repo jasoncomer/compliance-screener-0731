@@ -1,5 +1,5 @@
 import React from 'react';
-import { cn } from '../../lib/utils';
+import { cn } from '../../../lib/utils';
 
 interface AddressLayoutProps {
   children: React.ReactNode;
@@ -36,7 +36,7 @@ interface ScrollableAddressContentProps {
 
 export const ScrollableAddressContent: React.FC<ScrollableAddressContentProps> = ({ children, className }) => (
   <div className={cn(
-    "flex-1 w-full overflow-y-auto pt-5",
+    "flex-1 w-full overflow-y-auto",
     className
   )}>
     {children}

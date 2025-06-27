@@ -2,6 +2,7 @@ import React from 'react';
 import { Card, Typography, Tag } from 'antd';
 import { MapContainer, TileLayer } from 'react-leaflet';
 import { LatLngExpression } from 'leaflet';
+import { useTheme } from '../../../../context/ThemeContext';
 import 'leaflet/dist/leaflet.css';
 
 const { Title } = Typography;
@@ -11,9 +12,11 @@ interface GeographicPresenceProps {
 }
 
 const GeographicPresence: React.FC<GeographicPresenceProps> = ({ countries }) => {
+  const { theme } = useTheme();
+
   return (
-    <Card className="bg-gray-800 rounded-2xl border-gray-700">
-      <Title level={5} className="text-white mb-4">Geographic Presence</Title>
+    <Card className={`${theme === 'light' ? 'bg-white border-gray-200' : 'bg-gray-800 border-gray-700'} rounded-2xl`}>
+      <Title level={5} className={`${theme === 'light' ? 'text-gray-900' : 'text-white'} mb-4`}>Geographic Presence</Title>
       <div className="h-[400px] mb-4">
         <MapContainer 
           center={[20, 0] as LatLngExpression} 
@@ -24,7 +27,7 @@ const GeographicPresence: React.FC<GeographicPresenceProps> = ({ countries }) =>
           <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
         </MapContainer>
       </div>
-      <div className="text-gray-500">
+      <div className={`${theme === 'light' ? 'text-gray-500' : 'text-gray-500'}`}>
         <b>Associated Countries:</b> {countries.map(c => (
           <Tag key={c} color="blue" className="rounded-lg mr-2">{c}</Tag>
         ))}

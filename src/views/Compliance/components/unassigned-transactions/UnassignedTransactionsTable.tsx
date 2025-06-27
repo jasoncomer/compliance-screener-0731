@@ -191,18 +191,14 @@ const UnassignedTransactionsTable: React.FC<TransactionsTableProps> = ({
   ];
 
   return (
-    <>
+    <div className="w-full h-full flex flex-col overflow-hidden">
       <Table
-        className="compliance-table"
+        className="compliance-table w-full flex-1"
         dataSource={transactions}
         columns={columns as ColumnType<IComplianceTransaction>[]}
         rowKey="_id"
         rowSelection={rowSelection}
-        sticky={{
-          offsetHeader: 0,
-          offsetScroll: 0,
-          getContainer: () => document.body
-        }}
+        size="small"
         pagination={{
           current: currentPage,
           pageSize: pageSize,
@@ -220,8 +216,10 @@ const UnassignedTransactionsTable: React.FC<TransactionsTableProps> = ({
             }
           },
         })}
-        style={{ width: '100%' }}
-        scroll={{ x: 'max-content' }}
+        scroll={{ 
+          x: 'max-content',
+          y: 'calc(100vh - 600px)' // Adjusted for the new layout structure
+        }}
       />
 
       {/* <TransactionDetailsModal
@@ -239,7 +237,7 @@ const UnassignedTransactionsTable: React.FC<TransactionsTableProps> = ({
         teamMembers={[]}
       />
 
-    </>
+    </div>
   );
 };
 

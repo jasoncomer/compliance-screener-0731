@@ -31,6 +31,7 @@ import { useAppDispatch } from './store/hooks';
 import { fetchOrganizations } from './store/slices/organizationsSlice';
 import { useAnalytics } from './hooks/useAnalytics';
 import { ComplianceDashboard } from "./views/compliance-v2/compliance-dashboard";
+import { Toaster } from './components/ui/toaster';
 
 function App() {
   const dispatch = useAppDispatch();
@@ -115,6 +116,7 @@ function App() {
     <ConfigProvider theme={currentTheme}>
       <StyledThemeProvider theme={{ theme }}>
         {contextHolder}
+        <Toaster />
         <Routes>
           <Route path="/" element={<Navigate to="/home/compliance-screener" replace />} />
           <Route path="/login" element={<Login />} />
