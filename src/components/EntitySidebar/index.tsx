@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
-import { Avatar } from 'antd';
-import { UserOutlined } from '@ant-design/icons';
+import { User } from 'lucide-react';
 import { RootState } from '../../store/store';
 import { SidebarCard, ScrollableContent } from './styles';
 import { EntityListSection } from './EntityListSection';
@@ -77,13 +76,14 @@ const EntitySidebar: React.FC<Props> = ({ currentEntityId, onSelectSot }) => {
     }
   };
 
-  const hasContent = Boolean(
-    parentEntity ||
-    (isParentEntity && childEntities.length > 0) ||
-    (!isParentEntity && siblingEntities.length > 0) ||
-    custodianEntities.length > 0 ||
-    beneficialOwnerEntities.length > 0
-  );
+  // Check if sidebar has any content to display
+  const hasParent = !!parentEntity;
+  const hasChildren = isParentEntity && childEntities.length > 0;
+  const hasSiblings = !isParentEntity && siblingEntities.length > 0;
+  const hasCustodians = custodianEntities.length > 0;
+  const hasBeneficialOwners = beneficialOwnerEntities.length > 0;
+  
+  const hasContent = hasParent || hasChildren || hasSiblings || hasCustodians || hasBeneficialOwners;
 
   if (!hasContent) {
     return null;
@@ -143,11 +143,17 @@ const EntitySidebar: React.FC<Props> = ({ currentEntityId, onSelectSot }) => {
                       title={isClickable ? `Click to view ${entityName} profile` : `${entityName} not found in database`}
                     >
                       <div className="flex items-center gap-3">
-                        <Avatar 
-                          size="large" 
-                          src={entity?.logo} 
-                          icon={!entity?.logo && <UserOutlined />} 
-                        />
+                        <div className="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center overflow-hidden">
+                          {entity?.logo ? (
+                            <img 
+                              src={entity.logo} 
+                              alt={entityName}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <User className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+                          )}
+                        </div>
                         <div className="flex-1 min-w-0">
                           <div className="font-medium text-sm truncate">{entityName}</div>
                           <div className="text-xs text-gray-600 dark:text-gray-400">
@@ -190,11 +196,17 @@ const EntitySidebar: React.FC<Props> = ({ currentEntityId, onSelectSot }) => {
                       title={isClickable ? `Click to view ${entityName} profile` : `${entityName} not found in database`}
                     >
                       <div className="flex items-center gap-3">
-                        <Avatar 
-                          size="large" 
-                          src={entity?.logo} 
-                          icon={!entity?.logo && <UserOutlined />} 
-                        />
+                        <div className="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center overflow-hidden">
+                          {entity?.logo ? (
+                            <img 
+                              src={entity.logo} 
+                              alt={entityName}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <User className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+                          )}
+                        </div>
                         <div className="flex-1 min-w-0">
                           <div className="font-medium text-sm truncate">{entityName}</div>
                           <div className="text-xs text-gray-600 dark:text-gray-400">
