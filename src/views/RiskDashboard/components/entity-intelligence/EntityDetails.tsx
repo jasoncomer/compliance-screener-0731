@@ -73,28 +73,22 @@ const EntityDetails: React.FC<EntityDetailsProps> = ({
 
   if (!hasEntityData) {
     return (
-      <div className={`rounded-2xl border p-6 h-full ${
-        theme === 'dark' 
-          ? 'bg-gray-800/50 border-gray-700' 
-          : 'bg-gray-50 border-gray-200'
-      }`}>
-        <div className="flex flex-col items-center justify-center h-full text-center">
-          <div className={`w-16 h-16 rounded-full flex items-center justify-center mb-4 ${
-            theme === 'dark' ? 'bg-gray-700' : 'bg-gray-100'
-          }`}>
-            <UserOutlined className={`text-2xl ${
-              theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
-            }`} />
-          </div>
-          <h4 className={`text-lg font-medium mb-2 ${
-            theme === 'dark' ? 'text-white' : 'text-gray-900'
-          }`}>No Entity Information</h4>
-          <p className={`text-sm ${
+      <div className="flex flex-col items-center justify-center h-full text-center">
+        <div className={`w-16 h-16 rounded-full flex items-center justify-center mb-4 ${
+          theme === 'dark' ? 'bg-gray-700' : 'bg-gray-100'
+        }`}>
+          <UserOutlined className={`text-2xl ${
             theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
-          }`}>
-            No entity information available for this address
-          </p>
+          }`} />
         </div>
+        <h4 className={`text-lg font-medium mb-2 ${
+          theme === 'dark' ? 'text-white' : 'text-gray-900'
+        }`}>No Entity Information</h4>
+        <p className={`text-sm ${
+          theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
+        }`}>
+          No entity information available for this address
+        </p>
       </div>
     );
   }
@@ -112,15 +106,10 @@ const EntityDetails: React.FC<EntityDetailsProps> = ({
   };
 
   return (
-    <div className={`rounded-2xl border p-6 h-full overflow-y-auto ${
-      theme === 'dark' 
-        ? 'bg-gray-800/50 border-gray-700' 
-        : 'bg-gray-50 border-gray-200'
-    }`}>
+    <>
       <h4 className={`text-xl font-semibold mb-6 ${
         theme === 'dark' ? 'text-white' : 'text-gray-900'
       }`}>Entity Details</h4>
-      
       {/* Header with logo and name */}
       <div className="flex items-center mb-6">
         {logo && (
@@ -141,7 +130,6 @@ const EntityDetails: React.FC<EntityDetailsProps> = ({
             theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
           }`}>{type}</div>
         </div>
-        
         {/* View in VASP Explorer Button */}
         {entityId && (
           <button
@@ -153,11 +141,9 @@ const EntityDetails: React.FC<EntityDetailsProps> = ({
           </button>
         )}
       </div>
-
       {/* Status Indicators */}
       {(isOfacSanctioned || isDead || isCentralized !== undefined || noKycRequired) && (
-        <div className="mb-1 p-1 
-        }">
+        <div className="mb-1 p-1">
           <div className="space-y-2">
             {isOfacSanctioned && (
               <div className="flex items-center text-red-600 dark:text-red-400">
@@ -171,7 +157,6 @@ const EntityDetails: React.FC<EntityDetailsProps> = ({
                 <span className="text-sm">Entity likely inactive or does not support Crypto</span>
               </div>
             )}
-           
             {noKycRequired && (
               <div className="flex items-center text-orange-600 dark:text-orange-400">
                 <WarningOutlined className="mr-2" />
@@ -181,7 +166,6 @@ const EntityDetails: React.FC<EntityDetailsProps> = ({
           </div>
         </div>
       )}
-
       <div className="space-y-4">
         {/* Entity ID */}
         {entityId && (
@@ -461,7 +445,7 @@ const EntityDetails: React.FC<EntityDetailsProps> = ({
           </div>
         )}
       </div>
-    </div>
+    </>
   );
 };
 

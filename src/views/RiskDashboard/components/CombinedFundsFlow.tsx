@@ -182,7 +182,7 @@ export const CombinedFundsFlow = ({ incomingData, outgoingData, title }: Combine
       if (data.source && data.target) {
         // Link tooltip
         return (
-          <div className="bg-gray-800 border border-gray-600 rounded-lg shadow-lg text-sm p-3">
+          <div className="bg-gray-800 rounded-lg shadow-lg text-sm p-3">
             <p className="font-semibold text-white">{data.label}</p>
             {data.riskScore !== undefined && <p className="text-gray-300">Risk Score: {Math.round(data.riskScore)}</p>}
           </div>
@@ -191,7 +191,7 @@ export const CombinedFundsFlow = ({ incomingData, outgoingData, title }: Combine
       if (data.name) {
         // Node tooltip
         return (
-          <div className="bg-gray-800 border border-gray-600 rounded-lg shadow-lg text-sm p-3">
+          <div className="bg-gray-800 rounded-lg shadow-lg text-sm p-3">
             <p className="font-semibold text-white">
               {data.name.replace(/In: |Out: /g, "")}: {formatCurrency(data.value)}
             </p>
@@ -204,11 +204,7 @@ export const CombinedFundsFlow = ({ incomingData, outgoingData, title }: Combine
   }
 
   return (
-    <div className={`rounded-2xl border p-6 ${
-      theme === 'dark' 
-        ? 'bg-gray-800/50 border-gray-700' 
-        : 'bg-gray-50 border-gray-200'
-    }`}>
+<>
       <h4 className={`text-xl font-semibold mb-6 ${
         theme === 'dark' ? 'text-white' : 'text-gray-900'
       }`}>{title || "Funds Flow Analysis"}</h4>
@@ -249,9 +245,8 @@ export const CombinedFundsFlow = ({ incomingData, outgoingData, title }: Combine
                 </Sankey>
               </ResponsiveContainer>
             </div>
-            <div className={`mt-4 pt-4 border-t ${
-              theme === 'dark' ? 'border-gray-600' : 'border-gray-200'
-            }`}>
+            <div className={`mt-4 pt-4 
+            `}>
               <h3 className={`text-sm font-semibold mb-2 ${
                 theme === 'dark' ? 'text-white' : 'text-gray-900'
               }`}>Legend</h3>
@@ -284,6 +279,6 @@ export const CombinedFundsFlow = ({ incomingData, outgoingData, title }: Combine
           </div>
         )}
       </div>
-    </div>
+      </>
   )
 } 

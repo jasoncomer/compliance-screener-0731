@@ -94,36 +94,35 @@ const TwitterTimeline: React.FC<TwitterTimelineProps> = ({
 
   if (!username) {
     return (
-      <div className={`rounded-2xl border p-6 h-full ${
+      <div className={`rounded-2xl p-6 h-full flex flex-col items-center justify-center text-center ${
         theme === 'dark' 
           ? 'bg-gray-800/50 border-gray-700' 
           : 'bg-gray-50 border-gray-200'
       }`}>
-        <div className="flex items-center justify-between">
-          <h4 className={`text-xl font-semibold ${
+        <div>
+          <h4 className={`text-xl font-semibold mb-4 ${
             theme === 'dark' ? 'text-white' : 'text-gray-900'
           }`}>
             <TwitterOutlined className="mr-2" />
             {title}
           </h4>
-        </div>
-        
-        <div className="flex flex-col items-center justify-center h-full text-center">
-          <div className={`w-16 h-16 rounded-full flex items-center justify-center mb-4 ${
-            theme === 'dark' ? 'bg-gray-700' : 'bg-gray-100'
-          }`}>
-            <TwitterOutlined className={`text-2xl ${
+          <div className="flex flex-col items-center">
+            <div className={`w-16 h-16 rounded-full flex items-center justify-center mb-4 ${
+              theme === 'dark' ? 'bg-gray-700' : 'bg-gray-100'
+            }`}>
+              <TwitterOutlined className={`text-2xl ${
+                theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
+              }`} />
+            </div>
+            <h5 className={`text-lg font-medium mb-2 ${
+              theme === 'dark' ? 'text-white' : 'text-gray-900'
+            }`}>No Twitter Feed</h5>
+            <p className={`text-sm ${
               theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
-            }`} />
+            }`}>
+              No Twitter handle available for this entity
+            </p>
           </div>
-          <h5 className={`text-lg font-medium mb-2 ${
-            theme === 'dark' ? 'text-white' : 'text-gray-900'
-          }`}>No Twitter Feed</h5>
-          <p className={`text-sm ${
-            theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
-          }`}>
-            No Twitter handle available for this entity
-          </p>
         </div>
       </div>
     );

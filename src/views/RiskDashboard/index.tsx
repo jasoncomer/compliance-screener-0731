@@ -655,256 +655,253 @@ const RiskDashboard: React.FC = () => {
       )}
 
       {shouldShowData && !loading && !isLoadingAnyData && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="space-y-6">
           {/* Address Header - Full Width */}
-          <div className="lg:col-span-2">
+          <div className={`rounded-2xl border p-6 ${
+            theme === 'dark' 
+              ? 'bg-gray-800/50 border-gray-700' 
+              : 'bg-gray-50 border-gray-200'
+          }`}>
+            <AddressHeader 
+              address={address}
+              entityTags={entityTags}
+            />
+          </div>
+
+          {/* Summary Stats and Risk Assessment - Two Columns */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <AddressSummary {...addressSummaryProps} />
+            <RiskAssessment 
+              score={riskScore ? Math.round(riskScore.overallRisk * 100) : 0}
+              level={riskScore ? getRiskLevel(riskScore.overallRisk * 100) : 'Unknown'}
+              description={riskScore ? getRiskDescription(riskScore.overallRisk * 100) : 'No risk data available'}
+              isLoading={isLoadingRiskScore || loading}
+              onSeeDetails={handleRiskScoreClick}
+            />
+          </div>
+
+          {/* Transaction Activity - Full Width */}
+          {transformedTransactions.length > 0 && (
+       
+              <TransactionActivity transactionActivity={transactionActivityData} />
+        
+          )}
+
+          {/* Top Counterparties and Transaction History - Two Columns */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className={`rounded-2xl border p-6 ${
               theme === 'dark' 
                 ? 'bg-gray-800/50 border-gray-700' 
                 : 'bg-gray-50 border-gray-200'
             }`}>
-              <AddressHeader 
+              <TopCounterparties 
+                incoming={counterpartyData.incoming} 
+                outgoing={counterpartyData.outgoing} 
+                onCounterpartyClick={handleCounterpartyClick}
+                transactions={transformedTransactions}
+              />
+            </div>
+            
+            <div className={`rounded-2xl border p-6 ${
+              theme === 'dark' 
+                ? 'bg-gray-800/50 border-gray-700' 
+                : 'bg-gray-50 border-gray-200'
+            }`}>
+              <TransactionHistory 
                 address={address}
-                entityTags={entityTags}
               />
             </div>
-          </div>
-
-          {/* Summary Stats and Risk Assessment - Two Columns */}
-          <div className="lg:col-span-2">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              <AddressSummary {...addressSummaryProps} />
-              <RiskAssessment 
-                score={riskScore ? Math.round(riskScore.overallRisk * 100) : 0}
-                level={riskScore ? getRiskLevel(riskScore.overallRisk * 100) : 'Unknown'}
-                description={riskScore ? getRiskDescription(riskScore.overallRisk * 100) : 'No risk data available'}
-                isLoading={isLoadingRiskScore || loading}
-                onSeeDetails={handleRiskScoreClick}
-              />
-            </div>
-          </div>
-
-          {/* Transaction Activity - Full Width */}
-          {transformedTransactions.length > 0 && (
-            <div className="lg:col-span-2">
-              <TransactionActivity transactionActivity={transactionActivityData} />
-            </div>
-          )}
-
-          {/* Top Counterparties */}
-          <div className="h-[500px]">
-            <TopCounterparties 
-              incoming={counterpartyData.incoming} 
-              outgoing={counterpartyData.outgoing} 
-              onCounterpartyClick={handleCounterpartyClick}
-              transactions={transformedTransactions}
-            />
-          </div>
-          
-          {/* Transaction History */}
-          <div className="h-[500px]">
-            <TransactionHistory 
-              address={address}
-            />
           </div>
 
           {/* Funds Flow Analysis - Full Width */}
           {(fundsFlowData.incoming.length > 0 || fundsFlowData.outgoing.length > 0) && (
-            <div className="lg:col-span-2">
+       
               <CombinedFundsFlow 
                 incomingData={fundsFlowData.incoming}
                 outgoingData={fundsFlowData.outgoing}
               />
-            </div>
           )}
 
-          {/* Entity Details */}
-          <div>
-            <EntityDetails 
-              name={primaryEntityId ? getEntityDisplayName(primaryEntityId) : "Unknown Entity"}
-              type={primaryEntityId ? getEntityType(primaryEntityId) : "Unknown"}
-              description={primaryEntityId ? getEntityDescription(primaryEntityId) : "No description available"}
-              website={primaryEntityId ? getEntityWebsite(primaryEntityId) : ""}
-              phone={primaryEntityId ? getEntityPhone(primaryEntityId) : ""}
-              address={primaryEntityId ? getEntityAddress(primaryEntityId) : ""}
-              founded={primaryEntityId ? getEntityFounded(primaryEntityId) : 0}
-              logo={primaryEntityId ? getEntityLogo(primaryEntityId) || "" : ""}
-              countries={primaryEntityId ? getEntityCountries(primaryEntityId) : []}
-              entityId={primaryEntityId || ""}
-              email={primaryEntityId ? getEntityEmail(primaryEntityId) : ""}
-              twitter={primaryEntityId ? getEntityTwitter(primaryEntityId) : ""}
-              telegram={primaryEntityId ? getEntityTelegram(primaryEntityId) : ""}
-              ensAddress={primaryEntityId ? getEntityEnsAddress(primaryEntityId) : ""}
-              legalInfoUrl={primaryEntityId ? getEntityLegalInfoUrl(primaryEntityId) : ""}
-              ceo={primaryEntityId ? getEntityCeo(primaryEntityId) : ""}
-              keyPersonnel={primaryEntityId ? getEntityKeyPersonnel(primaryEntityId) : ""}
-              ticker={primaryEntityId ? getEntityTicker(primaryEntityId) : ""}
-              parentId={primaryEntityId ? getEntityParentId(primaryEntityId) : ""}
-              entityTags={primaryEntityId ? getEntityTags(primaryEntityId) : []}
-              socialMediaProfiles={primaryEntityId ? getEntitySocialMediaProfiles(primaryEntityId) : []}
-              isCentralized={primaryEntityId ? getEntityIsCentralized(primaryEntityId) : undefined}
-              noKycRequired={primaryEntityId ? getEntityNoKycRequired(primaryEntityId) : false}
-              isDead={primaryEntityId ? getEntityIsDead(primaryEntityId) : false}
-              isOfacSanctioned={primaryEntityId ? getEntityIsOfacSanctioned(primaryEntityId) : false}
-              note={primaryEntityId ? getEntityNote(primaryEntityId) : ""}
-              lastUpdated={primaryEntityId ? getEntityLastUpdated(primaryEntityId) : ""}
-              lastModifiedBy={primaryEntityId ? getEntityLastModifiedBy(primaryEntityId) : ""}
-              revisitSite={primaryEntityId ? getEntityRevisitSite(primaryEntityId) : false}
-            />
-          </div>
-          
-          {/* Twitter Timeline */}
-          <div>
-            <TwitterTimeline 
-              username={twitterHandle}
-              title="Twitter Feed"
-            />
+          {/* Entity Details and Twitter Timeline - Two Columns */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className={`rounded-2xl border p-6 ${
+              theme === 'dark' 
+                ? 'bg-gray-800/50 border-gray-700' 
+                : 'bg-gray-50 border-gray-200'
+            }`}>
+              <EntityDetails 
+                name={primaryEntityId ? getEntityDisplayName(primaryEntityId) : "Unknown Entity"}
+                type={primaryEntityId ? getEntityType(primaryEntityId) : "Unknown"}
+                description={primaryEntityId ? getEntityDescription(primaryEntityId) : "No description available"}
+                website={primaryEntityId ? getEntityWebsite(primaryEntityId) : ""}
+                phone={primaryEntityId ? getEntityPhone(primaryEntityId) : ""}
+                address={primaryEntityId ? getEntityAddress(primaryEntityId) : ""}
+                founded={primaryEntityId ? getEntityFounded(primaryEntityId) : 0}
+                logo={primaryEntityId ? getEntityLogo(primaryEntityId) || "" : ""}
+                countries={primaryEntityId ? getEntityCountries(primaryEntityId) : []}
+                entityId={primaryEntityId || ""}
+                email={primaryEntityId ? getEntityEmail(primaryEntityId) : ""}
+                twitter={primaryEntityId ? getEntityTwitter(primaryEntityId) : ""}
+                telegram={primaryEntityId ? getEntityTelegram(primaryEntityId) : ""}
+                ensAddress={primaryEntityId ? getEntityEnsAddress(primaryEntityId) : ""}
+                legalInfoUrl={primaryEntityId ? getEntityLegalInfoUrl(primaryEntityId) : ""}
+                ceo={primaryEntityId ? getEntityCeo(primaryEntityId) : ""}
+                keyPersonnel={primaryEntityId ? getEntityKeyPersonnel(primaryEntityId) : ""}
+                ticker={primaryEntityId ? getEntityTicker(primaryEntityId) : ""}
+                parentId={primaryEntityId ? getEntityParentId(primaryEntityId) : ""}
+                entityTags={primaryEntityId ? getEntityTags(primaryEntityId) : []}
+                socialMediaProfiles={primaryEntityId ? getEntitySocialMediaProfiles(primaryEntityId) : []}
+                isCentralized={primaryEntityId ? getEntityIsCentralized(primaryEntityId) : undefined}
+                noKycRequired={primaryEntityId ? getEntityNoKycRequired(primaryEntityId) : false}
+                isDead={primaryEntityId ? getEntityIsDead(primaryEntityId) : false}
+                isOfacSanctioned={primaryEntityId ? getEntityIsOfacSanctioned(primaryEntityId) : false}
+                note={primaryEntityId ? getEntityNote(primaryEntityId) : ""}
+                lastUpdated={primaryEntityId ? getEntityLastUpdated(primaryEntityId) : ""}
+                lastModifiedBy={primaryEntityId ? getEntityLastModifiedBy(primaryEntityId) : ""}
+                revisitSite={primaryEntityId ? getEntityRevisitSite(primaryEntityId) : false}
+              />
+            </div>
+            
+            <div className={`rounded-2xl border p-6 ${
+              theme === 'dark' 
+                ? 'bg-gray-800/50 border-gray-700' 
+                : 'bg-gray-50 border-gray-200'
+            }`}>
+              <TwitterTimeline 
+                username={twitterHandle}
+                title="Twitter Feed"
+              />
+            </div>
           </div>
         </div>
       )}
 
       {(loading || isLoadingAnyData) && (
-        <div>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            {/* Address Header Skeleton */}
-            <div className="lg:col-span-2">
-              <div className={`rounded-2xl border p-6 ${
-                theme === 'dark' 
-                  ? 'bg-gray-800/50 border-gray-700' 
-                  : 'bg-gray-50 border-gray-200'
-              }`}>
-                <div className="animate-pulse">
-                  <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-20 mb-2"></div>
-                  <div className="h-8 bg-gray-300 dark:bg-gray-600 rounded w-full"></div>
-                </div>
-              </div>
+        <div className="space-y-6">
+          {/* Address Header Skeleton */}
+          <div className={`rounded-2xl border p-6 ${
+            theme === 'dark' 
+              ? 'bg-gray-800/50 border-gray-700' 
+              : 'bg-gray-50 border-gray-200'
+          }`}>
+            <div className="animate-pulse">
+              <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-20 mb-2"></div>
+              <div className="h-8 bg-gray-300 dark:bg-gray-600 rounded w-full"></div>
             </div>
+          </div>
 
-            {/* Summary Stats and Risk Assessment Skeleton - Two Columns */}
-            <div className="lg:col-span-2">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                <div className={`rounded-2xl border p-6 ${
-                  theme === 'dark' 
-                    ? 'bg-gray-800/50 border-gray-700' 
-                    : 'bg-gray-50 border-gray-200'
-                }`}>
-                  <div className="animate-pulse">
-                    <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-24 mb-4"></div>
-                    <div className="space-y-4">
-                      <div className="flex justify-between items-center">
-                        <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-24"></div>
-                        <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-24"></div>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-26"></div>
-                        <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-24"></div>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-16"></div>
-                        <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-20"></div>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-28"></div>
-                        <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-32"></div>
-                      </div>
-                    </div>
+          {/* Summary Stats and Risk Assessment Skeleton - Two Columns */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className={`rounded-2xl border p-6 ${
+              theme === 'dark' 
+                ? 'bg-gray-800/50 border-gray-700' 
+                : 'bg-gray-50 border-gray-200'
+            }`}>
+              <div className="animate-pulse">
+                <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-24 mb-4"></div>
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-24"></div>
+                    <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-24"></div>
                   </div>
-                </div>
-                
-                <div className={`rounded-2xl border p-6 ${
-                  theme === 'dark' 
-                    ? 'bg-gray-800/50 border-gray-700' 
-                    : 'bg-gray-50 border-gray-200'
-                }`}>
-                  <div className="animate-pulse">
-                    <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-24 mb-4"></div>
-                    <div className="h-8 bg-gray-300 dark:bg-gray-600 rounded w-full"></div>
+                  <div className="flex justify-between items-center">
+                    <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-26"></div>
+                    <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-24"></div>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-16"></div>
+                    <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-20"></div>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-28"></div>
+                    <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-32"></div>
                   </div>
                 </div>
               </div>
             </div>
-
-            {/* Transaction Activity Skeleton */}
-            <div className="lg:col-span-2">
-              <div className={`rounded-2xl border p-6 ${
-                theme === 'dark' 
-                  ? 'bg-gray-800/50 border-gray-700' 
-                  : 'bg-gray-50 border-gray-200'
-              }`}>
-                <div className="animate-pulse">
-                  <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-40 mb-4"></div>
-                  <div className="h-48 bg-gray-300 dark:bg-gray-600 rounded w-full"></div>
-                </div>
+            
+            <div className={`rounded-2xl border p-6 ${
+              theme === 'dark' 
+                ? 'bg-gray-800/50 border-gray-700' 
+                : 'bg-gray-50 border-gray-200'
+            }`}>
+              <div className="animate-pulse">
+                <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-24 mb-4"></div>
+                <div className="h-8 bg-gray-300 dark:bg-gray-600 rounded w-full"></div>
               </div>
             </div>
+          </div>
 
-            {/* Top Counterparties Skeleton */}
-            <div className="h-[500px]">
-              <div className={`rounded-2xl border p-6 ${
-                theme === 'dark' 
-                  ? 'bg-gray-800/50 border-gray-700' 
-                  : 'bg-gray-50 border-gray-200'
-              }`}>
-                <div className="animate-pulse">
-                  <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-36 mb-4"></div>
-                  <div className="h-48 bg-gray-300 dark:bg-gray-600 rounded w-full"></div>
-                </div>
+          {/* Transaction Activity Skeleton */}
+          <div className={`rounded-2xl border p-6 ${
+            theme === 'dark' 
+              ? 'bg-gray-800/50 border-gray-700' 
+              : 'bg-gray-50 border-gray-200'
+          }`}>
+            <div className="animate-pulse">
+              <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-40 mb-4"></div>
+              <div className="h-48 bg-gray-300 dark:bg-gray-600 rounded w-full"></div>
+            </div>
+          </div>
+
+          {/* Top Counterparties and Transaction History Skeleton - Two Columns */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className={`rounded-2xl border p-6 ${
+              theme === 'dark' 
+                ? 'bg-gray-800/50 border-gray-700' 
+                : 'bg-gray-50 border-gray-200'
+            }`}>
+              <div className="animate-pulse">
+                <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-36 mb-4"></div>
+                <div className="h-48 bg-gray-300 dark:bg-gray-600 rounded w-full"></div>
               </div>
             </div>
             
-            {/* Transaction History Skeleton */}
-            <div className="h-[500px]">
-              <div className={`rounded-2xl border p-6 ${
-                theme === 'dark' 
-                  ? 'bg-gray-800/50 border-gray-700' 
-                  : 'bg-gray-50 border-gray-200'
-              }`}>
-                <div className="animate-pulse">
-                  <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-32 mb-4"></div>
-                  <div className="h-48 bg-gray-300 dark:bg-gray-600 rounded w-full"></div>
-                </div>
+            <div className={`rounded-2xl border p-6 ${
+              theme === 'dark' 
+                ? 'bg-gray-800/50 border-gray-700' 
+                : 'bg-gray-50 border-gray-200'
+            }`}>
+              <div className="animate-pulse">
+                <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-32 mb-4"></div>
+                <div className="h-48 bg-gray-300 dark:bg-gray-600 rounded w-full"></div>
               </div>
             </div>
+          </div>
 
-            {/* Funds Flow Analysis Skeleton */}
-            <div className="lg:col-span-2">
-              <div className={`rounded-2xl border p-6 ${
-                theme === 'dark' 
-                  ? 'bg-gray-800/50 border-gray-700' 
-                  : 'bg-gray-50 border-gray-200'
-              }`}>
-                <div className="animate-pulse">
-                  <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-36 mb-4"></div>
-                  <div className="h-48 bg-gray-300 dark:bg-gray-600 rounded w-full"></div>
-                </div>
-              </div>
+          {/* Funds Flow Analysis Skeleton */}
+          <div className={`rounded-2xl border p-6 ${
+            theme === 'dark' 
+              ? 'bg-gray-800/50 border-gray-700' 
+              : 'bg-gray-50 border-gray-200'
+          }`}>
+            <div className="animate-pulse">
+              <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-36 mb-4"></div>
+              <div className="h-48 bg-gray-300 dark:bg-gray-600 rounded w-full"></div>
             </div>
+          </div>
 
-            {/* Entity Details Skeleton */}
-            <div>
-              <div className={`rounded-2xl border p-6 ${
-                theme === 'dark' 
-                  ? 'bg-gray-800/50 border-gray-700' 
-                  : 'bg-gray-50 border-gray-200'
-              }`}>
-                <div className="animate-pulse">
-                  <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-24 mb-4"></div>
-                  <div className="h-48 bg-gray-300 dark:bg-gray-600 rounded w-full"></div>
-                </div>
+          {/* Entity Details and Twitter Timeline Skeleton - Two Columns */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className={`rounded-2xl border p-6 ${
+              theme === 'dark' 
+                ? 'bg-gray-800/50 border-gray-700' 
+                : 'bg-gray-50 border-gray-200'
+            }`}>
+              <div className="animate-pulse">
+                <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-24 mb-4"></div>
+                <div className="h-48 bg-gray-300 dark:bg-gray-600 rounded w-full"></div>
               </div>
             </div>
             
-            {/* Twitter Timeline Skeleton */}
-            <div>
-              <div className={`rounded-2xl border p-6 ${
-                theme === 'dark' 
-                  ? 'bg-gray-800/50 border-gray-700' 
-                  : 'bg-gray-50 border-gray-200'
-              }`}>
-                <div className="animate-pulse">
-                  <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-20 mb-4"></div>
-                  <div className="h-48 bg-gray-300 dark:bg-gray-600 rounded w-full"></div>
-                </div>
+            <div className={`rounded-2xl border p-6 ${
+              theme === 'dark' 
+                ? 'bg-gray-800/50 border-gray-700' 
+                : 'bg-gray-50 border-gray-200'
+            }`}>
+              <div className="animate-pulse">
+                <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-20 mb-4"></div>
+                <div className="h-48 bg-gray-300 dark:bg-gray-600 rounded w-full"></div>
               </div>
             </div>
           </div>

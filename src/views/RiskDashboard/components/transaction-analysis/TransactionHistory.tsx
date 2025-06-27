@@ -5,7 +5,7 @@ import { truncateStringMiddle } from '../../../../utils/generic';
 import { useAddressTransactions } from '../../../../hooks/useAddressTransactions';
 import { transformBtcTransactions } from '../../../../utils/transactionTransformers';
 import { useCryptoPrices } from '../../../../hooks/useCryptoPrices';
-import { ChevronLeft, ChevronRight, X, ExternalLink, Copy, Check } from 'lucide-react';
+import { ChevronLeft, ChevronRight, X, ExternalLink, Copy, Check, ArrowUpRight, ArrowDownRight } from 'lucide-react';
 
 interface TransactionHistoryProps {
   address: string;
@@ -111,82 +111,78 @@ const TransactionHistory: React.FC<TransactionHistoryProps> = ({
 
   return (
     <>
-    <div className="flex-1 min-w-[320px] flex flex-col justify-stretch">
-      <div className={`rounded-2xl border h-full flex flex-col max-h-[493px] ${
-        theme === 'dark' 
-          ? 'bg-gray-800/50 border-gray-700' 
-          : 'bg-gray-50 border-gray-200'
+    <div className="w-full h-full flex flex-col">
+      {/* Header */}
+      <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+        <h4 className={`text-lg font-semibold ${
+          theme === 'dark' ? 'text-white' : 'text-gray-900'
+        }`}>Transaction History</h4>
+        <button 
+          className={`px-3 py-1 text-sm font-medium rounded-lg transition-colors ${
+            theme === 'dark' 
+              ? 'bg-orange-600 text-white hover:bg-orange-700' 
+              : 'bg-orange-600 text-white hover:bg-orange-700'
+          }`}
+          onClick={handleViewInBlockScout}
+          disabled={!address}
+        >
+          View in BlockScout Explorer
+        </button>
+      </div>
+      
+      {/* Tabs */}
+      <div className={`border-b ${
+        theme === 'dark' ? 'border-gray-700' : 'border-gray-200'
       }`}>
-        {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
-          <h4 className={`text-lg font-semibold ${
-            theme === 'dark' ? 'text-white' : 'text-gray-900'
-          }`}>Transaction History</h4>
-          <button 
-            className={`px-3 py-1 text-sm font-medium rounded-lg transition-colors ${
-              theme === 'dark' 
-                ? 'bg-blockscout-orange text-white hover:bg-blockscout-orange/90' 
-                : 'bg-orange-600 text-white hover:bg-orange-700'
-            }`}
-            onClick={handleViewInBlockScout}
-            disabled={!address}
-          >
-            View in BlockScout Explorer
-          </button>
-        </div>
-        
-        {/* Tabs */}
-        <div className={`border-b ${
-          theme === 'dark' ? 'border-gray-700' : 'border-gray-200'
-        }`}>
-            <div className="flex px-4">
-              {[
-              { key: 'all', label: 'All Transactions' },
-              { key: 'in', label: 'Inflows (Received)' },
-              { key: 'out', label: 'Outflows (Sent)' },
-              ].map((tab) => (
-                <button
-                  key={tab.key}
-                  onClick={() => setTxTab(tab.key as any)}
-                  className={`py-3 px-4 text-sm font-medium transition-colors ${
-                    txTab === tab.key
-                      ? 'text-orange-600 dark:text-blockscout-orange border-b-2 border-orange-600 dark:border-blockscout-orange'
-                      : 'text-gray-600 dark:text-gray-400 hover:text-orange-600 dark:hover:text-blockscout-orange'
-                  }`}
-                >
-                  {tab.label}
-                </button>
-              ))}
+          <div className="flex px-4">
+            {[
+            { key: 'all', label: 'All Transactions' },
+            { key: 'in', label: 'Inflows (Received)' },
+            { key: 'out', label: 'Outflows (Sent)' },
+            ].map((tab) => (
+              <button
+                key={tab.key}
+                onClick={() => setTxTab(tab.key as any)}
+                className={`py-3 px-4 text-sm font-medium transition-colors ${
+                  txTab === tab.key
+                    ? 'text-orange-600 dark:text-orange-400 border-b-2 border-orange-600 dark:border-orange-400'
+                    : 'text-gray-600 dark:text-gray-400 hover:text-orange-600 dark:hover:text-orange-400'
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+      </div>
+      
+        {/* Table Content */}
+        <div className="flex-1 px-4 pt-4 pb-4 min-h-0">
+        {error ? (
+          <div className={`p-4 rounded-lg border ${
+            theme === 'dark' 
+              ? 'bg-red-900/20 border-red-700 text-red-200' 
+              : 'bg-red-50 border-red-200 text-red-800'
+          }`}>
+            <div className="flex items-center gap-2">
+              <span className="font-medium">Error</span>
             </div>
-        </div>
-        
-          {/* Table Content */}
-          <div className="flex-1 px-4 pt-4 pb-4 min-h-0 flex flex-col">
-          {error ? (
-            <div className={`p-4 rounded-lg border ${
-              theme === 'dark' 
-                ? 'bg-red-900/20 border-red-700 text-red-200' 
-                : 'bg-red-50 border-red-200 text-red-800'
-            }`}>
-              <div className="flex items-center gap-2">
-                <span className="font-medium">Error</span>
-              </div>
-              <p className="mt-1">{error.message}</p>
-            </div>
-          ) : (
-              <>
-                {/* Table */}
-                <div className="flex-1 overflow-y-auto">
-                  {isLoading ? (
-                    <div className="flex items-center justify-center h-full">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600"></div>
-                    </div>
-                  ) : filteredTx.length === 0 ? (
-                    <div className="flex items-center justify-center h-full text-gray-500 dark:text-gray-400">
-                      No transactions found
-                    </div>
-                  ) : (
-                    <div className="overflow-x-auto">
+            <p className="mt-1">{error.message}</p>
+          </div>
+        ) : (
+            <>
+              {/* Table */}
+              <div className="flex-1 overflow-y-auto">
+                {isLoading ? (
+                  <div className="flex items-center justify-center h-full">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600"></div>
+                  </div>
+                ) : filteredTx.length === 0 ? (
+                  <div className="flex items-center justify-center h-full text-gray-500 dark:text-gray-400">
+                    No transactions found
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <div className="max-h-[400px] overflow-y-auto">
                       <table className="w-full">
                         <thead>
                           <tr className={`border-b ${
@@ -200,134 +196,143 @@ const TransactionHistory: React.FC<TransactionHistoryProps> = ({
                             }`}>Direction</th>
                             <th className={`text-left py-3 px-2 text-xs font-semibold ${
                               theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
-                            }`}>Amount</th>
+                            }`}>Amount (USD)</th>
                             <th className={`text-left py-3 px-2 text-xs font-semibold ${
                               theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
-                            }`}>From</th>
+                            }`}>Amount (BTC)</th>
                             <th className={`text-left py-3 px-2 text-xs font-semibold ${
                               theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
-                            }`}>To</th>
-                            <th className={`text-left py-3 px-2 text-xs font-semibold ${
-                              theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
-                            }`}>USD</th>
+                            }`}>Counterparty</th>
                           </tr>
                         </thead>
                         <tbody>
-                          {paginatedData.map((tx, index) => (
+                          {paginatedData.map((transaction, index) => (
                             <tr 
-                              key={index}
-                              className={`border-b ${
-                                theme === 'dark' 
-                                  ? 'border-gray-700 hover:bg-gray-700/50' 
-                                  : 'border-gray-100 hover:bg-gray-50'
-                              } transition-colors cursor-pointer`}
-                              onClick={() => openModal(tx)}
+                              key={`${transaction.txid}-${index}`}
+                              className={`border-b cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors ${
+                                theme === 'dark' ? 'border-gray-700' : 'border-gray-200'
+                              }`}
+                              onClick={() => openModal(transaction)}
                             >
-                              <td className={`py-3 px-2 text-xs ${
-                                theme === 'dark' ? 'text-gray-300' : 'text-gray-700'
-                              }`}>
-                                {formatTime(tx.time)}
-                              </td>
                               <td className="py-3 px-2">
-                                <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getDirectionBg(tx.direction)} ${getDirectionColor(tx.direction)}`}>
-                                  {tx.direction === 'inflow' ? '↗' : '↘'}
+                                <span className={`text-sm ${
+                                  theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
+                                }`}>
+                                  {formatTime(transaction.time)}
                                 </span>
                               </td>
-                              <td className={`py-3 px-2 text-xs font-medium ${
-                                theme === 'dark' ? 'text-gray-300' : 'text-gray-700'
-                              }`}>
-                                {tx.description}
+                              <td className="py-3 px-2">
+                                <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                                  transaction.type === 'in'
+                                    ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
+                                    : 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'
+                                }`}>
+                                  {transaction.type === 'in' ? (
+                                    <ArrowUpRight className="w-3 h-3" />
+                                  ) : (
+                                    <ArrowDownRight className="w-3 h-3" />
+                                  )}
+                                </span>
                               </td>
-                              <td className={`py-3 px-2 text-xs ${
-                                theme === 'dark' ? 'text-gray-300' : 'text-gray-700'
-                              }`}>
-                                {truncateStringMiddle(tx.from, 8)}
+                              <td className="py-3 px-2">
+                                <span className={`text-sm font-medium ${
+                                  theme === 'dark' ? 'text-white' : 'text-gray-900'
+                                }`}>
+                                  {transaction.usd}
+                                </span>
                               </td>
-                              <td className={`py-3 px-2 text-xs ${
-                                theme === 'dark' ? 'text-gray-300' : 'text-gray-700'
-                              }`}>
-                                {truncateStringMiddle(tx.to, 8)}
+                              <td className="py-3 px-2">
+                                <span className={`text-sm ${
+                                  theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
+                                }`}>
+                                  {transaction.value.toFixed(8)} BTC
+                                </span>
                               </td>
-                              <td className={`py-3 px-2 text-xs font-medium ${
-                                theme === 'dark' ? 'text-gray-300' : 'text-gray-700'
-                              }`}>
-                                {tx.usd}
+                              <td className="py-3 px-2">
+                                <span className={`text-sm ${
+                                  theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
+                                }`}>
+                                  {transaction.type === 'in' 
+                                    ? truncateStringMiddle(transaction.from, 16)
+                                    : truncateStringMiddle(transaction.to, 16)
+                                  }
+                                </span>
                               </td>
                             </tr>
                           ))}
                         </tbody>
                       </table>
                     </div>
-                  )}
-                </div>
-
-                {/* Pagination */}
-                {filteredTx.length > 0 && (
-                  <div className={`flex items-center justify-between mt-4 pt-4 border-t ${
-                    theme === 'dark' ? 'border-gray-700' : 'border-gray-200'
-                  }`}>
-                    <div className="flex items-center space-x-2">
-                      <span className={`text-sm ${
-                        theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
-                      }`}>
-                        Show
-                      </span>
-                      <select
-                        value={pageSize}
-                        onChange={(e) => handlePageSizeChange(Number(e.target.value))}
-                        className={`text-sm border rounded px-2 py-1 ${
-                          theme === 'dark' 
-                            ? 'bg-gray-700 border-gray-600 text-gray-300' 
-                            : 'bg-white border-gray-300 text-gray-700'
-                        }`}
-                      >
-                        {[5, 8, 12].map(size => (
-                          <option key={size} value={size}>{size}</option>
-                        ))}
-                      </select>
-                      <span className={`text-sm ${
-                        theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
-                      }`}>
-                        of {filteredTx.length} transactions
-                      </span>
-                    </div>
-
-                    <div className="flex items-center space-x-2">
-                      <button
-                        onClick={() => handlePageChange(currentPage - 1)}
-                        disabled={currentPage === 1}
-                        className={`p-1 rounded ${
-                          currentPage === 1
-                            ? 'text-gray-400 cursor-not-allowed'
-                            : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
-                        }`}
-                      >
-                        <ChevronLeft className="w-4 h-4" />
-                      </button>
-                      
-                      <span className={`text-sm ${
-                        theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
-                      }`}>
-                        Page {currentPage} of {totalPages}
-                      </span>
-                      
-                      <button
-                        onClick={() => handlePageChange(currentPage + 1)}
-                        disabled={currentPage === totalPages}
-                        className={`p-1 rounded ${
-                          currentPage === totalPages
-                            ? 'text-gray-400 cursor-not-allowed'
-                            : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
-                        }`}
-                      >
-                        <ChevronRight className="w-4 h-4" />
-                      </button>
-                    </div>
                   </div>
                 )}
-              </>
-          )}
-        </div>
+              </div>
+
+              {/* Pagination */}
+              {filteredTx.length > 0 && (
+                <div className={`flex items-center justify-between mt-4 pt-4 border-t ${
+                  theme === 'dark' ? 'border-gray-700' : 'border-gray-200'
+                }`}>
+                  <div className="flex items-center space-x-2">
+                    <span className={`text-sm ${
+                      theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
+                    }`}>
+                      Show
+                    </span>
+                    <select
+                      value={pageSize}
+                      onChange={(e) => handlePageSizeChange(Number(e.target.value))}
+                      className={`text-sm border rounded px-2 py-1 ${
+                        theme === 'dark' 
+                          ? 'bg-gray-700 border-gray-600 text-gray-300' 
+                          : 'bg-white border-gray-300 text-gray-700'
+                      }`}
+                    >
+                      {[5, 8, 12].map(size => (
+                        <option key={size} value={size}>{size}</option>
+                      ))}
+                    </select>
+                    <span className={`text-sm ${
+                      theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
+                    }`}>
+                      of {filteredTx.length} transactions
+                    </span>
+                  </div>
+
+                  <div className="flex items-center space-x-2">
+                    <button
+                      onClick={() => handlePageChange(currentPage - 1)}
+                      disabled={currentPage === 1}
+                      className={`p-1 rounded ${
+                        currentPage === 1
+                          ? 'text-gray-400 cursor-not-allowed'
+                          : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                      }`}
+                    >
+                      <ChevronLeft className="w-4 h-4" />
+                    </button>
+                    
+                    <span className={`text-sm ${
+                      theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
+                    }`}>
+                      Page {currentPage} of {totalPages}
+                    </span>
+                    
+                    <button
+                      onClick={() => handlePageChange(currentPage + 1)}
+                      disabled={currentPage === totalPages}
+                      className={`p-1 rounded ${
+                        currentPage === totalPages
+                          ? 'text-gray-400 cursor-not-allowed'
+                          : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                      }`}
+                    >
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              )}
+            </>
+        )}
       </div>
     </div>
 
@@ -400,8 +405,11 @@ const TransactionHistory: React.FC<TransactionHistoryProps> = ({
                   </label>
                   <div className="flex items-center space-x-2">
                     <span className={`inline-flex items-center px-3 py-2 rounded-lg text-sm font-medium ${getDirectionBg(selectedTransaction.direction)} ${getDirectionColor(selectedTransaction.direction)}`}>
-                      {selectedTransaction.direction === 'inflow' ? '↗' : '↘'}
-                      <span className="ml-2 capitalize">{selectedTransaction.direction}</span>
+                      {selectedTransaction.direction === 'inflow' ? (
+                        <ArrowUpRight className="w-4 h-4" />
+                      ) : (
+                        <ArrowDownRight className="w-4 h-4" />
+                      )}
                     </span>
                   </div>
                 </div>
