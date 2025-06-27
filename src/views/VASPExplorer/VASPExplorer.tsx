@@ -196,7 +196,15 @@ const BlockHam: React.FC = () => {
                 icon={!entity.logo && <UserOutlined />}
               />
               <div className="flex-1">
-                <div>{entity.proper_name || entity.entity_id}</div>
+                <div className="flex items-center gap-2">
+                  <span>{entity.proper_name || entity.entity_id}</span>
+                  <EntityQuickView 
+                    entity={entity}
+                    sot={sotMap[entity._id]}
+                    onViewFull={handleViewFullProfile}
+                    onQuickView={handleQuickView}
+                  />
+                </div>
                 <div className="flex flex-wrap gap-1 mt-1">
                   {entity.entity_type && (
                     <Tag className="text-xs px-1.5 mr-0" color="blue">
@@ -217,12 +225,6 @@ const BlockHam: React.FC = () => {
                   )}
                 </div>
               </div>
-              <EntityQuickView 
-                entity={entity}
-                sot={sotMap[entity._id]}
-                onViewFull={handleViewFullProfile}
-                onQuickView={handleQuickView}
-              />
             </div>
           )
         }))
@@ -334,6 +336,7 @@ const BlockHam: React.FC = () => {
           onSelect={onSelect as any}
           onSearch={handleSearch}
           listHeight={500}
+          dropdownStyle={{ width: '1000px' }}
         >
           <Input.Search
             placeholder="Search by name, address, or type..."

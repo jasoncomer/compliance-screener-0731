@@ -1,6 +1,5 @@
 import React, { ReactNode } from 'react';
 import { cn } from '../lib/utils';
-import { useTheme } from '../context/ThemeContext';
 
 interface ViewWrapperProps {
   icon?: ReactNode;
@@ -17,7 +16,7 @@ const ViewWrapper: React.FC<ViewWrapperProps> = ({
   className,
   fullWidth = false
 }) => {
-  const { theme } = useTheme();
+  
   
   return (
     <div 
