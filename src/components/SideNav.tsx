@@ -100,7 +100,7 @@ const SideNav: React.FC<SideNavProps> = ({ theme, collapsed, onCollapse }) => {
     <TooltipProvider>
       <div
         className={cn(
-          "sticky top-0 h-screen transition-all duration-300 flex flex-col font-['Inter']",
+          "h-screen transition-all duration-300 flex flex-col font-['Inter'] flex-shrink-0",
           collapsed ? "w-14" : "w-60",
           theme === 'light' ? "bg-white border-r border-gray-200" : "bg-gray-900 border-r border-gray-700"
         )}

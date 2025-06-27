@@ -1,8 +1,10 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { AutoComplete, Avatar, Input, Tag } from 'antd';
-import { User, Database } from 'lucide-react';
+import { UserOutlined, DatabaseOutlined } from '@ant-design/icons';
 import Sifter from 'sifter';
 import { useDispatch, useSelector } from 'react-redux';
+import { useSearchParams } from 'react-router-dom';
+import styled from 'styled-components';
 
 import ViewWrapper from '../../components/ViewWrapper';
 import SOTEditor from '../../components/SOTEditor';
@@ -13,6 +15,72 @@ import { fetchOrganizations, selectCurrentOrganization } from '../../store/slice
 import { SOT } from '../../typings/interfaces';
 import { EEntityType } from '../../typings/SOT';
 import { getEntityTypeLabel } from '../../utils/display-labels';
+import { colors } from '../../styles/variables';
+
+const SearchWrapper = styled.div`
+  width: 100%;
+`;
+
+const OptionWrapper = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+`;
+
+const OptionContent = styled.div`
+  flex: 1;
+`;
+
+const OptionInfo = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 4px;
+`;
+
+const InfoTag = styled(Tag)`
+  font-size: 10px;
+  padding: 0 6px;
+  margin-right: 0;
+`;
+
+const GroupHeader = styled.div`
+  padding: 12px 12px 8px;
+  background-color: ${({ theme }) => theme.theme === 'dark' ? colors.gray[700] : colors.gray[50]};
+  
+  margin-top: 4px;
+  
+  
+  .header-title {
+    font-size: 14px;
+    font-weight: 600;
+    
+    color: ${({ theme }) => theme.theme === 'dark' ? colors.white : colors.gray[600]};
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .result-count {
+    font-size: 12px;
+    color: ${({ theme }) => theme.theme === 'dark' ? colors.gray[400] : colors.gray[500]};
+    margin-left: 8px;
+  }
+`;
+
+const StyledAutoComplete = styled(AutoComplete)`
+  .ant-select-dropdown {
+    z-index: 1000;
+  }
+`;
+
+const MainContent = styled.div`
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  width: 100%;
+  margin-top: 20px;
+`;
 
 export interface PopulatedSOT extends SOT {
   autocompleteDisplayTitle: string;
@@ -48,15 +116,26 @@ interface GroupedOption {
   })[];
 }
 
+// const headerTitleMap: Record<string, string> = {
+//   'proper_name': 'Company',
+//   'url': 'URL',
+//   'entity_id': 'Entity Id', // TODO: only for admin users
+//   'contact_twitter': 'Twitter',
+//   'contact_telegram': 'Telegram'
+//   // 'entity_type': 'Type',
+// };
+
 const BlockHam: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
   const { items: sot, itemsMap: sotMap, loading: sotLoading } = useSelector((state: RootState) => state.sot);
   const organization = useSelector(selectCurrentOrganization);
+  const [searchParams] = useSearchParams();
 
   const [options, setOptions] = useState<GroupedOption[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedSot, setSelectedSot] = useState<SOT | null>(null);
   const [_, setQuickViewSot] = useState<SOT | null>(null);
+  const [searchValue, setSearchValue] = useState('');
 
   const consolidateEntity = useCallback((sotItem: SOT, matchedField: string, searchScore: number): ConsolidatedEntity => {
     return {
@@ -185,49 +264,41 @@ const BlockHam: React.FC = () => {
           key: `${entity._id}-${index}`,
           value: entity.proper_name || entity.entity_id,
           label: (
-            <div className="flex items-center gap-2">
+            <OptionWrapper>
               <Avatar
                 size="small"
                 src={entity.logo}
-                icon={!entity.logo && <User className="text-gray-400" />}
+                icon={!entity.logo && <UserOutlined />}
               />
-              <div className="flex-1">
+              <OptionContent>
                 <div>{entity.proper_name || entity.entity_id}</div>
-                <div className="flex flex-wrap gap-1 mt-1">
+                <OptionInfo>
                   {entity.entity_type && (
-                    <Tag className="text-xs px-1.5 m-0 bg-blue-100 text-blue-800 border-blue-200">
+                    <InfoTag color="blue">
                       {getEntityTypeLabel(entity.entity_type as EEntityType)}
-                    </Tag>
+                    </InfoTag>
                   )}
                   {entity.urls && entity.urls[0] && (
-                    <Tag className="text-xs px-1.5 m-0 bg-green-100 text-green-800 border-green-200">
-                      {entity.urls[0]}
-                    </Tag>
+                    <InfoTag color="green">{entity.urls[0]}</InfoTag>
                   )}
                   {entity.contact_twitter && (
-                    <Tag className="text-xs px-1.5 m-0 bg-cyan-100 text-cyan-800 border-cyan-200">
-                      Twitter
-                    </Tag>
+                    <InfoTag color="cyan">Twitter</InfoTag>
                   )}
                   {entity.contact_telegram && (
-                    <Tag className="text-xs px-1.5 m-0 bg-purple-100 text-purple-800 border-purple-200">
-                      Telegram
-                    </Tag>
+                    <InfoTag color="purple">Telegram</InfoTag>
                   )}
                   {entity.associate_countries.length > 0 && (
-                    <Tag className="text-xs px-1.5 m-0 bg-orange-100 text-orange-800 border-orange-200">
-                      {entity.associate_countries[0]}
-                    </Tag>
+                    <InfoTag color="orange">{entity.associate_countries[0]}</InfoTag>
                   )}
-                </div>
-              </div>
+                </OptionInfo>
+              </OptionContent>
               <EntityQuickView 
                 entity={entity}
                 sot={sotMap[entity._id]}
                 onViewFull={handleViewFullProfile}
                 onQuickView={handleQuickView}
               />
-            </div>
+            </OptionWrapper>
           )
         }))
       }];
@@ -246,24 +317,37 @@ const BlockHam: React.FC = () => {
     dispatch(fetchOrganizations());
   }, [dispatch]);
 
+  // Handle initial search from URL parameters
+  useEffect(() => {
+    const searchParam = searchParams.get('search');
+    const entityParam = searchParams.get('entity');
+    
+    if (entityParam && sot.length > 0) {
+      // Find the entity by entity_id
+      const entity = Object.values(sot).find(sotItem => sotItem.entity_id === entityParam);
+      if (entity) {
+        setSelectedSot(entity);
+        setSearchValue(entity.proper_name || entity.entity_id);
+      }
+    } else if (searchParam && sot.length > 0) {
+      setSearchValue(searchParam);
+      handleSearch(searchParam);
+    }
+  }, [searchParams, sot.length, handleSearch]);
+
   // Re-trigger search when organization settings change
   useEffect(() => {
-    const searchInput = document.querySelector('input.ant-input') as HTMLInputElement;
-    if (searchInput && searchInput.value) {
-      handleSearch(searchInput.value);
+    if (searchValue) {
+      handleSearch(searchValue);
     }
-  }, [organization?.settings?.allowCSAM, handleSearch]);
+  }, [organization?.settings?.allowCSAM, handleSearch, searchValue]);
 
   const headerTitle = (title: string, count: number) => {
     return (
-      <div className="px-3 py-3 pb-2 bg-gray-50 dark:bg-gray-700 mt-1">
-        <span className="text-sm font-semibold text-gray-600 dark:text-white uppercase tracking-wider">
-          {title}
-        </span>
-        <span className="text-xs text-gray-500 dark:text-gray-400 ml-2">
-          ({count} results)
-        </span>
-      </div>
+      <GroupHeader>
+        <span className="header-title">{title}</span>
+        <span className="result-count">({count} results)</span>
+      </GroupHeader>
     );
   };
 
@@ -310,32 +394,32 @@ const BlockHam: React.FC = () => {
 
   return (
     <ViewWrapper
-      icon={<Database className="text-2xl text-blue-600 font-bold" />}
+      icon={<DatabaseOutlined style={{ fontSize: '28px', color: colors.attributionHover, fontWeight: 'bold' }} />}
       title="Entity Explorer"
       fullWidth={true}
     >
-      <div className="w-full">
-        <AutoComplete
+      <SearchWrapper>
+        <StyledAutoComplete
           options={options}
           onSelect={onSelect as any}
           onSearch={handleSearch}
           style={{ width: '100%' }}
           listHeight={500}
-          className="[&_.ant-select-dropdown]:z-[1000]"
         >
           <Input.Search
             placeholder="Search by name, address, or type..."
             onSearch={handleSearch}
             loading={loading || sotLoading}
             style={{ width: '400px' }}
+            defaultValue={searchValue}
           />
-        </AutoComplete>
-      </div>
+        </StyledAutoComplete>
+      </SearchWrapper>
 
       {selectedSot && (
-        <div className="flex-1 flex flex-col gap-6 w-full mt-5">
+        <MainContent>
           <SOTEditor sot={selectedSot} onSelectAssociatedSot={handleSelectAssociatedSot} />
-        </div>
+        </MainContent>
       )}
     </ViewWrapper>
   );
