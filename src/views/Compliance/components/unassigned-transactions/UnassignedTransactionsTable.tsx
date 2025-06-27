@@ -217,8 +217,13 @@ const UnassignedTransactionsTable: React.FC<TransactionsTableProps> = ({
           },
         })}
         scroll={{ 
-          x: 'max-content',
+          x: 1000, // Reduced width from 1200px to 1000px
           y: 'calc(100vh - 600px)' // Adjusted for the new layout structure
+        }}
+        style={{
+          // Disable any potential animations
+          transition: 'none',
+          animation: 'none'
         }}
       />
 

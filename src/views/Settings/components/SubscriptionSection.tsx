@@ -164,9 +164,6 @@ const SubscriptionSection: React.FC<SubscriptionSectionProps> = ({ theme }) => {
   // Sort tiers by sortOrder
   const sortedTiers = [...tiers].sort((a, b) => a.sortOrder - b.sortOrder);
 
-  // Debug: Log the tiers being displayed
-  console.log('Available tiers:', sortedTiers.map(tier => ({ id: tier.id, name: tier.name, isActive: tier.isActive })));
-
   if (loading) {
     return (
       <div style={{ textAlign: 'center', padding: '40px' }}>
