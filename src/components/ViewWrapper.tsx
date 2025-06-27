@@ -1,5 +1,4 @@
 import React, { ReactNode } from 'react';
-import { useTheme } from '../context/ThemeContext';
 import { cn } from '../lib/utils';
 
 interface ViewWrapperProps {
@@ -17,15 +16,11 @@ const ViewWrapper: React.FC<ViewWrapperProps> = ({
   className,
   fullWidth = false
 }) => {
-  const { theme } = useTheme();
-  
-  
-
   return (
     <div 
       className={cn(
         "w-full h-auto p-5",
-        theme === 'light' ? "bg-white" : "bg-gray-900",
+        "bg-white dark:bg-gray-900",
         fullWidth ? "max-w-full" : "max-w-6xl",
         "view-wrapper",
         className

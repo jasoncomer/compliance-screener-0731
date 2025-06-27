@@ -29,13 +29,11 @@ export const ScrollableContent: React.FC<ScrollableContentProps> = ({ children, 
   <div className={cn(
     "flex flex-col flex-1 min-h-0 overflow-y-auto overflow-x-hidden",
     "pr-2",
+    "max-h-[calc(100vh-250px)] min-h-[350px]",
     "scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600",
     "scrollbar-track-transparent",
     className
-  )} style={{ 
-    maxHeight: 'calc(100vh - 250px)',
-    minHeight: '350px'
-  }}>
+  )}>
     {children}
   </div>
 );
@@ -130,10 +128,11 @@ interface ScrollableSectionProps {
 export const ScrollableSection: React.FC<ScrollableSectionProps> = ({ children, className }) => (
   <div className={cn(
     "overflow-y-auto overflow-x-hidden relative",
+    "max-h-92",
     "scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600",
     "scrollbar-track-transparent",
     className
-  )} style={{ maxHeight: '400px' }}>
+  )}>
     {children}
   </div>
 );

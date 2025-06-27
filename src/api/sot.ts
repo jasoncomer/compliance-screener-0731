@@ -56,17 +56,8 @@ const getRelatedEntities = async (entityId: string): Promise<RelatedEntitiesResp
   
   const response = await axiosInstance.get(`/attribution/entity/${entityId}/unique-values`);
  
-  
-  // Try different response structures
-  if (response.data.data) {
-    return response.data.data;
-  } else if (response.data) {
     return response.data;
-  } else {
-    console.error('❌ API: Unexpected response structure:', response);
-    return { unique_bos: [], unique_custodians: [] };
-  }
-};
+  };
 
 export const sot = {
   updateMongoDb,
