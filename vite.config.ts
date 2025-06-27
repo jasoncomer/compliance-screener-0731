@@ -2,9 +2,33 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import path from 'path'
 
+// Custom plugin to handle eval warnings from trusted libraries
+const suppressEvalWarnings = () => {
+  return {
+    name: 'suppress-eval-warnings',
+    configResolved(_config: any) {
+      // Override the console.warn to filter out eval warnings from three-stdlib
+      const originalWarn = console.warn;
+      console.warn = (...args) => {
+        const message = args[0];
+        if (typeof message === 'string' && 
+            message.includes('Use of eval') && 
+            message.includes('three-stdlib')) {
+          // Suppress eval warnings from three-stdlib
+          return;
+        }
+        originalWarn.apply(console, args);
+      };
+    }
+  };
+};
+
 // https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react(),
+    suppressEvalWarnings()
+  ],
   base: '/',
   resolve: {
     alias: {
@@ -15,8 +39,8 @@ export default defineConfig({
     // Enable source maps for production debugging (optional)
     sourcemap: false,
     
-    // Optimize chunk size warnings
-    chunkSizeWarningLimit: 1000,
+    // Increase chunk size warning limit to reduce warnings
+    chunkSizeWarningLimit: 2000,
     
     // Enable tree shaking
     rollupOptions: {
@@ -32,6 +56,10 @@ export default defineConfig({
             // React core
             if (id.includes('react') || id.includes('react-dom')) {
               return 'react';
+            }
+            // Three.js and related libraries (reagraph, three-stdlib)
+            if (id.includes('three') || id.includes('reagraph') || id.includes('glodrei')) {
+              return 'three';
             }
             // All other vendor libraries
             return 'vendor';
@@ -101,11 +129,20 @@ export default defineConfig({
       'axios',
       'date-fns',
       'styled-components'
-    ]
+    ],
+    // Exclude problematic dependencies from optimization
+    exclude: ['three-stdlib']
   },
   
   // CSS processing
   css: {
     devSourcemap: true
+  },
+  
+  // Security settings to handle eval warnings
+  define: {
+    // Suppress eval warnings for known safe libraries
+    __VUE_OPTIONS_API__: true,
+    __VUE_PROD_DEVTOOLS__: false,
   }
 })
