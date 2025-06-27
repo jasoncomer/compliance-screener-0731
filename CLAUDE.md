@@ -7,8 +7,7 @@ Blockscout App is a comprehensive blockchain monitoring and compliance platform 
    - React 18 with TypeScript
    - Vite as build tool
    - Redux Toolkit for state management
-   - Styled-components for styling
-   - UI libraries: Ant Design and Material UI
+   - UI libraries: Tailwind CSS, Shadcn components, Lucide React
    - React Router for navigation
 
 2. **Core Features**:
@@ -56,7 +55,7 @@ The API is a Node.js/Express application written in TypeScript that serves as th
 - **TypeScript**: Strict mode enabled, with noUnusedLocals and noUnusedParameters checks
 - **Imports**: Use named imports for clarity, organize imports by external/internal/types
 - **Components**: Use functional components with React hooks
-- **Styling**: Uses styled-components for CSS-in-JS styling
+- **Styling**: Tailwind CSS. Shadcn components. Lucide React for icons.
 - **State Management**: Uses Redux Toolkit (@reduxjs/toolkit)
 - **Error Handling**: Use try/catch for async operations, proper error propagation
 - **Naming**:
@@ -64,4 +63,30 @@ The API is a Node.js/Express application written in TypeScript that serves as th
   - Functions/variables: camelCase
   - Types/interfaces: PascalCase
   - Files: PascalCase for components, camelCase for utilities
-- **File Structure**: Keep related components and utilities in feature directories
+- **File Structure**: Keep relatedw components and utilities in feature directories
+
+# Claude Memory File
+
+## Component Preferences
+
+### Ant Design Components
+- **AVOID** using Ant Design components (`antd`) in new code
+- Use native HTML elements or custom components instead
+- If existing code uses Ant Design, consider migrating to native elements when making changes
+- This applies to components like `Button`, `Input`, `Modal`, etc.
+
+### Examples of Migration
+- Replace `<Button>` from antd with native `<button>` element
+- Replace `<Input>` from antd with native `<input>` element or custom Input component
+- Use custom styling with Tailwind CSS classes instead of Ant Design props
+
+### Current Project Structure
+- The project uses Tailwind CSS for styling
+- Custom components are available in `src/components/`
+- Use `cn()` utility from `src/lib/utils` for conditional class names
+
+## Code Style Guidelines
+- Prefer native HTML elements over third-party component libraries
+- Use Tailwind CSS for styling
+- Maintain TypeScript type safety
+- Follow existing project patterns and conventions

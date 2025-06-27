@@ -1,11 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { Layout } from 'antd';
+
 import { Outlet } from 'react-router-dom';
 import { useTheme } from '../context/ThemeContext';
 import { storage } from '../utils/storage';
 import { setAuthToken } from '../api/api';
 import SideNav from '../components/SideNav';
-import { StyledLayout, MainContent } from '../styles/Layout';
 
 const Home: React.FC = () => {
   const { theme } = useTheme();
@@ -17,21 +16,18 @@ const Home: React.FC = () => {
   }, []);
 
   return (
-    <StyledLayout>
-      <Layout>
-        <SideNav 
-          theme={theme} 
-          collapsed={sidebarCollapsed} 
-          onCollapse={setSidebarCollapsed} 
-        />
-        <MainContent 
-          $theme={theme} 
-          sidebarCollapsed={sidebarCollapsed}
-        >
+    <div className="flex h-screen w-full bg-gray-100 dark:bg-gray-900">
+      <SideNav
+        theme={theme}
+        collapsed={sidebarCollapsed}
+        onCollapse={setSidebarCollapsed}
+      />
+      <div className="flex-1 flex flex-col min-h-0">
+        <div className="flex-1 overflow-y-auto">
           <Outlet />
-        </MainContent>
-      </Layout>
-    </StyledLayout>
+        </div>
+      </div>
+    </div>
   );
 };
 

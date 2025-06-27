@@ -3,6 +3,7 @@ import { AutoComplete, Avatar, Input, Tag } from 'antd';
 import { UserOutlined, DatabaseOutlined } from '@ant-design/icons';
 import Sifter from 'sifter';
 import { useDispatch, useSelector } from 'react-redux';
+import { useSearchParams } from 'react-router-dom';
 
 import ViewWrapper from '../../components/ViewWrapper';
 import SOTEditor from '../../components/SOTEditor';
@@ -53,11 +54,13 @@ const BlockHam: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
   const { items: sot, itemsMap: sotMap, loading: sotLoading } = useSelector((state: RootState) => state.sot);
   const organization = useSelector(selectCurrentOrganization);
+  const [searchParams] = useSearchParams();
 
   const [options, setOptions] = useState<GroupedOption[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedSot, setSelectedSot] = useState<SOT | null>(null);
   const [_, setQuickViewSot] = useState<SOT | null>(null);
+  const [searchValue, setSearchValue] = useState('');
 
   const consolidateEntity = useCallback((sotItem: SOT, matchedField: string, searchScore: number): ConsolidatedEntity => {
     return {
@@ -239,13 +242,30 @@ const BlockHam: React.FC = () => {
     dispatch(fetchOrganizations());
   }, [dispatch]);
 
+  // Handle initial search from URL parameters
+  useEffect(() => {
+    const searchParam = searchParams.get('search');
+    const entityParam = searchParams.get('entity');
+    
+    if (entityParam && sot.length > 0) {
+      // Find the entity by entity_id
+      const entity = Object.values(sot).find(sotItem => sotItem.entity_id === entityParam);
+      if (entity) {
+        setSelectedSot(entity);
+        setSearchValue(entity.proper_name || entity.entity_id);
+      }
+    } else if (searchParam && sot.length > 0) {
+      setSearchValue(searchParam);
+      handleSearch(searchParam);
+    }
+  }, [searchParams, sot.length, handleSearch]);
+
   // Re-trigger search when organization settings change
   useEffect(() => {
-    const searchInput = document.querySelector('input.ant-input') as HTMLInputElement;
-    if (searchInput && searchInput.value) {
-      handleSearch(searchInput.value);
+    if (searchValue) {
+      handleSearch(searchValue);
     }
-  }, [organization?.settings?.allowCSAM, handleSearch]);
+  }, [organization?.settings?.allowCSAM, handleSearch, searchValue]);
 
   const headerTitle = (title: string, count: number) => {
     return (
@@ -319,6 +339,7 @@ const BlockHam: React.FC = () => {
             placeholder="Search by name, address, or type..."
             onSearch={handleSearch}
             loading={loading || sotLoading}
+            defaultValue={searchValue}
           />
         </AutoComplete>
       </div>

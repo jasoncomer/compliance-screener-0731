@@ -1,8 +1,6 @@
 import React from 'react';
-import { Card, Statistic, Button, Typography, Spin } from 'antd';
-import { SafetyOutlined, EyeOutlined } from '@ant-design/icons';
-
-const { Title } = Typography;
+import { Shield, Eye, Loader2 } from 'lucide-react';
+import { useTheme } from "../../../../context/ThemeContext";
 
 interface RiskAssessmentProps {
   score: number;
@@ -19,52 +17,80 @@ const RiskAssessment: React.FC<RiskAssessmentProps> = ({
   isLoading = false,
   onSeeDetails 
 }) => {
-  const getRiskColor = (score: number): string => {
-    if (score > 70) return '#cf1322'; // Red for high risk
-    if (score > 40) return '#faad14'; // Orange for medium risk
-    return '#3f8600'; // Green for low risk
-  };
+  const { theme } = useTheme();
 
-  const getRiskIconColor = (score: number): string => {
-    if (score > 70) return '#cf1322';
-    if (score > 40) return '#faad14';
-    return '#3f8600';
+  const getRiskColor = (score: number): string => {
+    if (score >= 80) return '#ef4444'; // Red for high risk
+    if (score >= 50) return '#f59e0b'; // Orange for medium risk
+    if (score >= 20) return '#10b981'; // Green for low risk
+    return '#6b7280'; // Gray for very low risk
   };
 
   if (isLoading) {
     return (
-      <Card className="bg-gray-800 rounded-2xl border-gray-700 h-full flex flex-col justify-center items-center">
-        <Title level={5} className="text-white mb-4">Risk Assessment</Title>
-        <Spin size="large" />
-        <div className="text-gray-500 text-sm mt-4">Loading risk data...</div>
-      </Card>
+      <div className={`rounded-2xl border p-6 h-full flex flex-col justify-center items-center ${
+        theme === 'dark' 
+          ? 'bg-gray-800/50 border-gray-700' 
+          : 'bg-gray-50 border-gray-200'
+      }`}>
+        <h5 className={`text-lg font-semibold mb-4 ${
+          theme === 'dark' ? 'text-white' : 'text-gray-900'
+        }`}>Risk Assessment</h5>
+        <Loader2 className="w-8 h-8 animate-spin text-brand-primary mb-4" />
+        <div className={`text-sm ${
+          theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
+        }`}>Loading risk data...</div>
+      </div>
     );
   }
 
   const riskColor = getRiskColor(score);
-  const iconColor = getRiskIconColor(score);
 
   return (
-    <Card className="bg-gray-800 rounded-2xl border-gray-700 h-full flex flex-col justify-center items-center">
-      <Title level={5} className="text-white mb-4">Risk Assessment</Title>
-      <Statistic
-        value={score}
-        valueStyle={{ color: riskColor, fontSize: '3rem', fontWeight: 700 }}
-        prefix={<SafetyOutlined className="mr-2" style={{ color: iconColor }} />}
-        suffix={<span className="text-gray-500 text-lg">/100</span>}
-      />
-      <div className="font-semibold text-lg mt-2" style={{ color: riskColor }}>{level}</div>
-      <div className="text-gray-500 text-sm mb-4">{description}</div>
-      <Button 
-        type="default" 
-        className="w-full rounded-lg bg-orange-500 text-white border-none font-semibold hover:bg-orange-600 hover:border-orange-600 transition-colors duration-200"
+    <div className={`rounded-2xl border p-6 h-full flex flex-col justify-center items-center ${
+      theme === 'dark' 
+        ? 'bg-gray-800/50 border-gray-700' 
+        : 'bg-gray-50 border-gray-200'
+    }`}>
+      <h5 className={`text-lg font-semibold mb-4 ${
+        theme === 'dark' ? 'text-white' : 'text-gray-900'
+      }`}>Risk Assessment</h5>
+      
+      <div className="flex items-center mb-4">
+        <Shield className="w-8 h-8 mr-3" style={{ color: riskColor }} />
+        <div className="text-center">
+          <div className="text-4xl font-bold" style={{ color: riskColor }}>
+            {score}
+            <span className={`text-lg font-normal ml-1 ${
+              theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
+            }`}>/100</span>
+          </div>
+        </div>
+      </div>
+      
+      <div className="font-semibold text-lg mb-2" style={{ color: riskColor }}>
+        {level}
+      </div>
+      
+      <div className={`text-sm text-center mb-6 px-4 ${
+        theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
+      }`}>
+        {description}
+      </div>
+      
+      <button 
+        className={`w-full rounded-lg font-semibold transition-colors duration-200 flex items-center justify-center gap-2 py-2 px-4 ${
+          onSeeDetails
+            ? 'bg-brand-primary text-white hover:bg-brand-primary/90'
+            : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+        }`}
         onClick={onSeeDetails}
         disabled={!onSeeDetails}
-        icon={<EyeOutlined />}
       >
+        <Eye className="w-4 h-4" />
         View Details
-      </Button>
-    </Card>
+      </button>
+    </div>
   );
 };
 

@@ -1,4 +1,4 @@
-import { FC, useRef } from 'react';
+import React, { FC, useRef, useMemo } from 'react';
 import { Modal } from 'antd';
 import { IComplianceTransaction } from '../../../../typings/compliance';
 import TransactionDetailsHeader from './TransactionDetailsHeader';
@@ -16,7 +16,7 @@ interface TransactionDetailsModalProps {
   transactionData?: IComplianceTransaction | null;
 }
 
-export const TransactionDetailsModal: FC<TransactionDetailsModalProps> = ({
+export const TransactionDetailsModal: FC<TransactionDetailsModalProps> = React.memo(({
   isVisible,
   onClose,
   transactionId,
@@ -30,23 +30,13 @@ export const TransactionDetailsModal: FC<TransactionDetailsModalProps> = ({
     transactionId ? selectTransactionById(state, transactionId) : null
   );
   
-  const transactionDetails = transactionData || transactionFromStore;
+  // Memoize transaction details to prevent unnecessary re-renders
+  const transactionDetails = useMemo(() => {
+    return transactionData || transactionFromStore;
+  }, [transactionData, transactionFromStore]);
 
-  console.log('TransactionDetailsModal render:', { 
-    isVisible, 
-    transactionId, 
-    transactionData: !!transactionData,
-    transactionFromStore: !!transactionFromStore,
-    transactionDetails: !!transactionDetails
-  });
-
-  if (!transactionDetails || !transactionId) {
-    console.log('Modal returning null because:', { 
-      hasTransactionData: !!transactionData,
-      hasTransactionFromStore: !!transactionFromStore,
-      hasTransactionDetails: !!transactionDetails, 
-      hasTransactionId: !!transactionId 
-    });
+  // Early return if modal is not visible or no transaction details
+  if (!isVisible || !transactionDetails || !transactionId) {
     return null;
   }
 
@@ -104,4 +94,4 @@ export const TransactionDetailsModal: FC<TransactionDetailsModalProps> = ({
       </Modal>
     </>
   );
-};
+});

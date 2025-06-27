@@ -17,7 +17,6 @@ const MonitoredAddressesTable: React.FC<MonitoredAddressTableProps> = ({
   onDelete,
   onViewHistory,
 }) => {
-  console.log('addresses', addresses);
   const columns = [
     {
       title: 'Address',

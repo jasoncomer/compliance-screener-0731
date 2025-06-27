@@ -1,7 +1,5 @@
 import React, { useState } from 'react';
-import { Card, Input, Spin, Alert, Typography, Skeleton } from 'antd';
-import { SearchOutlined, BarChartOutlined } from '@ant-design/icons';
-import { colors } from '../../styles/variables';
+import { Search, BarChart3, AlertCircle, Loader2 } from 'lucide-react';
 import ViewWrapper from '../../components/ViewWrapper';
 import { 
   RiskAssessment, 
@@ -15,7 +13,6 @@ import {
 import TwitterTimeline from './components/entity-intelligence/TwitterTimeline';
 import { AddressSummary } from './components/AddressSummary';
 import AddressHeader from './components/address/AddressHeader';
-import styled from 'styled-components';
 import { useAddressTransactions } from '../../hooks/useAddressTransactions';
 import { useAddressSummary } from '../../hooks/useAddressSummary';
 import { useAddressBlockStats } from '../../hooks/useAddressBlockStats';
@@ -29,128 +26,22 @@ import { RootState } from '../../store/store';
 import { getEntityTypeLabel } from '../../utils/display-labels';
 import { EEntityType } from '../../typings/SOT';
 import { fetchSOT } from '../../store/slices/sotSlice';
-
-
-const { Search } = Input;
-
-// Styled components for height matching
-const FlexRow = styled.div`
-  display: flex;
-  flex-wrap: wrap;
-  margin: -8px;
-  gap: 16px;
-`;
-
-const FlexCol = styled.div`
-  padding: 8px;
-  display: flex;
-  flex: 1;
-  min-width: 300px;
-  align-items: stretch;
-  
-  & > * {
-    flex: 1;
-    margin: 0 !important;
-    height: 100% !important;
-  }
-  
-  &.full-width {
-    flex-basis: 100%;
-    min-width: 100%;
-  }
-  
-  &.half-width {
-    flex-basis: calc(50% - 16px);
-    min-width: 400px;
-  }
-`;
-
-const SearchContainer = styled.div`
-  margin-bottom: 24px;
-  
-  .ant-input-search {
-    .ant-input {
-      background: #1f2937;
-      border: none;
-      box-shadow: none;
-      color: #fff;
-      border-radius: 8px;
-      
-      &:hover, &:focus {
-        border-color: ${colors.attributionHover};
-        box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
-      }
-      
-      &::placeholder {
-        color: #9ca3af;
-      }
-    }
-    
-    .ant-input-search-button {
-      background: ${colors.attributionHover};
-      border: 1px solid ${colors.attributionHover};
-      border-radius: 8px;
-      height: 40px;
-      
-      &:hover {
-        background: #2563eb;
-        border-color: #2563eb;
-      }
-    }
-  }
-`;
-
-const LoadingContainer = styled.div`
-  .ant-skeleton {
-    .ant-skeleton-content {
-      .ant-skeleton-title {
-        background: linear-gradient(90deg, #374151 25%, #4b5563 37%, #374151 63%);
-        background-size: 400% 100%;
-        animation: ant-skeleton-loading 1.4s ease infinite;
-      }
-      .ant-skeleton-paragraph {
-        li {
-          background: linear-gradient(90deg, #374151 25%, #4b5563 37%, #374151 63%);
-          background-size: 400% 100%;
-          animation: ant-skeleton-loading 1.4s ease infinite;
-        }
-      }
-    }
-  }
-  
-  @keyframes ant-skeleton-loading {
-    0% {
-      background-position: 100% 50%;
-    }
-    100% {
-      background-position: 0 50%;
-    }
-  }
-`;
-
-const LoadingCard = styled(Card)`
-  background: #1f2937 !important;
-  border: 1px solid #374151 !important;
-  border-radius: 16px !important;
-  
-  .ant-card-body {
-    padding: 24px;
-  }
-`;
+import { useTheme } from '../../context/ThemeContext';
 
 const RiskDashboard: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [hasData, setHasData] = useState(false); // Changed to false to only show searchbar by default
-  const [address, setAddress] = useState('bc1qxy2kgdygjrsqtzqzn0yrf2493p83kkfjhx0wlh');
+  const [hasData, setHasData] = useState(false);
+  const [address, setAddress] = useState('');
   const [searchValue, setSearchValue] = useState('');
   const [riskScoreModalVisible, setRiskScoreModalVisible] = useState(false);
+  const { theme } = useTheme();
 
   // React Query hooks
-  const { data: transactionData, isLoading: isLoadingTransactions, error: transactionError } = useAddressTransactions(address, 1, 100);
+  const { data: counterpartyTransactionData, isLoading: isLoadingTransactions, error: transactionError } = useAddressTransactions(address, 1, 100); // For counterparty analysis
   const { data: addressSummaryData, isLoading: isLoadingAddressSummary } = useAddressSummary(address);
   const { data: addressBlockStatsData, isLoading: isLoadingAddressBlockStats } = useAddressBlockStats(address);
-  const { data: addressData, isLoading: isLoadingAddress, error: addressError } = useAddress(address);
+  const { isLoading: isLoadingAddress, error: addressError } = useAddress(address);
   const { getPrice } = useCryptoPrices();
   const { riskScore, isLoading: isLoadingRiskScore, error: riskScoreError } = useRiskScore(address);
   const btcPrice = getPrice('BTC') || 35000; // Default fallback price
@@ -160,19 +51,41 @@ const RiskDashboard: React.FC = () => {
   const { itemsMap } = useAppSelector((state: RootState) => state.sot);
   const dispatch = useAppDispatch();
 
-  // Transform transaction data
+  // Loading state
+  const isLoadingAnyData = isLoadingTransactions || isLoadingAddressSummary || isLoadingAddressBlockStats || isLoadingAddress || isLoadingRiskScore;
+
+  // Debug logging
+  console.log('RiskDashboard - Debug Info:', {
+    address,
+    hasData,
+    shouldShowData: hasData || (address && !isLoadingAnyData && (counterpartyTransactionData || addressSummaryData || addressBlockStatsData)),
+    transactionData: counterpartyTransactionData ? { txsCount: counterpartyTransactionData.txs?.length, pagination: counterpartyTransactionData.pagination } : null,
+    isLoadingAnyData,
+    isLoadingTransactions,
+    transactionError
+  });
+
+  // Transform transaction data for counterparty analysis
   const transformedTransactions: TransformedTransaction[] = React.useMemo(() => {
-    if (!transactionData?.txs) return [];
-    const transformed = transformBtcTransactions(transactionData.txs, address, btcPrice);
-    console.log('RiskDashboard - transformed transactions:', transformed);
+    if (!counterpartyTransactionData?.txs) return [];
+    const transformed = transformBtcTransactions(counterpartyTransactionData.txs, address, btcPrice);
+    console.log('RiskDashboard - FIRST RAW TX:', counterpartyTransactionData.txs[0]);
+    console.log('RiskDashboard - ALL RAW TX COUNT:', counterpartyTransactionData.txs.length);
+    console.log('RiskDashboard - TRANSFORMED:', transformed);
     return transformed;
-  }, [transactionData?.txs, address, btcPrice]);
+  }, [counterpartyTransactionData?.txs, address, btcPrice]);
 
   // Function to get entity display name
-  const getEntityDisplayName = (entityId: string) => {
+  const getEntityDisplayName = React.useCallback((entityId: string) => {
     if (!entityId) return '';
     const entity = Object.values(itemsMap).find(sot => sot.entity_id === entityId);
     return entity?.proper_name || entityId;
+  }, [itemsMap]);
+
+  // Function to truncate addresses for display
+  const truncateAddress = (address: string, startLength: number = 6, endLength: number = 4) => {
+    if (address.length <= startLength + endLength + 3) return address;
+    return `${address.slice(0, startLength)}...${address.slice(-endLength)}`;
   };
 
   // Generate counterparty data from transaction history
@@ -211,157 +124,182 @@ const RiskDashboard: React.FC = () => {
     const incomingCounterparties = Object.entries(incomingByAddress)
       .map(([address, data]) => {
         const entityId = attributions[address]?.entity || attributions[address]?.bo || attributions[address]?.custodian;
-        const entityName = entityId ? getEntityDisplayName(entityId) : 'Unknown Wallet';
+        const entityName = entityId ? getEntityDisplayName(entityId) : truncateAddress(address);
         
         return {
           entity: entityName,
           direction: 'inflow' as const,
           amount: `$${(data.totalAmount * btcPrice).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+          btcAmount: `${data.totalAmount.toFixed(8)} BTC`,
           txns: data.count,
-          address: address,
-          totalAmount: data.totalAmount * btcPrice // For sorting
+          address: address
         };
       })
-      .sort((a, b) => b.totalAmount - a.totalAmount)
-      .slice(0, 5)
-      .map(({ totalAmount, ...rest }) => rest); // Remove totalAmount from final result
+      .sort((a, b) => {
+        const aAmount = parseFloat(a.amount.replace(/[$,]/g, ''));
+        const bAmount = parseFloat(b.amount.replace(/[$,]/g, ''));
+        return bAmount - aAmount;
+      })
+      .slice(0, 5);
 
     const outgoingCounterparties = Object.entries(outgoingByAddress)
       .map(([address, data]) => {
         const entityId = attributions[address]?.entity || attributions[address]?.bo || attributions[address]?.custodian;
-        const entityName = entityId ? getEntityDisplayName(entityId) : 'Unknown Wallet';
+        const entityName = entityId ? getEntityDisplayName(entityId) : truncateAddress(address);
         
         return {
           entity: entityName,
           direction: 'outflow' as const,
           amount: `$${(data.totalAmount * btcPrice).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+          btcAmount: `${data.totalAmount.toFixed(8)} BTC`,
           txns: data.count,
-          address: address,
-          totalAmount: data.totalAmount * btcPrice // For sorting
+          address: address
         };
       })
-      .sort((a, b) => b.totalAmount - a.totalAmount)
-      .slice(0, 5)
-      .map(({ totalAmount, ...rest }) => rest); // Remove totalAmount from final result
+      .sort((a, b) => {
+        const aAmount = parseFloat(a.amount.replace(/[$,]/g, ''));
+        const bAmount = parseFloat(b.amount.replace(/[$,]/g, ''));
+        return bAmount - aAmount;
+      })
+      .slice(0, 5);
 
     return { incoming: incomingCounterparties, outgoing: outgoingCounterparties };
   }, [transformedTransactions, attributions, btcPrice, getEntityDisplayName]);
 
   // Prepare address summary data for the component
   const addressSummaryProps = React.useMemo(() => {
-    if (!addressSummaryData || !addressBlockStatsData || !addressData) {
+    if (!addressSummaryData || !addressBlockStatsData) {
       return {
+        totalTransactions: 0,
+        totalVolume: 0,
+        firstSeen: '',
+        lastSeen: '',
+        averageTransactionSize: 0,
+        inputAmount: 0,
+        outputAmount: 0,
         balance: 0,
-        total_received: 0,
-        total_spent: 0,
-        script_type: 'Unknown',
-        firstBlock: undefined,
-        lastBlock: undefined,
-        isLoading: true
+        topCounterparty: 'N/A',
+        isLoading: isLoadingAddressSummary || isLoadingAddressBlockStats
       };
     }
 
-    return {
-      balance: addressSummaryData.balance || 0,
-      total_received: addressSummaryData.total_received || 0,
-      total_spent: addressSummaryData.total_spent || 0,
-      script_type: addressData.script_type || 'Unknown',
-      firstBlock: addressBlockStatsData.firstBlock?.blockNumber,
-      lastBlock: addressBlockStatsData.lastBlock?.blockNumber,
-      isLoading: false
-    };
-  }, [addressSummaryData, addressBlockStatsData, addressData]);
+    const totalTxns = counterpartyTransactionData?.pagination?.totalTxs || 0;
+    const totalVolume = addressSummaryData.total_received || 0;
+    const firstSeen = addressBlockStatsData.firstBlock?.blockNumber?.toString() || '';
+    const lastSeen = addressBlockStatsData.lastBlock?.blockNumber?.toString() || '';
+    const avgTxSize = totalTxns > 0 ? totalVolume / totalTxns : 0;
 
-  // Check if any data is loading
-  const isLoadingAnyData = isLoadingTransactions || isLoadingAddressSummary || isLoadingAddressBlockStats || isLoadingAddress || isLoadingRiskScore;
+    // Calculate input, output, and balance from transaction data
+    let inputAmount = 0;
+    let outputAmount = 0;
+    let topCounterparty = 'N/A';
 
-  // Fetch SOT data when component mounts
-  React.useEffect(() => {
-    dispatch(fetchSOT());
-  }, [dispatch]);
+    if (transformedTransactions.length > 0) {
+      // Calculate input and output amounts
+      transformedTransactions.forEach(tx => {
+        if (tx.type === 'in') {
+          inputAmount += tx.value;
+        } else if (tx.type === 'out') {
+          outputAmount += tx.value;
+        }
+      });
 
-  // Fetch attributions when address changes
-  React.useEffect(() => {
-    if (address) {
-      fetchAttributions([address]);
+      // Find top counterparty (highest transaction volume)
+      const counterpartyVolumes: { [key: string]: number } = {};
+      const counterpartyCounts: { [key: string]: number } = {};
+      transformedTransactions.forEach(tx => {
+        const counterparty = tx.type === 'in' ? tx.from : tx.to;
+        if (counterparty && counterparty !== 'Unknown') {
+          counterpartyVolumes[counterparty] = (counterpartyVolumes[counterparty] || 0) + tx.value;
+          counterpartyCounts[counterparty] = (counterpartyCounts[counterparty] || 0) + 1;
+        }
+      });
+
+      const topCounterpartyAddress = Object.entries(counterpartyCounts)
+        .sort(([, a], [, b]) => b - a)[0]?.[0];
+
+      if (topCounterpartyAddress) {
+        const entityId = attributions[topCounterpartyAddress]?.entity || 
+                        attributions[topCounterpartyAddress]?.bo || 
+                        attributions[topCounterpartyAddress]?.custodian;
+        topCounterparty = entityId ? getEntityDisplayName(entityId) : topCounterpartyAddress;
+      }
     }
-  }, [address, fetchAttributions]);
 
-  // Function to get entity information from address
+    // Calculate balance (input - output)
+    const balance = inputAmount - outputAmount;
+
+    return {
+      totalTransactions: totalTxns,
+      totalVolume: totalVolume, // Keep in BTC
+      firstSeen,
+      lastSeen,
+      averageTransactionSize: avgTxSize, // Keep in BTC
+      inputAmount: inputAmount, // Keep in BTC
+      outputAmount: outputAmount, // Keep in BTC
+      balance: balance, // Keep in BTC
+      topCounterparty,
+      isLoading: isLoadingAddressSummary || isLoadingAddressBlockStats
+    };
+  }, [addressSummaryData, addressBlockStatsData, counterpartyTransactionData, btcPrice, isLoadingAddressSummary, isLoadingAddressBlockStats, transformedTransactions, attributions, getEntityDisplayName]);
+
+  // Get primary entity from address
   const getEntityFromAddress = () => {
-    if (!address || !attributions[address]) return null;
-    
-    const entityId = attributions[address]?.entity || attributions[address]?.bo || attributions[address]?.custodian;
-    if (!entityId) return null;
-    
-    return Object.values(itemsMap).find(sot => sot.entity_id === entityId);
+    const attribution = attributions[address];
+    return attribution?.entity || attribution?.bo || attribution?.custodian;
   };
 
-  // Function to get Twitter handle from entity
+  // Get Twitter handle for the entity
   const getTwitterHandle = () => {
-    const entity = getEntityFromAddress();
-    return entity?.contact_twitter || null;
+    const entityId = getEntityFromAddress();
+    if (!entityId) return '';
+    const entity = Object.values(itemsMap).find(sot => sot.entity_id === entityId);
+    return entity?.contact_twitter || '';
   };
 
-  // Get Twitter handle for display
-  const twitterHandle = getTwitterHandle();
-
-  // Function to get entity type
+  // Entity helper functions
   const getEntityType = (entityId: string) => {
-    if (!entityId) return '';
     const entity = Object.values(itemsMap).find(sot => sot.entity_id === entityId);
-    return entity?.entity_type ? getEntityTypeLabel(entity.entity_type as EEntityType) : '';
+    return entity?.entity_type ? getEntityTypeLabel(entity.entity_type as EEntityType) : 'Unknown';
   };
 
-  // Function to get entity logo
   const getEntityLogo = (entityId: string) => {
-    if (!entityId) return null;
     const entity = Object.values(itemsMap).find(sot => sot.entity_id === entityId);
-    return entity?.logo;
+    return entity?.logo || '';
   };
 
-  // Function to get entity description
   const getEntityDescription = (entityId: string) => {
-    if (!entityId) return '';
     const entity = Object.values(itemsMap).find(sot => sot.entity_id === entityId);
-    return entity?.description_merged || '';
+    return entity?.description_merged || 'No description available';
   };
 
-  // Function to get entity website
   const getEntityWebsite = (entityId: string) => {
-    if (!entityId) return '';
     const entity = Object.values(itemsMap).find(sot => sot.entity_id === entityId);
     return entity?.url || '';
   };
 
-  // Function to get entity phone
   const getEntityPhone = (entityId: string) => {
-    if (!entityId) return '';
     const entity = Object.values(itemsMap).find(sot => sot.entity_id === entityId);
     return entity?.contact_phone || '';
   };
 
-  // Function to get entity address
   const getEntityAddress = (entityId: string) => {
-    if (!entityId) return '';
     const entity = Object.values(itemsMap).find(sot => sot.entity_id === entityId);
     return entity?.contact_address || '';
   };
 
-  // Function to get entity founded year
   const getEntityFounded = (entityId: string) => {
-    if (!entityId) return 0;
     const entity = Object.values(itemsMap).find(sot => sot.entity_id === entityId);
     return entity?.year_founded ? parseInt(entity.year_founded) : 0;
   };
 
-  // Function to get entity countries
   const getEntityCountries = (entityId: string) => {
-    if (!entityId) return [];
     const entity = Object.values(itemsMap).find(sot => sot.entity_id === entityId);
+    if (!entity) return [];
+    
     const countries = [];
     for (let i = 1; i <= 6; i++) {
-      const country = entity?.[`associate_country_${i}` as keyof typeof entity];
+      const country = entity[`associate_country_${i}` as keyof typeof entity];
       if (country && typeof country === 'string' && country.trim() !== '') {
         countries.push(country);
       }
@@ -369,14 +307,14 @@ const RiskDashboard: React.FC = () => {
     return countries;
   };
 
-  // Function to get entity tags (same as block explorer)
   const getEntityTags = (entityId: string): string[] => {
-    if (!entityId) return [];
     const entity = Object.values(itemsMap).find(sot => sot.entity_id === entityId);
+    if (!entity) return [];
+    
     // Combine all entity tag fields
     const tags: string[] = [];
-    for (let i = 1; i <= 5; i++) {
-      const tag = entity?.[`entity_tag${i}` as keyof typeof entity];
+    for (let i = 1; i <= 7; i++) {
+      const tag = entity[`entity_tag${i}` as keyof typeof entity];
       if (tag && typeof tag === 'string') {
         tags.push(tag);
       }
@@ -384,68 +322,248 @@ const RiskDashboard: React.FC = () => {
     return tags;
   };
 
-  // Get entity tags for the current address
-  const entityTags = React.useMemo(() => {
-    if (!address || !attributions[address]) return [];
-    const entityId = attributions[address]?.entity || attributions[address]?.bo || attributions[address]?.custodian;
-    return getEntityTags(entityId);
-  }, [address, attributions, itemsMap]);
+  // Additional entity helper functions
+  const getEntityEmail = (entityId: string) => {
+    const entity = Object.values(itemsMap).find(sot => sot.entity_id === entityId);
+    return entity?.contact_email || '';
+  };
 
-  // Get the primary entity ID for the address
-  const primaryEntityId = React.useMemo(() => {
-    if (!address || !attributions[address]) return null;
-    return attributions[address]?.entity || attributions[address]?.bo || attributions[address]?.custodian;
-  }, [address, attributions]);
+  const getEntityTwitter = (entityId: string) => {
+    const entity = Object.values(itemsMap).find(sot => sot.entity_id === entityId);
+    return entity?.contact_twitter || '';
+  };
 
-  // Calculate risk level and description based on actual risk score
+  const getEntityTelegram = (entityId: string) => {
+    const entity = Object.values(itemsMap).find(sot => sot.entity_id === entityId);
+    return entity?.contact_telegram || '';
+  };
+
+  const getEntityEnsAddress = (entityId: string) => {
+    const entity = Object.values(itemsMap).find(sot => sot.entity_id === entityId);
+    return entity?.ens_address || '';
+  };
+
+  const getEntityLegalInfoUrl = (entityId: string) => {
+    const entity = Object.values(itemsMap).find(sot => sot.entity_id === entityId);
+    return entity?.legal_info_url || '';
+  };
+
+  const getEntityCeo = (entityId: string) => {
+    const entity = Object.values(itemsMap).find(sot => sot.entity_id === entityId);
+    return entity?.ceo || '';
+  };
+
+  const getEntityKeyPersonnel = (entityId: string) => {
+    const entity = Object.values(itemsMap).find(sot => sot.entity_id === entityId);
+    return entity?.key_personnel || '';
+  };
+
+  const getEntityTicker = (entityId: string) => {
+    const entity = Object.values(itemsMap).find(sot => sot.entity_id === entityId);
+    return entity?.ticker || '';
+  };
+
+  const getEntityParentId = (entityId: string) => {
+    const entity = Object.values(itemsMap).find(sot => sot.entity_id === entityId);
+    return entity?.parent_id || '';
+  };
+
+  const getEntitySocialMediaProfiles = (entityId: string): string[] => {
+    const entity = Object.values(itemsMap).find(sot => sot.entity_id === entityId);
+    if (!entity) return [];
+    
+    const profiles: string[] = [];
+    for (let i = 1; i <= 4; i++) {
+      const profile = entity[`social_media_profile${i === 1 ? '' : '_' + i}` as keyof typeof entity];
+      if (profile && typeof profile === 'string' && profile.trim() !== '') {
+        profiles.push(profile);
+      }
+    }
+    return profiles;
+  };
+
+  const getEntityIsCentralized = (entityId: string): boolean | undefined => {
+    const entity = Object.values(itemsMap).find(sot => sot.entity_id === entityId);
+    return entity?.centralized ?? undefined;
+  };
+
+  const getEntityNoKycRequired = (entityId: string) => {
+    const entity = Object.values(itemsMap).find(sot => sot.entity_id === entityId);
+    return entity?.no_kyc_req || false;
+  };
+
+  const getEntityIsDead = (entityId: string) => {
+    const entity = Object.values(itemsMap).find(sot => sot.entity_id === entityId);
+    return entity?.dead || false;
+  };
+
+  const getEntityIsOfacSanctioned = (entityId: string) => {
+    const entity = Object.values(itemsMap).find(sot => sot.entity_id === entityId);
+    return entity?.ofac || false;
+  };
+
+  const getEntityNote = (entityId: string) => {
+    const entity = Object.values(itemsMap).find(sot => sot.entity_id === entityId);
+    return entity?.note || '';
+  };
+
+  const getEntityLastUpdated = (entityId: string) => {
+    const entity = Object.values(itemsMap).find(sot => sot.entity_id === entityId);
+    return entity?.date_updated || '';
+  };
+
+  const getEntityLastModifiedBy = (entityId: string) => {
+    const entity = Object.values(itemsMap).find(sot => sot.entity_id === entityId);
+    return entity?.user || '';
+  };
+
+  const getEntityRevisitSite = (entityId: string) => {
+    const entity = Object.values(itemsMap).find(sot => sot.entity_id === entityId);
+    return entity?.revisit_site || false;
+  };
+
+  // Risk level helper functions
   const getRiskLevel = (score: number): string => {
-    if (score > 70) return 'High';
-    if (score > 40) return 'Medium';
-    return 'Low';
+    if (score >= 80) return 'High';
+    if (score >= 50) return 'Medium';
+    if (score >= 20) return 'Low';
+    return 'Very Low';
   };
 
   const getRiskDescription = (score: number): string => {
-    if (score > 70) return 'High risk detected';
-    if (score > 40) return 'Moderate risk level';
-    return 'Low risk profile';
+    if (score >= 80) {
+      return 'This address shows significant risk indicators including high transaction volumes, connections to known risky entities, and unusual activity patterns.';
+    } else if (score >= 50) {
+      return 'This address displays moderate risk factors with some concerning transaction patterns and entity connections that warrant attention.';
+    } else if (score >= 20) {
+      return 'This address shows low risk indicators with mostly normal transaction patterns and few concerning connections.';
+    } else {
+      return 'This address appears to be low risk with normal transaction patterns and no significant concerning indicators.';
+    }
   };
 
-  // Mock data for TransactionActivity
-  const mockTransactionActivity = Array.from({ length: 365 }, (_, i) => ({
-    day: i % 7,
-    week: Math.floor(i / 7),
-    active: Math.random() > 0.7
-  }));
-
-  // Mock data for Funds Flow Analysis
-  const mockIncomingData = [
-    { name: 'Exchange A', value: 50000, entityType: 'Exchange' },
-    { name: 'Wallet B', value: 25000, entityType: 'Wallet' },
-    { name: 'DeFi Protocol', value: 15000, entityType: 'DeFi' }
-  ];
-
-  const mockOutgoingData = [
-    { name: 'Exchange C', value: 30000, entityType: 'Exchange' },
-    { name: 'Wallet D', value: 20000, entityType: 'Wallet' },
-    { name: 'NFT Marketplace', value: 10000, entityType: 'NFT' }
-  ];
-
-  const handleAddressSearch = async (value: string) => {
-    if (!value.trim()) {
-      setError('Please enter a blockchain address');
-      return;
+  // Generate transaction activity data from real transaction data
+  const transactionActivityData = React.useMemo(() => {
+    if (!transformedTransactions.length) {
+      return Array.from({ length: 365 }, (_, i) => ({
+        day: i % 7,
+        week: Math.floor(i / 7),
+        active: false
+      }));
     }
 
+    // Create a map of dates to transaction counts
+    const dateMap = new Map<string, number>();
+    const now = new Date();
+    
+    // Initialize all dates in the last year with 0 transactions
+    for (let i = 0; i < 365; i++) {
+      const date = new Date(now);
+      date.setDate(date.getDate() - i);
+      const dateKey = date.toISOString().split('T')[0];
+      dateMap.set(dateKey, 0);
+    }
+
+    // Count transactions per day
+    transformedTransactions.forEach(tx => {
+      const txDate = new Date(tx.time);
+      const dateKey = txDate.toISOString().split('T')[0];
+      if (dateMap.has(dateKey)) {
+        dateMap.set(dateKey, (dateMap.get(dateKey) || 0) + 1);
+      }
+    });
+
+    // Convert to the expected format
+    return Array.from({ length: 365 }, (_, i) => {
+      const date = new Date(now);
+      date.setDate(date.getDate() - i);
+      const dateKey = date.toISOString().split('T')[0];
+      const txCount = dateMap.get(dateKey) || 0;
+      
+      return {
+        day: date.getDay(),
+        week: Math.floor(i / 7),
+        active: txCount > 0
+      };
+    }).reverse(); // Reverse to show oldest to newest
+  }, [transformedTransactions]);
+
+  // Generate funds flow data from real transaction data
+  const fundsFlowData = React.useMemo(() => {
+    if (!transformedTransactions.length) {
+      return { incoming: [], outgoing: [] };
+    }
+
+    // Group transactions by entity type
+    const incomingByEntity: { [key: string]: number } = {};
+    const outgoingByEntity: { [key: string]: number } = {};
+
+    transformedTransactions.forEach(tx => {
+      if (tx.type === 'in' && tx.from !== 'Unknown') {
+        const entityId = attributions[tx.from]?.entity || attributions[tx.from]?.bo || attributions[tx.from]?.custodian;
+        const entityName = entityId ? getEntityDisplayName(entityId) : tx.from;
+        
+        if (!incomingByEntity[entityName]) {
+          incomingByEntity[entityName] = 0;
+        }
+        incomingByEntity[entityName] += tx.value * btcPrice;
+      } else if (tx.type === 'out' && tx.to !== 'Unknown') {
+        const entityId = attributions[tx.to]?.entity || attributions[tx.to]?.bo || attributions[tx.to]?.custodian;
+        const entityName = entityId ? getEntityDisplayName(entityId) : tx.to;
+        
+        if (!outgoingByEntity[entityName]) {
+          outgoingByEntity[entityName] = 0;
+        }
+        outgoingByEntity[entityName] += tx.value * btcPrice;
+      }
+    });
+
+    // Convert to the expected format
+    const incomingData = Object.entries(incomingByEntity)
+      .map(([name, value]) => ({
+        name,
+        value,
+        entityType: 'Exchange' // Default to Exchange for now
+      }))
+      .sort((a, b) => b.value - a.value)
+      .slice(0, 5);
+
+    const outgoingData = Object.entries(outgoingByEntity)
+      .map(([name, value]) => ({
+        name,
+        value,
+        entityType: 'Wallet' // Default to Wallet for outgoing
+      }))
+      .sort((a, b) => b.value - a.value)
+      .slice(0, 5);
+
+    return { incoming: incomingData, outgoing: outgoingData };
+  }, [transformedTransactions, attributions, btcPrice, getEntityDisplayName]);
+
+  // Get primary entity and tags
+  const primaryEntityId = getEntityFromAddress();
+  const entityTags = primaryEntityId ? getEntityTags(primaryEntityId) : [];
+  const twitterHandle = getTwitterHandle();
+
+  // Check if we have data to display (only when hasData is true)
+  const shouldShowData = hasData && address && !isLoadingAnyData && (counterpartyTransactionData || addressSummaryData || addressBlockStatsData);
+
+  // Handle address search
+  const handleAddressSearch = async (value: string) => {
+    if (!value.trim()) return;
+    
     setLoading(true);
     setError(null);
-
+    
     try {
-      // Update the address which will trigger the useRiskScore hook to fetch new data
+      await fetchAttributions([value]);
+      await dispatch(fetchSOT());
       setAddress(value);
-      setHasData(true);
       setSearchValue(value);
+      setHasData(true);
     } catch (err) {
-      setError('Failed to fetch risk data. Please try again.');
+      setError('Failed to fetch address data');
+      console.error('Error fetching address data:', err);
     } finally {
       setLoading(false);
     }
@@ -470,68 +588,89 @@ const RiskDashboard: React.FC = () => {
 
   return (
     <ViewWrapper
-      icon={<BarChartOutlined style={{ fontSize: '28px', color: colors.attributionHover }} />}
+      icon={<BarChart3 className="w-7 h-7 text-brand-primary" />}
       title="Risk Dashboard"
       fullWidth={true}
     >
       {/* Search Bar */}
-      <SearchContainer>
-        <Search
-          placeholder="Enter blockchain address (e.g., 0x1234... or bc1qxy2...)"
-          enterButton={<SearchOutlined />}
-          size="large"
-          value={searchValue}
-          onChange={(e) => setSearchValue(e.target.value)}
-          onSearch={handleSearch}
-          loading={loading}
-          allowClear
-        />
-      </SearchContainer>
+      <div className="mb-6">
+        <div className="relative">
+          <input
+            type="text"
+            placeholder="Enter blockchain address (e.g., 0x1234... or bc1qxy2...)"
+            value={searchValue}
+            onChange={(e) => setSearchValue(e.target.value)}
+            onKeyPress={(e) => e.key === 'Enter' && handleSearch(searchValue)}
+            className={`w-full px-4 py-3 pr-12 rounded-lg border transition-colors focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 focus:outline-none ${
+              theme === 'dark' 
+                ? 'bg-gray-800 border-gray-700 text-white placeholder-gray-400' 
+                : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
+            }`}
+            disabled={loading}
+          />
+          <button
+            onClick={() => handleSearch(searchValue)}
+            disabled={loading}
+            className={`absolute right-2 top-1/2 transform -translate-y-1/2 p-2 rounded-md transition-colors ${
+              loading 
+                ? 'text-gray-400 cursor-not-allowed' 
+                : 'text-brand-primary hover:bg-brand-primary/10'
+            }`}
+          >
+            {loading ? (
+              <Loader2 className="w-5 h-5 animate-spin" />
+            ) : (
+              <Search className="w-5 h-5" />
+            )}
+          </button>
+        </div>
+      </div>
 
-      {/* Welcome Message - Show when no search has been performed */}
-      {!hasData && !loading && !isLoadingAnyData && (
-        <div style={{ 
-          textAlign: 'center', 
-          padding: '60px 20px', 
-          color: '#9ca3af',
-          maxWidth: '600px',
-          margin: '0 auto'
-        }}>
-          <BarChartOutlined style={{ 
-            fontSize: '64px', 
-            color: colors.attributionHover, 
-            marginBottom: '24px',
-            opacity: 0.7
-          }} />
-          <Typography.Title level={3} style={{ color: '#e5e7eb', marginBottom: '16px' }}>
-            Risk Dashboard
-          </Typography.Title>
-          <Typography.Paragraph style={{ fontSize: '16px', lineHeight: '1.6', marginBottom: '24px' }}>
-            Enter a blockchain address above to analyze its risk profile, transaction patterns, and associated entities.
-          </Typography.Paragraph>
-          <Typography.Text style={{ fontSize: '14px', opacity: 0.8 }}>
-            Supports Bitcoin (bc1q...), Ethereum (0x...), and other major blockchain addresses
-          </Typography.Text>
+      {/* Welcome Message - Show when no search has been performed and no data available */}
+      {!shouldShowData && !loading && !isLoadingAnyData && (
+        <div className="text-center py-16 px-5 max-w-2xl mx-auto">
+          <BarChart3 className={`w-16 h-16 mx-auto mb-6 opacity-70 ${
+            theme === 'dark' ? 'text-brand-primary' : 'text-brand-primary'
+          }`} />
+          <h3 className={`text-2xl font-semibold mb-4 ${
+            theme === 'dark' ? 'text-gray-100' : 'text-gray-900'
+          }`}>
+            Welcome to Risk Dashboard
+          </h3>
+          <p className={`text-base leading-relaxed mb-6 ${
+            theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
+          }`}>
+            Analyze blockchain addresses for risk assessment, transaction patterns, and entity intelligence. 
+            Get comprehensive insights into address behavior, counterparty analysis, and risk scoring.
+          </p>
+          <div className={`text-sm space-y-2 ${
+            theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
+          }`}>
+            <p>• Supports Bitcoin (bc1q...), Ethereum (0x...), and other major blockchain addresses</p>
+            <p>• Real-time risk scoring and transaction analysis</p>
+            <p>• Entity attribution and counterparty intelligence</p>
+            <p>• Funds flow visualization and transaction history</p>
+          </div>
         </div>
       )}
 
-      {hasData && !loading && !isLoadingAnyData && (
-        <FlexRow>
+      {shouldShowData && !loading && !isLoadingAnyData && (
+        <div className="space-y-6">
           {/* Address Header - Full Width */}
-          <FlexCol className="full-width">
-            <Card className="bg-gray-800 rounded-2xl border-gray-700">
-              <AddressHeader 
-                address={address}
-                entityTags={entityTags}
-              />
-            </Card>
-          </FlexCol>
+          <div className={`rounded-2xl border p-6 ${
+            theme === 'dark' 
+              ? 'bg-gray-800/50 border-gray-700' 
+              : 'bg-gray-50 border-gray-200'
+          }`}>
+            <AddressHeader 
+              address={address}
+              entityTags={entityTags}
+            />
+          </div>
 
-          {/* Summary Stats - Half Width Each */}
-          <FlexCol className="half-width">
+          {/* Summary Stats and Risk Assessment - Two Columns */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <AddressSummary {...addressSummaryProps} />
-          </FlexCol>
-          <FlexCol className="half-width">
             <RiskAssessment 
               score={riskScore ? Math.round(riskScore.overallRisk * 100) : 0}
               level={riskScore ? getRiskLevel(riskScore.overallRisk * 100) : 'Unknown'}
@@ -539,171 +678,286 @@ const RiskDashboard: React.FC = () => {
               isLoading={isLoadingRiskScore || loading}
               onSeeDetails={handleRiskScoreClick}
             />
-          </FlexCol>
+          </div>
 
           {/* Transaction Activity - Full Width */}
-          <FlexCol className="full-width">
-            <TransactionActivity transactionActivity={mockTransactionActivity} />
-          </FlexCol>
+          {transformedTransactions.length > 0 && (
+       
+              <TransactionActivity transactionActivity={transactionActivityData} />
+        
+          )}
 
-          {/* Top Counterparties and Transaction History - Half Width Each */}
-          <FlexCol className="half-width">
-            <TopCounterparties 
-              incoming={counterpartyData.incoming} 
-              outgoing={counterpartyData.outgoing} 
-              onCounterpartyClick={handleCounterpartyClick}
-              transactions={transformedTransactions}
-            />
-          </FlexCol>
-          <FlexCol className="half-width">
-            <TransactionHistory 
-              transactions={transformedTransactions} 
-              loading={isLoadingTransactions}
-              error={transactionError}
-              address={address}
-            />
-          </FlexCol>
+          {/* Top Counterparties and Transaction History - Two Columns */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className={`rounded-2xl border p-6 ${
+              theme === 'dark' 
+                ? 'bg-gray-800/50 border-gray-700' 
+                : 'bg-gray-50 border-gray-200'
+            }`}>
+              <TopCounterparties 
+                incoming={counterpartyData.incoming} 
+                outgoing={counterpartyData.outgoing} 
+                onCounterpartyClick={handleCounterpartyClick}
+                transactions={transformedTransactions}
+              />
+            </div>
+            
+            <div className={`rounded-2xl border p-6 ${
+              theme === 'dark' 
+                ? 'bg-gray-800/50 border-gray-700' 
+                : 'bg-gray-50 border-gray-200'
+            }`}>
+              <TransactionHistory 
+                address={address}
+              />
+            </div>
+          </div>
 
           {/* Funds Flow Analysis - Full Width */}
-          <FlexCol className="full-width">
-            <CombinedFundsFlow 
-              incomingData={mockIncomingData}
-              outgoingData={mockOutgoingData}
-            />
-          </FlexCol>
+          {(fundsFlowData.incoming.length > 0 || fundsFlowData.outgoing.length > 0) && (
+       
+              <CombinedFundsFlow 
+                incomingData={fundsFlowData.incoming}
+                outgoingData={fundsFlowData.outgoing}
+              />
+          )}
 
-          {/* Entity Details and Twitter Timeline */}
-          <FlexCol className="half-width">
-            <EntityDetails 
-              name={primaryEntityId ? getEntityDisplayName(primaryEntityId) : "Unknown Entity"}
-              type={primaryEntityId ? getEntityType(primaryEntityId) : "Unknown"}
-              description={primaryEntityId ? getEntityDescription(primaryEntityId) : "No description available"}
-              website={primaryEntityId ? getEntityWebsite(primaryEntityId) : ""}
-              contact={primaryEntityId ? getEntityWebsite(primaryEntityId) : ""}
-              phone={primaryEntityId ? getEntityPhone(primaryEntityId) : ""}
-              address={primaryEntityId ? getEntityAddress(primaryEntityId) : ""}
-              founded={primaryEntityId ? getEntityFounded(primaryEntityId) : 0}
-              logo={primaryEntityId ? getEntityLogo(primaryEntityId) || "" : ""}
-              countries={primaryEntityId ? getEntityCountries(primaryEntityId) : []}
-            />
-          </FlexCol>
-          <FlexCol className="half-width">
-            <TwitterTimeline 
-              username={twitterHandle}
-              title="Twitter Feed"
-            />
-          </FlexCol>
-        </FlexRow>
+          {/* Entity Details and Twitter Timeline - Two Columns */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className={`rounded-2xl border p-6 ${
+              theme === 'dark' 
+                ? 'bg-gray-800/50 border-gray-700' 
+                : 'bg-gray-50 border-gray-200'
+            }`}>
+              <EntityDetails 
+                name={primaryEntityId ? getEntityDisplayName(primaryEntityId) : "Unknown Entity"}
+                type={primaryEntityId ? getEntityType(primaryEntityId) : "Unknown"}
+                description={primaryEntityId ? getEntityDescription(primaryEntityId) : "No description available"}
+                website={primaryEntityId ? getEntityWebsite(primaryEntityId) : ""}
+                phone={primaryEntityId ? getEntityPhone(primaryEntityId) : ""}
+                address={primaryEntityId ? getEntityAddress(primaryEntityId) : ""}
+                founded={primaryEntityId ? getEntityFounded(primaryEntityId) : 0}
+                logo={primaryEntityId ? getEntityLogo(primaryEntityId) || "" : ""}
+                countries={primaryEntityId ? getEntityCountries(primaryEntityId) : []}
+                entityId={primaryEntityId || ""}
+                email={primaryEntityId ? getEntityEmail(primaryEntityId) : ""}
+                twitter={primaryEntityId ? getEntityTwitter(primaryEntityId) : ""}
+                telegram={primaryEntityId ? getEntityTelegram(primaryEntityId) : ""}
+                ensAddress={primaryEntityId ? getEntityEnsAddress(primaryEntityId) : ""}
+                legalInfoUrl={primaryEntityId ? getEntityLegalInfoUrl(primaryEntityId) : ""}
+                ceo={primaryEntityId ? getEntityCeo(primaryEntityId) : ""}
+                keyPersonnel={primaryEntityId ? getEntityKeyPersonnel(primaryEntityId) : ""}
+                ticker={primaryEntityId ? getEntityTicker(primaryEntityId) : ""}
+                parentId={primaryEntityId ? getEntityParentId(primaryEntityId) : ""}
+                entityTags={primaryEntityId ? getEntityTags(primaryEntityId) : []}
+                socialMediaProfiles={primaryEntityId ? getEntitySocialMediaProfiles(primaryEntityId) : []}
+                isCentralized={primaryEntityId ? getEntityIsCentralized(primaryEntityId) : undefined}
+                noKycRequired={primaryEntityId ? getEntityNoKycRequired(primaryEntityId) : false}
+                isDead={primaryEntityId ? getEntityIsDead(primaryEntityId) : false}
+                isOfacSanctioned={primaryEntityId ? getEntityIsOfacSanctioned(primaryEntityId) : false}
+                note={primaryEntityId ? getEntityNote(primaryEntityId) : ""}
+                lastUpdated={primaryEntityId ? getEntityLastUpdated(primaryEntityId) : ""}
+                lastModifiedBy={primaryEntityId ? getEntityLastModifiedBy(primaryEntityId) : ""}
+                revisitSite={primaryEntityId ? getEntityRevisitSite(primaryEntityId) : false}
+              />
+            </div>
+            
+            <div className={`rounded-2xl border p-6 ${
+              theme === 'dark' 
+                ? 'bg-gray-800/50 border-gray-700' 
+                : 'bg-gray-50 border-gray-200'
+            }`}>
+              <TwitterTimeline 
+                username={twitterHandle}
+                title="Twitter Feed"
+              />
+            </div>
+          </div>
+        </div>
       )}
 
       {(loading || isLoadingAnyData) && (
-        <LoadingContainer>
-          <FlexRow>
-            {/* Address Header Skeleton */}
-            <FlexCol className="full-width">
-              <LoadingCard>
-                <Skeleton.Input active size="small" style={{ width: 80, marginBottom: 8 }} />
-                <Skeleton.Input active size="large" style={{ width: '100%' }} />
-              </LoadingCard>
-            </FlexCol>
+        <div className="space-y-6">
+          {/* Address Header Skeleton */}
+          <div className={`rounded-2xl border p-6 ${
+            theme === 'dark' 
+              ? 'bg-gray-800/50 border-gray-700' 
+              : 'bg-gray-50 border-gray-200'
+          }`}>
+            <div className="animate-pulse">
+              <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-20 mb-2"></div>
+              <div className="h-8 bg-gray-300 dark:bg-gray-600 rounded w-full"></div>
+            </div>
+          </div>
 
-            {/* Summary Stats Skeletons */}
-            <FlexCol className="half-width">
-              <LoadingCard>
-                <Skeleton.Input active size="small" style={{ width: 120, marginBottom: 16 }} />
-                <Skeleton.Input active size="large" style={{ width: '100%' }} />
-              </LoadingCard>
-            </FlexCol>
-            <FlexCol className="half-width">
-              <LoadingCard>
-                <Skeleton.Input active size="small" style={{ width: 100, marginBottom: 16 }} />
-                <Skeleton.Input active size="large" style={{ width: '100%' }} />
-              </LoadingCard>
-            </FlexCol>
+          {/* Summary Stats and Risk Assessment Skeleton - Two Columns */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className={`rounded-2xl border p-6 ${
+              theme === 'dark' 
+                ? 'bg-gray-800/50 border-gray-700' 
+                : 'bg-gray-50 border-gray-200'
+            }`}>
+              <div className="animate-pulse">
+                <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-24 mb-4"></div>
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-24"></div>
+                    <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-24"></div>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-26"></div>
+                    <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-24"></div>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-16"></div>
+                    <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-20"></div>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-28"></div>
+                    <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-32"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div className={`rounded-2xl border p-6 ${
+              theme === 'dark' 
+                ? 'bg-gray-800/50 border-gray-700' 
+                : 'bg-gray-50 border-gray-200'
+            }`}>
+              <div className="animate-pulse">
+                <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-24 mb-4"></div>
+                <div className="h-8 bg-gray-300 dark:bg-gray-600 rounded w-full"></div>
+              </div>
+            </div>
+          </div>
 
-            {/* Transaction Activity Skeleton */}
-            <FlexCol className="full-width">
-              <LoadingCard>
-                <Skeleton.Input active size="small" style={{ width: 150, marginBottom: 16 }} />
-                <Skeleton.Input active size="large" style={{ width: '100%', height: 200 }} />
-              </LoadingCard>
-            </FlexCol>
+          {/* Transaction Activity Skeleton */}
+          <div className={`rounded-2xl border p-6 ${
+            theme === 'dark' 
+              ? 'bg-gray-800/50 border-gray-700' 
+              : 'bg-gray-50 border-gray-200'
+          }`}>
+            <div className="animate-pulse">
+              <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-40 mb-4"></div>
+              <div className="h-48 bg-gray-300 dark:bg-gray-600 rounded w-full"></div>
+            </div>
+          </div>
 
-            {/* Top Counterparties and Transaction History Skeletons */}
-            <FlexCol className="half-width">
-              <LoadingCard>
-                <Skeleton.Input active size="small" style={{ width: 140, marginBottom: 16 }} />
-                <Skeleton.Input active size="large" style={{ width: '100%', height: 200 }} />
-              </LoadingCard>
-            </FlexCol>
-            <FlexCol className="half-width">
-              <LoadingCard>
-                <Skeleton.Input active size="small" style={{ width: 120, marginBottom: 16 }} />
-                <Skeleton.Input active size="large" style={{ width: '100%', height: 200 }} />
-              </LoadingCard>
-            </FlexCol>
+          {/* Top Counterparties and Transaction History Skeleton - Two Columns */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className={`rounded-2xl border p-6 ${
+              theme === 'dark' 
+                ? 'bg-gray-800/50 border-gray-700' 
+                : 'bg-gray-50 border-gray-200'
+            }`}>
+              <div className="animate-pulse">
+                <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-36 mb-4"></div>
+                <div className="h-48 bg-gray-300 dark:bg-gray-600 rounded w-full"></div>
+              </div>
+            </div>
+            
+            <div className={`rounded-2xl border p-6 ${
+              theme === 'dark' 
+                ? 'bg-gray-800/50 border-gray-700' 
+                : 'bg-gray-50 border-gray-200'
+            }`}>
+              <div className="animate-pulse">
+                <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-32 mb-4"></div>
+                <div className="h-48 bg-gray-300 dark:bg-gray-600 rounded w-full"></div>
+              </div>
+            </div>
+          </div>
 
-            {/* Funds Flow Analysis Skeleton */}
-            <FlexCol className="full-width">
-              <LoadingCard>
-                <Skeleton.Input active size="small" style={{ width: 140, marginBottom: 16 }} />
-                <Skeleton.Input active size="large" style={{ width: '100%', height: 200 }} />
-              </LoadingCard>
-            </FlexCol>
+          {/* Funds Flow Analysis Skeleton */}
+          <div className={`rounded-2xl border p-6 ${
+            theme === 'dark' 
+              ? 'bg-gray-800/50 border-gray-700' 
+              : 'bg-gray-50 border-gray-200'
+          }`}>
+            <div className="animate-pulse">
+              <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-36 mb-4"></div>
+              <div className="h-48 bg-gray-300 dark:bg-gray-600 rounded w-full"></div>
+            </div>
+          </div>
 
-            {/* Entity Details and OSINT Skeletons */}
-            <FlexCol className="half-width">
-              <LoadingCard>
-                <Skeleton.Input active size="small" style={{ width: 100, marginBottom: 16 }} />
-                <Skeleton.Input active size="large" style={{ width: '100%', height: 200 }} />
-              </LoadingCard>
-            </FlexCol>
-            <FlexCol className="half-width">
-              <LoadingCard>
-                <Skeleton.Input active size="small" style={{ width: 80, marginBottom: 16 }} />
-                <Skeleton.Input active size="large" style={{ width: '100%', height: 200 }} />
-              </LoadingCard>
-            </FlexCol>
-          </FlexRow>
+          {/* Entity Details and Twitter Timeline Skeleton - Two Columns */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className={`rounded-2xl border p-6 ${
+              theme === 'dark' 
+                ? 'bg-gray-800/50 border-gray-700' 
+                : 'bg-gray-50 border-gray-200'
+            }`}>
+              <div className="animate-pulse">
+                <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-24 mb-4"></div>
+                <div className="h-48 bg-gray-300 dark:bg-gray-600 rounded w-full"></div>
+              </div>
+            </div>
+            
+            <div className={`rounded-2xl border p-6 ${
+              theme === 'dark' 
+                ? 'bg-gray-800/50 border-gray-700' 
+                : 'bg-gray-50 border-gray-200'
+            }`}>
+              <div className="animate-pulse">
+                <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-20 mb-4"></div>
+                <div className="h-48 bg-gray-300 dark:bg-gray-600 rounded w-full"></div>
+              </div>
+            </div>
+          </div>
           
           {/* Loading indicator */}
-          <div style={{ textAlign: 'center', padding: '20px', marginTop: '16px' }}>
-            <Spin size="large" />
-            <div style={{ marginTop: '12px', color: '#9ca3af', fontSize: '14px' }}>
+          <div className="text-center py-5 mt-4">
+            <Loader2 className="w-8 h-8 animate-spin mx-auto mb-3 text-brand-primary" />
+            <div className={`text-sm ${
+              theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
+            }`}>
               Analyzing blockchain address and gathering risk intelligence...
             </div>
           </div>
-        </LoadingContainer>
+        </div>
       )}
 
       {error && (
-        <Alert
-          message="Error"
-          description={error}
-          type="error"
-          showIcon
-          style={{ marginBottom: 16 }}
-        />
+        <div className={`mb-4 p-4 rounded-lg border ${
+          theme === 'dark' 
+            ? 'bg-red-900/20 border-red-700 text-red-200' 
+            : 'bg-red-50 border-red-200 text-red-800'
+        }`}>
+          <div className="flex items-center gap-2">
+            <AlertCircle className="w-5 h-5" />
+            <span className="font-medium">Error</span>
+          </div>
+          <p className="mt-1">{error}</p>
+        </div>
       )}
 
       {riskScoreError && (
-        <Alert
-          message="Risk Score Error"
-          description={riskScoreError}
-          type="warning"
-          showIcon
-          style={{ marginBottom: 16 }}
-        />
+        <div className={`mb-4 p-4 rounded-lg border ${
+          theme === 'dark' 
+            ? 'bg-yellow-900/20 border-yellow-700 text-yellow-200' 
+            : 'bg-yellow-50 border-yellow-200 text-yellow-800'
+        }`}>
+          <div className="flex items-center gap-2">
+            <AlertCircle className="w-5 h-5" />
+            <span className="font-medium">Risk Score Error</span>
+          </div>
+          <p className="mt-1">{riskScoreError}</p>
+        </div>
       )}
 
       {addressError && (
-        <Alert
-          message="Address Error"
-          description={addressError.message}
-          type="warning"
-          showIcon
-          style={{ marginBottom: 16 }}
-        />
+        <div className={`mb-4 p-4 rounded-lg border ${
+          theme === 'dark' 
+            ? 'bg-yellow-900/20 border-yellow-700 text-yellow-200' 
+            : 'bg-yellow-50 border-yellow-200 text-yellow-800'
+        }`}>
+          <div className="flex items-center gap-2">
+            <AlertCircle className="w-5 h-5" />
+            <span className="font-medium">Address Error</span>
+          </div>
+          <p className="mt-1">{addressError.message}</p>
+        </div>
       )}
 
       {riskScoreModalVisible && (
