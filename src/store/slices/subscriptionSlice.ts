@@ -42,9 +42,9 @@ export const fetchOrganizationSubscription = createAsyncThunk(
 
 export const createOrganizationSubscription = createAsyncThunk(
   'subscription/createOrganizationSubscription',
-  async ({ organizationId, tierId }: { organizationId: string; tierId: string }, { rejectWithValue }) => {
+  async ({ organizationId, tierId, billingPeriod }: { organizationId: string; tierId: string; billingPeriod: 'monthly' | 'yearly' }, { rejectWithValue }) => {
     try {
-      return await api.subscription.createOrganizationSubscription(organizationId, tierId);
+      return await api.subscription.createOrganizationSubscription(organizationId, tierId, billingPeriod);
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || 'Failed to create subscription');
     }
@@ -53,9 +53,9 @@ export const createOrganizationSubscription = createAsyncThunk(
 
 export const updateOrganizationSubscription = createAsyncThunk(
   'subscription/updateOrganizationSubscription',
-  async ({ organizationId, tierId }: { organizationId: string; tierId: string }, { rejectWithValue }) => {
+  async ({ organizationId, tierId, billingPeriod }: { organizationId: string; tierId: string; billingPeriod: 'monthly' | 'yearly' }, { rejectWithValue }) => {
     try {
-      return await api.subscription.updateOrganizationSubscription(organizationId, tierId);
+      return await api.subscription.updateOrganizationSubscription(organizationId, tierId, billingPeriod);
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || 'Failed to update subscription');
     }
