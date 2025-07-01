@@ -1,15 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { Spin, Alert } from 'antd';
-import { SafetyOutlined } from '@ant-design/icons';
-import { colors } from '../../styles/variables';
+import { Shield, ExternalLink } from 'lucide-react';
+import ViewWrapper from '../../components/ViewWrapper';
+import SearchInput from '../../components/common/SearchInput';
+import EmptyState from '../../components/common/EmptyState';
 import { calculateRiskScore } from '../../api/riskScoring';
 import { RiskScoringResponse } from '../../typings/riskScoring';
-import ViewWrapper from '../../components/ViewWrapper';
 import RiskDetailsTable from './RiskDetailsTable';
-import SearchBar from './SearchBar';
 import RiskScoreCards from './RiskScoreCards';
 import Paragraph from 'antd/es/typography/Paragraph';
 import { useLocation } from 'react-router-dom';
+
+
 
 const RiskScoring: React.FC = () => {
   const location = useLocation();
@@ -48,51 +50,79 @@ const RiskScoring: React.FC = () => {
   };
 
   const getRiskColor = (score: number) => {
-    if (score > 70) return colors.danger;
-    if (score > 40) return colors.warning;
-    return colors.success;
+    if (score > 70) return 'hsl(var(--danger))';
+    if (score > 40) return 'hsl(var(--warning))';
+    return 'hsl(var(--success))';
   };
 
   return (
     <ViewWrapper
-      icon={<SafetyOutlined style={{ fontSize: '28px', color: colors.attributionHover, fontWeight: 'bold' }} />}
+      icon={<Shield className="w-8 h-8 text-orange-500" />}
       title="Risk Scoring Dashboard"
+      // description="Analyze the risk profile of any blockchain address based on transaction patterns, entity information, and jurisdiction data."
       fullWidth={true}
     >
-      <Paragraph>
-        Analyze the risk profile of any blockchain address based on transaction patterns,
-        entity information, and jurisdiction data.
-      </Paragraph>
-
-      <SearchBar
-        address={address}
-        loading={loading}
-        onAddressChange={setAddress}
-        onSubmit={() => handleAddressSubmit()}
-      />
-
-      {error && (
-        <Alert
-          message="Error"
-          description={error}
-          type="error"
-          showIcon
-        />
-      )}
-
-      {loading && (
-        <div style={{ textAlign: 'center', padding: '50px', flex: '1' }}>
-          <Spin size="large" />
-          <Paragraph style={{ marginTop: '20px' }}>Analyzing blockchain address...</Paragraph>
+      <div className="space-y-6">
+        {/* Search Bar */}
+        <div className="flex items-center gap-4">
+          <div className="flex-1 max-w-2xl">
+            <SearchInput
+              placeholder="Enter blockchain address"
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
+              onSearch={() => handleAddressSubmit()}
+              loading={loading}
+            />
+          </div>
+          <button
+            onClick={() => handleAddressSubmit()}
+            disabled={!address || loading}
+            className="px-4 py-2.5 bg-orange-500 text-white rounded-lg font-medium hover:bg-orange-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Analyze Risk
+          </button>
+          <button
+            onClick={() => address && window.open(`/home/block-explorer/address/${address}`, '_blank')}
+            disabled={!address}
+            className="px-4 py-2.5 border border-gray-300 dark:border-gray-700 rounded-lg font-medium hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+          >
+            View in Block Explorer
+            <ExternalLink className="w-4 h-4" />
+          </button>
         </div>
-      )}
 
-      {riskScores && !loading && (
-        <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
-          <RiskScoreCards riskScores={riskScores} getRiskColor={getRiskColor} />
-          <RiskDetailsTable riskScores={riskScores} />
-        </div>
-      )}
+        {error && (
+          <Alert
+            message="Error"
+            description={error}
+            type="error"
+            showIcon
+          />
+        )}
+
+        {loading && (
+          <div style={{ textAlign: 'center', padding: '50px', flex: '1' }}>
+            <Spin size="large" />
+            <Paragraph style={{ marginTop: '20px' }}>Analyzing blockchain address...</Paragraph>
+          </div>
+        )}
+
+        {!loading && !riskScores && !error && (
+          <EmptyState
+            variant="initial"
+            icon={<Shield className="w-12 h-12" />}
+            title="Start Risk Analysis"
+            description="Analyze the risk profile of any blockchain address based on transaction patterns, entity information, and jurisdiction data."
+          />
+        )}
+
+        {riskScores && !loading && (
+          <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
+            <RiskScoreCards riskScores={riskScores} getRiskColor={getRiskColor} />
+            <RiskDetailsTable riskScores={riskScores} />
+          </div>
+        )}
+      </div>
     </ViewWrapper>
   );
 };

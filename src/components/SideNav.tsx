@@ -185,7 +185,9 @@ const SideNav: React.FC<SideNavProps> = ({ theme, collapsed, onCollapse }) => {
                                 : "text-gray-400 hover:bg-gray-800 hover:text-orange-400"
                           )}
                         >
-                          {React.cloneElement(item.icon as React.ReactElement, { className: "h-5 w-5" })}
+                          <div className="h-5 w-5">
+                            {item.icon}
+                          </div>
                         </Button>
                       </TooltipTrigger>
                       <TooltipContent side="right">
@@ -207,7 +209,9 @@ const SideNav: React.FC<SideNavProps> = ({ theme, collapsed, onCollapse }) => {
                             : "text-gray-400 hover:bg-gray-800 hover:text-orange-400"
                       )}
                     >
-                      {React.cloneElement(item.icon as React.ReactElement, { className: "h-5 w-5" })}
+                      <div className="h-5 w-5">
+                        {item.icon}
+                      </div>
                       <span className="font-medium">{item.label}</span>
                     </Button>
                   )}

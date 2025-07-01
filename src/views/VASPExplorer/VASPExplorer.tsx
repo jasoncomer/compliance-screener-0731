@@ -1,86 +1,22 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { AutoComplete, Avatar, Input, Tag } from 'antd';
-import { UserOutlined, DatabaseOutlined } from '@ant-design/icons';
+import { AutoComplete, Avatar, Tag } from 'antd';
+import { UserOutlined } from '@ant-design/icons';
+import { Database } from 'lucide-react';
+import EmptyState from '../../components/common/EmptyState';
 import Sifter from 'sifter';
 import { useDispatch, useSelector } from 'react-redux';
 import { useSearchParams } from 'react-router-dom';
-import styled from 'styled-components';
 
 import ViewWrapper from '../../components/ViewWrapper';
 import SOTEditor from '../../components/SOTEditor';
 import EntityQuickView from '../../components/EntityQuickView';
+
 import { AppDispatch, RootState } from '../../store/store';
 import { fetchSOT } from '../../store/slices/sotSlice';
 import { fetchOrganizations, selectCurrentOrganization } from '../../store/slices/organizationsSlice';
 import { SOT } from '../../typings/interfaces';
 import { EEntityType } from '../../typings/SOT';
 import { getEntityTypeLabel } from '../../utils/display-labels';
-import { colors } from '../../styles/variables';
-
-const SearchWrapper = styled.div`
-  width: 100%;
-`;
-
-const OptionWrapper = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 8px;
-`;
-
-const OptionContent = styled.div`
-  flex: 1;
-`;
-
-const OptionInfo = styled.div`
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  margin-top: 4px;
-`;
-
-const InfoTag = styled(Tag)`
-  font-size: 10px;
-  padding: 0 6px;
-  margin-right: 0;
-`;
-
-const GroupHeader = styled.div`
-  padding: 12px 12px 8px;
-  background-color: ${({ theme }) => theme.theme === 'dark' ? colors.gray[700] : colors.gray[50]};
-  
-  margin-top: 4px;
-  
-  
-  .header-title {
-    font-size: 14px;
-    font-weight: 600;
-    
-    color: ${({ theme }) => theme.theme === 'dark' ? colors.white : colors.gray[600]};
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-  }
-
-  .result-count {
-    font-size: 12px;
-    color: ${({ theme }) => theme.theme === 'dark' ? colors.gray[400] : colors.gray[500]};
-    margin-left: 8px;
-  }
-`;
-
-const StyledAutoComplete = styled(AutoComplete)`
-  .ant-select-dropdown {
-    z-index: 1000;
-  }
-`;
-
-const MainContent = styled.div`
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-  width: 100%;
-  margin-top: 20px;
-`;
 
 export interface PopulatedSOT extends SOT {
   autocompleteDisplayTitle: string;
@@ -257,6 +193,7 @@ const BlockHam: React.FC = () => {
       const sortedEntities = Object.values(consolidatedEntities)
         .sort((a, b) => b.searchScore - a.searchScore);
 
+      console.log('sortedEntities', sortedEntities);
       // Convert to AutoComplete's format
       const groupedOptions: GroupedOption[] = [{
         label: headerTitle('Entities', sortedEntities.length),
@@ -264,41 +201,41 @@ const BlockHam: React.FC = () => {
           key: `${entity._id}-${index}`,
           value: entity.proper_name || entity.entity_id,
           label: (
-            <OptionWrapper>
+            <div className="flex items-center gap-2">
               <Avatar
                 size="small"
                 src={entity.logo}
                 icon={!entity.logo && <UserOutlined />}
               />
-              <OptionContent>
+              <div className="flex-1">
                 <div>{entity.proper_name || entity.entity_id}</div>
-                <OptionInfo>
+                <div className="flex flex-wrap gap-1 mt-1">
                   {entity.entity_type && (
-                    <InfoTag color="blue">
+                    <Tag className="text-[10px] px-1.5 py-0 mr-0" color="blue">
                       {getEntityTypeLabel(entity.entity_type as EEntityType)}
-                    </InfoTag>
+                    </Tag>
                   )}
                   {entity.urls && entity.urls[0] && (
-                    <InfoTag color="green">{entity.urls[0]}</InfoTag>
+                    <Tag className="text-[10px] px-1.5 py-0 mr-0" color="green">{entity.urls[0]}</Tag>
                   )}
                   {entity.contact_twitter && (
-                    <InfoTag color="cyan">Twitter</InfoTag>
+                    <Tag className="text-[10px] px-1.5 py-0 mr-0" color="cyan">Twitter</Tag>
                   )}
                   {entity.contact_telegram && (
-                    <InfoTag color="purple">Telegram</InfoTag>
+                    <Tag className="text-[10px] px-1.5 py-0 mr-0" color="purple">Telegram</Tag>
                   )}
                   {entity.associate_countries.length > 0 && (
-                    <InfoTag color="orange">{entity.associate_countries[0]}</InfoTag>
+                    <Tag className="text-[10px] px-1.5 py-0 mr-0" color="orange">{entity.associate_countries[0]}</Tag>
                   )}
-                </OptionInfo>
-              </OptionContent>
+                </div>
+              </div>
               <EntityQuickView 
                 entity={entity}
                 sot={sotMap[entity._id]}
                 onViewFull={handleViewFullProfile}
                 onQuickView={handleQuickView}
               />
-            </OptionWrapper>
+            </div>
           )
         }))
       }];
@@ -344,10 +281,10 @@ const BlockHam: React.FC = () => {
 
   const headerTitle = (title: string, count: number) => {
     return (
-      <GroupHeader>
-        <span className="header-title">{title}</span>
-        <span className="result-count">({count} results)</span>
-      </GroupHeader>
+      <div className="px-3 pt-3 pb-2 mt-1 bg-gray-50 dark:bg-gray-700">
+        <span className="text-sm font-semibold text-gray-600 dark:text-white uppercase tracking-wide">{title}</span>
+        <span className="text-xs text-gray-500 dark:text-gray-400 ml-2">({count} results)</span>
+      </div>
     );
   };
 
@@ -394,33 +331,54 @@ const BlockHam: React.FC = () => {
 
   return (
     <ViewWrapper
-      icon={<DatabaseOutlined style={{ fontSize: '28px', color: colors.attributionHover, fontWeight: 'bold' }} />}
+      icon={<Database className="w-8 h-8 text-orange-500" />}
       title="Entity Explorer"
       fullWidth={true}
     >
-      <SearchWrapper>
-        <StyledAutoComplete
-          options={options}
-          onSelect={onSelect as any}
-          onSearch={handleSearch}
-          style={{ width: '100%' }}
-          listHeight={500}
-        >
-          <Input.Search
-            placeholder="Search by name, address, or type..."
-            onSearch={handleSearch}
-            loading={loading || sotLoading}
-            style={{ width: '400px' }}
-            defaultValue={searchValue}
-          />
-        </StyledAutoComplete>
-      </SearchWrapper>
+      <div className="space-y-6">
+        {/* Search Bar */}
+        <div className="flex items-center gap-4">
+          <div className="flex-1 max-w-2xl">
+            <AutoComplete
+              options={options}
+              value={searchValue}
+              onChange={(value) => {
+                setSearchValue(value);
+                if (value) {
+                  handleSearch(value);
+                } else {
+                  setOptions([]);
+                }
+              }}
+              onSelect={onSelect}
+              placeholder="Search by name, address, or type..."
+              style={{ 
+                width: '100%', 
+                height: '44px',
+                borderRadius: '8px',
+                padding: '0 12px',
+                fontSize: '18px',
+                color: '#000',
+              }}
+            />
+          </div>
+        </div>
 
-      {selectedSot && (
-        <MainContent>
-          <SOTEditor sot={selectedSot} onSelectAssociatedSot={handleSelectAssociatedSot} />
-        </MainContent>
-      )}
+        {!selectedSot && !loading && !sotLoading && (
+          <EmptyState
+            variant="initial"
+            icon={<Database className="w-12 h-12" />}
+            title="Explore VASP Entities"
+            description="Search for Virtual Asset Service Providers (VASPs) and entities by name, address, or type. Get comprehensive information about their operations, locations, and compliance status."
+          />
+        )}
+
+        {selectedSot && (
+          <div className="flex-1 flex flex-col gap-6 w-full">
+            <SOTEditor sot={selectedSot} onSelectAssociatedSot={handleSelectAssociatedSot} />
+          </div>
+        )}
+      </div>
     </ViewWrapper>
   );
 };

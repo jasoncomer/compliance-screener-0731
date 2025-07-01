@@ -4,6 +4,7 @@ import { cn } from '../lib/utils';
 interface ViewWrapperProps {
   icon?: ReactNode;
   title: string;
+  description?: string;
   children: ReactNode;
   className?: string;
   fullWidth?: boolean;
@@ -12,6 +13,7 @@ interface ViewWrapperProps {
 const ViewWrapper: React.FC<ViewWrapperProps> = ({ 
   icon, 
   title, 
+  description,
   children, 
   className,
   fullWidth = false
@@ -27,16 +29,21 @@ const ViewWrapper: React.FC<ViewWrapperProps> = ({
     >
       {title && (
         <header className="mb-6 lg:mb-8">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 mb-2">
             {icon && (
-              <div className="flex items-center justify-center w-8 h-8 text-muted-foreground">
+              <div className="flex items-center justify-center w-8 h-8">
                 {icon}
               </div>
             )}
-            <h1 className="text-xl lg:text-2xl font-semibold tracking-tight text-foreground font-['Inter']">
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground font-['Inter']">
               {title}
             </h1>
           </div>
+          {description && (
+            <p className="text-muted-foreground ml-11">
+              {description}
+            </p>
+          )}
         </header>
       )}
       <main className="font-['Inter']">

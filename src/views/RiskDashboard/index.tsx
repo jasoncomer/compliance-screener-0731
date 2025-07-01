@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
-import { Search, BarChart3, AlertCircle, Loader2 } from 'lucide-react';
+import { BarChart3, AlertCircle, Loader2 } from 'lucide-react';
+import SearchInput from '../../components/common/SearchInput';
+import EmptyState from '../../components/common/EmptyState';
 import ViewWrapper from '../../components/ViewWrapper';
 import { 
   RiskAssessment, 
@@ -26,7 +28,6 @@ import { RootState } from '../../store/store';
 import { getEntityTypeLabel } from '../../utils/display-labels';
 import { EEntityType } from '../../typings/SOT';
 import { fetchSOT } from '../../store/slices/sotSlice';
-import { useTheme } from '../../context/ThemeContext';
 
 const RiskDashboard: React.FC = () => {
   const [loading, setLoading] = useState(false);
@@ -35,7 +36,6 @@ const RiskDashboard: React.FC = () => {
   const [address, setAddress] = useState('');
   const [searchValue, setSearchValue] = useState('');
   const [riskScoreModalVisible, setRiskScoreModalVisible] = useState(false);
-  const { theme } = useTheme();
 
   // React Query hooks
   const { data: counterpartyTransactionData, isLoading: isLoadingTransactions, error: transactionError } = useAddressTransactions(address, 1, 100); // For counterparty analysis
@@ -580,88 +580,42 @@ const RiskDashboard: React.FC = () => {
   // Handle counterparty click to navigate to that address
   const handleCounterpartyClick = (address: string) => {
     if (address && address.trim()) {
-      setAddress(address);
-      setSearchValue(address);
-      setHasData(true);
+      handleAddressSearch(address);
     }
   };
 
   return (
     <ViewWrapper
-      icon={<BarChart3 className="w-7 h-7 text-brand-primary" />}
+      icon={<BarChart3 className="w-8 h-8 text-orange-500" />}
       title="Risk Dashboard"
       fullWidth={true}
     >
       {/* Search Bar */}
-      <div className="mb-6">
-        <div className="relative">
-          <input
-            type="text"
-            placeholder="Enter blockchain address (e.g., 0x1234... or bc1qxy2...)"
-            value={searchValue}
-            onChange={(e) => setSearchValue(e.target.value)}
-            onKeyPress={(e) => e.key === 'Enter' && handleSearch(searchValue)}
-            className={`w-full px-4 py-3 pr-12 rounded-lg border transition-colors focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 focus:outline-none ${
-              theme === 'dark' 
-                ? 'bg-gray-800 border-gray-700 text-white placeholder-gray-400' 
-                : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
-            }`}
-            disabled={loading}
-          />
-          <button
-            onClick={() => handleSearch(searchValue)}
-            disabled={loading}
-            className={`absolute right-2 top-1/2 transform -translate-y-1/2 p-2 rounded-md transition-colors ${
-              loading 
-                ? 'text-gray-400 cursor-not-allowed' 
-                : 'text-brand-primary hover:bg-brand-primary/10'
-            }`}
-          >
-            {loading ? (
-              <Loader2 className="w-5 h-5 animate-spin" />
-            ) : (
-              <Search className="w-5 h-5" />
-            )}
-          </button>
-        </div>
+      <div className="mb-6 max-w-2xl">
+        <SearchInput
+          placeholder="Enter blockchain address (e.g., 0x1234... or bc1qxy2...)"
+          value={searchValue}
+          onChange={(e) => setSearchValue(e.target.value)}
+          onSearch={handleSearch}
+          loading={loading}
+          disabled={loading}
+        />
       </div>
 
       {/* Welcome Message - Show when no search has been performed and no data available */}
       {!shouldShowData && !loading && !isLoadingAnyData && (
-        <div className="text-center py-16 px-5 max-w-2xl mx-auto">
-          <BarChart3 className={`w-16 h-16 mx-auto mb-6 opacity-70 ${
-            theme === 'dark' ? 'text-brand-primary' : 'text-brand-primary'
-          }`} />
-          <h3 className={`text-2xl font-semibold mb-4 ${
-            theme === 'dark' ? 'text-gray-100' : 'text-gray-900'
-          }`}>
-            Welcome to Risk Dashboard
-          </h3>
-          <p className={`text-base leading-relaxed mb-6 ${
-            theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
-          }`}>
-            Analyze blockchain addresses for risk assessment, transaction patterns, and entity intelligence. 
-            Get comprehensive insights into address behavior, counterparty analysis, and risk scoring.
-          </p>
-          <div className={`text-sm space-y-2 ${
-            theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
-          }`}>
-            <p>• Supports Bitcoin (bc1q...), Ethereum (0x...), and other major blockchain addresses</p>
-            <p>• Real-time risk scoring and transaction analysis</p>
-            <p>• Entity attribution and counterparty intelligence</p>
-            <p>• Funds flow visualization and transaction history</p>
-          </div>
-        </div>
+        <EmptyState
+          variant="initial"
+          icon={<BarChart3 className="w-12 h-12" />}
+          title="Welcome to Risk Dashboard"
+          description="Analyze blockchain addresses for risk assessment, transaction patterns, and entity intelligence. Get comprehensive insights into address behavior, counterparty analysis, and risk scoring."
+        />
       )}
 
       {shouldShowData && !loading && !isLoadingAnyData && (
         <div className="space-y-6">
           {/* Address Header - Full Width */}
-          <div className={`rounded-2xl border p-6 ${
-            theme === 'dark' 
-              ? 'bg-gray-800/50 border-gray-700' 
-              : 'bg-gray-50 border-gray-200'
-          }`}>
+          <div className="rounded-2xl border p-6 bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700">
             <AddressHeader 
               address={address}
               entityTags={entityTags}
@@ -689,11 +643,7 @@ const RiskDashboard: React.FC = () => {
 
           {/* Top Counterparties and Transaction History - Two Columns */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className={`rounded-2xl border p-6 ${
-              theme === 'dark' 
-                ? 'bg-gray-800/50 border-gray-700' 
-                : 'bg-gray-50 border-gray-200'
-            }`}>
+            <div className="rounded-2xl border p-6 bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700">
               <TopCounterparties 
                 incoming={counterpartyData.incoming} 
                 outgoing={counterpartyData.outgoing} 
@@ -702,11 +652,7 @@ const RiskDashboard: React.FC = () => {
               />
             </div>
             
-            <div className={`rounded-2xl border p-6 ${
-              theme === 'dark' 
-                ? 'bg-gray-800/50 border-gray-700' 
-                : 'bg-gray-50 border-gray-200'
-            }`}>
+            <div className="rounded-2xl border p-6 bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700">
               <TransactionHistory 
                 address={address}
               />
@@ -724,11 +670,7 @@ const RiskDashboard: React.FC = () => {
 
           {/* Entity Details and Twitter Timeline - Two Columns */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className={`rounded-2xl border p-6 ${
-              theme === 'dark' 
-                ? 'bg-gray-800/50 border-gray-700' 
-                : 'bg-gray-50 border-gray-200'
-            }`}>
+            <div className="rounded-2xl border p-6 bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700">
               <EntityDetails 
                 name={primaryEntityId ? getEntityDisplayName(primaryEntityId) : "Unknown Entity"}
                 type={primaryEntityId ? getEntityType(primaryEntityId) : "Unknown"}
@@ -762,11 +704,7 @@ const RiskDashboard: React.FC = () => {
               />
             </div>
             
-            <div className={`rounded-2xl border p-6 ${
-              theme === 'dark' 
-                ? 'bg-gray-800/50 border-gray-700' 
-                : 'bg-gray-50 border-gray-200'
-            }`}>
+            <div className="rounded-2xl border p-6 bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700">
               <TwitterTimeline 
                 username={twitterHandle}
                 title="Twitter Feed"
@@ -779,11 +717,7 @@ const RiskDashboard: React.FC = () => {
       {(loading || isLoadingAnyData) && (
         <div className="space-y-6">
           {/* Address Header Skeleton */}
-          <div className={`rounded-2xl border p-6 ${
-            theme === 'dark' 
-              ? 'bg-gray-800/50 border-gray-700' 
-              : 'bg-gray-50 border-gray-200'
-          }`}>
+          <div className="rounded-2xl border p-6 bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700">
             <div className="animate-pulse">
               <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-20 mb-2"></div>
               <div className="h-8 bg-gray-300 dark:bg-gray-600 rounded w-full"></div>
@@ -792,11 +726,7 @@ const RiskDashboard: React.FC = () => {
 
           {/* Summary Stats and Risk Assessment Skeleton - Two Columns */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className={`rounded-2xl border p-6 ${
-              theme === 'dark' 
-                ? 'bg-gray-800/50 border-gray-700' 
-                : 'bg-gray-50 border-gray-200'
-            }`}>
+            <div className="rounded-2xl border p-6 bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700">
               <div className="animate-pulse">
                 <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-24 mb-4"></div>
                 <div className="space-y-4">
@@ -820,11 +750,7 @@ const RiskDashboard: React.FC = () => {
               </div>
             </div>
             
-            <div className={`rounded-2xl border p-6 ${
-              theme === 'dark' 
-                ? 'bg-gray-800/50 border-gray-700' 
-                : 'bg-gray-50 border-gray-200'
-            }`}>
+            <div className="rounded-2xl border p-6 bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700">
               <div className="animate-pulse">
                 <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-24 mb-4"></div>
                 <div className="h-8 bg-gray-300 dark:bg-gray-600 rounded w-full"></div>
@@ -833,11 +759,7 @@ const RiskDashboard: React.FC = () => {
           </div>
 
           {/* Transaction Activity Skeleton */}
-          <div className={`rounded-2xl border p-6 ${
-            theme === 'dark' 
-              ? 'bg-gray-800/50 border-gray-700' 
-              : 'bg-gray-50 border-gray-200'
-          }`}>
+          <div className="rounded-2xl border p-6 bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700">
             <div className="animate-pulse">
               <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-40 mb-4"></div>
               <div className="h-48 bg-gray-300 dark:bg-gray-600 rounded w-full"></div>
@@ -846,22 +768,14 @@ const RiskDashboard: React.FC = () => {
 
           {/* Top Counterparties and Transaction History Skeleton - Two Columns */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className={`rounded-2xl border p-6 ${
-              theme === 'dark' 
-                ? 'bg-gray-800/50 border-gray-700' 
-                : 'bg-gray-50 border-gray-200'
-            }`}>
+            <div className="rounded-2xl border p-6 bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700">
               <div className="animate-pulse">
                 <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-36 mb-4"></div>
                 <div className="h-48 bg-gray-300 dark:bg-gray-600 rounded w-full"></div>
               </div>
             </div>
             
-            <div className={`rounded-2xl border p-6 ${
-              theme === 'dark' 
-                ? 'bg-gray-800/50 border-gray-700' 
-                : 'bg-gray-50 border-gray-200'
-            }`}>
+            <div className="rounded-2xl border p-6 bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700">
               <div className="animate-pulse">
                 <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-32 mb-4"></div>
                 <div className="h-48 bg-gray-300 dark:bg-gray-600 rounded w-full"></div>
@@ -870,11 +784,7 @@ const RiskDashboard: React.FC = () => {
           </div>
 
           {/* Funds Flow Analysis Skeleton */}
-          <div className={`rounded-2xl border p-6 ${
-            theme === 'dark' 
-              ? 'bg-gray-800/50 border-gray-700' 
-              : 'bg-gray-50 border-gray-200'
-          }`}>
+          <div className="rounded-2xl border p-6 bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700">
             <div className="animate-pulse">
               <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-36 mb-4"></div>
               <div className="h-48 bg-gray-300 dark:bg-gray-600 rounded w-full"></div>
@@ -883,22 +793,14 @@ const RiskDashboard: React.FC = () => {
 
           {/* Entity Details and Twitter Timeline Skeleton - Two Columns */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className={`rounded-2xl border p-6 ${
-              theme === 'dark' 
-                ? 'bg-gray-800/50 border-gray-700' 
-                : 'bg-gray-50 border-gray-200'
-            }`}>
+            <div className="rounded-2xl border p-6 bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700">
               <div className="animate-pulse">
                 <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-24 mb-4"></div>
                 <div className="h-48 bg-gray-300 dark:bg-gray-600 rounded w-full"></div>
               </div>
             </div>
             
-            <div className={`rounded-2xl border p-6 ${
-              theme === 'dark' 
-                ? 'bg-gray-800/50 border-gray-700' 
-                : 'bg-gray-50 border-gray-200'
-            }`}>
+            <div className="rounded-2xl border p-6 bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700">
               <div className="animate-pulse">
                 <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-20 mb-4"></div>
                 <div className="h-48 bg-gray-300 dark:bg-gray-600 rounded w-full"></div>
@@ -909,9 +811,7 @@ const RiskDashboard: React.FC = () => {
           {/* Loading indicator */}
           <div className="text-center py-5 mt-4">
             <Loader2 className="w-8 h-8 animate-spin mx-auto mb-3 text-brand-primary" />
-            <div className={`text-sm ${
-              theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
-            }`}>
+            <div className="text-sm text-gray-500 dark:text-gray-400">
               Analyzing blockchain address and gathering risk intelligence...
             </div>
           </div>
@@ -919,11 +819,7 @@ const RiskDashboard: React.FC = () => {
       )}
 
       {error && (
-        <div className={`mb-4 p-4 rounded-lg border ${
-          theme === 'dark' 
-            ? 'bg-red-900/20 border-red-700 text-red-200' 
-            : 'bg-red-50 border-red-200 text-red-800'
-        }`}>
+        <div className="mb-4 p-4 rounded-lg border bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-700 text-red-800 dark:text-red-200">
           <div className="flex items-center gap-2">
             <AlertCircle className="w-5 h-5" />
             <span className="font-medium">Error</span>
@@ -933,11 +829,7 @@ const RiskDashboard: React.FC = () => {
       )}
 
       {riskScoreError && (
-        <div className={`mb-4 p-4 rounded-lg border ${
-          theme === 'dark' 
-            ? 'bg-yellow-900/20 border-yellow-700 text-yellow-200' 
-            : 'bg-yellow-50 border-yellow-200 text-yellow-800'
-        }`}>
+        <div className="mb-4 p-4 rounded-lg border bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-700 text-yellow-800 dark:text-yellow-200">
           <div className="flex items-center gap-2">
             <AlertCircle className="w-5 h-5" />
             <span className="font-medium">Risk Score Error</span>
@@ -947,11 +839,7 @@ const RiskDashboard: React.FC = () => {
       )}
 
       {addressError && (
-        <div className={`mb-4 p-4 rounded-lg border ${
-          theme === 'dark' 
-            ? 'bg-yellow-900/20 border-yellow-700 text-yellow-200' 
-            : 'bg-yellow-50 border-yellow-200 text-yellow-800'
-        }`}>
+        <div className="mb-4 p-4 rounded-lg border bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-700 text-yellow-800 dark:text-yellow-200">
           <div className="flex items-center gap-2">
             <AlertCircle className="w-5 h-5" />
             <span className="font-medium">Address Error</span>

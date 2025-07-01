@@ -14,14 +14,17 @@ frontend:
         - npm rebuild
         - echo "Dependencies installed and rebuilt"
         - echo "Verifying critical dependencies..."
-        - 'ls -la node_modules/@rollup/ || echo "Rollup modules not found, will use fallback"'
+        - ls -la node_modules/@rollup/ || echo "Rollup modules not found, will use fallback"
     build:
       commands:
         - echo "Building the application for AWS Amplify..."
-        - 'npm run build:amplify || (echo "Amplify build failed, trying fallback..." && npm run build:clean)'
+        - npm run build
         - echo "Build completed successfully"
-        - echo "Build artifacts:"
+    postBuild:
+      commands:
+        - echo "=== Build Artifacts ==="
         - ls -la dist/
+        - echo "=== Build completed successfully ==="
   artifacts:
     baseDirectory: dist
     files:
