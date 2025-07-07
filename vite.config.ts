@@ -49,13 +49,9 @@ export default defineConfig({
         manualChunks: (id) => {
           // Only split major node_modules 
           if (id.includes('node_modules')) {
-            // Ant Design - largest library
-            if (id.includes('antd') || id.includes('@ant-design')) {
-              return 'antd';
-            }
-            // React core
-            if (id.includes('react') || id.includes('react-dom')) {
-              return 'react';
+            // Bundle React and Ant Design together to ensure React is available for Ant Design
+            if (id.includes('react') || id.includes('react-dom') || id.includes('antd') || id.includes('@ant-design')) {
+              return 'react-antd';
             }
             // Three.js and related libraries (reagraph, three-stdlib)
             if (id.includes('three') || id.includes('reagraph') || id.includes('glodrei')) {
