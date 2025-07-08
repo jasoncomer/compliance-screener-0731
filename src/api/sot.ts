@@ -53,9 +53,11 @@ const deleteSOT = async (id: string): Promise<void> => {
 };
 
 const getRelatedEntities = async (entityId: string): Promise<RelatedEntitiesResponse> => {
+  
   const response = await axiosInstance.get(`/attribution/entity/${entityId}/unique-values`);
-  return response.data.data;
-};
+ 
+    return response.data;
+  };
 
 export const sot = {
   updateMongoDb,

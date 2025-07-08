@@ -18,6 +18,9 @@ import { SOT } from '../../typings/interfaces';
 import { EEntityType } from '../../typings/SOT';
 import { getEntityTypeLabel } from '../../utils/display-labels';
 
+import { colors } from '../../styles/variables';
+
+
 export interface PopulatedSOT extends SOT {
   autocompleteDisplayTitle: string;
   matchedField?: string;
@@ -51,15 +54,6 @@ interface GroupedOption {
     key: string;
   })[];
 }
-
-// const headerTitleMap: Record<string, string> = {
-//   'proper_name': 'Company',
-//   'url': 'URL',
-//   'entity_id': 'Entity Id', // TODO: only for admin users
-//   'contact_twitter': 'Twitter',
-//   'contact_telegram': 'Telegram'
-//   // 'entity_type': 'Type',
-// };
 
 const BlockHam: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
@@ -208,33 +202,39 @@ const BlockHam: React.FC = () => {
                 icon={!entity.logo && <UserOutlined />}
               />
               <div className="flex-1">
-                <div>{entity.proper_name || entity.entity_id}</div>
+
+                <div className="flex items-center gap-2">
+                  <span>{entity.proper_name || entity.entity_id}</span>
+                  <EntityQuickView 
+                    entity={entity}
+                    sot={sotMap[entity._id]}
+                    onViewFull={handleViewFullProfile}
+                    onQuickView={handleQuickView}
+                  />
+                </div>
                 <div className="flex flex-wrap gap-1 mt-1">
                   {entity.entity_type && (
-                    <Tag className="text-[10px] px-1.5 py-0 mr-0" color="blue">
+                    <Tag className="text-xs px-1.5 mr-0" color="blue">
+
                       {getEntityTypeLabel(entity.entity_type as EEntityType)}
                     </Tag>
                   )}
                   {entity.urls && entity.urls[0] && (
-                    <Tag className="text-[10px] px-1.5 py-0 mr-0" color="green">{entity.urls[0]}</Tag>
+
+                    <Tag className="text-xs px-1.5 mr-0" color="green">{entity.urls[0]}</Tag>
                   )}
                   {entity.contact_twitter && (
-                    <Tag className="text-[10px] px-1.5 py-0 mr-0" color="cyan">Twitter</Tag>
+                    <Tag className="text-xs px-1.5 mr-0" color="cyan">Twitter</Tag>
                   )}
                   {entity.contact_telegram && (
-                    <Tag className="text-[10px] px-1.5 py-0 mr-0" color="purple">Telegram</Tag>
+                    <Tag className="text-xs px-1.5 mr-0" color="purple">Telegram</Tag>
                   )}
                   {entity.associate_countries.length > 0 && (
-                    <Tag className="text-[10px] px-1.5 py-0 mr-0" color="orange">{entity.associate_countries[0]}</Tag>
+                    <Tag className="text-xs px-1.5 mr-0" color="orange">{entity.associate_countries[0]}</Tag>
                   )}
                 </div>
               </div>
-              <EntityQuickView 
-                entity={entity}
-                sot={sotMap[entity._id]}
-                onViewFull={handleViewFullProfile}
-                onQuickView={handleQuickView}
-              />
+
             </div>
           )
         }))
@@ -282,8 +282,13 @@ const BlockHam: React.FC = () => {
   const headerTitle = (title: string, count: number) => {
     return (
       <div className="px-3 pt-3 pb-2 mt-1 bg-gray-50 dark:bg-gray-700">
-        <span className="text-sm font-semibold text-gray-600 dark:text-white uppercase tracking-wide">{title}</span>
-        <span className="text-xs text-gray-500 dark:text-gray-400 ml-2">({count} results)</span>
+        <span className="text-sm font-semibold uppercase tracking-wide text-gray-600 dark:text-white">
+          {title}
+        </span>
+        <span className="text-xs ml-2 text-gray-500 dark:text-gray-400">
+          ({count} results)
+        </span>
+
       </div>
     );
   };
@@ -335,50 +340,31 @@ const BlockHam: React.FC = () => {
       title="Entity Explorer"
       fullWidth={true}
     >
-      <div className="space-y-6">
-        {/* Search Bar */}
-        <div className="flex items-center gap-4">
-          <div className="flex-1 max-w-2xl">
-            <AutoComplete
-              options={options}
-              value={searchValue}
-              onChange={(value) => {
-                setSearchValue(value);
-                if (value) {
-                  handleSearch(value);
-                } else {
-                  setOptions([]);
-                }
-              }}
-              onSelect={onSelect}
-              placeholder="Search by name, address, or type..."
-              style={{ 
-                width: '100%', 
-                height: '44px',
-                borderRadius: '8px',
-                padding: '0 12px',
-                fontSize: '18px',
-                color: '#000',
-              }}
-            />
-          </div>
-        </div>
 
-        {!selectedSot && !loading && !sotLoading && (
-          <EmptyState
-            variant="initial"
-            icon={<Database className="w-12 h-12" />}
-            title="Explore VASP Entities"
-            description="Search for Virtual Asset Service Providers (VASPs) and entities by name, address, or type. Get comprehensive information about their operations, locations, and compliance status."
+      <div className="w-full">
+        <AutoComplete
+          className="w-[400px]"
+          options={options}
+          onSelect={onSelect as any}
+          onSearch={handleSearch}
+          listHeight={500}
+          dropdownStyle={{ width: '1000px' }}
+        >
+          <Input.Search
+            placeholder="Search by name, address, or type..."
+            onSearch={handleSearch}
+            loading={loading || sotLoading}
+            defaultValue={searchValue}
           />
-        )}
-
-        {selectedSot && (
-          <div className="flex-1 flex flex-col gap-6 w-full">
-            <SOTEditor sot={selectedSot} onSelectAssociatedSot={handleSelectAssociatedSot} />
-          </div>
-        )}
+        </AutoComplete>
       </div>
+
+      {selectedSot && (
+        <div className="flex-1 flex flex-col gap-6 w-full mt-5">
+          <SOTEditor sot={selectedSot} onSelectAssociatedSot={handleSelectAssociatedSot} />
+        </div>
+      )}
+
     </ViewWrapper>
   );
 };

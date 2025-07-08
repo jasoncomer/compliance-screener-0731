@@ -25,7 +25,7 @@ interface ContainerProps {
 }
 
 const Container: React.FC<ContainerProps> = ({ children, className }) => (
-  <div className={cn("w-full flex flex-row gap-6 pb-8 mt-12", className)}>
+  <div className={cn("w-full flex flex-row gap-6 mt-12", className)}>
     {children}
   </div>
 );
@@ -37,7 +37,7 @@ interface EditorWrapperProps {
 }
 
 const EditorWrapper: React.FC<EditorWrapperProps> = ({ children, className, style }) => (
-  <Card className={cn("flex-1", className)} style={style}>
+  <Card className={cn("flex-1 min-w-0", className)} style={style}>
     {children}
   </Card>
 );
@@ -59,7 +59,7 @@ interface DetailSectionProps {
 }
 
 const DetailSection: React.FC<DetailSectionProps> = ({ children, className }) => (
-  <div className={cn("flex gap-6 pb-8 text-left", className)}>
+  <div className={cn("flex gap-6 text-left", className)}>
     {children}
   </div>
 );
@@ -722,11 +722,13 @@ const SOTEditor: React.FC<SOTEditorProps> = ({ sot, onSelectAssociatedSot }) => 
       </EditorWrapper>
 
       {/* Unified sidebar for associated entities, parent, custodian, and beneficial owner */}
-      <EntitySidebar
-        associatedSots={associatedSotItems}
-        currentEntityId={sot?.entity_id}
-        onSelectSot={onSelectAssociatedSot}
-      />
+      <div className="w-66 flex-shrink-0 h-full">
+        <EntitySidebar
+          associatedSots={associatedSotItems}
+          currentEntityId={sot?.entity_id}
+          onSelectSot={onSelectAssociatedSot}
+        />
+      </div>
     </Container>
   );
 };

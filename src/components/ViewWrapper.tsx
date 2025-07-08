@@ -18,6 +18,8 @@ const ViewWrapper: React.FC<ViewWrapperProps> = ({
   className,
   fullWidth = false
 }) => {
+  
+  
   return (
     <div 
       className={cn(
