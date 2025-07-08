@@ -1,8 +1,7 @@
-import React, { useCallback, useEffect, useState } from 'react';
-import { AutoComplete, Avatar, Tag } from 'antd';
-import { UserOutlined } from '@ant-design/icons';
-import { Database } from 'lucide-react';
-import EmptyState from '../../components/common/EmptyState';
+import React, { useCallback, useEffect, useState, useRef, useMemo } from 'react';
+import { Database, User } from 'lucide-react';  
+import SearchInput from '../../components/common/SearchInput';
+import { Badge } from '../../components/ui/badge';
 import Sifter from 'sifter';
 import { useDispatch, useSelector } from 'react-redux';
 import { useSearchParams } from 'react-router-dom';
@@ -18,8 +17,57 @@ import { SOT } from '../../typings/interfaces';
 import { EEntityType } from '../../typings/SOT';
 import { getEntityTypeLabel } from '../../utils/display-labels';
 
-import { colors } from '../../styles/variables';
 
+// Custom debounce hook
+function useDebounce(value: string, delay: number) {
+  const [debouncedValue, setDebouncedValue] = useState(value);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [value, delay]);
+
+  return debouncedValue;
+}
+
+// Utility functions moved to the top
+const getEntityTags = (sot: SOT): string[] => {
+  const tags: string[] = [];
+  for (let i = 1; i <= 7; i++) {
+    const tag = sot[`entity_tag${i}` as keyof SOT];
+    if (tag && typeof tag === 'string' && tag.trim() !== '') {
+      tags.push(tag);
+    }
+  }
+  return tags;
+};
+
+const getAssociateCountries = (sot: SOT): string[] => {
+  const countries: string[] = [];
+  for (let i = 1; i <= 6; i++) {
+    const country = sot[`associate_country_${i}` as keyof SOT];
+    if (country && typeof country === 'string' && country.trim() !== '') {
+      countries.push(country);
+    }
+  }
+  return countries;
+};
+
+const getSocialMediaProfiles = (sot: SOT): string[] => {
+  const profiles: string[] = [];
+  ['social_media_profile', 'social_media_profile_2', 'social_media_profile_3', 'social_media_profile_4'].forEach(field => {
+    const profile = sot[field as keyof SOT];
+    if (profile && typeof profile === 'string' && profile.trim() !== '') {
+      profiles.push(profile);
+    }
+  });
+  return profiles;
+};
 
 export interface PopulatedSOT extends SOT {
   autocompleteDisplayTitle: string;
@@ -46,26 +94,122 @@ export interface ConsolidatedEntity {
   originalSOT: SOT;
 }
 
-interface GroupedOption {
-  label: React.ReactNode;
-  options: ({
-    label: React.ReactNode;
-    value: string;
-    key: string;
-  })[];
-}
+// Memoized option component
+const EntityOption = React.memo(({ 
+  entity, 
+  sotMap, 
+  handleQuickView, 
+  handleViewFullProfile, 
+  isHighlighted, 
+  onClick 
+}: {
+  entity: ConsolidatedEntity;
+  sotMap: Record<string, SOT>;
+  handleQuickView: (e: React.MouseEvent, entityId: string) => void;
+  handleViewFullProfile: (sot: SOT) => void;
+  isHighlighted: boolean;
+  onClick: () => void;
+}) => (
+  <div
+    className={`px-3 py-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 ${
+      isHighlighted ? 'bg-gray-100 dark:bg-gray-700' : ''
+    }`}
+    onClick={onClick}
+  >
+    <div className="flex items-center gap-2">
+      <div className="flex-shrink-0">
+        {entity.logo ? (
+          <img 
+            src={entity.logo} 
+            alt={entity.proper_name || entity.entity_id}
+            className="w-8 h-8 rounded-full object-cover"
+          />
+        ) : (
+          <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+            <User className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+          </div>
+        )}
+      </div>
+      <div className="flex-1">
+        <div className="flex items-center gap-2">
+          <span className="font-medium">{entity.proper_name || entity.entity_id}</span>
+          <EntityQuickView 
+            entity={entity}
+            sot={sotMap[entity._id]}
+            onViewFull={handleViewFullProfile}
+            onQuickView={handleQuickView}
+          />
+        </div>
+        <div className="flex flex-wrap gap-1 mt-1">
+          {entity.entity_type && (
+            <Badge variant="secondary" className="text-xs px-1.5 py-0.5 bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+              {getEntityTypeLabel(entity.entity_type as EEntityType)}
+            </Badge>
+          )}
+          {entity.urls && entity.urls[0] && (
+            <Badge variant="secondary" className="text-xs px-1.5 py-0.5 bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+              {entity.urls[0]}
+            </Badge>
+          )}
+          {entity.contact_twitter && (
+            <Badge variant="secondary" className="text-xs px-1.5 py-0.5 bg-cyan-100 text-cyan-800 dark:bg-cyan-900 dark:text-cyan-200">
+              Twitter
+            </Badge>
+          )}
+          {entity.contact_telegram && (
+            <Badge variant="secondary" className="text-xs px-1.5 py-0.5 bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200">
+              Telegram
+            </Badge>
+          )}
+          {entity.associate_countries.length > 0 && (
+            <Badge variant="secondary" className="text-xs px-1.5 py-0.5 bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200">
+              {entity.associate_countries[0]}
+            </Badge>
+          )}
+        </div>
+      </div>
+    </div>
+  </div>
+));
 
-const BlockHam: React.FC = () => {
+const VASPExplorer: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
   const { items: sot, itemsMap: sotMap, loading: sotLoading } = useSelector((state: RootState) => state.sot);
   const organization = useSelector(selectCurrentOrganization);
   const [searchParams] = useSearchParams();
 
-  const [options, setOptions] = useState<GroupedOption[]>([]);
+  const [searchResults, setSearchResults] = useState<ConsolidatedEntity[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedSot, setSelectedSot] = useState<SOT | null>(null);
   const [_, setQuickViewSot] = useState<SOT | null>(null);
   const [searchValue, setSearchValue] = useState('');
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [highlightedIndex, setHighlightedIndex] = useState(-1);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Debounce search value
+  const debouncedSearchValue = useDebounce(searchValue, 300);
+
+  // Initial data fetching
+  useEffect(() => {
+    dispatch(fetchSOT());
+    dispatch(fetchOrganizations());
+  }, [dispatch]);
+
+  // Click outside handler
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsDropdownOpen(false);
+        setHighlightedIndex(-1);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   const consolidateEntity = useCallback((sotItem: SOT, matchedField: string, searchScore: number): ConsolidatedEntity => {
     return {
@@ -86,32 +230,31 @@ const BlockHam: React.FC = () => {
       searchScore,
       originalSOT: sotItem
     };
-  }, []);
+  }, []); // No dependencies needed since utility functions are stable
 
-  const handleSelectAssociatedSot = (newSot: SOT) => {
+  const handleSelectAssociatedSot = useCallback((newSot: SOT) => {
     setSelectedSot(newSot);
-  };
+  }, []);
 
   const handleQuickView = useCallback((e: React.MouseEvent, entityId: string) => {
     e.stopPropagation();
-    // Only set the quick view SOT, not the full view
     setQuickViewSot(sotMap[entityId]);
   }, [sotMap]);
 
   const handleViewFullProfile = useCallback((sot: SOT) => {
-    // Set the selected SOT for full view
     setSelectedSot(sot);
-    // Clear the quick view SOT to close the popover
     setQuickViewSot(null);
-  }, [setSelectedSot, setQuickViewSot]);
+  }, []);
   
-  const handleSearch = useCallback(async (searchText: string) => {
+  // Memoized search function
+  const performSearch = useCallback(async (searchText: string) => {
     if (!searchText) {
-      setOptions([]);
+      setSearchResults([]);
       return;
     }
 
     setLoading(true);
+    
     try {
       const sifter = new Sifter(sot);
       const searchableFields = [
@@ -138,14 +281,13 @@ const BlockHam: React.FC = () => {
         'associate_country_6',
       ];
 
-      // Search across all fields at once
       const results = sifter.search(searchText, {
         fields: searchableFields,
         conjunction: 'or',
         sort: [{ field: 'score', direction: 'desc' }],
+        limit: 50
       });
 
-      // Consolidate results by entity_id instead of _id
       const consolidatedEntities: Record<string, ConsolidatedEntity> = {};
 
       for (const result of results.items) {
@@ -154,8 +296,7 @@ const BlockHam: React.FC = () => {
         const fieldName = searchableFields[scoreField] || 'unknown';
         const entityId = sotItem.entity_id;
 
-        // Skip CSAM-related entities if allowCSAM is false
-        if (organization?.settings.allowCSAM === false) {
+        if (organization?.settings?.allowCSAM === false) {
           const hasCSAMTag = getEntityTags(sotItem).some(tag => tag.toLowerCase().includes('csam'));
           const isCSAMType = sotItem.entity_type?.toLowerCase().includes('csam');
           if (hasCSAMTag || isCSAMType) {
@@ -164,17 +305,14 @@ const BlockHam: React.FC = () => {
         }
 
         if (consolidatedEntities[entityId]) {
-          // Entity already in results, add matched field and URL if new
           consolidatedEntities[entityId].matchedFields.push(fieldName);
           if (result.score > consolidatedEntities[entityId].searchScore) {
             consolidatedEntities[entityId].searchScore = result.score;
           }
-          // Add URL if it exists and is not already in the array
           if (sotItem.url && !consolidatedEntities[entityId].urls.includes(sotItem.url)) {
             consolidatedEntities[entityId].urls.push(sotItem.url);
           }
         } else {
-          // New entity, add to consolidated results
           consolidatedEntities[entityId] = consolidateEntity(
             sotItem,
             fieldName,
@@ -183,76 +321,28 @@ const BlockHam: React.FC = () => {
         }
       }
 
-      // Convert to array and sort by search score
       const sortedEntities = Object.values(consolidatedEntities)
         .sort((a, b) => b.searchScore - a.searchScore);
 
-      console.log('sortedEntities', sortedEntities);
-      // Convert to AutoComplete's format
-      const groupedOptions: GroupedOption[] = [{
-        label: headerTitle('Entities', sortedEntities.length),
-        options: sortedEntities.map((entity, index) => ({
-          key: `${entity._id}-${index}`,
-          value: entity.proper_name || entity.entity_id,
-          label: (
-            <div className="flex items-center gap-2">
-              <Avatar
-                size="small"
-                src={entity.logo}
-                icon={!entity.logo && <UserOutlined />}
-              />
-              <div className="flex-1">
-
-                <div className="flex items-center gap-2">
-                  <span>{entity.proper_name || entity.entity_id}</span>
-                  <EntityQuickView 
-                    entity={entity}
-                    sot={sotMap[entity._id]}
-                    onViewFull={handleViewFullProfile}
-                    onQuickView={handleQuickView}
-                  />
-                </div>
-                <div className="flex flex-wrap gap-1 mt-1">
-                  {entity.entity_type && (
-                    <Tag className="text-xs px-1.5 mr-0" color="blue">
-
-                      {getEntityTypeLabel(entity.entity_type as EEntityType)}
-                    </Tag>
-                  )}
-                  {entity.urls && entity.urls[0] && (
-
-                    <Tag className="text-xs px-1.5 mr-0" color="green">{entity.urls[0]}</Tag>
-                  )}
-                  {entity.contact_twitter && (
-                    <Tag className="text-xs px-1.5 mr-0" color="cyan">Twitter</Tag>
-                  )}
-                  {entity.contact_telegram && (
-                    <Tag className="text-xs px-1.5 mr-0" color="purple">Telegram</Tag>
-                  )}
-                  {entity.associate_countries.length > 0 && (
-                    <Tag className="text-xs px-1.5 mr-0" color="orange">{entity.associate_countries[0]}</Tag>
-                  )}
-                </div>
-              </div>
-
-            </div>
-          )
-        }))
-      }];
-
-      setOptions(groupedOptions);
+      setSearchResults(sortedEntities);
     } catch (error) {
       console.error('Search error:', error);
-      setOptions([]);
+      setSearchResults([]);
     } finally {
       setLoading(false);
     }
-  }, [organization?.settings?.allowCSAM, sot, sotMap, consolidateEntity, handleQuickView, handleViewFullProfile]);
+  }, [organization?.settings?.allowCSAM, sot, consolidateEntity]);
 
+  // Trigger search when debounced value changes
   useEffect(() => {
-    dispatch(fetchSOT());
-    dispatch(fetchOrganizations());
-  }, [dispatch]);
+    if (debouncedSearchValue) {
+      performSearch(debouncedSearchValue);
+      setIsDropdownOpen(true);
+    } else {
+      setSearchResults([]);
+      setIsDropdownOpen(false);
+    }
+  }, [debouncedSearchValue, performSearch]);
 
   // Handle initial search from URL parameters
   useEffect(() => {
@@ -260,26 +350,24 @@ const BlockHam: React.FC = () => {
     const entityParam = searchParams.get('entity');
     
     if (entityParam && sot.length > 0) {
-      // Find the entity by entity_id
       const entity = Object.values(sot).find(sotItem => sotItem.entity_id === entityParam);
       if (entity) {
         setSelectedSot(entity);
-        setSearchValue(entity.proper_name || entity.entity_id);
       }
     } else if (searchParam && sot.length > 0) {
       setSearchValue(searchParam);
-      handleSearch(searchParam);
+      performSearch(searchParam);
     }
-  }, [searchParams, sot.length, handleSearch]);
+  }, [searchParams, sot, performSearch]);
 
   // Re-trigger search when organization settings change
   useEffect(() => {
     if (searchValue) {
-      handleSearch(searchValue);
+      performSearch(searchValue);
     }
-  }, [organization?.settings?.allowCSAM, handleSearch, searchValue]);
+  }, [organization?.settings?.allowCSAM, performSearch, searchValue]);
 
-  const headerTitle = (title: string, count: number) => {
+  const headerTitle = useMemo(() => (title: string, count: number) => {
     return (
       <div className="px-3 pt-3 pb-2 mt-1 bg-gray-50 dark:bg-gray-700">
         <span className="text-sm font-semibold uppercase tracking-wide text-gray-600 dark:text-white">
@@ -288,51 +376,57 @@ const BlockHam: React.FC = () => {
         <span className="text-xs ml-2 text-gray-500 dark:text-gray-400">
           ({count} results)
         </span>
-
       </div>
     );
-  };
+  }, []);
 
-  const onSelect = (_: string, option: any) => {
-    const key = option?.key;
-    if (!key) return;
+  const handleSelectOption = useCallback((entity: ConsolidatedEntity) => {
+    setSelectedSot(sotMap[entity._id]);
+    setSearchValue('');
+    setIsDropdownOpen(false);
+    setHighlightedIndex(-1);
+  }, [sotMap]);
 
-    const id = key.split('-')[0];
-    setSelectedSot(sotMap[id]);
-  };
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (!isDropdownOpen || searchResults.length === 0) return;
 
-  const getEntityTags = (sot: SOT): string[] => {
-    const tags: string[] = [];
-    for (let i = 1; i <= 7; i++) {
-      const tag = sot[`entity_tag${i}` as keyof SOT];
-      if (tag && typeof tag === 'string' && tag.trim() !== '') {
-        tags.push(tag);
-      }
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault();
+        setHighlightedIndex(prev => 
+          prev < searchResults.length - 1 ? prev + 1 : 0
+        );
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        setHighlightedIndex(prev => 
+          prev > 0 ? prev - 1 : searchResults.length - 1
+        );
+        break;
+      case 'Enter':
+        e.preventDefault();
+        if (highlightedIndex >= 0) {
+          handleSelectOption(searchResults[highlightedIndex]);
+        }
+        break;
+      case 'Escape':
+        setIsDropdownOpen(false);
+        setHighlightedIndex(-1);
+        break;
     }
-    return tags;
-  };
+  }, [isDropdownOpen, searchResults, highlightedIndex, handleSelectOption]);
 
-  const getAssociateCountries = (sot: SOT): string[] => {
-    const countries: string[] = [];
-    for (let i = 1; i <= 6; i++) {
-      const country = sot[`associate_country_${i}` as keyof SOT];
-      if (country && typeof country === 'string' && country.trim() !== '') {
-        countries.push(country);
-      }
+  const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setSearchValue(value);
+    setHighlightedIndex(-1);
+  }, []);
+
+  const handleInputFocus = useCallback(() => {
+    if (searchValue && searchResults.length > 0) {
+      setIsDropdownOpen(true);
     }
-    return countries;
-  };
-
-  const getSocialMediaProfiles = (sot: SOT): string[] => {
-    const profiles: string[] = [];
-    ['social_media_profile', 'social_media_profile_2', 'social_media_profile_3', 'social_media_profile_4'].forEach(field => {
-      const profile = sot[field as keyof SOT];
-      if (profile && typeof profile === 'string' && profile.trim() !== '') {
-        profiles.push(profile);
-      }
-    });
-    return profiles;
-  };
+  }, [searchValue, searchResults.length]);
 
   return (
     <ViewWrapper
@@ -340,23 +434,38 @@ const BlockHam: React.FC = () => {
       title="Entity Explorer"
       fullWidth={true}
     >
-
       <div className="w-full">
-        <AutoComplete
-          className="w-[400px]"
-          options={options}
-          onSelect={onSelect as any}
-          onSearch={handleSearch}
-          listHeight={500}
-          dropdownStyle={{ width: '1000px' }}
-        >
-          <Input.Search
+        <div className="relative w-[400px]">
+          <SearchInput
             placeholder="Search by name, address, or type..."
-            onSearch={handleSearch}
+            value={searchValue}
+            onChange={handleInputChange}
+            onSearch={performSearch}
             loading={loading || sotLoading}
-            defaultValue={searchValue}
+            onKeyDown={handleKeyDown}
+            onFocus={handleInputFocus}
           />
-        </AutoComplete>
+          
+          {isDropdownOpen && searchResults.length > 0 && (
+            <div 
+              ref={dropdownRef}
+              className="absolute z-50 w-[1000px] mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg shadow-lg max-h-[500px] overflow-y-auto"
+            >
+              {headerTitle('Entities', searchResults.length)}
+              {searchResults.map((entity, index) => (
+                <EntityOption
+                  key={`${entity._id}-${index}`}
+                  entity={entity}
+                  sotMap={sotMap}
+                  handleQuickView={handleQuickView}
+                  handleViewFullProfile={handleViewFullProfile}
+                  isHighlighted={highlightedIndex === index}
+                  onClick={() => handleSelectOption(entity)}
+                />
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       {selectedSot && (
@@ -364,9 +473,8 @@ const BlockHam: React.FC = () => {
           <SOTEditor sot={selectedSot} onSelectAssociatedSot={handleSelectAssociatedSot} />
         </div>
       )}
-
     </ViewWrapper>
   );
 };
 
-export default BlockHam; 
+export default VASPExplorer; 
