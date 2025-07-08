@@ -153,7 +153,7 @@ const Settings = () => {
     <ViewWrapper
       icon={<SettingOutlined />}
       title="Settings"
-      fullWidth={isFullWidth}
+      fullWidth={true}
     >
       <SettingsLayout className={isFullWidth ? 'full-width-layout' : ''}>
         <SettingsSidebar

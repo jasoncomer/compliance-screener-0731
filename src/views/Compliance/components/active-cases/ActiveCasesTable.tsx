@@ -316,7 +316,7 @@ const ActiveCasesTable: React.FC<ActiveCasesTableProps> = React.memo(({
     return (
       <>
         <Table
-          className="active-cases-table"
+          className="compliance-table active-cases-table"
           dataSource={validTransactions}
           columns={columns}
           rowKey="_id"
@@ -334,8 +334,13 @@ const ActiveCasesTable: React.FC<ActiveCasesTableProps> = React.memo(({
           }}
           loading={loading}
           onChange={onTableChange}
-          style={{ width: '100%' }}
-          scroll={{ x: 'max-content' }}
+          style={{ 
+            width: '100%',
+            // Disable any potential animations
+            transition: 'none',
+            animation: 'none'
+          }}
+          scroll={{ x: 1000 }} // Reduced width from 1200px to 1000px
           footer={() => !isArchivedTab ? (
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>

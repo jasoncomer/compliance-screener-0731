@@ -25,12 +25,14 @@ export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     return (saved as Theme) || 'dark'; // Default to dark theme
   });
 
+
   // Apply dark class to document element for Tailwind dark mode
   useEffect(() => {
     if (theme === 'dark') {
       document.documentElement.classList.add('dark');
     } else {
       document.documentElement.classList.remove('dark');
+
     }
   }, [theme]);
 

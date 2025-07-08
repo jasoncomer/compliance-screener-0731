@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Tabs } from 'antd';
-import { useTheme } from '../../context/ThemeContext';
-import { AuditOutlined, DatabaseOutlined, TableOutlined, FileSearchOutlined, HistoryOutlined } from '@ant-design/icons';
-import { colors } from '../../styles/variables';
+import { DatabaseOutlined, TableOutlined, FileSearchOutlined, HistoryOutlined } from '@ant-design/icons';
+import { Search } from 'lucide-react';
+import ViewWrapper from '../../components/ViewWrapper';
 import UnassignedTransactionsTab from './components/unassigned-transactions/UnassignedTransactionsTab';
 import MonitoredAddressesTab from './components/monitored-addresses/MonitoredAddressesTab';
 import ActiveCasesTab from './components/active-cases/ActiveCasesTab';
@@ -21,54 +21,7 @@ interface TabConfig {
   component: React.ReactNode;
 }
 
-// Simplified inline card component to replace ViewWrapper
-interface ComplianceCardProps {
-  title: string;
-  icon?: React.ReactNode;
-  description?: string;
-}
 
-const ComplianceCard: React.FC<ComplianceCardProps> = ({ title, icon, description }) => {
-  const { theme } = useTheme();
-  
-  return (
-    <div className="bg-card border-b border-border shadow-sm m-6">
-      <div className="px-6 py-6 lg:px-8">
-        <header className="mb-4">
-          <div className="flex items-center gap-3">
-            {icon && (
-              <div className="flex items-center justify-center w-8 h-8 text-muted-foreground">
-                {icon}
-              </div>
-            )}
-            <h1 className="text-2xl font-semibold tracking-tight text-foreground font-['Inter']">
-              {title}
-            </h1>
-          </div>
-        </header>
-        {description && (
-          <p style={{ 
-            marginTop: -15, 
-            color: theme === 'light' ? colors.black : colors.white 
-          }}>
-            {description}
-          </p>
-        )}
-      </div>
-    </div>
-  );
-};
-
-const styles = {
-  icon: {
-    marginRight: '8px',
-  },
-  titleIcon: {
-    fontSize: '28px',
-    color: colors.attributionHover,
-    fontWeight: 'bold',
-  },
-};
 
 const ComplianceScreener: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -104,8 +57,8 @@ const ComplianceScreener: React.FC = () => {
   };
 
   const createTabHeader = (icon: React.ReactNode, label: string) => (
-    <span>
-      <span style={styles.icon}>{icon}</span>
+    <span className="flex items-center gap-2">
+      {icon}
       {label}
     </span>
   );
@@ -144,29 +97,27 @@ const ComplianceScreener: React.FC = () => {
   ], [monitoredAddresses, activeTab, handleAddressesChange]);
 
   return (
-    <div className="w-full h-full flex flex-col overflow-hidden">
-      <ComplianceCard 
-        title="Compliance Screener" 
-        icon={<AuditOutlined style={styles.titleIcon} />}
-        description={getTabDescription(activeTab)}
-      />
-      <main className="flex-1 px-6 lg:px-8 space-y-6 font-['Inter'] overflow-auto">
-        <Tabs
-          activeKey={activeTab}
-          onChange={handleTabChange}
-          type="card"
-        >
-          {tabConfig.map(({ key, label, icon, component }) => (
-            <TabPane
-              key={key}
-              tab={createTabHeader(icon, label)}
-            >
-              {component}
-            </TabPane>
-          ))}
-        </Tabs>
-      </main>
-    </div>
+    <ViewWrapper
+      icon={<Search className="w-8 h-8 text-orange-500" />}
+      title="Compliance Screener"
+      description={getTabDescription(activeTab)}
+      fullWidth={true}
+    >
+      <Tabs
+        activeKey={activeTab}
+        onChange={handleTabChange}
+        type="card"
+      >
+        {tabConfig.map(({ key, label, icon, component }) => (
+          <TabPane
+            key={key}
+            tab={createTabHeader(icon, label)}
+          >
+            {component}
+          </TabPane>
+        ))}
+      </Tabs>
+    </ViewWrapper>
   );
 };
 

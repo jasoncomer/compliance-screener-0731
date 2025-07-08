@@ -5,7 +5,6 @@ import {
   useLocation
 } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { ThemeProvider as StyledThemeProvider } from 'styled-components';
 import Login from './views/Login';
 import Register from "./views/Register";
 import ResetPassword from "./views/ResetPassword";
@@ -114,9 +113,8 @@ function App() {
 
   return (
     <ConfigProvider theme={currentTheme}>
-      <StyledThemeProvider theme={{ theme }}>
-        {contextHolder}
-        <Toaster />
+      {contextHolder}
+      <Toaster />
         <Routes>
           <Route path="/" element={<Navigate to="/home/compliance-screener" replace />} />
           <Route path="/login" element={<Login />} />
@@ -146,7 +144,6 @@ function App() {
           </Route>
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
-      </StyledThemeProvider>
     </ConfigProvider>
   )
 }

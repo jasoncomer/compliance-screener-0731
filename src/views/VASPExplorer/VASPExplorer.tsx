@@ -1,6 +1,8 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { AutoComplete, Avatar, Input, Tag } from 'antd';
-import { UserOutlined, DatabaseOutlined } from '@ant-design/icons';
+import { AutoComplete, Avatar, Tag } from 'antd';
+import { UserOutlined } from '@ant-design/icons';
+import { Database } from 'lucide-react';
+import EmptyState from '../../components/common/EmptyState';
 import Sifter from 'sifter';
 import { useDispatch, useSelector } from 'react-redux';
 import { useSearchParams } from 'react-router-dom';
@@ -8,13 +10,16 @@ import { useSearchParams } from 'react-router-dom';
 import ViewWrapper from '../../components/ViewWrapper';
 import SOTEditor from '../../components/SOTEditor';
 import EntityQuickView from '../../components/EntityQuickView';
+
 import { AppDispatch, RootState } from '../../store/store';
 import { fetchSOT } from '../../store/slices/sotSlice';
 import { fetchOrganizations, selectCurrentOrganization } from '../../store/slices/organizationsSlice';
 import { SOT } from '../../typings/interfaces';
 import { EEntityType } from '../../typings/SOT';
 import { getEntityTypeLabel } from '../../utils/display-labels';
+
 import { colors } from '../../styles/variables';
+
 
 export interface PopulatedSOT extends SOT {
   autocompleteDisplayTitle: string;
@@ -182,6 +187,7 @@ const BlockHam: React.FC = () => {
       const sortedEntities = Object.values(consolidatedEntities)
         .sort((a, b) => b.searchScore - a.searchScore);
 
+      console.log('sortedEntities', sortedEntities);
       // Convert to AutoComplete's format
       const groupedOptions: GroupedOption[] = [{
         label: headerTitle('Entities', sortedEntities.length),
@@ -196,6 +202,7 @@ const BlockHam: React.FC = () => {
                 icon={!entity.logo && <UserOutlined />}
               />
               <div className="flex-1">
+
                 <div className="flex items-center gap-2">
                   <span>{entity.proper_name || entity.entity_id}</span>
                   <EntityQuickView 
@@ -208,10 +215,12 @@ const BlockHam: React.FC = () => {
                 <div className="flex flex-wrap gap-1 mt-1">
                   {entity.entity_type && (
                     <Tag className="text-xs px-1.5 mr-0" color="blue">
+
                       {getEntityTypeLabel(entity.entity_type as EEntityType)}
                     </Tag>
                   )}
                   {entity.urls && entity.urls[0] && (
+
                     <Tag className="text-xs px-1.5 mr-0" color="green">{entity.urls[0]}</Tag>
                   )}
                   {entity.contact_twitter && (
@@ -225,6 +234,7 @@ const BlockHam: React.FC = () => {
                   )}
                 </div>
               </div>
+
             </div>
           )
         }))
@@ -278,6 +288,7 @@ const BlockHam: React.FC = () => {
         <span className="text-xs ml-2 text-gray-500 dark:text-gray-400">
           ({count} results)
         </span>
+
       </div>
     );
   };
@@ -325,10 +336,11 @@ const BlockHam: React.FC = () => {
 
   return (
     <ViewWrapper
-      icon={<DatabaseOutlined style={{ fontSize: '28px', color: colors.attributionHover, fontWeight: 'bold' }} />}
+      icon={<Database className="w-8 h-8 text-orange-500" />}
       title="Entity Explorer"
       fullWidth={true}
     >
+
       <div className="w-full">
         <AutoComplete
           className="w-[400px]"
@@ -352,6 +364,7 @@ const BlockHam: React.FC = () => {
           <SOTEditor sot={selectedSot} onSelectAssociatedSot={handleSelectAssociatedSot} />
         </div>
       )}
+
     </ViewWrapper>
   );
 };

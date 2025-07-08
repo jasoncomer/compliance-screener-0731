@@ -12,7 +12,8 @@ import {
   message,
   Form,
   Input,
-  Select
+  Select,
+  Radio,
 } from 'antd';
 import { CrownOutlined, CheckCircleOutlined, CloseCircleOutlined } from '@ant-design/icons';
 import { useAppDispatch, useAppSelector } from '../../../store/hooks';
@@ -30,6 +31,7 @@ import { ISubscriptionTier, ESubscriptionStatus, TierId } from '../../../typings
 import { api } from '../../../api/api';
 import { IContactSalesFormData } from '../../../api/contactSales';
 import { format } from 'date-fns';
+import { useAppContext } from '../../../context/AppContext';
 
 const { Title, Text } = Typography;
 
@@ -39,6 +41,7 @@ interface SubscriptionSectionProps {
 
 const SubscriptionSection: React.FC<SubscriptionSectionProps> = ({ theme }) => {
   const dispatch = useAppDispatch();
+  const { user } = useAppContext();
   const tiers = useAppSelector(selectSubscriptionTiers);
   const currentSubscription = useAppSelector(selectCurrentSubscription);
   const loading = useAppSelector(selectSubscriptionLoading);
@@ -49,6 +52,7 @@ const SubscriptionSection: React.FC<SubscriptionSectionProps> = ({ theme }) => {
   const [contactSalesModalVisible, setContactSalesModalVisible] = useState(false);
   const [cancelImmediately, setCancelImmediately] = useState(false);
   const [contactForm] = Form.useForm();
+  const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'yearly'>('monthly');
 
   useEffect(() => {
     dispatch(fetchSubscriptionTiers());
@@ -58,7 +62,11 @@ const SubscriptionSection: React.FC<SubscriptionSectionProps> = ({ theme }) => {
   }, [dispatch, organization?._id]);
 
   const handleTierSelect = (tier: ISubscriptionTier) => {
-    if (tier.id === 'enterprise') {
+    if (tier.id === 'custom') {
+      contactForm.setFieldsValue({
+        email: user?.email || '',
+        company: organization?.name || ''
+      });
       setContactSalesModalVisible(true);
     } else {
       setSelectedTier(tier);
@@ -72,7 +80,8 @@ const SubscriptionSection: React.FC<SubscriptionSectionProps> = ({ theme }) => {
     try {
       await dispatch(updateOrganizationSubscription({
         organizationId: organization._id,
-        tierId: selectedTier.id as TierId
+        tierId: selectedTier.id as TierId,
+        billingPeriod: billingPeriod
       })).unwrap();
       message.success('Subscription updated successfully');
       setConfirmModalVisible(false);
@@ -175,7 +184,11 @@ const SubscriptionSection: React.FC<SubscriptionSectionProps> = ({ theme }) => {
 
       {currentSubscription && (
         <Card 
-          title="Current Subscription" 
+          title={
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span>Current Plan</span>
+            </div>
+          }
           style={{ marginBottom: '24px' }} 
           bordered={false}
           className={theme === 'dark' ? 'dark-card' : ''}
@@ -184,10 +197,13 @@ const SubscriptionSection: React.FC<SubscriptionSectionProps> = ({ theme }) => {
             <Descriptions.Item label="Plan">{currentTier?.name || 'Unknown'}</Descriptions.Item>
             <Descriptions.Item label="Status">{getStatusTag(currentSubscription.status)}</Descriptions.Item>
             <Descriptions.Item label="Billing Period">
-              {currentTier?.price.billingPeriod === 'monthly' ? 'Monthly' : 'Yearly'}
+              {currentSubscription.billingPeriod === 'monthly' ? 'Monthly' : 'Yearly'}
             </Descriptions.Item>
             <Descriptions.Item label="Price">
-              {currentTier ? `$${currentTier.price.amount} ${currentTier.price.currency}` : 'N/A'}
+              {(() => {
+                const currentPrice = currentTier?.prices.find(p => p.billingPeriod === currentSubscription.billingPeriod);
+                return currentPrice ? `$${currentPrice.amount} ${currentPrice.currency}` : 'N/A';
+              })()}
             </Descriptions.Item>
             <Descriptions.Item label="Current Period">
               {formatDate(currentSubscription.currentPeriodStart)} - {formatDate(currentSubscription.currentPeriodEnd)}
@@ -210,65 +226,120 @@ const SubscriptionSection: React.FC<SubscriptionSectionProps> = ({ theme }) => {
       )}
 
       <Card 
-        title="Available Plans" 
+        title={
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span>Available Plans</span>
+            <Radio.Group
+              value={billingPeriod}
+              onChange={e => setBillingPeriod(e.target.value)}
+              optionType="button"
+              buttonStyle="solid"
+              size="small"
+            >
+              <Radio.Button value="monthly">Monthly</Radio.Button>
+              <Radio.Button value="yearly">Yearly</Radio.Button>
+            </Radio.Group>
+          </div>
+        }
         bordered={false}
         className={theme === 'dark' ? 'dark-card' : ''}
       >
-        <Row gutter={[16, 16]}>
-          {sortedTiers.map(tier => (
-            <Col xs={24} sm={24} md={12} lg={8} xl={8} xxl={6} key={String(tier.id)}>
-              <Card 
-                title={tier.name} 
-                bordered 
-                style={{ 
-                  height: '100%',
-                  borderColor: currentTier?.id === tier.id ? '#1890ff' : undefined,
-                  boxShadow: currentTier?.id === tier.id ? '0 0 10px rgba(24,144,255,0.2)' : undefined
-                }}
-              >
-                <div style={{ marginBottom: '16px' }}>
-                  {tier.id === 'enterprise' ? (
-                    <>
-                      <Title level={4}>Custom Pricing</Title>
-                      <Text>{tier.description}</Text>
-                    </>
-                  ) : (
-                    <>
-                      <Title level={4}>${tier.price.amount.toLocaleString()}/{tier.price.billingPeriod === 'monthly' ? 'mo' : 'yr'}</Title>
-                      <Text>{tier.description}</Text>
-                    </>
-                  )}
-                </div>
-                
-                <Descriptions column={1} size="small">
-                  <Descriptions.Item label="Max Members">{tier.features.maxMembers}</Descriptions.Item>
-                  {/* <Descriptions.Item label="Max Organizations">{tier.features.maxOrganizations}</Descriptions.Item> */}
-                  <Descriptions.Item label="Compliance Transactions">{tier.features.maxTransactionsPerMonth.toLocaleString()}</Descriptions.Item>
-                  <Descriptions.Item label="Data Retention">{tier.features.dataRetentionMonths} months</Descriptions.Item>
-                  <Descriptions.Item label="Support" className='capitalize'>{tier.features.support}</Descriptions.Item>
-                  {/* <Descriptions.Item label="Custom Branding">{renderFeatureValue(tier.features.customBranding)}</Descriptions.Item> */}
-                  <Descriptions.Item label="API Access">{renderFeatureValue(tier.features.apiAccess)}</Descriptions.Item>
-                  {/* <Descriptions.Item label="CSAM Scanning">{renderFeatureValue(tier.features.allowCSAM)}</Descriptions.Item> */}
-                </Descriptions>
+        {sortedTiers.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '40px' }}>
+            <Text type="secondary">No subscription plans available at the moment.</Text>
+          </div>
+        ) : (
+          <Row gutter={[16, 16]}>
+            {sortedTiers.map(tier => {
+              const priceObj = tier.prices.find(p => p.billingPeriod === billingPeriod);
+              return (
+                <Col xs={24} sm={24} md={8} lg={8} xl={8} xxl={8} key={String(tier.id)}>
+                  <Card 
+                    title={tier.name} 
+                    bordered 
+                    style={{ 
+                      height: '100%',
+                      borderColor: currentTier?.id === tier.id ? '#1890ff' : undefined,
+                      boxShadow: currentTier?.id === tier.id ? '0 0 10px rgba(24,144,255,0.2)' : undefined,
+                      position: 'relative',
+                      minHeight: '400px',
+                      display: 'flex',
+                      flexDirection: 'column'
+                    }}
+                    bodyStyle={{
+                      flex: 1,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      padding: '16px'
+                    }}
+                  >
+                    {currentTier?.id === tier.id && (
+                      <div style={{
+                        position: 'absolute',
+                        top: '8px',
+                        right: '8px',
+                        zIndex: 1
+                      }}>
+                        <CheckCircleOutlined style={{ 
+                          color: '#52c41a', 
+                          fontSize: '20px',
+                          backgroundColor: 'white',
+                          borderRadius: '50%',
+                          padding: '2px'
+                        }} />
+                      </div>
+                    )}
+                    
+                    <div style={{ marginBottom: '16px' }}>
+                      {tier.id === 'custom' && priceObj?.amount === 0 ? (
+                        <>
+                          <Title level={4}>Custom Pricing</Title>
+                          <Text>{tier.description}</Text>
+                        </>
+                      ) : (
+                        <>
+                          <Title level={4}>
+                            {priceObj ? `$${priceObj.amount.toLocaleString()}/${billingPeriod === 'monthly' ? 'mo' : 'yr'}` : 'N/A'}
+                          </Title>
+                          <Text>{tier.description}</Text>
+                        </>
+                      )}
+                    </div>
+                    
+                    <Descriptions column={1} size="small" style={{ flex: 1 }}>
+                      <Descriptions.Item label="Max Members">{tier.features.maxMembers}</Descriptions.Item>
+                      {/* <Descriptions.Item label="Max Organizations">{tier.features.maxOrganizations}</Descriptions.Item> */}
+                      <Descriptions.Item label="Compliance Transactions">{tier.features.maxTransactionsPerMonth.toLocaleString()}</Descriptions.Item>
+                      <Descriptions.Item label="Data Retention">{tier.features.dataRetentionMonths} months</Descriptions.Item>
+                      <Descriptions.Item label="Support" className='capitalize'>{tier.features.support}</Descriptions.Item>
+                      {/* <Descriptions.Item label="Custom Branding">{renderFeatureValue(tier.features.customBranding)}</Descriptions.Item> */}
+                      <Descriptions.Item label="API Access">{renderFeatureValue(tier.features.apiAccess)}</Descriptions.Item>
+                      {/* <Descriptions.Item label="CSAM Scanning">{renderFeatureValue(tier.features.allowCSAM)}</Descriptions.Item> */}
+                    </Descriptions>
 
-                <Button 
-                  type="primary" 
-                  block 
-                  style={{ marginTop: '16px' }}
-                  disabled={currentTier?.id === tier.id}
-                  onClick={() => handleTierSelect(tier)}
-                >
-                  {currentTier?.id === tier.id 
-                    ? 'Current Plan' 
-                    : tier.id === 'enterprise' 
-                      ? 'Contact Sales' 
-                      : 'Select Plan'
-                  }
-                </Button>
-              </Card>
-            </Col>
-          ))}
-        </Row>
+                    <Button 
+                      type="primary" 
+                      block 
+                      style={{ 
+                        marginTop: 'auto',
+                        marginBottom: '0'
+                      }}
+                      disabled={currentTier?.id === tier.id}
+                      onClick={() => handleTierSelect(tier)}
+                    >
+                      {currentTier?.id === tier.id 
+                        ? 'Current Plan' 
+                        : tier.id === 'custom' 
+                          ? 'Contact Sales' 
+                          : 'Select Plan'
+                      }
+                    </Button>
+                  </Card>
+                </Col>
+              );
+            })}
+          </Row>
+        )}
       </Card>
 
       <Modal
@@ -280,7 +351,12 @@ const SubscriptionSection: React.FC<SubscriptionSectionProps> = ({ theme }) => {
         cancelText="Cancel"
       >
         <p>Are you sure you want to change your subscription to {selectedTier?.name}?</p>
-        <p>You will be charged ${selectedTier?.price.amount} per {selectedTier?.price.billingPeriod}.</p>
+        <p>
+          {(() => {
+            const priceObj = selectedTier?.prices.find(p => p.billingPeriod === billingPeriod);
+            return priceObj ? `You will be charged $${priceObj.amount} per ${billingPeriod}.` : '';
+          })()}
+        </p>
       </Modal>
 
       <Modal
@@ -324,7 +400,7 @@ const SubscriptionSection: React.FC<SubscriptionSectionProps> = ({ theme }) => {
       >
         <div style={{ marginBottom: '16px' }}>
           <Text>
-            Interested in our Enterprise plan? Fill out the form below and our sales team will get in touch with you shortly.
+            Interested in our Custom plan? Fill out the form below and our sales team will get in touch with you shortly.
           </Text>
         </div>
         
@@ -373,7 +449,7 @@ const SubscriptionSection: React.FC<SubscriptionSectionProps> = ({ theme }) => {
           >
             <Input.TextArea 
               rows={4} 
-              placeholder="Tell us about your specific requirements, expected usage, or any questions you have about the Enterprise plan..."
+              placeholder="Tell us about your specific requirements, expected usage, or any questions you have about the Custom plan..."
             />
           </Form.Item>
           

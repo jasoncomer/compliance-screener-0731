@@ -19,14 +19,14 @@ export interface ITierFeatures {
   dataRetentionMonths: number;
 }
 
-export type TierId = 'free' | 'trial' | 'professional' | 'enterprise';
+export type TierId = 'free' | 'starter' | 'growth' | 'custom';
 
 // Define the subscription tier model
 export interface ISubscriptionTier {
   id?: TierId;
   name: string;
   description?: string;
-  price: IPrice;
+  prices: IPrice[];
   features: ITierFeatures;
   isActive: boolean;
   sortOrder: number;
@@ -48,6 +48,7 @@ export interface IOrganizationSubscription {
   _id?: string;
   organizationId: string | Types.ObjectId;
   tierId: TierId;
+  billingPeriod: 'monthly' | 'yearly';
   status: ESubscriptionStatus;
   stripeCustomerId?: string;
   stripeSubscriptionId?: string;

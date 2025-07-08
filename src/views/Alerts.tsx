@@ -5,7 +5,6 @@ import { Typography, Table, Tag, Input, Select, Space, Button, Collapse } from '
 import AlertConfig from './AlertConfig';
 import { colors } from '../styles/variables';
 import { useTheme } from '../context/ThemeContext';
-import '../styles/theme-overrides.css';
 
 const { Paragraph } = Typography;
 const { Option } = Select;
