@@ -15,6 +15,7 @@ export interface OptionCardProps {
 export interface CreateOrgFormData {
   name: string;
   description?: string;
+  email?: string; // Optional organization email - will default to user's email if not provided
 }
 
 export interface JoinOrgFormData {

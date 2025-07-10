@@ -54,6 +54,18 @@ const CreateOrgForm: React.FC<CreateOrgFormProps> = ({ onBack, onSubmit }) => {
           />
         </Form.Item>
 
+        <Form.Item
+          name="email"
+          label="Organization Email (Optional)"
+          rules={[
+            { type: 'email', message: 'Please enter a valid email address' },
+            { max: 128, message: 'Email must be at most 128 characters' }
+          ]}
+          help="If not provided, your account email will be used as the organization email"
+        >
+          <Input placeholder="Enter organization email" />
+        </Form.Item>
+
         <ActionButtons>
           <Button onClick={onBack}>Cancel</Button>
           <Button type="primary" htmlType="submit">

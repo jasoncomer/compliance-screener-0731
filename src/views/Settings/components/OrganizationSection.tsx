@@ -129,6 +129,10 @@ const OrganizationSection: React.FC<OrganizationSectionProps> = ({
             <Value theme={{ theme }}>{organization?.description || 'No description'}</Value>
           </InfoItem>
           <InfoItem theme={{ theme }}>
+            <Label theme={{ theme }}>Organization Email</Label>
+            <Value theme={{ theme }}>{organization?.email || 'No email'}</Value>
+          </InfoItem>
+          <InfoItem theme={{ theme }}>
             <Label theme={{ theme }}>Member Limit</Label>
             <Value theme={{ theme }}>{organization?.settings.maxMembers || 5}</Value>
           </InfoItem>
@@ -457,6 +461,7 @@ const OrganizationSection: React.FC<OrganizationSectionProps> = ({
           initialValues={{
             name: organization?.name,
             description: organization?.description,
+            email: organization?.email,
             allowedDomains: organization?.settings.allowedDomains?.join('\n')
           }}
           onFinish={handleSubmit}
@@ -474,6 +479,17 @@ const OrganizationSection: React.FC<OrganizationSectionProps> = ({
             label="Description"
           >
             <Input multiline rows={3} />
+          </Form.Item>
+
+          <Form.Item
+            name="email"
+            label="Organization Email"
+            rules={[
+              { required: true, message: 'Please enter organization email' },
+              { type: 'email', message: 'Please enter a valid email address' }
+            ]}
+          >
+            <Input />
           </Form.Item>
 
           <Form.Item
