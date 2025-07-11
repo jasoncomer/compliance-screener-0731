@@ -64,8 +64,9 @@ const Wrapper = styled.div`
     }
   }
   .address.highlighted {
-    color: white;
+    color: hsl(var(--foreground));
     text-decoration: none;
+    font-weight: 600;
   }
   .address-container {
     display: flex;
