@@ -1,8 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { AutoComplete, Avatar, Tag } from 'antd';
+import { AutoComplete, Avatar, Tag, Input } from 'antd';
 import { UserOutlined } from '@ant-design/icons';
 import { Database } from 'lucide-react';
-import EmptyState from '../../components/common/EmptyState';
 import Sifter from 'sifter';
 import { useDispatch, useSelector } from 'react-redux';
 import { useSearchParams } from 'react-router-dom';
@@ -17,8 +16,6 @@ import { fetchOrganizations, selectCurrentOrganization } from '../../store/slice
 import { SOT } from '../../typings/interfaces';
 import { EEntityType } from '../../typings/SOT';
 import { getEntityTypeLabel } from '../../utils/display-labels';
-
-import { colors } from '../../styles/variables';
 
 
 export interface PopulatedSOT extends SOT {
