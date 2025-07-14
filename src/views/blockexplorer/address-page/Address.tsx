@@ -16,9 +16,6 @@ import { useToast } from '../../../hooks/use-toast';
 import { useAppSelector, useAppDispatch } from '../../../store/hooks';
 import { RootState } from '../../../store/store';
 import { fetchSOT } from '../../../store/slices/sotSlice';
-import {
-  ScrollableAddressContent
-} from './AddressStyles';
 
 const Address: React.FC = () => {
   const { address } = useParams();
