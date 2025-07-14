@@ -1,3 +1,5 @@
+import { IOrganizationCreate } from '../../typings/organization';
+
 export type WelcomeOption = 'create' | 'join' | 'skip';
 
 export interface WelcomeProps {
@@ -12,11 +14,7 @@ export interface OptionCardProps {
   description: string;
 }
 
-export interface CreateOrgFormData {
-  name: string;
-  description?: string;
-  email?: string; // Optional organization email - will default to user's email if not provided
-}
+
 
 export interface JoinOrgFormData {
   code: string;
@@ -24,7 +22,7 @@ export interface JoinOrgFormData {
 
 export interface CreateOrgFormProps extends WelcomeProps {
   onBack: () => void;
-  onSubmit: (values: CreateOrgFormData) => Promise<void>;
+  onSubmit: (values: IOrganizationCreate) => Promise<void>;
 }
 
 export interface JoinOrgFormProps extends WelcomeProps {
