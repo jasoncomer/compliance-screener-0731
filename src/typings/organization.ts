@@ -32,6 +32,7 @@ export interface IOrganization {
   _id: string;
   name: string;
   description?: string;
+  email: string; // Organization email address
   settings: IOrganizationSettings;
   ownerId: string;
   createdAt: string;
@@ -42,12 +43,14 @@ export interface IOrganization {
 export interface IOrganizationCreate {
   name: string;
   description?: string;
+  email?: string; // Optional, will default to owner's email
   settings?: Partial<IOrganizationSettings>;
 }
 
 export interface IOrganizationUpdate {
   name?: string;
   description?: string;
+  email?: string; // Allow updating organization email
   settings?: Partial<IOrganizationSettings>;
 }
 
