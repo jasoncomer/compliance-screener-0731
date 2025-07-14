@@ -183,7 +183,7 @@ const Address: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col h-screen w-full overflow-hidden">
+    <div className="flex flex-col w-full">
       <AddressSummary
         address={address}
         summary={summary}
@@ -199,7 +199,7 @@ const Address: React.FC = () => {
         getTagColor={getTagColor}
       />
 
-      <ScrollableAddressContent>
+      <div className="w-full">
         <BsBlock>
           <h3>Transactions ({totalTxs.toLocaleString()})</h3>
           <hr />
@@ -216,7 +216,7 @@ const Address: React.FC = () => {
             </>
           )}
         </BsBlock>
-      </ScrollableAddressContent>
+      </div>
     </div>
   );
 };
