@@ -3,10 +3,12 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Spin, Modal, message } from 'antd';
 import { TeamOutlined, UserAddOutlined, ArrowRightOutlined } from '@ant-design/icons';
 import { useTheme } from '../../context/ThemeContext';
+import { api } from '../../api/api';
 import OptionCard from './components/OptionCard';
 import CreateOrgForm from './components/CreateOrgForm';
 import JoinOrgForm from './components/JoinOrgForm';
-import { WelcomeOption, CreateOrgFormData, JoinOrgFormData } from './types';
+import { WelcomeOption, JoinOrgFormData } from './types';
+import { IOrganizationCreate } from '../../typings/organization';
 import {
   StyledCard,
   WelcomeContainer,
@@ -59,11 +61,9 @@ const Welcome: React.FC = () => {
     }
   }, [loading]);
 
-  const handleCreateOrganization = async (values: CreateOrgFormData) => {
+  const handleCreateOrganization = async (values: IOrganizationCreate) => {
     try {
-      // TODO: API implementation
-      // await api.organization.create(values);
-      console.log('values', values);
+      await api.organizations.create(values);
       message.success('Organization created successfully!');
       navigate('/home/compliance-screener');
     } catch (err: any) {
@@ -73,9 +73,7 @@ const Welcome: React.FC = () => {
 
   const handleJoinWithCode = async (values: JoinOrgFormData) => {
     try {
-      // TODO: API implementation
-      // await api.organization.joinWithCode(values.code);
-      console.log('values', values);
+      await api.organizations.join({ code: values.code, email: '' }); // Email will be handled by backend
       message.success('Successfully joined the organization!');
       navigate('/home/compliance-screener');
     } catch (err: any) {
