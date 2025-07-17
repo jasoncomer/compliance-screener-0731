@@ -53,17 +53,17 @@ const TransactionActivity: React.FC<TransactionActivityProps> = ({
   // Function to get activity intensity color based on count (GitHub-style)
   const getActivityColor = (activityCount: number = 0) => {
     if (activityCount === 0) {
-      return theme === 'dark' ? 'bg-gray-800' : 'bg-gray-100';
+      return theme === 'dark' ? 'bg-gray-700' : 'bg-gray-200';
     }
     
-    // GitHub-style intensity levels with orange theme
-    if (activityCount >= 20) return 'bg-orange-600'; // Very high activity
-    if (activityCount >= 15) return 'bg-orange-500'; // High activity
-    if (activityCount >= 10) return 'bg-orange-400'; // Medium-high activity
-    if (activityCount >= 5) return 'bg-orange-300';  // Medium activity
+    // GitHub-style intensity levels with orange theme - more contrast
+    if (activityCount >= 20) return 'bg-orange-700'; // Very high activity
+    if (activityCount >= 15) return 'bg-orange-600'; // High activity
+    if (activityCount >= 10) return 'bg-orange-500'; // Medium-high activity
+    if (activityCount >= 5) return 'bg-orange-400';  // Medium activity
     if (activityCount >= 1) return 'bg-orange-200';  // Low activity
     
-    return theme === 'dark' ? 'bg-gray-800' : 'bg-gray-100';
+    return theme === 'dark' ? 'bg-gray-700' : 'bg-gray-200';
   };
 
   // Transform data - simplified for daily view only
@@ -72,16 +72,12 @@ const TransactionActivity: React.FC<TransactionActivityProps> = ({
     return transactionActivity;
   }, [transactionActivity]);
 
-  // Always keep chronological order for the heatmap grid
+  // Always keep chronological order for the heatmap grid (GitHub-style)
   const chronologicalActivity = useMemo(() => {
     return [...transformedActivity].sort((a, b) => {
-      if (sortBy === 'date') {
-        return a.week - b.week || a.day - b.day;
-      } else {
-        return (b.activityCount || 0) - (a.activityCount || 0);
-      }
+      return a.week - b.week || a.day - b.day;
     });
-  }, [transformedActivity, sortBy]);
+  }, [transformedActivity]);
 
   // Debug logging for chronological activity
   console.log('TransactionActivity Component - Chronological Activity:', {
@@ -145,10 +141,10 @@ const TransactionActivity: React.FC<TransactionActivityProps> = ({
 
   return (
     <div className="w-full mb-8">
-      <div className={`rounded-lg border p-4 ${
+      <div className={`rounded-2xl border p-6 ${
         theme === 'dark' 
-          ? 'bg-gray-900 border-gray-700' 
-          : 'bg-white border-gray-200'
+          ? 'bg-gray-800/50 border-gray-700' 
+          : 'bg-gray-50 border-gray-200'
       }`}>
         <div className="flex items-center justify-between mb-4">
           <h5 className={`text-lg font-semibold ${
@@ -188,49 +184,51 @@ const TransactionActivity: React.FC<TransactionActivityProps> = ({
               </button>
             </div>
             
-            {/* Sort Dropdown */}
-            <div className="relative" ref={dropdownRef}>
-              <button
-                onClick={() => setShowSortDropdown(!showSortDropdown)}
-                className={`flex items-center space-x-2 px-3 py-2 text-sm rounded-lg border transition-colors ${
-                  theme === 'dark' 
-                    ? 'bg-gray-700 border-gray-600 text-gray-300 hover:bg-gray-600' 
-                    : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
-                }`}
-              >
-                <span>{sortOptions.find(opt => opt.value === sortBy)?.label}</span>
-                <ChevronDown className={`w-4 h-4 transition-transform ${showSortDropdown ? 'rotate-180' : ''}`} />
-              </button>
-              
-              {showSortDropdown && (
-                <div className={`absolute right-0 top-full mt-1 py-2 rounded-lg border shadow-lg z-10 min-w-[160px] ${
-                  theme === 'dark' 
-                    ? 'bg-gray-700 border-gray-600' 
-                    : 'bg-white border-gray-300'
-                }`}>
-                  {sortOptions.map((option) => (
-                    <button
-                      key={option.value}
-                      onClick={() => {
-                        setSortBy(option.value as SortOption);
-                        setShowSortDropdown(false);
-                      }}
-                      className={`w-full text-left px-4 py-2 text-sm transition-colors ${
-                        sortBy === option.value
-                          ? theme === 'dark' 
-                            ? 'bg-orange-600 text-white' 
-                            : 'bg-orange-100 text-orange-700'
-                          : theme === 'dark'
-                            ? 'text-gray-300 hover:bg-gray-600'
-                            : 'text-gray-700 hover:bg-gray-50'
-                      }`}
-                    >
-                      {option.label}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
+            {/* Sort Dropdown - Only show for list view */}
+            {viewMode === 'list' && (
+              <div className="relative" ref={dropdownRef}>
+                <button
+                  onClick={() => setShowSortDropdown(!showSortDropdown)}
+                  className={`flex items-center space-x-2 px-3 py-2 text-sm rounded-lg border transition-colors ${
+                    theme === 'dark' 
+                      ? 'bg-gray-700 border-gray-600 text-gray-300 hover:bg-gray-600' 
+                      : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
+                  }`}
+                >
+                  <span>{sortOptions.find(opt => opt.value === sortBy)?.label}</span>
+                  <ChevronDown className={`w-4 h-4 transition-transform ${showSortDropdown ? 'rotate-180' : ''}`} />
+                </button>
+                
+                {showSortDropdown && (
+                  <div className={`absolute right-0 top-full mt-1 py-2 rounded-lg border shadow-lg z-10 min-w-[160px] ${
+                    theme === 'dark' 
+                      ? 'bg-gray-700 border-gray-600' 
+                      : 'bg-white border-gray-300'
+                  }`}>
+                    {sortOptions.map((option) => (
+                      <button
+                        key={option.value}
+                        onClick={() => {
+                          setSortBy(option.value as SortOption);
+                          setShowSortDropdown(false);
+                        }}
+                        className={`w-full text-left px-4 py-2 text-sm transition-colors ${
+                          sortBy === option.value
+                            ? theme === 'dark' 
+                              ? 'bg-orange-600 text-white' 
+                              : 'bg-orange-100 text-orange-700'
+                            : theme === 'dark'
+                              ? 'text-gray-300 hover:bg-gray-600'
+                              : 'text-gray-700 hover:bg-gray-50'
+                        }`}
+                      >
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
@@ -264,11 +262,17 @@ const TransactionActivity: React.FC<TransactionActivityProps> = ({
                   <>
                     <div className="w-full overflow-hidden mb-2 flex flex-row items-start">
                       {/* GitHub-style Vertical labels */}
-                      <div className="flex flex-col justify-between h-full mr-3 min-w-[32px]">
-                        {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(day => (
-                          <span key={day} className={`text-xs h-3 leading-3 my-0.5 flex-1 ${
-                            theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
-                          }`}>{day}</span>
+                      <div className="mr-3 min-w-[32px] grid grid-rows-[repeat(7,1fr)] h-[120px] gap-2">
+                        {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day, index) => (
+                          <div 
+                            key={day} 
+                            className={`flex items-center justify-center ${
+                              theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
+                            }`}
+                            style={{ gridRow: index + 1 }}
+                          >
+                            <span className="text-xs">{day}</span>
+                          </div>
                         ))}
                       </div>
                       {/* Heatmap grid - GitHub-style */}
@@ -390,10 +394,10 @@ const TransactionActivity: React.FC<TransactionActivityProps> = ({
             <span>Less</span>
             <div className="flex space-x-1">
               <div className="w-4 h-4 rounded-sm bg-orange-200 border border-gray-200"></div>
-              <div className="w-4 h-4 rounded-sm bg-orange-300 border border-gray-200"></div>
               <div className="w-4 h-4 rounded-sm bg-orange-400 border border-gray-200"></div>
               <div className="w-4 h-4 rounded-sm bg-orange-500 border border-gray-200"></div>
               <div className="w-4 h-4 rounded-sm bg-orange-600 border border-gray-200"></div>
+              <div className="w-4 h-4 rounded-sm bg-orange-700 border border-gray-200"></div>
             </div>
             <span>More</span>
           </div>
