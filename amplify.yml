@@ -19,6 +19,9 @@ frontend:
       commands:
         - echo "Building the application for AWS Amplify..."
         - npm run build
+        - echo "Ensuring _redirects file is in place..."
+        - ls -la dist/ || echo "dist directory not found"
+        - ls -la dist/_redirects || echo "_redirects file not found in dist"
         - echo "Build completed successfully"
     postBuild:
       commands:
@@ -29,6 +32,8 @@ frontend:
     baseDirectory: dist
     files:
       - '**/*'
+    # Ensure _redirects file is copied to the root
+    discard-paths: no
   cache:
     paths:
       - node_modules/**/*
