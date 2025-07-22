@@ -7,6 +7,7 @@ import { organizations } from './organizations';
 import { crypto } from './crypto';
 import { subscription } from './subscription';
 import { contactSales } from './contactSales';
+import { socialMedia } from './socialMedia';
 import { storage } from '../utils/storage';
 
 const BASE_URL = process.env.NODE_ENV === 'production' ? 'https://api.blockscout.ai/api/v1' : 'http://localhost:8004/api/v1';
@@ -31,6 +32,7 @@ export const api = {
   crypto,
   organizations,
   sot,
+  socialMedia,
   subscription,
   users,
 };

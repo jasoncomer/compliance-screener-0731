@@ -12,7 +12,7 @@ import {
   EntityDetails,
   RiskScoreModal
 } from './components';
-import TwitterTimeline from './components/entity-intelligence/TwitterTimeline';
+import SocialMediaFeed from './components/entity-intelligence/SocialMediaFeed';
 import { AddressSummary } from './components/AddressSummary';
 import AddressHeader from './components/address/AddressHeader';
 import { useAddressTransactions } from '../../hooks/useAddressTransactions';
@@ -249,13 +249,13 @@ const RiskDashboard: React.FC = () => {
     return attribution?.entity || attribution?.bo || attribution?.custodian;
   };
 
-  // Get Twitter handle for the entity
-  const getTwitterHandle = () => {
-    const entityId = getEntityFromAddress();
-    if (!entityId) return '';
-    const entity = Object.values(itemsMap).find(sot => sot.entity_id === entityId);
-    return entity?.contact_twitter || '';
-  };
+  // Get Twitter handle for the entity (no longer used - replaced by SocialMediaFeed)
+  // const getTwitterHandle = () => {
+  //   const entityId = getEntityFromAddress();
+  //   if (!entityId) return '';
+  //   const entity = Object.values(itemsMap).find(sot => sot.entity_id === entityId);
+  //   return entity?.contact_twitter || '';
+  // };
 
   // Entity helper functions
   const getEntityType = (entityId: string) => {
@@ -543,7 +543,7 @@ const RiskDashboard: React.FC = () => {
   // Get primary entity and tags
   const primaryEntityId = getEntityFromAddress();
   const entityTags = primaryEntityId ? getEntityTags(primaryEntityId) : [];
-  const twitterHandle = getTwitterHandle();
+  // const twitterHandle = getTwitterHandle(); // Removed - no longer used
 
   // Check if we have data to display (only when hasData is true)
   const shouldShowData = hasData && address && !isLoadingAnyData && (counterpartyTransactionData || addressSummaryData || addressBlockStatsData);
@@ -705,9 +705,9 @@ const RiskDashboard: React.FC = () => {
             </div>
             
             <div className="rounded-2xl border p-6 bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700">
-              <TwitterTimeline 
-                username={twitterHandle}
-                title="Twitter Feed"
+              <SocialMediaFeed 
+                address={address}
+                title="Social Media & News Feed"
               />
             </div>
           </div>
