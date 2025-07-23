@@ -71,7 +71,7 @@ const SocialMediaFeed: React.FC<SocialMediaFeedProps> = ({
   };
 
   const TweetCard: React.FC<{ tweet: Tweet }> = ({ tweet }) => (
-    <div className={`p-4 rounded-lg border mb-3 ${
+    <div className={`p-2 rounded-md border mb-3 ${
       theme === 'dark' 
         ? 'bg-gray-700/50 border-gray-600 hover:bg-gray-700' 
         : 'bg-white border-gray-200 hover:bg-gray-50'
@@ -87,36 +87,19 @@ const SocialMediaFeed: React.FC<SocialMediaFeedProps> = ({
             <span className={`font-semibold text-sm ${
               theme === 'dark' ? 'text-white' : 'text-gray-900'
             }`}>
-              {tweet.userDisplayName || tweet.username}
+              @{tweet.userDisplayName || tweet.username}
             </span>
-            <span className={`text-xs ${
-              theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
-            }`}>
-              @{tweet.username}
-            </span>
-            <span className={`text-xs ${
-              theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
-            }`}>
-              {formatDate(tweet.date)}
-            </span>
-          </div>
+              </div>
           <p className={`text-sm mb-2 ${
             theme === 'dark' ? 'text-gray-200' : 'text-gray-700'
           }`}>
             {truncateText(tweet.content)}
           </p>
-          <div className="flex items-center space-x-4 text-xs">
-            {tweet.retweetCount !== undefined && (
-              <span className={theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}>
-                🔄 {tweet.retweetCount}
-              </span>
-            )}
-            {tweet.likeCount !== undefined && (
-              <span className={theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}>
-                ❤️ {tweet.likeCount}
-              </span>
-            )}
-          </div>
+            <span className={`text-xs ${
+              theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
+            }`}>
+              {formatDate(tweet.date)}
+            </span>
           <a 
             href={tweet.url} 
             target="_blank" 
@@ -125,7 +108,7 @@ const SocialMediaFeed: React.FC<SocialMediaFeedProps> = ({
               theme === 'dark' ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-700'
             } hover:underline mt-2 inline-block`}
           >
-            View Tweet →
+          View Tweet →
           </a>
         </div>
       </div>
