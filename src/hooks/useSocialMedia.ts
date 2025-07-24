@@ -1,17 +1,17 @@
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../api/api';
-import { SocialMediaResponse } from '../api/socialMedia';
+import { NewsResponse } from '../api/socialMedia';
 
-// Query keys for social media data
+// Query keys for news data
 export const socialMediaQueryKeys = {
   all: ['socialMedia'] as const,
   address: (address: string) => [...socialMediaQueryKeys.all, 'address', address] as const,
   mentions: (searchTerm: string, context: string) => [...socialMediaQueryKeys.all, 'mentions', searchTerm, context] as const,
 };
 
-// Hook for fetching social media data for an address
+// Hook for fetching news data for an address
 export const useSocialMediaData = (address: string) => {
-  return useQuery<SocialMediaResponse>({
+  return useQuery<NewsResponse>({
     queryKey: socialMediaQueryKeys.address(address),
     queryFn: async () => {
       console.log('useSocialMediaData - Fetching data for address:', address);
