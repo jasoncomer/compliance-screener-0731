@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { BarChart3, AlertCircle, Loader2 } from 'lucide-react';
 import SearchInput from '../../components/common/SearchInput';
 import EmptyState from '../../components/common/EmptyState';
@@ -13,7 +13,7 @@ import {
   EntityDetails,
   RiskScoreModal
 } from './components';
-import TwitterTimeline from './components/entity-intelligence/TwitterTimeline';
+import SocialMediaFeed from './components/entity-intelligence/SocialMediaFeed';
 import { AddressSummary } from './components/AddressSummary';
 import AddressHeader from './components/address/AddressHeader';
 import { useAddressTransactions } from '../../hooks/useAddressTransactions';
@@ -38,6 +38,9 @@ const RiskDashboard: React.FC = () => {
   const [address, setAddress] = useState(''); // Start with empty address
   const [searchValue, setSearchValue] = useState('');
   const [riskScoreModalVisible, setRiskScoreModalVisible] = useState(false);
+  const [entityDetailsHeight, setEntityDetailsHeight] = useState<number | undefined>(undefined);
+  const entityDetailsRef = useRef<HTMLDivElement>(null);
+  const resizeObserverRef = useRef<ResizeObserver | null>(null);
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
 
   // React Query hooks - Fetch more transactions for activity analysis
@@ -191,26 +194,18 @@ const RiskDashboard: React.FC = () => {
     }
 
     const totalTxns = counterpartyTransactionData?.pagination?.totalTxs || 0;
-    const totalVolume = addressSummaryData.total_received || 0;
+    const totalVolume = addressSummaryData.total_received ? addressSummaryData.total_received / 100000000 : 0; // Convert satoshis to BTC
     const firstSeen = addressBlockStatsData.firstBlock?.blockNumber?.toString() || '';
     const lastSeen = addressBlockStatsData.lastBlock?.blockNumber?.toString() || '';
     const avgTxSize = totalTxns > 0 ? totalVolume / totalTxns : 0;
 
-    // Calculate input, output, and balance from transaction data
-    let inputAmount = 0;
-    let outputAmount = 0;
+    // Use data from block explorer API instead of calculating from transactions
+    const inputAmount = addressSummaryData.total_received ? addressSummaryData.total_received / 100000000 : 0; // Convert satoshis to BTC
+    const outputAmount = addressSummaryData.total_spent ? addressSummaryData.total_spent / 100000000 : 0; // Convert satoshis to BTC
+    const balance = addressSummaryData.balance ? addressSummaryData.balance / 100000000 : 0; // Convert satoshis to BTC
     let topCounterparty = 'N/A';
 
     if (transformedTransactions.length > 0) {
-      // Calculate input and output amounts
-      transformedTransactions.forEach(tx => {
-        if (tx.type === 'in') {
-          inputAmount += tx.value;
-        } else if (tx.type === 'out') {
-          outputAmount += tx.value;
-        }
-      });
-
       // Find top counterparty (highest transaction volume)
       const counterpartyVolumes: { [key: string]: number } = {};
       const counterpartyCounts: { [key: string]: number } = {};
@@ -235,9 +230,6 @@ const RiskDashboard: React.FC = () => {
       }
     }
 
-    // Calculate balance (input - output)
-    const balance = inputAmount - outputAmount;
-
     return {
       totalTransactions: totalTxns,
       totalVolume: totalVolume, // Keep in BTC
@@ -258,13 +250,13 @@ const RiskDashboard: React.FC = () => {
     return attribution?.entity || attribution?.bo || attribution?.custodian;
   };
 
-  // Get Twitter handle for the entity
-  const getTwitterHandle = () => {
-    const entityId = getEntityFromAddress();
-    if (!entityId) return '';
-    const entity = itemsMap[entityId];
-    return entity?.contact_twitter || '';
-  };
+  // Restore handleResize and related logic
+  const handleResize = useCallback(() => {
+    if (entityDetailsRef.current) {
+      const newHeight = entityDetailsRef.current.offsetHeight;
+      setEntityDetailsHeight(prev => (prev !== newHeight ? newHeight : prev));
+    }
+  }, []);
 
   // Entity helper functions
   const getEntityType = (entityId: string) => {
@@ -601,6 +593,23 @@ const RiskDashboard: React.FC = () => {
     return result;
   }, [activityTransactionData?.txs, counterpartyTransactionData?.txs, address, selectedYear]);
 
+  // Get primary entity and tags (single declaration)
+  const primaryEntityId = React.useMemo(() => getEntityFromAddress(), [attributions, address]);
+  const entityTags = React.useMemo(() => primaryEntityId ? getEntityTags(primaryEntityId) : [], [primaryEntityId, itemsMap]);
+
+  useEffect(() => {
+    if (!entityDetailsRef.current) return;
+    handleResize();
+    resizeObserverRef.current = new (window as any).ResizeObserver(handleResize);
+    resizeObserverRef.current!.observe(entityDetailsRef.current);
+    return () => {
+      if (resizeObserverRef.current) {
+        resizeObserverRef.current.disconnect();
+        resizeObserverRef.current = null;
+      }
+    };
+  }, [primaryEntityId, handleResize]);
+
   // Generate funds flow data from real transaction data
   const fundsFlowData = React.useMemo(() => {
     if (!transformedTransactions.length) {
@@ -656,11 +665,6 @@ const RiskDashboard: React.FC = () => {
 
     return { incoming: incomingData, outgoing: outgoingData };
   }, [transformedTransactions, attributions, btcPrice, itemsMap]);
-
-  // Get primary entity and tags
-  const primaryEntityId = React.useMemo(() => getEntityFromAddress(), [attributions, address]);
-  const entityTags = React.useMemo(() => primaryEntityId ? getEntityTags(primaryEntityId) : [], [primaryEntityId, itemsMap]);
-  const twitterHandle = React.useMemo(() => getTwitterHandle(), [primaryEntityId, itemsMap]);
 
   // Check if we have data to display (only when hasData is true)
   const shouldShowData = React.useMemo(() => 
@@ -819,8 +823,8 @@ const RiskDashboard: React.FC = () => {
           )}
 
           {/* Entity Details and Twitter Timeline - Two Columns */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="rounded-2xl border p-6 bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+            <div ref={entityDetailsRef} className="rounded-2xl border p-6 bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700">
               <EntityDetails 
                 name={primaryEntityId ? (itemsMap[primaryEntityId]?.proper_name || primaryEntityId) : "Unknown Entity"}
                 type={primaryEntityId ? getEntityType(primaryEntityId) : "Unknown"}
@@ -854,10 +858,10 @@ const RiskDashboard: React.FC = () => {
               />
             </div>
             
-            <div className="rounded-2xl border p-6 bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700">
-              <TwitterTimeline 
-                username={twitterHandle}
-                title="Twitter Feed"
+            <div className="rounded-2xl border p-6 bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700" style={entityDetailsHeight ? { height: entityDetailsHeight } : {}}>
+              <SocialMediaFeed 
+                address={address}
+                title="Social Media & News Feed"
               />
             </div>
           </div>
