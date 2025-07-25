@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { BarChart3, AlertCircle, Loader2 } from 'lucide-react';
 import SearchInput from '../../components/common/SearchInput';
 import EmptyState from '../../components/common/EmptyState';
@@ -36,6 +36,8 @@ const RiskDashboard: React.FC = () => {
   const [address, setAddress] = useState('');
   const [searchValue, setSearchValue] = useState('');
   const [riskScoreModalVisible, setRiskScoreModalVisible] = useState(false);
+  const [entityDetailsHeight, setEntityDetailsHeight] = useState<number | undefined>(undefined);
+  const entityDetailsRef = useRef<HTMLDivElement>(null);
 
   // React Query hooks
   const { data: counterpartyTransactionData, isLoading: isLoadingTransactions, error: transactionError } = useAddressTransactions(address, 1, 100); // For counterparty analysis
@@ -488,6 +490,23 @@ const RiskDashboard: React.FC = () => {
     }).reverse(); // Reverse to show oldest to newest
   }, [transformedTransactions]);
 
+  // Get primary entity and tags
+  const primaryEntityId = getEntityFromAddress();
+  const entityTags = primaryEntityId ? getEntityTags(primaryEntityId) : [];
+
+  useEffect(() => {
+    if (!entityDetailsRef.current) return;
+    const handleResize = () => {
+      if (entityDetailsRef.current) {
+        setEntityDetailsHeight(entityDetailsRef.current.offsetHeight);
+      }
+    };
+    handleResize();
+    const resizeObserver = new (window as any).ResizeObserver(handleResize);
+    resizeObserver.observe(entityDetailsRef.current);
+    return () => resizeObserver.disconnect();
+  }, [primaryEntityId]);
+
   // Generate funds flow data from real transaction data
   const fundsFlowData = React.useMemo(() => {
     if (!transformedTransactions.length) {
@@ -539,11 +558,6 @@ const RiskDashboard: React.FC = () => {
 
     return { incoming: incomingData, outgoing: outgoingData };
   }, [transformedTransactions, attributions, btcPrice, getEntityDisplayName]);
-
-  // Get primary entity and tags
-  const primaryEntityId = getEntityFromAddress();
-  const entityTags = primaryEntityId ? getEntityTags(primaryEntityId) : [];
-  // const twitterHandle = getTwitterHandle(); // Removed - no longer used
 
   // Check if we have data to display (only when hasData is true)
   const shouldShowData = hasData && address && !isLoadingAnyData && (counterpartyTransactionData || addressSummaryData || addressBlockStatsData);
@@ -669,8 +683,8 @@ const RiskDashboard: React.FC = () => {
           )}
 
           {/* Entity Details and Twitter Timeline - Two Columns */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="rounded-2xl border p-6 bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+            <div ref={entityDetailsRef} className="rounded-2xl border p-6 bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700">
               <EntityDetails 
                 name={primaryEntityId ? getEntityDisplayName(primaryEntityId) : "Unknown Entity"}
                 type={primaryEntityId ? getEntityType(primaryEntityId) : "Unknown"}
@@ -708,6 +722,7 @@ const RiskDashboard: React.FC = () => {
               <SocialMediaFeed 
                 address={address}
                 title="Social Media & News Feed"
+                maxHeight={entityDetailsHeight}
               />
             </div>
           </div>
