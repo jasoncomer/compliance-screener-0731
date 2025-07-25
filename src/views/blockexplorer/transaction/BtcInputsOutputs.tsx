@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import styled from 'styled-components';
 import { colors } from '../../../styles/variables';
@@ -11,6 +11,7 @@ import { RootState } from '../../../store/store';
 import { satsToBTC, truncateAddress } from '../../../utils/crypto';
 import { BtcTransaction } from '../../../typings/BtcTransaction';
 import { useAttribution } from '../../../context/AttributionContext';
+import EntityQuickView from '../../../components/EntityQuickView';
 
 
 interface BtcInputsOutputsProps {
@@ -35,8 +36,8 @@ const Wrapper = styled.div`
   }
   .row-container {
     display: grid;
-    grid-template-columns: minmax(300px, 2fr) minmax(200px, 1fr) minmax(120px, 1fr) minmax(120px, 1fr);
-    gap: 16px;
+    grid-template-columns: minmax(300px, 2fr) minmax(180px, 1fr) minmax(100px, 1fr) minmax(120px, 1fr);
+    gap: 8px;
     align-items: center;
     padding: 2px 0;
     width: 100%;
@@ -63,8 +64,9 @@ const Wrapper = styled.div`
     }
   }
   .address.highlighted {
-    color: white;
+    color: hsl(var(--foreground));
     text-decoration: none;
+    font-weight: 600;
   }
   .address-container {
     display: flex;
@@ -161,7 +163,6 @@ const Wrapper = styled.div`
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    margin-left: 38px;
   }
   .cospend-id {
     min-width: 150px;
@@ -174,7 +175,6 @@ const Wrapper = styled.div`
     font-family: monospace;
     color: ${colors.gray[600]};
     text-align: left;
-    margin-left: 50px;
   }
   .amount {
     font-family: monospace;
@@ -285,9 +285,6 @@ const BtcInputsOutputs: React.FC<BtcInputsOutputsProps> = ({ data, type }) => {
   const [isTooltipHovered, setIsTooltipHovered] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
   const [tooltipPosition, setTooltipPosition] = useState({ top: 0, left: 0 });
-  const [hoveredEntityId, setHoveredEntityId] = useState<string | null>(null);
-  const [isEntityTooltipHovered, setIsEntityTooltipHovered] = useState(false);
-  const [entityTooltipPosition, setEntityTooltipPosition] = useState({ top: 0, left: 0 });
   const organization = useSelector(selectCurrentOrganization);
 
   const { itemsMap } = useSelector((state: RootState) => state.sot);
@@ -321,17 +318,6 @@ const BtcInputsOutputs: React.FC<BtcInputsOutputsProps> = ({ data, type }) => {
       });
   };
 
-  const copyEntityId = (entityId: string) => {
-    navigator.clipboard.writeText(entityId)
-      .then(() => {
-        setCopySuccess(true);
-        setTimeout(() => setCopySuccess(false), 2000);
-      })
-      .catch(err => {
-        console.error('Failed to copy entity ID: ', err);
-      });
-  };
-
   // Handle mouse leave for both address and tooltip
   const handleMouseLeave = () => {
     // Use a small timeout to prevent tooltip from disappearing when moving between address and tooltip
@@ -351,37 +337,12 @@ const BtcInputsOutputs: React.FC<BtcInputsOutputsProps> = ({ data, type }) => {
     setHoveredAddress(address);
   };
 
-  // Handle mouse leave for entity ID tooltip
-  const handleEntityMouseLeave = () => {
-    setTimeout(() => {
-      if (!isEntityTooltipHovered) {
-        setHoveredEntityId(null);
-      }
-    }, 100);
-  };
-
-  const handleEntityMouseEnter = (entityId: string, event: React.MouseEvent<HTMLSpanElement>) => {
-    const rect = event.currentTarget.getBoundingClientRect();
-    setEntityTooltipPosition({
-      top: rect.top - 10,
-      left: rect.left + (rect.width / 2)
-    });
-    setHoveredEntityId(entityId);
-  };
-
   // Function to format entity ID with truncation if needed
   const formatEntityId = (entityId: string | undefined, bo: string | undefined) => {
     if (!entityId) return '-';
     // If beneficial owner exists and is different from entity, show that instead
     const displayId = (bo && bo !== entityId) ? bo : entityId;
     return displayId.length > 42 ? truncateAddress(displayId) : displayId;
-  };
-
-  // Check if entity ID is truncated
-  const isEntityIdTruncated = (entityId: string | undefined, bo: string | undefined) => {
-    if (!entityId) return false;
-    const displayId = (bo && bo !== entityId) ? bo : entityId;
-    return displayId.length > 42;
   };
 
   const getEntityDisplayName = (entityId: string) => {
@@ -400,6 +361,24 @@ const BtcInputsOutputs: React.FC<BtcInputsOutputsProps> = ({ data, type }) => {
     return entity?.proper_name || entityId;
   };
 
+  // Function to get SOT data for an entity
+  const getEntitySot = (entityId: string) => {
+    if (!entityId) return null;
+    return Object.values(itemsMap).find(sot => sot.entity_id === entityId) || null;
+  };
+
+  // Handle view full profile
+  const handleViewFullProfile = (sot: any) => {
+    // Navigate to VASP Explorer with the entity
+    window.open(`/home/blockham?entity=${sot.entity_id}`, '_blank');
+  };
+
+  // Handle quick view click
+  const handleQuickView = (e: React.MouseEvent, _entityId: string) => {
+    e.stopPropagation();
+    // The EntityQuickView component handles the quick view display
+  };
+
   return (
     <Wrapper>
       {displayData.map((
@@ -409,10 +388,10 @@ const BtcInputsOutputs: React.FC<BtcInputsOutputsProps> = ({ data, type }) => {
         const entityDisplayName = getEntityDisplayName(attributions[item.addr]?.entity);
         const boDisplayName = getEntityDisplayName(attributions[item.addr]?.bo);
         const shouldShowBO = attributions[item.addr]?.bo && attributions[item.addr]?.bo !== attributions[item.addr]?.entity;
-        const titleText = shouldShowBO ? boDisplayName : entityDisplayName || '-';
+        const primaryEntityId = shouldShowBO ? attributions[item.addr]?.bo : attributions[item.addr]?.entity;
         const displayEntityId = formatEntityId(entityDisplayName, boDisplayName);
-        const isEntityTruncated = isEntityIdTruncated(entityDisplayName, boDisplayName);
         const scriptType = attributions[item.addr]?.script_type;
+        const sot = getEntitySot(primaryEntityId);
 
         return (
           <Row key={index} className="row-container">
@@ -424,14 +403,25 @@ const BtcInputsOutputs: React.FC<BtcInputsOutputsProps> = ({ data, type }) => {
               <BtcTxAddress address={item.addr} />
             </div>
 
-            <span
-              className="entity-id"
-              title={titleText}
-              onMouseEnter={(e) => isEntityTruncated && handleEntityMouseEnter(titleText, e)}
-              onMouseLeave={handleEntityMouseLeave}
-            >
-              {displayEntityId}
-            </span>
+            <div className="entity-id" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span title={shouldShowBO ? boDisplayName : entityDisplayName || '-'}>
+                {displayEntityId}
+              </span>
+              {sot && (
+                <EntityQuickView
+                  entity={{
+                    _id: sot._id,
+                    proper_name: sot.proper_name,
+                    entity_id: sot.entity_id
+                  }}
+                  sot={sot}
+                  onViewFull={handleViewFullProfile}
+                  onQuickView={handleQuickView}
+                  popoverPlacement="right"
+                  popoverWidth={450}
+                />
+              )}
+            </div>
 
             <span className="script-type">{scriptType || '-'}</span>
             <Amount className="amount">{renderAmt(item.amt)}</Amount>
@@ -466,35 +456,6 @@ const BtcInputsOutputs: React.FC<BtcInputsOutputsProps> = ({ data, type }) => {
               className="copy-button"
               onClick={() => copyCospendId(attributions[hoveredAddress].cospend_id || '')}
               title="Copy cospend ID"
-            >
-              {copySuccess ? '✓' : '⧉'}
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Entity ID Tooltip */}
-      {hoveredEntityId && (
-        <div
-          className="cospend-tooltip"
-          style={{
-            position: 'fixed',
-            top: `${entityTooltipPosition.top}px`,
-            left: `${entityTooltipPosition.left + 20}px`,
-            transform: 'translate(-50%, -100%)'
-          }}
-          onMouseEnter={() => setIsEntityTooltipHovered(true)}
-          onMouseLeave={() => {
-            setIsEntityTooltipHovered(false);
-            setHoveredEntityId(null);
-          }}
-        >
-          <div className="tooltip-content">
-            <span>Entity ID: {hoveredEntityId}</span>
-            <button
-              className="copy-button"
-              onClick={() => copyEntityId(hoveredEntityId)}
-              title="Copy entity ID"
             >
               {copySuccess ? '✓' : '⧉'}
             </button>

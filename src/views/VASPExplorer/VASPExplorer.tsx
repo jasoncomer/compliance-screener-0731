@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-
-import { Database } from 'lucide-react';  
+import { Database } from 'lucide-react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useSearchParams } from 'react-router-dom';
 
@@ -13,7 +12,6 @@ import { AppDispatch, RootState } from '../../store/store';
 import { fetchSOT } from '../../store/slices/sotSlice';
 import { fetchOrganizations, selectCurrentOrganization } from '../../store/slices/organizationsSlice';
 import { SOT } from '../../typings/interfaces';
-
 
 import { useDebounce } from '../../hooks/useDebounce';
 import { useEntitySearch, useSearchDropdown } from './hooks';
