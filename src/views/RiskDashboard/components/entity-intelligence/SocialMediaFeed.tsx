@@ -10,6 +10,7 @@ interface NewsArticle {
   published: string;
   source?: string;
   description?: string;
+  logoUrl?: string; // Add logoUrl for type safety
 }
 
 interface Tweet {
@@ -72,11 +73,21 @@ const NewsFeed: React.FC<NewsFeedProps> = ({
   const NewsCard: React.FC<{ article: NewsArticle }> = ({ article }) => (
     <div className="mb-4 pb-4 border-b border-gray-200 last:border-b-0">
       <div className="flex items-start space-x-3">
-        <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-          theme === 'dark' ? 'bg-green-600' : 'bg-green-500'
-        }`}>
-          <FileText className="text-white w-4 h-4" />
-        </div>
+        {article.logoUrl ? (
+          <img
+            src={article.logoUrl}
+            alt="News source logo"
+            className="w-8 h-8 rounded-full object-cover bg-white border"
+            style={{ minWidth: 32, minHeight: 32 }}
+            onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
+          />
+        ) : (
+          <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+            theme === 'dark' ? 'bg-green-600' : 'bg-green-500'
+          }`}>
+            <FileText className="text-white w-4 h-4" />
+          </div>
+        )}
         <div className="flex-1 min-w-0">
           <div className="flex items-center space-x-2 mb-1">
             <span className={`font-semibold text-sm ${
