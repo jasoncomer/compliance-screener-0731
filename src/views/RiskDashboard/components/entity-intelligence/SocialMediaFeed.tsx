@@ -39,7 +39,7 @@ interface NewsFeedProps {
 const NewsFeed: React.FC<NewsFeedProps> = ({ 
   address,
   title = "News & Social Media Feed",
-  maxHeight
+  
 }) => {
   const { theme } = useTheme();
   const { data, isLoading: loading, error } = useSocialMediaData(address);
@@ -182,18 +182,19 @@ const NewsFeed: React.FC<NewsFeedProps> = ({
     </div>
   );
 
-  const FeedTab: React.FC<{ data: NewsData; maxHeight?: number }> = ({ data, maxHeight }) => {
+  const FeedTab: React.FC<{ data: NewsData; maxHeight?: number }> = ({ data }) => {
+    // Show only first 4 news items initially
     return (
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full w-full">
         {/* Latest Tweets Column */}
-        <div className="flex flex-col border rounded-lg overflow-hidden">
+        <div className="flex flex-col border rounded-lg overflow-hidden h-full w-full">
           <h4 className={`font-semibold text-sm p-3 border-b flex-shrink-0 flex items-center ${
             theme === 'dark' ? 'text-white border-gray-600 bg-gray-800' : 'text-gray-900 border-gray-200 bg-gray-50'
           }`}>
             <Twitter className="w-4 h-4 mr-2" />
             Latest Tweets ({data.tweets.length})
           </h4>
-          <div className="flex-1 overflow-y-auto overflow-x-hidden p-3 min-h-0" style={maxHeight ? { maxHeight: maxHeight - 56 - 48 - 16 - 12 } : {}}>
+          <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden p-3">
             {/* 56px = h4 header height (p-3 + border), 48px = container padding (p-6 top + p-6 bottom), 16px = title mb-4, 12px = filter mb-3 */}
             {data.tweets.length === 0 ? (
               <div className={`text-center py-8 ${
@@ -213,14 +214,14 @@ const NewsFeed: React.FC<NewsFeedProps> = ({
         </div>
 
         {/* Latest News Column */}
-        <div className="flex flex-col border rounded-lg overflow-hidden">
+        <div className="flex flex-col border rounded-lg overflow-hidden h-full w-full">
           <h4 className={`font-semibold text-sm p-3 border-b flex-shrink-0 flex items-center ${
             theme === 'dark' ? 'text-white border-gray-600 bg-gray-800' : 'text-gray-900 border-gray-200 bg-gray-50'
           }`}>
             <Globe className="w-4 h-4 mr-2" />
             Latest News ({data.news.length})
           </h4>
-          <div className="flex-1 overflow-y-auto overflow-x-hidden p-3 min-h-0" style={maxHeight ? { maxHeight: maxHeight - 56 - 48 - 16 - 12 } : {}}>
+          <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden p-3">
             {/* 56px = h4 header height (p-3 + border), 48px = container padding (p-6 top + p-6 bottom), 16px = title mb-4, 12px = filter mb-3 */}
             {data.news.length === 0 ? (
               <div className={`text-center py-8 ${
@@ -340,9 +341,9 @@ const NewsFeed: React.FC<NewsFeedProps> = ({
   }
 
   return (
-    <div>
-      <div className="mb-4">
-        <div className="flex items-center justify-between mb-3">
+    <div className="h-full w-full">
+      <div className="h-full w-full flex flex-col">
+        <div className="flex items-center justify-between mb-3 flex-shrink-0">
           <h3 className={`font-semibold ${
             theme === 'dark' ? 'text-white' : 'text-gray-900'
           }`}>
@@ -373,19 +374,18 @@ const NewsFeed: React.FC<NewsFeedProps> = ({
             ))}
           </div>
         </div>
-      </div>
-
-      <div>
-        {filteredData ? (
-          <FeedTab data={filteredData} maxHeight={maxHeight} />
-        ) : (
-          <div className={`text-center py-8 ${
-            theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
-          }`}>
-            <Globe className="w-12 h-12 mx-auto mb-3 opacity-50" />
-            <p>No news data available</p>
-          </div>
-        )}
+        <div className="flex-1 min-h-0">
+          {filteredData ? (
+            <FeedTab data={filteredData} />
+          ) : (
+            <div className={`text-center py-8 ${
+              theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
+            }`}>
+              <Globe className="w-12 h-12 mx-auto mb-3 opacity-50" />
+              <p>No news data available</p>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

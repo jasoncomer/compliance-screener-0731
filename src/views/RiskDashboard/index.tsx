@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { BarChart3, AlertCircle, Loader2 } from 'lucide-react';
 import SearchInput from '../../components/common/SearchInput';
 import EmptyState from '../../components/common/EmptyState';
@@ -38,6 +38,14 @@ const RiskDashboard: React.FC = () => {
   const [riskScoreModalVisible, setRiskScoreModalVisible] = useState(false);
   const [entityDetailsHeight, setEntityDetailsHeight] = useState<number | undefined>(undefined);
   const entityDetailsRef = useRef<HTMLDivElement>(null);
+  const resizeObserverRef = useRef<ResizeObserver | null>(null);
+
+  const handleResize = useCallback(() => {
+    if (entityDetailsRef.current) {
+      const newHeight = entityDetailsRef.current.offsetHeight;
+      setEntityDetailsHeight(prev => (prev !== newHeight ? newHeight : prev));
+    }
+  }, []);
 
   // React Query hooks
   const { data: counterpartyTransactionData, isLoading: isLoadingTransactions, error: transactionError } = useAddressTransactions(address, 1, 100); // For counterparty analysis
@@ -496,16 +504,16 @@ const RiskDashboard: React.FC = () => {
 
   useEffect(() => {
     if (!entityDetailsRef.current) return;
-    const handleResize = () => {
-      if (entityDetailsRef.current) {
-        setEntityDetailsHeight(entityDetailsRef.current.offsetHeight);
+    handleResize();
+    resizeObserverRef.current = new (window as any).ResizeObserver(handleResize);
+    resizeObserverRef.current!.observe(entityDetailsRef.current);
+    return () => {
+      if (resizeObserverRef.current) {
+        resizeObserverRef.current.disconnect();
+        resizeObserverRef.current = null;
       }
     };
-    handleResize();
-    const resizeObserver = new (window as any).ResizeObserver(handleResize);
-    resizeObserver.observe(entityDetailsRef.current);
-    return () => resizeObserver.disconnect();
-  }, [primaryEntityId]);
+  }, [primaryEntityId, handleResize]);
 
   // Generate funds flow data from real transaction data
   const fundsFlowData = React.useMemo(() => {
@@ -718,11 +726,10 @@ const RiskDashboard: React.FC = () => {
               />
             </div>
             
-            <div className="rounded-2xl border p-6 bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700">
+            <div className="rounded-2xl border p-6 bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700" style={entityDetailsHeight ? { height: entityDetailsHeight } : {}}>
               <SocialMediaFeed 
                 address={address}
                 title="Social Media & News Feed"
-                maxHeight={entityDetailsHeight}
               />
             </div>
           </div>
