@@ -51,7 +51,7 @@ const RiskDashboard: React.FC = () => {
   const { isLoading: isLoadingAddress, error: addressError } = useAddress(address);
   const { getPrice } = useCryptoPrices();
   const { riskScore, isLoading: isLoadingRiskScore, error: riskScoreError } = useRiskScore(address);
-  const btcPrice = getPrice('BTC') || 35000; // Default fallback price
+  const btcPrice = React.useMemo(() => getPrice('BTC') || 35000, [getPrice]); // Default fallback price
 
   // Attribution and SOT data hooks
   const { fetchAttributions, attributions } = useAttribution();
@@ -80,19 +80,16 @@ const RiskDashboard: React.FC = () => {
   const transformedTransactions: TransformedTransaction[] = React.useMemo(() => {
     if (!counterpartyTransactionData?.txs) return [];
     const transformed = transformBtcTransactions(counterpartyTransactionData.txs, address, btcPrice);
-    console.log('RiskDashboard - FIRST RAW TX:', counterpartyTransactionData.txs[0]);
-    console.log('RiskDashboard - ALL RAW TX COUNT:', counterpartyTransactionData.txs.length);
-    console.log('RiskDashboard - TRANSFORMED:', transformed);
     return transformed;
   }, [counterpartyTransactionData?.txs, address, btcPrice]);
 
 
 
   // Function to truncate addresses for display
-  const truncateAddress = (address: string, startLength: number = 6, endLength: number = 4) => {
+  const truncateAddress = useCallback((address: string, startLength: number = 6, endLength: number = 4) => {
     if (address.length <= startLength + endLength + 3) return address;
     return `${address.slice(0, startLength)}...${address.slice(-endLength)}`;
-  };
+  }, []);
 
   // Generate counterparty data from transaction history
   const counterpartyData = React.useMemo(() => {
@@ -244,11 +241,7 @@ const RiskDashboard: React.FC = () => {
     };
   }, [addressSummaryData, addressBlockStatsData, counterpartyTransactionData, isLoadingAddressSummary, isLoadingAddressBlockStats, transformedTransactions, attributions, itemsMap]);
 
-  // Get primary entity from address
-  const getEntityFromAddress = () => {
-    const attribution = attributions[address];
-    return attribution?.entity || attribution?.bo || attribution?.custodian;
-  };
+
 
   // Restore handleResize and related logic
   const handleResize = useCallback(() => {
@@ -259,42 +252,42 @@ const RiskDashboard: React.FC = () => {
   }, []);
 
   // Entity helper functions
-  const getEntityType = (entityId: string) => {
+  const getEntityType = useCallback((entityId: string) => {
     const entity = itemsMap[entityId];
     return entity?.entity_type ? getEntityTypeLabel(entity.entity_type as EEntityType) : 'Unknown';
-  };
+  }, [itemsMap]);
 
-  const getEntityLogo = (entityId: string) => {
+  const getEntityLogo = useCallback((entityId: string) => {
     const entity = itemsMap[entityId];
     return entity?.logo || '';
-  };
+  }, [itemsMap]);
 
-  const getEntityDescription = (entityId: string) => {
+  const getEntityDescription = useCallback((entityId: string) => {
     const entity = itemsMap[entityId];
     return entity?.description_merged || 'No description available';
-  };
+  }, [itemsMap]);
 
-  const getEntityWebsite = (entityId: string) => {
+  const getEntityWebsite = useCallback((entityId: string) => {
     const entity = itemsMap[entityId];
     return entity?.url || '';
-  };
+  }, [itemsMap]);
 
-  const getEntityPhone = (entityId: string) => {
+  const getEntityPhone = useCallback((entityId: string) => {
     const entity = itemsMap[entityId];
     return entity?.contact_phone || '';
-  };
+  }, [itemsMap]);
 
-  const getEntityAddress = (entityId: string) => {
+  const getEntityAddress = useCallback((entityId: string) => {
     const entity = itemsMap[entityId];
     return entity?.contact_address || '';
-  };
+  }, [itemsMap]);
 
-  const getEntityFounded = (entityId: string) => {
+  const getEntityFounded = useCallback((entityId: string) => {
     const entity = itemsMap[entityId];
     return entity?.year_founded ? parseInt(entity.year_founded) : 0;
-  };
+  }, [itemsMap]);
 
-  const getEntityCountries = (entityId: string) => {
+  const getEntityCountries = useCallback((entityId: string) => {
     const entity = itemsMap[entityId];
     if (!entity) return [];
     
@@ -306,9 +299,9 @@ const RiskDashboard: React.FC = () => {
       }
     }
     return countries;
-  };
+  }, [itemsMap]);
 
-  const getEntityTags = (entityId: string): string[] => {
+  const getEntityTags = useCallback((entityId: string): string[] => {
     const entity = itemsMap[entityId];
     if (!entity) return [];
     
@@ -321,55 +314,55 @@ const RiskDashboard: React.FC = () => {
       }
     }
     return tags;
-  };
+  }, [itemsMap]);
 
   // Additional entity helper functions
-  const getEntityEmail = (entityId: string) => {
+  const getEntityEmail = useCallback((entityId: string) => {
     const entity = itemsMap[entityId];
     return entity?.contact_email || '';
-  };
+  }, [itemsMap]);
 
-  const getEntityTwitter = (entityId: string) => {
+  const getEntityTwitter = useCallback((entityId: string) => {
     const entity = itemsMap[entityId];
     return entity?.contact_twitter || '';
-  };
+  }, [itemsMap]);
 
-  const getEntityTelegram = (entityId: string) => {
+  const getEntityTelegram = useCallback((entityId: string) => {
     const entity = itemsMap[entityId];
     return entity?.contact_telegram || '';
-  };
+  }, [itemsMap]);
 
-  const getEntityEnsAddress = (entityId: string) => {
+  const getEntityEnsAddress = useCallback((entityId: string) => {
     const entity = itemsMap[entityId];
     return entity?.ens_address || '';
-  };
+  }, [itemsMap]);
 
-  const getEntityLegalInfoUrl = (entityId: string) => {
+  const getEntityLegalInfoUrl = useCallback((entityId: string) => {
     const entity = itemsMap[entityId];
     return entity?.legal_info_url || '';
-  };
+  }, [itemsMap]);
 
-  const getEntityCeo = (entityId: string) => {
+  const getEntityCeo = useCallback((entityId: string) => {
     const entity = itemsMap[entityId];
     return entity?.ceo || '';
-  };
+  }, [itemsMap]);
 
-  const getEntityKeyPersonnel = (entityId: string) => {
+  const getEntityKeyPersonnel = useCallback((entityId: string) => {
     const entity = itemsMap[entityId];
     return entity?.key_personnel || '';
-  };
+  }, [itemsMap]);
 
-  const getEntityTicker = (entityId: string) => {
+  const getEntityTicker = useCallback((entityId: string) => {
     const entity = itemsMap[entityId];
     return entity?.ticker || '';
-  };
+  }, [itemsMap]);
 
-  const getEntityParentId = (entityId: string) => {
+  const getEntityParentId = useCallback((entityId: string) => {
     const entity = itemsMap[entityId];
     return entity?.parent_id || '';
-  };
+  }, [itemsMap]);
 
-  const getEntitySocialMediaProfiles = (entityId: string): string[] => {
+  const getEntitySocialMediaProfiles = useCallback((entityId: string): string[] => {
     const entity = itemsMap[entityId];
     if (!entity) return [];
     
@@ -381,57 +374,57 @@ const RiskDashboard: React.FC = () => {
       }
     }
     return profiles;
-  };
+  }, [itemsMap]);
 
-  const getEntityIsCentralized = (entityId: string): boolean | undefined => {
+  const getEntityIsCentralized = useCallback((entityId: string): boolean | undefined => {
     const entity = itemsMap[entityId];
     return entity?.centralized ?? undefined;
-  };
+  }, [itemsMap]);
 
-  const getEntityNoKycRequired = (entityId: string) => {
+  const getEntityNoKycRequired = useCallback((entityId: string) => {
     const entity = itemsMap[entityId];
     return entity?.no_kyc_req || false;
-  };
+  }, [itemsMap]);
 
-  const getEntityIsDead = (entityId: string) => {
+  const getEntityIsDead = useCallback((entityId: string) => {
     const entity = itemsMap[entityId];
     return entity?.dead || false;
-  };
+  }, [itemsMap]);
 
-  const getEntityIsOfacSanctioned = (entityId: string) => {
+  const getEntityIsOfacSanctioned = useCallback((entityId: string) => {
     const entity = itemsMap[entityId];
     return entity?.ofac || false;
-  };
+  }, [itemsMap]);
 
-  const getEntityNote = (entityId: string) => {
+  const getEntityNote = useCallback((entityId: string) => {
     const entity = itemsMap[entityId];
     return entity?.note || '';
-  };
+  }, [itemsMap]);
 
-  const getEntityLastUpdated = (entityId: string) => {
+  const getEntityLastUpdated = useCallback((entityId: string) => {
     const entity = itemsMap[entityId];
     return entity?.date_updated || '';
-  };
+  }, [itemsMap]);
 
-  const getEntityLastModifiedBy = (entityId: string) => {
+  const getEntityLastModifiedBy = useCallback((entityId: string) => {
     const entity = itemsMap[entityId];
     return entity?.user || '';
-  };
+  }, [itemsMap]);
 
-  const getEntityRevisitSite = (entityId: string) => {
+  const getEntityRevisitSite = useCallback((entityId: string) => {
     const entity = itemsMap[entityId];
     return entity?.revisit_site || false;
-  };
+  }, [itemsMap]);
 
   // Risk level helper functions
-  const getRiskLevel = (score: number): string => {
+  const getRiskLevel = useCallback((score: number): string => {
     if (score >= 80) return 'High';
     if (score >= 50) return 'Medium';
     if (score >= 20) return 'Low';
     return 'Very Low';
-  };
+  }, []);
 
-  const getRiskDescription = (score: number): string => {
+  const getRiskDescription = useCallback((score: number): string => {
     if (score >= 80) {
       return 'This address shows significant risk indicators including high transaction volumes, connections to known risky entities, and unusual activity patterns.';
     } else if (score >= 50) {
@@ -441,31 +434,14 @@ const RiskDashboard: React.FC = () => {
     } else {
       return 'This address appears to be low risk with normal transaction patterns and no significant concerning indicators.';
     }
-  };
+  }, []);
 
   // Generate transaction activity data from real transaction data
   const transactionActivityData = React.useMemo(() => {
     // Use activity transaction data if available, otherwise fall back to counterparty data
     const txData = activityTransactionData?.txs || counterpartyTransactionData?.txs || [];
     
-    console.log('TransactionActivity - Debug Info:', {
-      address,
-      selectedYear,
-      activityTransactionData: activityTransactionData ? { txsCount: activityTransactionData.txs?.length } : null,
-      counterpartyTransactionData: counterpartyTransactionData ? { txsCount: counterpartyTransactionData.txs?.length } : null,
-      txDataLength: txData.length,
-      firstTx: txData[0],
-      lastTx: txData[txData.length - 1],
-      sampleTxs: txData.slice(0, 3).map(tx => ({
-        timestamp: tx.timestamp,
-        date: new Date(tx.timestamp * 1000).toISOString(),
-        dateKey: new Date(tx.timestamp * 1000).toISOString().split('T')[0],
-        year: new Date(tx.timestamp * 1000).getFullYear()
-      }))
-    });
-    
     if (!txData.length || !address) {
-      console.log('TransactionActivity - No transaction data available or no address');
       return Array.from({ length: 365 }, (_, i) => ({
         day: i % 7,
         week: Math.floor(i / 7),
@@ -478,17 +454,6 @@ const RiskDashboard: React.FC = () => {
     const filteredTxData = txData.filter(tx => {
       const txYear = new Date(tx.timestamp * 1000).getFullYear();
       return txYear === selectedYear;
-    });
-
-    console.log('TransactionActivity - Year Filter:', {
-      selectedYear,
-      totalTransactions: txData.length,
-      filteredTransactions: filteredTxData.length,
-      yearDistribution: txData.reduce((acc, tx) => {
-        const year = new Date(tx.timestamp * 1000).getFullYear();
-        acc[year] = (acc[year] || 0) + 1;
-        return acc;
-      }, {} as Record<number, number>)
     });
 
     // Create a map of dates to transaction counts for the selected year
@@ -506,45 +471,15 @@ const RiskDashboard: React.FC = () => {
       }
     }
 
-    console.log('TransactionActivity - Date Range:', {
-      selectedYear,
-      startDate: startOfYear.toISOString().split('T')[0],
-      endDate: endOfYear.toISOString().split('T')[0],
-      totalDays: dateMap.size
-    });
+
 
     // Count transactions per day
-    let processedCount = 0;
-    let skippedCount = 0;
     filteredTxData.forEach(tx => {
       const txDate = new Date(tx.timestamp * 1000); // Convert timestamp to Date
       const dateKey = txDate.toISOString().split('T')[0];
       if (dateMap.has(dateKey)) {
         dateMap.set(dateKey, (dateMap.get(dateKey) || 0) + 1);
-        processedCount++;
-      } else {
-        skippedCount++;
-        if (skippedCount <= 5) { // Only log first 5 skipped transactions
-          console.log('TransactionActivity - Skipped transaction:', {
-            timestamp: tx.timestamp,
-            txDate: txDate.toISOString(),
-            dateKey,
-            isInDateMap: dateMap.has(dateKey)
-          });
-        }
       }
-    });
-    
-    console.log('TransactionActivity - Processing Results:', {
-      address,
-      selectedYear,
-      totalTransactions: filteredTxData.length,
-      processedTransactions: processedCount,
-      skippedTransactions: skippedCount,
-      dateMapSize: dateMap.size,
-      sampleDates: Array.from(dateMap.entries()).slice(0, 5),
-      maxTransactionsPerDay: Math.max(...Array.from(dateMap.values())),
-      activeDays: Array.from(dateMap.values()).filter(count => count > 0).length
     });
 
     // Convert to the expected format for GitHub-style heatmap
@@ -581,24 +516,18 @@ const RiskDashboard: React.FC = () => {
       }
     }
 
-    console.log('TransactionActivity - Final Result:', {
-      address,
-      selectedYear,
-      resultLength: result.length,
-      activeCells: result.filter(cell => cell.active).length,
-      maxActivityCount: Math.max(...result.map(cell => cell.activityCount || 0)),
-      sampleCells: result.filter(cell => cell.active).slice(0, 5)
-    });
-
     return result;
   }, [activityTransactionData?.txs, counterpartyTransactionData?.txs, address, selectedYear]);
 
   // Get primary entity and tags (single declaration)
-  const primaryEntityId = React.useMemo(() => getEntityFromAddress(), [attributions, address]);
+  const primaryEntityId = React.useMemo(() => {
+    const attribution = attributions[address];
+    return attribution?.entity || attribution?.bo || attribution?.custodian;
+  }, [attributions, address]);
   const entityTags = React.useMemo(() => primaryEntityId ? getEntityTags(primaryEntityId) : [], [primaryEntityId, itemsMap]);
 
   useEffect(() => {
-    if (!entityDetailsRef.current) return;
+    if (!entityDetailsRef.current || !primaryEntityId) return;
     handleResize();
     resizeObserverRef.current = new (window as any).ResizeObserver(handleResize);
     resizeObserverRef.current!.observe(entityDetailsRef.current);
@@ -608,7 +537,7 @@ const RiskDashboard: React.FC = () => {
         resizeObserverRef.current = null;
       }
     };
-  }, [primaryEntityId, handleResize]);
+  }, [primaryEntityId]);
 
   // Generate funds flow data from real transaction data
   const fundsFlowData = React.useMemo(() => {
@@ -673,7 +602,7 @@ const RiskDashboard: React.FC = () => {
   );
 
   // Handle address search
-  const handleAddressSearch = async (value: string) => {
+  const handleAddressSearch = useCallback(async (value: string) => {
     if (!value.trim()) return;
     
     setLoading(true);
@@ -691,22 +620,22 @@ const RiskDashboard: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [fetchAttributions, dispatch]);
 
-  const handleSearch = (value: string) => {
+  const handleSearch = useCallback((value: string) => {
     handleAddressSearch(value);
-  };
+  }, [handleAddressSearch]);
 
-  const handleRiskScoreClick = () => {
+  const handleRiskScoreClick = useCallback(() => {
     setRiskScoreModalVisible(true);
-  };
+  }, []);
 
   // Handle counterparty click to navigate to that address
-  const handleCounterpartyClick = (address: string) => {
+  const handleCounterpartyClick = useCallback((address: string) => {
     if (address && address.trim()) {
       handleAddressSearch(address);
     }
-  };
+  }, [handleAddressSearch]);
 
   return (
     <ViewWrapper
@@ -743,6 +672,7 @@ const RiskDashboard: React.FC = () => {
             <AddressHeader 
               address={address}
               entityTags={entityTags}
+              entityName={primaryEntityId ? (itemsMap[primaryEntityId]?.proper_name || primaryEntityId) : undefined}
             />
           </div>
 
@@ -858,7 +788,7 @@ const RiskDashboard: React.FC = () => {
               />
             </div>
             
-            <div className="rounded-2xl border p-6 bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700" style={entityDetailsHeight ? { height: entityDetailsHeight } : {}}>
+            <div className="rounded-2xl border p-6 bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700" style={entityDetailsHeight ? { height: Math.max(entityDetailsHeight, 300) } : { minHeight: '300px' }}>
               <SocialMediaFeed 
                 address={address}
                 title="Social Media & News Feed"

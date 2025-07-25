@@ -45,12 +45,13 @@ export const useCryptoPrices = () => {
 
     // Check if the price data is stale
     if (Date.now() - priceData.lastUpdated > CACHE_DURATION) {
-      fetchPrices(); // Trigger a refresh
+      // Don't call fetchPrices directly here to avoid infinite loops
+      // The useEffect will handle periodic refresh
       return priceData.price; // Return stale data while fetching
     }
 
     return priceData.price;
-  }, [prices, fetchPrices]);
+  }, [prices]);
 
   useEffect(() => {
     fetchPrices();

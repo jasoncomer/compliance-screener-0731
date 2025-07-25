@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { calculateRiskScore } from '../api/riskScoring';
 import { RiskScoringResponse } from '../typings/riskScoring';
 
@@ -14,7 +14,7 @@ export const useRiskScore = (address: string): UseRiskScoreReturn => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchRiskScore = async () => {
+  const fetchRiskScore = useCallback(async () => {
     if (!address) {
       setRiskScore(null);
       return;
@@ -32,11 +32,11 @@ export const useRiskScore = (address: string): UseRiskScoreReturn => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [address]);
 
   useEffect(() => {
     fetchRiskScore();
-  }, [address]);
+  }, [fetchRiskScore]);
 
   return {
     riskScore,

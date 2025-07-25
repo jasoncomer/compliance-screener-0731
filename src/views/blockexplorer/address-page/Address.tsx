@@ -137,7 +137,7 @@ const Address: React.FC = () => {
   };
 
   const handleRiskScoreClick = () => {
-    window.open(`/home/risk-scoring?address=${address}`, '_blank');
+    window.open(`/home/risk-dashboard?address=${address}`, '_blank');
   };
 
   // Function to get entity tags

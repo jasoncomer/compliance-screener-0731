@@ -23,14 +23,10 @@ export const addressBlockStatsQueryKeys = {
 
 // Hook for fetching address block stats
 export const useAddressBlockStats = (address: string) => {
-  console.log('useAddressBlockStats - called with:', { address });
-  
   return useQuery<AddressBlockStats>({
     queryKey: addressBlockStatsQueryKeys.detail(address),
     queryFn: async () => {
-      console.log('useAddressBlockStats - fetching data for address:', address);
       const result = await api.blockchain.getAddressBlockStats(address);
-      console.log('useAddressBlockStats - received data:', result);
       return result;
     },
     enabled: !!address && address.trim().length > 0,

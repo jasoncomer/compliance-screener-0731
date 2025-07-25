@@ -21,14 +21,10 @@ export const addressTransactionQueryKeys = {
 
 // Hook for fetching address transactions
 export const useAddressTransactions = (address: string, page: number = 1, limit: number = 10) => {
-  console.log('useAddressTransactions - called with:', { address, page, limit });
-  
   return useQuery<GetAddressTransactionsResponseData>({
     queryKey: addressTransactionQueryKeys.list(address, page, limit),
     queryFn: async () => {
-      console.log('useAddressTransactions - fetching data for address:', address);
       const result = await getAddressTransactions(address, { page, limit });
-      console.log('useAddressTransactions - received data:', result);
       return result;
     },
     enabled: !!address && address.trim().length > 0,

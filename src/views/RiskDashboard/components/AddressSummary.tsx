@@ -4,7 +4,6 @@ interface AddressSummaryProps {
   inputAmount?: number;
   outputAmount?: number;
   balance?: number;
-  topCounterparty?: string;
   isLoading?: boolean;
 }
 
@@ -12,7 +11,6 @@ export function AddressSummary({
   inputAmount = 0,
   outputAmount = 0,
   balance = 0,
-  topCounterparty = 'N/A',
   isLoading = false
 }: AddressSummaryProps) {
   const { theme } = useTheme();
@@ -27,30 +25,24 @@ export function AddressSummary({
         <h4 className={`text-xl font-semibold mb-6 ${
           theme === 'dark' ? 'text-white' : 'text-gray-900'
         }`}>Summary</h4>
-        <div className="space-y-4">
-          <div className="flex justify-between items-center">
+        <div className="space-y-6">
+          <div className="flex justify-between items-center py-2">
             <span className={`text-base ${
               theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
             }`}>Input Amount:</span>
-            <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-24 animate-pulse"></div>
+            <div className="h-5 bg-gray-300 dark:bg-gray-600 rounded w-24 animate-pulse"></div>
           </div>
-          <div className="flex justify-between items-center">
+          <div className="flex justify-between items-center py-2">
             <span className={`text-base ${
               theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
             }`}>Output Amount:</span>
-            <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-24 animate-pulse"></div>
+            <div className="h-5 bg-gray-300 dark:bg-gray-600 rounded w-24 animate-pulse"></div>
           </div>
-          <div className="flex justify-between items-center">
+          <div className="flex justify-between items-center py-2">
             <span className={`text-base ${
               theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
             }`}>Balance:</span>
-            <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-20 animate-pulse"></div>
-          </div>
-          <div className="flex justify-between items-center">
-            <span className={`text-base ${
-              theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
-            }`}>Top Counterparty:</span>
-            <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-32 animate-pulse"></div>
+            <div className="h-5 bg-gray-300 dark:bg-gray-600 rounded w-20 animate-pulse"></div>
           </div>
         </div>
       </div>
@@ -72,8 +64,8 @@ export function AddressSummary({
       <h4 className={`text-xl font-semibold mb-6 ${
         theme === 'dark' ? 'text-white' : 'text-gray-900'
       }`}>Summary</h4>
-      <div className="space-y-4">
-        <div className="flex justify-between items-center">
+      <div className="space-y-6">
+        <div className="flex justify-between items-center py-2">
           <span className={`text-base ${
             theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
           }`}>Input Amount:</span>
@@ -81,7 +73,7 @@ export function AddressSummary({
             theme === 'dark' ? 'text-white' : 'text-gray-900'
           }`}>{formatBitcoin(inputAmount)}</span>
         </div>
-        <div className="flex justify-between items-center">
+        <div className="flex justify-between items-center py-2">
           <span className={`text-base ${
             theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
           }`}>Output Amount:</span>
@@ -89,21 +81,13 @@ export function AddressSummary({
             theme === 'dark' ? 'text-white' : 'text-gray-900'
           }`}>{formatBitcoin(outputAmount)}</span>
         </div>
-        <div className="flex justify-between items-center">
+        <div className="flex justify-between items-center py-2">
           <span className={`text-base ${
             theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
           }`}>Balance:</span>
           <span className={`font-mono text-lg ${
             theme === 'dark' ? 'text-white' : 'text-gray-900'
           }`}>{formatBitcoin(balance)}</span>
-        </div>
-        <div className="flex justify-between items-center">
-          <span className={`text-base ${
-            theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
-          }`}>Top Counterparty:</span>
-          <span className={`font-mono text-lg ${
-            theme === 'dark' ? 'text-white' : 'text-gray-900'
-          }`}>{topCounterparty}</span>
         </div>
       </div>
     </div>
