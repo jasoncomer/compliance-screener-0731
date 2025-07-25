@@ -236,8 +236,8 @@ const RiskDashboard: React.FC = () => {
       }
     }
 
-    // Calculate balance (input - output)
-    const balance = inputAmount - outputAmount;
+    // Use the actual current balance from the API (should never be negative for valid addresses)
+    const balance = addressSummaryData?.balance ? addressSummaryData.balance / 100000000 : 0; // Convert satoshis to BTC
 
     return {
       totalTransactions: totalTxns,

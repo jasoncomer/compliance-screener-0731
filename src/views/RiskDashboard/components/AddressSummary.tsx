@@ -60,7 +60,7 @@ export function AddressSummary({
   const formatBitcoin = (value: number) => {
     if (value >= 1000) return `${(value / 1000).toFixed(3)}k BTC`;
     if (value >= 1) return `${value.toFixed(4)} BTC`;
-    return `${(value * 1000).toFixed(4)}`;
+    return `${value.toFixed(8)} BTC`;
   };
 
   return (
