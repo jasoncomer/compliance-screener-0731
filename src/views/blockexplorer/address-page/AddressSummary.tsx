@@ -87,27 +87,16 @@ const AddressSummary: React.FC<AddressSummaryProps> = ({
     return truncateAddress(address || '');
   };
 
-  const getAttributionSummary = () => {
-    if (!address || !attributions[address]) return null;
-    
-    const attrs = attributions[address];
-    const summary = [];
-    
-    if (attrs.entity) summary.push(`Entity: ${attrs.entity}`);
-    if (attrs.bo && attrs.bo !== attrs.entity) summary.push(`Owner: ${attrs.bo}`);
-    if (attrs.custodian) summary.push(`Custodian: ${attrs.custodian}`);
-    
-    return summary;
-  };
+
 
   return (
     <>
       {/* Main Cards - scrollable */}
       <div className="w-full bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
-        <div className="px-8 py-6">
-          <div className="flex flex-wrap gap-6 justify-start">
+        <div className="px-4 py-2">
+          <div className="flex flex-wrap gap-3 justify-start">
             {/* Address Card */}
-            <div className="flex flex-col justify-between bg-gradient-to-br from-slate-100 to-gray-200 dark:from-slate-800 dark:to-gray-800 shadow-md rounded-2xl p-3 flex-1 min-w-[250px] text-gray-900 dark:text-gray-100 relative border border-slate-200 dark:border-slate-700 h-[185px]">
+            <div className="flex flex-col justify-between bg-gradient-to-br from-slate-100 to-gray-200 dark:from-slate-800 dark:to-gray-800 shadow-md rounded-2xl p-2 flex-1 min-w-[250px] text-gray-900 dark:text-gray-100 relative border border-slate-200 dark:border-slate-700 h-[160px]">
               <div className="absolute top-2 right-2 opacity-10 text-2xl select-none pointer-events-none">#</div>
               <div className="flex items-center gap-1 mb-1">
                 <Bitcoin className="w-4 h-4 text-orange-600 dark:text-orange-400" />
@@ -115,15 +104,13 @@ const AddressSummary: React.FC<AddressSummaryProps> = ({
               </div>
               <div className="text-sm font-bold break-all mb-1">{getDisplayName()}</div>
               
-              {/* Attribution Information */}
-              {getAttributionSummary() && (
-                <div className="mb-1 p-1 bg-blue-50 dark:bg-blue-900/20 rounded border border-blue-200 dark:border-blue-800">
-                  <div className="text-xs font-medium text-blue-700 dark:text-blue-300">Attribution</div>
-                  {getAttributionSummary()?.slice(0, 1).map((attr, index) => (
-                    <div key={index} className="text-xs text-blue-600 dark:text-blue-400 truncate">
-                      {attr}
-                    </div>
-                  ))}
+              {/* Entity Type */}
+              {address && attributions[address]?.entity && (
+                <div className="mb-1 p-1 bg-orange-50 dark:bg-orange-900/20 rounded border border-orange-200 dark:border-orange-800">
+                  <div className="text-xs font-medium text-orange-700 dark:text-orange-300">Entity Type</div>
+                  <div className="text-xs text-orange-600 dark:text-orange-400 truncate">
+                    {attributions[address].entity_type || 'Unknown'}
+                  </div>
                 </div>
               )}
               
@@ -136,20 +123,17 @@ const AddressSummary: React.FC<AddressSummaryProps> = ({
                   {copySuccess ? <CheckCircle className="w-3 h-3 text-green-600" /> : <Copy className="w-3 h-3 text-gray-500" />}
                 </button>
                 <div className="flex gap-1 flex-wrap">
-                  {address && attributions[address] && getEntityTags(attributions[address]?.entity || '').slice(0, 1).map(tag => (
+                  {address && attributions[address] && getEntityTags(attributions[address]?.entity || '').slice(0, 5).map(tag => (
                     <Tag key={tag} color={getTagColor(tag.toLowerCase())} className="text-xs px-1 py-0">
                       {tag.toUpperCase()}
                     </Tag>
                   ))}
                 </div>
               </div>
-              <div className="text-xs text-gray-600 dark:text-gray-400 font-medium">CURRENT BALANCE</div>
-              <div className="text-lg font-bold tracking-tight leading-tight text-gray-900 dark:text-gray-100">{satsToBTC(summary?.balance || 0)}</div>
-              <div className="text-xs font-semibold text-gray-600 dark:text-gray-400">BTC</div>
             </div>
 
             {/* Balance Flow Card */}
-            <div className="flex flex-col justify-between bg-gradient-to-br from-slate-50 to-gray-100 dark:from-slate-800 dark:to-gray-800 shadow-md rounded-2xl p-3 flex-1 min-w-[250px] text-gray-900 dark:text-gray-100 border border-slate-200 dark:border-slate-700 h-[185px]">
+            <div className="flex flex-col justify-between bg-gradient-to-br from-slate-50 to-gray-100 dark:from-slate-800 dark:to-gray-800 shadow-md rounded-2xl p-5 flex-1 min-w-[250px] text-gray-900 dark:text-gray-100 border border-slate-200 dark:border-slate-700 h-[160px]">
               <div className="flex items-center gap-1 mb-1">
                 <TrendingUp className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                 <span className="text-xs font-medium">Transaction Flows</span>
@@ -168,7 +152,7 @@ const AddressSummary: React.FC<AddressSummaryProps> = ({
             </div>
 
             {/* Activity Timeline Card */}
-            <div className="flex flex-col justify-between bg-gradient-to-br from-slate-50 to-gray-100 dark:from-slate-800 dark:to-gray-800 shadow-md rounded-2xl p-3 flex-1 min-w-[250px] text-gray-900 dark:text-gray-100 border border-slate-200 dark:border-slate-700 h-[185px]">
+            <div className="flex flex-col justify-between bg-gradient-to-br from-slate-50 to-gray-100 dark:from-slate-800 dark:to-gray-800 shadow-md rounded-2xl p-6 flex-1 min-w-[250px] text-gray-900 dark:text-gray-100 border border-slate-200 dark:border-slate-700 h-[160px]">
               <div className="flex items-center gap-1 mb-1">
                 <Clock className="w-4 h-4 text-purple-600 dark:text-purple-400" />
                 <span className="text-xs font-medium">Blockchain Activity</span>
@@ -190,7 +174,7 @@ const AddressSummary: React.FC<AddressSummaryProps> = ({
             </div>
 
             {/* Risk Score Card */}
-            <div className="flex flex-col justify-between bg-gradient-to-br from-slate-50 to-gray-100 dark:from-slate-800 dark:to-gray-800 shadow-md rounded-2xl p-3 flex-1 min-w-[200px] text-gray-900 dark:text-gray-100 items-center border border-slate-200 dark:border-slate-700 h-[185px]">
+            <div className="flex flex-col justify-between bg-gradient-to-br from-slate-50 to-gray-100 dark:from-slate-800 dark:to-gray-800 shadow-md rounded-2xl p-5 flex-1 min-w-[200px] text-gray-900 dark:text-gray-100 items-center border border-slate-200 dark:border-slate-700 h-[160px]">
               <div className="flex items-center gap-1 mb-1">
                 <AlertTriangle className="w-4 h-4 text-orange-600 dark:text-orange-400" />
                 <span className="text-xs font-medium">Risk Assessment</span>
