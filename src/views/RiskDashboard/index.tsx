@@ -258,14 +258,6 @@ const RiskDashboard: React.FC = () => {
     }
   }, []);
 
-  // Get Twitter handle for the entity
-  const getTwitterHandle = () => {
-    const entityId = getEntityFromAddress();
-    if (!entityId) return '';
-    const entity = itemsMap[entityId];
-    return entity?.contact_twitter || '';
-  };
-
   // Entity helper functions
   const getEntityType = (entityId: string) => {
     const entity = itemsMap[entityId];
@@ -604,7 +596,6 @@ const RiskDashboard: React.FC = () => {
   // Get primary entity and tags (single declaration)
   const primaryEntityId = React.useMemo(() => getEntityFromAddress(), [attributions, address]);
   const entityTags = React.useMemo(() => primaryEntityId ? getEntityTags(primaryEntityId) : [], [primaryEntityId, itemsMap]);
-  const twitterHandle = React.useMemo(() => getTwitterHandle(), [primaryEntityId, itemsMap]);
 
   useEffect(() => {
     if (!entityDetailsRef.current) return;
