@@ -194,26 +194,18 @@ const RiskDashboard: React.FC = () => {
     }
 
     const totalTxns = counterpartyTransactionData?.pagination?.totalTxs || 0;
-    const totalVolume = addressSummaryData.total_received || 0;
+    const totalVolume = addressSummaryData.total_received ? addressSummaryData.total_received / 100000000 : 0; // Convert satoshis to BTC
     const firstSeen = addressBlockStatsData.firstBlock?.blockNumber?.toString() || '';
     const lastSeen = addressBlockStatsData.lastBlock?.blockNumber?.toString() || '';
     const avgTxSize = totalTxns > 0 ? totalVolume / totalTxns : 0;
 
-    // Calculate input, output, and balance from transaction data
-    let inputAmount = 0;
-    let outputAmount = 0;
+    // Use data from block explorer API instead of calculating from transactions
+    const inputAmount = addressSummaryData.total_received ? addressSummaryData.total_received / 100000000 : 0; // Convert satoshis to BTC
+    const outputAmount = addressSummaryData.total_spent ? addressSummaryData.total_spent / 100000000 : 0; // Convert satoshis to BTC
+    const balance = addressSummaryData.balance ? addressSummaryData.balance / 100000000 : 0; // Convert satoshis to BTC
     let topCounterparty = 'N/A';
 
     if (transformedTransactions.length > 0) {
-      // Calculate input and output amounts
-      transformedTransactions.forEach(tx => {
-        if (tx.type === 'in') {
-          inputAmount += tx.value;
-        } else if (tx.type === 'out') {
-          outputAmount += tx.value;
-        }
-      });
-
       // Find top counterparty (highest transaction volume)
       const counterpartyVolumes: { [key: string]: number } = {};
       const counterpartyCounts: { [key: string]: number } = {};
@@ -235,9 +227,6 @@ const RiskDashboard: React.FC = () => {
         topCounterparty = entityId ? getEntityDisplayName(entityId) : topCounterpartyAddress;
       }
     }
-
-    // Use the actual current balance from the API (should never be negative for valid addresses)
-    const balance = addressSummaryData?.balance ? addressSummaryData.balance / 100000000 : 0; // Convert satoshis to BTC
 
     return {
       totalTransactions: totalTxns,
