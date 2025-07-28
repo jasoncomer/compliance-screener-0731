@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { BarChart3, AlertCircle, Loader2 } from 'lucide-react';
 import SearchInput from '../../components/common/SearchInput';
 import EmptyState from '../../components/common/EmptyState';
@@ -22,7 +22,7 @@ import { useAddressBlockStats } from '../../hooks/useAddressBlockStats';
 import { useAddress } from '../../hooks/useAddress';
 import { useCryptoPrices } from '../../hooks/useCryptoPrices';
 import { useRiskScore } from '../../hooks/useRiskScore';
-import { transformBtcTransactions, TransformedTransaction } from '../../utils/transactionTransformers';
+import { transformBtcTransactions } from '../../utils/transactionTransformers';
 import { useAttribution } from '../../context/AttributionContext';
 import { useAppSelector, useAppDispatch } from '../../store/hooks';
 import { RootState } from '../../store/store';
@@ -30,12 +30,12 @@ import { getEntityTypeLabel } from '../../utils/display-labels';
 import { EEntityType } from '../../typings/SOT';
 import { fetchSOT } from '../../store/slices/sotSlice';
 
-const RiskDashboard: React.FC = () => {
+const RiskDashboard: React.FC = React.memo(() => {
   const { theme } = useTheme();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [hasData, setHasData] = useState(false); // Start with false - no data until search
-  const [address, setAddress] = useState(''); // Start with empty address
+  const [hasData, setHasData] = useState(false);
+  const [address, setAddress] = useState('');
   const [searchValue, setSearchValue] = useState('');
   const [riskScoreModalVisible, setRiskScoreModalVisible] = useState(false);
   const [entityDetailsHeight, setEntityDetailsHeight] = useState<number | undefined>(undefined);
@@ -44,28 +44,37 @@ const RiskDashboard: React.FC = () => {
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
 
   // React Query hooks - Fetch more transactions for activity analysis
-  const { data: counterpartyTransactionData, isLoading: isLoadingTransactions } = useAddressTransactions(address, 1, 100); // For counterparty analysis
-  const { data: activityTransactionData, isLoading: isLoadingActivityTransactions } = useAddressTransactions(address, 1, 1000); // For activity analysis - fetch more transactions
+  const { data: counterpartyTransactionData, isLoading: isLoadingTransactions } = useAddressTransactions(address, 1, 100);
+  const { data: activityTransactionData, isLoading: isLoadingActivityTransactions } = useAddressTransactions(address, 1, 1000);
   const { data: addressSummaryData, isLoading: isLoadingAddressSummary } = useAddressSummary(address);
   const { data: addressBlockStatsData, isLoading: isLoadingAddressBlockStats } = useAddressBlockStats(address);
   const { isLoading: isLoadingAddress, error: addressError } = useAddress(address);
   const { getPrice } = useCryptoPrices();
   const { riskScore, isLoading: isLoadingRiskScore, error: riskScoreError } = useRiskScore(address);
-  const btcPrice = React.useMemo(() => getPrice('BTC') || 35000, [getPrice]); // Default fallback price
+  
+  // Memoize BTC price to prevent unnecessary recalculations
+  const btcPrice = useMemo(() => getPrice('BTC') || 35000, [getPrice]);
 
   // Attribution and SOT data hooks
   const { fetchAttributions, attributions } = useAttribution();
   const { itemsMap } = useAppSelector((state: RootState) => state.sot);
   const dispatch = useAppDispatch();
 
-  // Loading state
-  const isLoadingAnyData = isLoadingTransactions || isLoadingActivityTransactions || isLoadingAddressSummary || isLoadingAddressBlockStats || isLoadingAddress || isLoadingRiskScore;
+  // Loading state - memoized to prevent unnecessary recalculations
+  const isLoadingAnyData = useMemo(() => 
+    isLoadingTransactions || 
+    isLoadingActivityTransactions || 
+    isLoadingAddressSummary || 
+    isLoadingAddressBlockStats || 
+    isLoadingAddress || 
+    isLoadingRiskScore,
+    [isLoadingTransactions, isLoadingActivityTransactions, isLoadingAddressSummary, isLoadingAddressBlockStats, isLoadingAddress, isLoadingRiskScore]
+  );
 
-  // Calculate transaction counts for each year
-  const yearTransactionCounts = React.useMemo(() => {
+  // Calculate transaction counts for each year - memoized
+  const yearTransactionCounts = useMemo(() => {
     const counts: Record<number, number> = {};
     
-    // Use activity transaction data if available, otherwise fall back to counterparty data
     const txData = activityTransactionData?.txs || counterpartyTransactionData?.txs || [];
     
     txData.forEach(tx => {
@@ -76,28 +85,24 @@ const RiskDashboard: React.FC = () => {
     return counts;
   }, [activityTransactionData?.txs, counterpartyTransactionData?.txs]);
 
-  // Transform transaction data for counterparty analysis
-  const transformedTransactions: TransformedTransaction[] = React.useMemo(() => {
+  // Transform transaction data for counterparty analysis - memoized
+  const transformedTransactions = useMemo(() => {
     if (!counterpartyTransactionData?.txs) return [];
-    const transformed = transformBtcTransactions(counterpartyTransactionData.txs, address, btcPrice);
-    return transformed;
+    return transformBtcTransactions(counterpartyTransactionData.txs, address, btcPrice);
   }, [counterpartyTransactionData?.txs, address, btcPrice]);
 
-
-
-  // Function to truncate addresses for display
+  // Function to truncate addresses for display - memoized
   const truncateAddress = useCallback((address: string, startLength: number = 6, endLength: number = 4) => {
     if (address.length <= startLength + endLength + 3) return address;
     return `${address.slice(0, startLength)}...${address.slice(-endLength)}`;
   }, []);
 
-  // Generate counterparty data from transaction history
-  const counterpartyData = React.useMemo(() => {
+  // Generate counterparty data from transaction history - memoized
+  const counterpartyData = useMemo(() => {
     if (!transformedTransactions.length) {
       return { incoming: [], outgoing: [] };
     }
 
-    // Group transactions by counterparty address
     const incomingByAddress: { [key: string]: { totalAmount: number; count: number; addresses: string[] } } = {};
     const outgoingByAddress: { [key: string]: { totalAmount: number; count: number; addresses: string[] } } = {};
 
@@ -123,11 +128,9 @@ const RiskDashboard: React.FC = () => {
       }
     });
 
-    // Convert to array and sort by total amount
     const incomingCounterparties = Object.entries(incomingByAddress)
       .map(([address, data]) => {
         const entityId = attributions[address]?.entity || attributions[address]?.bo || attributions[address]?.custodian;
-        // Get entity name directly without using getEntityDisplayName to avoid circular dependency
         const entity = entityId ? itemsMap[entityId] : null;
         const entityName = entity?.proper_name || truncateAddress(address);
         
@@ -150,7 +153,6 @@ const RiskDashboard: React.FC = () => {
     const outgoingCounterparties = Object.entries(outgoingByAddress)
       .map(([address, data]) => {
         const entityId = attributions[address]?.entity || attributions[address]?.bo || attributions[address]?.custodian;
-        // Get entity name directly without using getEntityDisplayName to avoid circular dependency
         const entity = entityId ? itemsMap[entityId] : null;
         const entityName = entity?.proper_name || truncateAddress(address);
         
@@ -171,10 +173,10 @@ const RiskDashboard: React.FC = () => {
       .slice(0, 5);
 
     return { incoming: incomingCounterparties, outgoing: outgoingCounterparties };
-  }, [transformedTransactions, attributions, btcPrice, itemsMap]);
+  }, [transformedTransactions, attributions, btcPrice, itemsMap, truncateAddress]);
 
-  // Prepare address summary data for the component
-  const addressSummaryProps = React.useMemo(() => {
+  // Prepare address summary data for the component - memoized
+  const addressSummaryProps = useMemo(() => {
     if (!addressSummaryData || !addressBlockStatsData) {
       return {
         totalTransactions: 0,
@@ -191,19 +193,17 @@ const RiskDashboard: React.FC = () => {
     }
 
     const totalTxns = counterpartyTransactionData?.pagination?.totalTxs || 0;
-    const totalVolume = addressSummaryData.total_received ? addressSummaryData.total_received / 100000000 : 0; // Convert satoshis to BTC
+    const totalVolume = addressSummaryData.total_received ? addressSummaryData.total_received / 100000000 : 0;
     const firstSeen = addressBlockStatsData.firstBlock?.blockNumber?.toString() || '';
     const lastSeen = addressBlockStatsData.lastBlock?.blockNumber?.toString() || '';
     const avgTxSize = totalTxns > 0 ? totalVolume / totalTxns : 0;
 
-    // Use data from block explorer API instead of calculating from transactions
-    const inputAmount = addressSummaryData.total_received ? addressSummaryData.total_received / 100000000 : 0; // Convert satoshis to BTC
-    const outputAmount = addressSummaryData.total_spent ? addressSummaryData.total_spent / 100000000 : 0; // Convert satoshis to BTC
-    const balance = addressSummaryData.balance ? addressSummaryData.balance / 100000000 : 0; // Convert satoshis to BTC
+    const inputAmount = addressSummaryData.total_received ? addressSummaryData.total_received / 100000000 : 0;
+    const outputAmount = addressSummaryData.total_spent ? addressSummaryData.total_spent / 100000000 : 0;
+    const balance = addressSummaryData.balance ? addressSummaryData.balance / 100000000 : 0;
     let topCounterparty = 'N/A';
 
     if (transformedTransactions.length > 0) {
-      // Find top counterparty (highest transaction volume)
       const counterpartyVolumes: { [key: string]: number } = {};
       const counterpartyCounts: { [key: string]: number } = {};
       transformedTransactions.forEach(tx => {
@@ -221,7 +221,6 @@ const RiskDashboard: React.FC = () => {
         const entityId = attributions[topCounterpartyAddress]?.entity || 
                         attributions[topCounterpartyAddress]?.bo || 
                         attributions[topCounterpartyAddress]?.custodian;
-        // Get entity name directly without using getEntityDisplayName to avoid circular dependency
         const entity = entityId ? itemsMap[entityId] : null;
         topCounterparty = entity?.proper_name || topCounterpartyAddress;
       }
@@ -229,21 +228,19 @@ const RiskDashboard: React.FC = () => {
 
     return {
       totalTransactions: totalTxns,
-      totalVolume: totalVolume, // Keep in BTC
+      totalVolume,
       firstSeen,
       lastSeen,
-      averageTransactionSize: avgTxSize, // Keep in BTC
-      inputAmount: inputAmount, // Keep in BTC
-      outputAmount: outputAmount, // Keep in BTC
-      balance: balance, // Keep in BTC
+      averageTransactionSize: avgTxSize,
+      inputAmount,
+      outputAmount,
+      balance,
       topCounterparty,
       isLoading: isLoadingAddressSummary || isLoadingAddressBlockStats
     };
   }, [addressSummaryData, addressBlockStatsData, counterpartyTransactionData, isLoadingAddressSummary, isLoadingAddressBlockStats, transformedTransactions, attributions, itemsMap]);
 
-
-
-  // Restore handleResize and related logic
+  // Restore handleResize and related logic - memoized
   const handleResize = useCallback(() => {
     if (entityDetailsRef.current) {
       const newHeight = entityDetailsRef.current.offsetHeight;
@@ -251,7 +248,7 @@ const RiskDashboard: React.FC = () => {
     }
   }, []);
 
-  // Entity helper functions
+  // Entity helper functions - memoized
   const getEntityType = useCallback((entityId: string) => {
     const entity = itemsMap[entityId];
     return entity?.entity_type ? getEntityTypeLabel(entity.entity_type as EEntityType) : 'Unknown';
@@ -305,7 +302,6 @@ const RiskDashboard: React.FC = () => {
     const entity = itemsMap[entityId];
     if (!entity) return [];
     
-    // Combine all entity tag fields
     const tags: string[] = [];
     for (let i = 1; i <= 7; i++) {
       const tag = entity[`entity_tag${i}` as keyof typeof entity];
@@ -316,7 +312,7 @@ const RiskDashboard: React.FC = () => {
     return tags;
   }, [itemsMap]);
 
-  // Additional entity helper functions
+  // Additional entity helper functions - memoized
   const getEntityEmail = useCallback((entityId: string) => {
     const entity = itemsMap[entityId];
     return entity?.contact_email || '';
@@ -416,7 +412,7 @@ const RiskDashboard: React.FC = () => {
     return entity?.revisit_site || false;
   }, [itemsMap]);
 
-  // Risk level helper functions
+  // Risk level helper functions - memoized
   const getRiskLevel = useCallback((score: number): string => {
     if (score >= 80) return 'High';
     if (score >= 50) return 'Medium';
@@ -436,9 +432,8 @@ const RiskDashboard: React.FC = () => {
     }
   }, []);
 
-  // Generate transaction activity data from real transaction data
-  const transactionActivityData = React.useMemo(() => {
-    // Use activity transaction data if available, otherwise fall back to counterparty data
+  // Generate transaction activity data from real transaction data - memoized
+  const transactionActivityData = useMemo(() => {
     const txData = activityTransactionData?.txs || counterpartyTransactionData?.txs || [];
     
     if (!txData.length || !address) {
@@ -450,18 +445,15 @@ const RiskDashboard: React.FC = () => {
       }));
     }
 
-    // Filter transactions by selected year
     const filteredTxData = txData.filter(tx => {
       const txYear = new Date(tx.timestamp * 1000).getFullYear();
       return txYear === selectedYear;
     });
 
-    // Create a map of dates to transaction counts for the selected year
     const dateMap = new Map<string, number>();
     const startOfYear = new Date(selectedYear, 0, 1);
     const endOfYear = new Date(selectedYear, 11, 31);
     
-    // Initialize all dates in the selected year with 0 transactions
     for (let i = 0; i < 365; i++) {
       const date = new Date(startOfYear);
       date.setDate(date.getDate() + i);
@@ -471,43 +463,33 @@ const RiskDashboard: React.FC = () => {
       }
     }
 
-
-
-    // Count transactions per day
     filteredTxData.forEach(tx => {
-      const txDate = new Date(tx.timestamp * 1000); // Convert timestamp to Date
+      const txDate = new Date(tx.timestamp * 1000);
       const dateKey = txDate.toISOString().split('T')[0];
       if (dateMap.has(dateKey)) {
         dateMap.set(dateKey, (dateMap.get(dateKey) || 0) + 1);
       }
     });
 
-    // Convert to the expected format for GitHub-style heatmap
     const result = [];
     
-    // Generate data for 52 weeks × 7 days = 364 days
     for (let week = 0; week < 52; week++) {
       for (let day = 0; day < 7; day++) {
-        // Calculate the actual date for this week/day position
-        // Start from the first Monday of the year
         const firstDayOfYear = new Date(selectedYear, 0, 1);
-        const dayOfWeek = firstDayOfYear.getDay(); // 0=Sunday, 1=Monday, ..., 6=Saturday
+        const dayOfWeek = firstDayOfYear.getDay();
         
-        // Find the first Monday of the year
         const daysToFirstMonday = dayOfWeek === 0 ? 1 : (8 - dayOfWeek) % 7;
         const firstMonday = new Date(selectedYear, 0, 1 + daysToFirstMonday);
         
-        // Calculate the target date
         const targetDate = new Date(firstMonday);
         targetDate.setDate(firstMonday.getDate() + (week * 7) + day);
         
-        // Only include dates within the selected year
         if (targetDate.getFullYear() === selectedYear) {
           const dateKey = targetDate.toISOString().split('T')[0];
           const txCount = dateMap.get(dateKey) || 0;
           
           result.push({
-            day: day, // 0=Monday, 1=Tuesday, ..., 6=Sunday
+            day: day,
             week: week,
             active: txCount > 0,
             activityCount: txCount
@@ -519,40 +501,45 @@ const RiskDashboard: React.FC = () => {
     return result;
   }, [activityTransactionData?.txs, counterpartyTransactionData?.txs, address, selectedYear]);
 
-  // Get primary entity and tags (single declaration)
-  const primaryEntityId = React.useMemo(() => {
+  // Get primary entity and tags - memoized
+  const primaryEntityId = useMemo(() => {
     const attribution = attributions[address];
     return attribution?.entity || attribution?.bo || attribution?.custodian;
   }, [attributions, address]);
-  const entityTags = React.useMemo(() => primaryEntityId ? getEntityTags(primaryEntityId) : [], [primaryEntityId, itemsMap]);
 
+  const entityTags = useMemo(() => primaryEntityId ? getEntityTags(primaryEntityId) : [], [primaryEntityId, getEntityTags]);
+
+  // Properly handle ResizeObserver cleanup
   useEffect(() => {
     if (!entityDetailsRef.current || !primaryEntityId) return;
+    
     handleResize();
-    resizeObserverRef.current = new (window as any).ResizeObserver(handleResize);
-    resizeObserverRef.current!.observe(entityDetailsRef.current);
+    
+    if (window.ResizeObserver) {
+      resizeObserverRef.current = new ResizeObserver(handleResize);
+      resizeObserverRef.current.observe(entityDetailsRef.current);
+    }
+    
     return () => {
       if (resizeObserverRef.current) {
         resizeObserverRef.current.disconnect();
         resizeObserverRef.current = null;
       }
     };
-  }, [primaryEntityId]);
+  }, [primaryEntityId, handleResize]);
 
-  // Generate funds flow data from real transaction data
-  const fundsFlowData = React.useMemo(() => {
+  // Generate funds flow data from real transaction data - memoized
+  const fundsFlowData = useMemo(() => {
     if (!transformedTransactions.length) {
       return { incoming: [], outgoing: [] };
     }
 
-    // Group transactions by entity type
     const incomingByEntity: { [key: string]: number } = {};
     const outgoingByEntity: { [key: string]: number } = {};
 
     transformedTransactions.forEach(tx => {
       if (tx.type === 'in' && tx.from !== 'Unknown') {
         const entityId = attributions[tx.from]?.entity || attributions[tx.from]?.bo || attributions[tx.from]?.custodian;
-        // Get entity name directly without using getEntityDisplayName to avoid circular dependency
         const entity = entityId ? itemsMap[entityId] : null;
         const entityName = entity?.proper_name || tx.from;
         
@@ -562,7 +549,6 @@ const RiskDashboard: React.FC = () => {
         incomingByEntity[entityName] += tx.value * btcPrice;
       } else if (tx.type === 'out' && tx.to !== 'Unknown') {
         const entityId = attributions[tx.to]?.entity || attributions[tx.to]?.bo || attributions[tx.to]?.custodian;
-        // Get entity name directly without using getEntityDisplayName to avoid circular dependency
         const entity = entityId ? itemsMap[entityId] : null;
         const entityName = entity?.proper_name || tx.to;
         
@@ -573,12 +559,11 @@ const RiskDashboard: React.FC = () => {
       }
     });
 
-    // Convert to the expected format
     const incomingData = Object.entries(incomingByEntity)
       .map(([name, value]) => ({
         name,
         value,
-        entityType: 'Exchange' // Default to Exchange for now
+        entityType: 'Exchange'
       }))
       .sort((a, b) => b.value - a.value)
       .slice(0, 5);
@@ -587,7 +572,7 @@ const RiskDashboard: React.FC = () => {
       .map(([name, value]) => ({
         name,
         value,
-        entityType: 'Wallet' // Default to Wallet for outgoing
+        entityType: 'Wallet'
       }))
       .sort((a, b) => b.value - a.value)
       .slice(0, 5);
@@ -595,13 +580,13 @@ const RiskDashboard: React.FC = () => {
     return { incoming: incomingData, outgoing: outgoingData };
   }, [transformedTransactions, attributions, btcPrice, itemsMap]);
 
-  // Check if we have data to display (only when hasData is true)
-  const shouldShowData = React.useMemo(() => 
+  // Check if we have data to display - memoized
+  const shouldShowData = useMemo(() => 
     hasData && address && !isLoadingAnyData && (counterpartyTransactionData || addressSummaryData || addressBlockStatsData),
     [hasData, address, isLoadingAnyData, counterpartyTransactionData, addressSummaryData, addressBlockStatsData]
   );
 
-  // Handle address search
+  // Handle address search - memoized
   const handleAddressSearch = useCallback(async (value: string) => {
     if (!value.trim()) return;
     
@@ -630,7 +615,7 @@ const RiskDashboard: React.FC = () => {
     setRiskScoreModalVisible(true);
   }, []);
 
-  // Handle counterparty click to navigate to that address
+  // Handle counterparty click to navigate to that address - memoized
   const handleCounterpartyClick = useCallback((address: string) => {
     if (address && address.trim()) {
       handleAddressSearch(address);
@@ -722,6 +707,8 @@ const RiskDashboard: React.FC = () => {
               transactionActivity={transactionActivityData} 
               isLoading={isLoadingAnyData}
               selectedYear={selectedYear}
+              address={address}
+              transactions={activityTransactionData?.txs || []}
             />
           </div>
 
@@ -745,11 +732,10 @@ const RiskDashboard: React.FC = () => {
 
           {/* Funds Flow Analysis - Full Width */}
           {(fundsFlowData.incoming.length > 0 || fundsFlowData.outgoing.length > 0) && (
-       
-              <CombinedFundsFlow 
-                incomingData={fundsFlowData.incoming}
-                outgoingData={fundsFlowData.outgoing}
-              />
+            <CombinedFundsFlow 
+              incomingData={fundsFlowData.incoming}
+              outgoingData={fundsFlowData.outgoing}
+            />
           )}
 
           {/* Entity Details and Twitter Timeline - Two Columns */}
@@ -943,6 +929,8 @@ const RiskDashboard: React.FC = () => {
       )}
     </ViewWrapper>
   );
-};
+});
+
+RiskDashboard.displayName = 'RiskDashboard';
 
 export default RiskDashboard;

@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useTheme } from "../../../../context/ThemeContext";
 import { ChevronDown, Calendar, BarChart3 } from 'lucide-react';
+import { BtcTransaction } from "../../../../typings/BtcTransaction";
 
 interface TransactionActivityProps {
   transactionActivity: Array<{ 
@@ -11,6 +12,8 @@ interface TransactionActivityProps {
   }>;
   isLoading?: boolean; // Add loading prop
   selectedYear?: number; // Add selected year prop
+  address?: string; // Add address prop for navigation
+  transactions?: BtcTransaction[]; // Add transaction data for filtering by date
 }
 
 type SortOption = 'date' | 'activity';
@@ -18,7 +21,9 @@ type SortOption = 'date' | 'activity';
 const TransactionActivity: React.FC<TransactionActivityProps> = ({ 
   transactionActivity, 
   isLoading = false,
-  selectedYear = new Date().getFullYear()
+  selectedYear = new Date().getFullYear(),
+  address,
+  transactions = []
 }) => {
   const { theme } = useTheme();
   const [sortBy, setSortBy] = useState<SortOption>('date');
@@ -33,7 +38,9 @@ const TransactionActivity: React.FC<TransactionActivityProps> = ({
     sampleData: transactionActivity.slice(0, 3),
     maxActivity: Math.max(...transactionActivity.map(cell => cell.activityCount || 0)),
     activeDays: transactionActivity.filter(cell => cell.active).length,
-    totalActivityCount: transactionActivity.reduce((sum, cell) => sum + (cell.activityCount || 0), 0)
+    totalActivityCount: transactionActivity.reduce((sum, cell) => sum + (cell.activityCount || 0), 0),
+    address,
+    transactionsLength: transactions.length
   });
 
   // Close dropdown when clicking outside
@@ -137,6 +144,39 @@ const TransactionActivity: React.FC<TransactionActivityProps> = ({
     targetDate.setDate(firstMonday.getDate() + (week * 7) + day);
     
     return targetDate;
+  };
+
+  // Function to get transactions for a specific date
+  const getTransactionsForDate = (date: Date) => {
+    if (!transactions.length) return [];
+    
+    const startOfDay = new Date(date);
+    startOfDay.setHours(0, 0, 0, 0);
+    
+    const endOfDay = new Date(date);
+    endOfDay.setHours(23, 59, 59, 999);
+    
+    return transactions.filter(tx => {
+      const txDate = new Date(tx.timestamp * 1000);
+      return txDate >= startOfDay && txDate <= endOfDay;
+    });
+  };
+
+  // Function to handle day click - redirect to block explorer
+  const handleDayClick = (week: number, day: number) => {
+    const date = getDateFromWeekDay(week, day);
+    const dayTransactions = getTransactionsForDate(date);
+    
+    if (dayTransactions.length > 0) {
+      // If there are transactions for this day, redirect to the first transaction
+      const firstTx = dayTransactions[0];
+      const explorerUrl = `/home/block-explorer/transaction/${firstTx.txid}`;
+      window.open(explorerUrl, '_blank', 'noopener,noreferrer');
+    } else if (address) {
+      // If no transactions for this day but we have an address, redirect to address view
+      const explorerUrl = `/home/block-explorer/address/${address}`;
+      window.open(explorerUrl, '_blank', 'noopener,noreferrer');
+    }
   };
 
   return (
@@ -295,13 +335,14 @@ const TransactionActivity: React.FC<TransactionActivityProps> = ({
                           return (
                             <div 
                               key={idx} 
-                              className={`w-4 h-4 rounded-sm transition-colors cursor-pointer border ${
+                              className={`w-4 h-4 rounded-sm transition-colors cursor-pointer border hover:scale-110 ${
                                 getActivityColor(activityCount)
                               } ${theme === 'dark' ? 'border-gray-700' : 'border-gray-200'}`}
                               style={{
                                 gridRow,
                                 gridColumn
                               }}
+                              onClick={() => handleDayClick(dailyCell.week, dailyCell.day)}
                               onMouseEnter={(e) => {
                                 const rect = e.currentTarget.getBoundingClientRect();
                                 setHoveredCell({
@@ -334,6 +375,9 @@ const TransactionActivity: React.FC<TransactionActivityProps> = ({
                             <div className="text-xs text-gray-300">
                               {hoveredCell.count} transaction{hoveredCell.count !== 1 ? 's' : ''}
                             </div>
+                            <div className="text-xs text-gray-400 mt-1">
+                              Click to view in explorer
+                            </div>
                           </div>
                         )}
                       </div>
@@ -352,12 +396,14 @@ const TransactionActivity: React.FC<TransactionActivityProps> = ({
                 .slice(0, 20) // Show top 20 most active days
                 .map((cell, idx) => {
                   const date = getDateFromWeekDay(cell.week, cell.day);
+                  
                   return (
                     <div 
                       key={idx}
-                      className={`flex items-center justify-between p-3 rounded-lg ${
-                        theme === 'dark' ? 'bg-gray-700' : 'bg-gray-100'
+                      className={`flex items-center justify-between p-3 rounded-lg cursor-pointer transition-colors hover:bg-opacity-80 ${
+                        theme === 'dark' ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-100 hover:bg-gray-200'
                       }`}
+                      onClick={() => handleDayClick(cell.week, cell.day)}
                     >
                       <div className="flex items-center space-x-3">
                         <div className={`w-4 h-4 rounded ${getActivityColor(cell.activityCount)}`}></div>
@@ -367,11 +413,18 @@ const TransactionActivity: React.FC<TransactionActivityProps> = ({
                           {date.toLocaleDateString()}
                         </span>
                       </div>
-                      <span className={`text-sm font-medium ${
-                        theme === 'dark' ? 'text-white' : 'text-gray-900'
-                      }`}>
-                        {cell.activityCount} transactions
-                      </span>
+                      <div className="flex items-center space-x-2">
+                        <span className={`text-sm font-medium ${
+                          theme === 'dark' ? 'text-white' : 'text-gray-900'
+                        }`}>
+                          {cell.activityCount} transactions
+                        </span>
+                        <span className={`text-xs ${
+                          theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
+                        }`}>
+                          Click to view
+                        </span>
+                      </div>
                     </div>
                   );
                 })}

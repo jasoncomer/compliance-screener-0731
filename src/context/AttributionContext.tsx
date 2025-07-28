@@ -1,5 +1,5 @@
 // AttributionContext.tsx
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useContext, useState, useCallback, useMemo } from 'react';
 import { IAttributionMap, ReferenceAttributionMap, IAttribution, IReferenceAttribution } from '../typings/ReferenceAttribution';
 import { api } from '../api/api';
 
@@ -20,6 +20,8 @@ export const AttributionProvider: React.FC<{ children: React.ReactNode }> = ({ c
   const [isLoading, setIsLoading] = useState(false);
 
   const fetchAttributions = useCallback(async (addresses: string[]) => {
+    if (addresses.length === 0) return;
+    
     try {
       setIsLoading(true);
       setError(null);
@@ -36,8 +38,8 @@ export const AttributionProvider: React.FC<{ children: React.ReactNode }> = ({ c
         return acc;
       }, {});
 
-      setAttributions(newAttributions);
-      setReferenceAttributions(newReferenceAttributions);
+      setAttributions(prev => ({ ...prev, ...newAttributions }));
+      setReferenceAttributions(prev => ({ ...prev, ...newReferenceAttributions }));
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Failed to fetch attributions'));
     } finally {
@@ -45,16 +47,17 @@ export const AttributionProvider: React.FC<{ children: React.ReactNode }> = ({ c
     }
   }, []);
 
+  // Memoize the context value to prevent unnecessary rerenders
+  const contextValue = useMemo(() => ({
+    attributions,
+    referenceAttributions,
+    fetchAttributions,
+    isLoading,
+    error
+  }), [attributions, referenceAttributions, fetchAttributions, isLoading, error]);
+
   return (
-    <AttributionContext.Provider 
-      value={{ 
-        attributions, 
-        referenceAttributions, 
-        fetchAttributions,
-        isLoading,
-        error 
-      }}
-    >
+    <AttributionContext.Provider value={contextValue}>
       {children}
     </AttributionContext.Provider>
   );
