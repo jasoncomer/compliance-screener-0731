@@ -2,9 +2,11 @@ import React, { useState, useMemo } from 'react';
 import { useTheme } from '../../../../context/ThemeContext';
 import { TransformedTransaction } from '../../../../utils/transactionTransformers';
 import { X, ExternalLink, Copy, Check, TrendingUp, BarChart3, ArrowUpRight, ArrowDownRight } from 'lucide-react';
+import { truncateAddress } from '../../../../utils/crypto';
 
 interface Counterparty {
   entity: string;
+  entityId?: string; // Add entity ID for better identification
   direction: 'inflow' | 'outflow';
   amount: string;
   btcAmount: string;
@@ -67,6 +69,13 @@ const TopCounterparties: React.FC<TopCounterpartiesProps> = ({
   const openAddressInExplorer = () => {
     if (selectedCounterparty?.address) {
       const explorerUrl = `/home/block-explorer/address/${selectedCounterparty.address}`;
+      window.open(explorerUrl, '_blank', 'noopener,noreferrer');
+    }
+  };
+
+  const openEntityInExplorer = () => {
+    if (selectedCounterparty?.entityId) {
+      const explorerUrl = `/home/blockham?entity=${selectedCounterparty.entityId}`;
       window.open(explorerUrl, '_blank', 'noopener,noreferrer');
     }
   };
@@ -210,11 +219,13 @@ const TopCounterparties: React.FC<TopCounterpartiesProps> = ({
                       >
                         <td className="py-3 px-2">
                           <div className="flex items-center space-x-2">
-                            <span className={`text-sm font-medium ${
-                              theme === 'dark' ? 'text-white' : 'text-gray-900'
-                            }`}>
-                              {record.entity}
-                            </span>
+                            <div className="flex flex-col">
+                              <span className={`text-sm font-medium ${
+                                theme === 'dark' ? 'text-white' : 'text-gray-900'
+                              }`}>
+                                {truncateAddress(record.address)}
+                              </span>
+                            </div>
                           </div>
                         </td>
                         <td className="py-3 px-2">
@@ -274,7 +285,7 @@ const TopCounterparties: React.FC<TopCounterpartiesProps> = ({
               <h3 className={`text-lg font-semibold ${
                 theme === 'dark' ? 'text-white' : 'text-gray-900'
               }`}>
-                Transactions with {selectedCounterparty.entity}
+                Transactions with {selectedCounterparty.address}
               </h3>
               <button
                 onClick={closeModal}
@@ -360,7 +371,8 @@ const TopCounterparties: React.FC<TopCounterpartiesProps> = ({
                   theme === 'dark' ? 'text-white' : 'text-gray-900'
                 }`}>Recent Transactions</h4>
                 <div className="overflow-x-auto">
-                  <table className="w-full">
+                  <div className="max-h-64 overflow-y-auto">
+                    <table className="w-full">
                     <thead>
                       <tr className={`border-b ${
                         theme === 'dark' ? 'border-gray-700' : 'border-gray-200'
@@ -380,7 +392,7 @@ const TopCounterparties: React.FC<TopCounterpartiesProps> = ({
                       </tr>
                     </thead>
                     <tbody>
-                      {getCounterpartyTransactions(selectedCounterparty.address).slice(0, 4).map((tx, index) => (
+                      {getCounterpartyTransactions(selectedCounterparty.address).map((tx, index) => (
                         <tr 
                           key={index}
                           className={`border-b ${
@@ -419,6 +431,7 @@ const TopCounterparties: React.FC<TopCounterpartiesProps> = ({
                       ))}
                     </tbody>
                   </table>
+                  </div>
                 </div>
               </div>
             </div>
@@ -437,6 +450,21 @@ const TopCounterparties: React.FC<TopCounterpartiesProps> = ({
               >
                 Close
               </button>
+              {selectedCounterparty.entityId && (
+                <button
+                  onClick={() => {
+                    openEntityInExplorer();
+                    closeModal();
+                  }}
+                  className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                    theme === 'dark' 
+                      ? 'bg-blue-600 text-white hover:bg-blue-700' 
+                      : 'bg-blue-600 text-white hover:bg-blue-700'
+                  }`}
+                >
+                  View Entity
+                </button>
+              )}
               <button
                 onClick={() => {
                   onCounterpartyClick?.(selectedCounterparty.address);

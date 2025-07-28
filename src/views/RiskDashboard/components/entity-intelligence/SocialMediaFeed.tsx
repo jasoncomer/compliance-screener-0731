@@ -183,20 +183,17 @@ const NewsFeed: React.FC<NewsFeedProps> = ({
   );
 
   const FeedTab: React.FC<{ data: NewsData; maxHeight?: number }> = ({ data }) => {
-    // Fixed height for each column - approximately 3 items worth of space
-    const columnHeight = 400; // Adjust this value as needed
-    
     return (
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full w-full">
         {/* Latest Tweets Column */}
-        <div className="flex flex-col border rounded-lg overflow-hidden h-full w-full" style={{ height: columnHeight }}>
+        <div className="flex flex-col border rounded-lg overflow-hidden h-full w-full">
           <h4 className={`font-semibold text-sm p-3 border-b flex-shrink-0 flex items-center ${
             theme === 'dark' ? 'text-white border-gray-600 bg-gray-800' : 'text-gray-900 border-gray-200 bg-gray-50'
           }`}>
             <Twitter className="w-4 h-4 mr-2" />
             Latest Tweets ({data.tweets.length})
           </h4>
-          <div className="flex-1 overflow-y-auto overflow-x-hidden p-3" style={{ height: `calc(${columnHeight}px - 56px)` }}>
+          <div className="flex-1 overflow-y-auto overflow-x-hidden p-3">
             {data.tweets.length === 0 ? (
               <div className={`text-center py-8 ${
                 theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
@@ -215,14 +212,14 @@ const NewsFeed: React.FC<NewsFeedProps> = ({
         </div>
 
         {/* Latest News Column */}
-        <div className="flex flex-col border rounded-lg overflow-hidden h-full w-full" style={{ height: columnHeight }}>
+        <div className="flex flex-col border rounded-lg overflow-hidden h-full w-full">
           <h4 className={`font-semibold text-sm p-3 border-b flex-shrink-0 flex items-center ${
             theme === 'dark' ? 'text-white border-gray-600 bg-gray-800' : 'text-gray-900 border-gray-200 bg-gray-50'
           }`}>
             <Globe className="w-4 h-4 mr-2" />
             Latest News ({data.news.length})
           </h4>
-          <div className="flex-1 overflow-y-auto overflow-x-hidden p-3" style={{ height: `calc(${columnHeight}px - 56px)` }}>
+          <div className="flex-1 overflow-y-auto overflow-x-hidden p-3">
             {data.news.length === 0 ? (
               <div className={`text-center py-8 ${
                 theme === 'dark' ? 'text-gray-400' : 'text-gray-500'

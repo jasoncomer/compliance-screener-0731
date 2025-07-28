@@ -70,6 +70,27 @@ const RiskDashboard: React.FC = React.memo(() => {
   const { itemsMap, items } = useAppSelector((state: RootState) => state.sot);
   const dispatch = useAppDispatch();
 
+  // Load SOT data on component mount
+  useEffect(() => {
+    console.log('Loading SOT data on component mount');
+    dispatch(fetchSOT());
+  }, [dispatch]);
+
+  // Debug: Log itemsMap and attributions changes
+  useEffect(() => {
+    console.log('itemsMap updated:', { 
+      itemsMapKeys: Object.keys(itemsMap).length,
+      sampleItems: Object.values(itemsMap).slice(0, 3).map(item => ({ entity_id: item.entity_id, proper_name: item.proper_name }))
+    });
+  }, [itemsMap]);
+
+  useEffect(() => {
+    console.log('attributions updated:', { 
+      attributionKeys: Object.keys(attributions).length,
+      sampleAttributions: Object.entries(attributions).slice(0, 3)
+    });
+  }, [attributions]);
+
   // Loading state - memoized to prevent unnecessary recalculations
   const isLoadingAnyData = useMemo(() => 
     isLoadingTransactions || 
@@ -166,11 +187,14 @@ const RiskDashboard: React.FC = React.memo(() => {
     const incomingCounterparties = Object.entries(incomingByAddress)
       .map(([address, data]) => {
         const entityId = attributions[address]?.entity || attributions[address]?.bo || attributions[address]?.custodian;
-        const entity = entityId ? itemsMap[entityId] : null;
+        console.log('Processing incoming counterparty:', { address, entityId, itemsMapKeys: Object.keys(itemsMap).length });
+        const entity = entityId ? Object.values(itemsMap).find(sot => sot.entity_id === entityId) : null;
+        console.log('Found entity:', entity);
         const entityName = entity?.proper_name || truncateAddress(address);
         
         return {
           entity: entityName,
+          entityId: entityId || undefined,
           direction: 'inflow' as const,
           amount: `$${(data.totalAmount * btcPrice).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
           btcAmount: `${data.totalAmount.toFixed(8)} BTC`,
@@ -188,11 +212,12 @@ const RiskDashboard: React.FC = React.memo(() => {
     const outgoingCounterparties = Object.entries(outgoingByAddress)
       .map(([address, data]) => {
         const entityId = attributions[address]?.entity || attributions[address]?.bo || attributions[address]?.custodian;
-        const entity = entityId ? itemsMap[entityId] : null;
+        const entity = entityId ? Object.values(itemsMap).find(sot => sot.entity_id === entityId) : null;
         const entityName = entity?.proper_name || truncateAddress(address);
         
         return {
           entity: entityName,
+          entityId: entityId || undefined,
           direction: 'outflow' as const,
           amount: `$${(data.totalAmount * btcPrice).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
           btcAmount: `${data.totalAmount.toFixed(8)} BTC`,
@@ -256,7 +281,7 @@ const RiskDashboard: React.FC = React.memo(() => {
         const entityId = attributions[topCounterpartyAddress]?.entity || 
                         attributions[topCounterpartyAddress]?.bo || 
                         attributions[topCounterpartyAddress]?.custodian;
-        const entity = entityId ? itemsMap[entityId] : null;
+        const entity = entityId ? Object.values(itemsMap).find(sot => sot.entity_id === entityId) : null;
         topCounterparty = entity?.proper_name || topCounterpartyAddress;
       }
     }
@@ -575,8 +600,8 @@ const RiskDashboard: React.FC = React.memo(() => {
     transformedTransactions.forEach(tx => {
       if (tx.type === 'in' && tx.from !== 'Unknown') {
         const entityId = attributions[tx.from]?.entity || attributions[tx.from]?.bo || attributions[tx.from]?.custodian;
-        const entity = entityId ? itemsMap[entityId] : null;
-        const entityName = entity?.proper_name || tx.from;
+        const entity = entityId ? Object.values(itemsMap).find(sot => sot.entity_id === entityId) : null;
+        const entityName = entity?.proper_name || truncateAddress(tx.from);
         
         if (!incomingByEntity[entityName]) {
           incomingByEntity[entityName] = 0;
@@ -584,8 +609,8 @@ const RiskDashboard: React.FC = React.memo(() => {
         incomingByEntity[entityName] += tx.value * btcPrice;
       } else if (tx.type === 'out' && tx.to !== 'Unknown') {
         const entityId = attributions[tx.to]?.entity || attributions[tx.to]?.bo || attributions[tx.to]?.custodian;
-        const entity = entityId ? itemsMap[entityId] : null;
-        const entityName = entity?.proper_name || tx.to;
+        const entity = entityId ? Object.values(itemsMap).find(sot => sot.entity_id === entityId) : null;
+        const entityName = entity?.proper_name || truncateAddress(tx.to);
         
         if (!outgoingByEntity[entityName]) {
           outgoingByEntity[entityName] = 0;
@@ -613,7 +638,7 @@ const RiskDashboard: React.FC = React.memo(() => {
       .slice(0, 5);
 
     return { incoming: incomingData, outgoing: outgoingData };
-  }, [transformedTransactions, attributions, btcPrice, itemsMap]);
+  }, [transformedTransactions, attributions, btcPrice, itemsMap, truncateAddress]);
 
   // Check if we have data to display - memoized
   const shouldShowData = useMemo(() => 
