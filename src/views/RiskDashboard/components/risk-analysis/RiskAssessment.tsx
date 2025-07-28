@@ -1,5 +1,5 @@
 import React from 'react';
-import { Shield, Eye, Loader2 } from 'lucide-react';
+import { Shield, Eye, Loader2, Info } from 'lucide-react';
 import { useTheme } from "../../../../context/ThemeContext";
 
 interface RiskAssessmentProps {
@@ -47,16 +47,16 @@ const RiskAssessment: React.FC<RiskAssessmentProps> = ({
   const riskColor = getRiskColor(score);
 
   return (
-    <div className={`rounded-2xl border p-6 h-full flex flex-col justify-center items-center ${
+    <div className={`rounded-2xl border p-4 h-full flex flex-col justify-center items-center ${
       theme === 'dark' 
         ? 'bg-gray-800/50 border-gray-700' 
         : 'bg-gray-50 border-gray-200'
     }`}>
-      <h5 className={`text-lg font-semibold mb-4 ${
+      <h5 className={`text-lg font-semibold mb-3 ${
         theme === 'dark' ? 'text-white' : 'text-gray-900'
       }`}>Risk Assessment</h5>
       
-      <div className="flex items-center mb-4">
+      <div className="flex items-center mb-3">
         <Shield className="w-8 h-8 mr-3" style={{ color: riskColor }} />
         <div className="text-center">
           <div className="text-4xl font-bold" style={{ color: riskColor }}>
@@ -68,18 +68,31 @@ const RiskAssessment: React.FC<RiskAssessmentProps> = ({
         </div>
       </div>
       
-      <div className="font-semibold text-lg mb-2" style={{ color: riskColor }}>
-        {level}
-      </div>
-      
-      <div className={`text-sm text-center mb-6 px-4 ${
-        theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
-      }`}>
-        {description}
+      <div className="flex items-center justify-center mb-4">
+        <div className="font-semibold text-lg mr-2" style={{ color: riskColor }}>
+          {level}
+        </div>
+        <div className="relative group">
+          <Info 
+            className="w-4 h-4 cursor-help text-gray-500 dark:text-gray-400" 
+          />
+          <div className={`absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 text-sm rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-10 min-w-[300px] max-w-[400px] ${
+            theme === 'dark' 
+              ? 'bg-gray-800 text-gray-200 border border-gray-700' 
+              : 'bg-white text-gray-800 border border-gray-200'
+          }`}>
+            {description}
+            <div className={`absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent ${
+              theme === 'dark' 
+                ? 'border-t-gray-800' 
+                : 'border-t-white'
+            }`}></div>
+          </div>
+        </div>
       </div>
       
       <button 
-        className={`w-full rounded-lg font-semibold transition-colors duration-200 flex items-center justify-center gap-2 py-2 px-4 ${
+        className={`w-full rounded-lg font-semibold transition-colors duration-200 flex items-center justify-center gap-2 py-1.5 px-3 ${
           onSeeDetails
             ? 'bg-brand-primary text-white hover:bg-brand-primary/90'
             : 'bg-gray-300 text-gray-500 cursor-not-allowed'

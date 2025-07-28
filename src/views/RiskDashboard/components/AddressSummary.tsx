@@ -17,15 +17,15 @@ export function AddressSummary({
 
   if (isLoading) {
     return (
-      <div className={`rounded-2xl border p-6 h-full ${
+      <div className={`rounded-2xl border p-4 h-full ${
         theme === 'dark' 
           ? 'bg-gray-800/50 border-gray-700' 
           : 'bg-gray-50 border-gray-200'
       }`}>
-        <h4 className={`text-xl font-semibold mb-6 ${
+        <h4 className={`text-xl font-semibold mb-4 ${
           theme === 'dark' ? 'text-white' : 'text-gray-900'
         }`}>Summary</h4>
-        <div className="space-y-6">
+        <div className="space-y-4">
           <div className="flex justify-between items-center py-2">
             <span className={`text-base ${
               theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
@@ -56,15 +56,15 @@ export function AddressSummary({
   };
 
   return (
-    <div className={`rounded-2xl border p-6 h-full ${
+    <div className={`rounded-2xl border p-4 h-full ${
       theme === 'dark' 
         ? 'bg-gray-800/50 border-gray-700' 
         : 'bg-gray-50 border-gray-200'
     }`}>
-      <h4 className={`text-xl font-semibold mb-6 ${
+      <h4 className={`text-xl font-semibold mb-4 ${
         theme === 'dark' ? 'text-white' : 'text-gray-900'
       }`}>Summary</h4>
-      <div className="space-y-6">
+      <div className="space-y-4">
         <div className="flex justify-between items-center py-2">
           <span className={`text-base ${
             theme === 'dark' ? 'text-gray-400' : 'text-gray-600'

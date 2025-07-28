@@ -41,7 +41,17 @@ const RiskDashboard: React.FC = React.memo(() => {
   const [entityDetailsHeight, setEntityDetailsHeight] = useState<number | undefined>(undefined);
   const entityDetailsRef = useRef<HTMLDivElement>(null);
   const resizeObserverRef = useRef<ResizeObserver | null>(null);
-  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
+  const [selectedYear, setSelectedYear] = useState<number>(() => {
+    // Initialize with current year, will be updated when transaction data is available
+    return new Date().getFullYear();
+  });
+  const hasSetInitialYear = useRef(false);
+
+  // Debug: Log when address changes and reset year selection flag
+  useEffect(() => {
+    console.log('Address changed to:', address);
+    hasSetInitialYear.current = false; // Reset flag when address changes
+  }, [address]);
 
   // React Query hooks - Fetch more transactions for activity analysis
   const { data: counterpartyTransactionData, isLoading: isLoadingTransactions } = useAddressTransactions(address, 1, 100);
@@ -57,7 +67,7 @@ const RiskDashboard: React.FC = React.memo(() => {
 
   // Attribution and SOT data hooks
   const { fetchAttributions, attributions } = useAttribution();
-  const { itemsMap } = useAppSelector((state: RootState) => state.sot);
+  const { itemsMap, items } = useAppSelector((state: RootState) => state.sot);
   const dispatch = useAppDispatch();
 
   // Loading state - memoized to prevent unnecessary recalculations
@@ -77,13 +87,38 @@ const RiskDashboard: React.FC = React.memo(() => {
     
     const txData = activityTransactionData?.txs || counterpartyTransactionData?.txs || [];
     
+    console.log('Calculating yearTransactionCounts - txData length:', txData.length);
+    console.log('Calculating yearTransactionCounts - sample txData:', txData.slice(0, 3));
+    
     txData.forEach(tx => {
       const txYear = new Date(tx.timestamp * 1000).getFullYear();
       counts[txYear] = (counts[txYear] || 0) + 1;
     });
     
+    console.log('Calculating yearTransactionCounts - final counts:', counts);
     return counts;
   }, [activityTransactionData?.txs, counterpartyTransactionData?.txs]);
+
+  // Set default year to the year with most transactions
+  useEffect(() => {
+    console.log('Year selection effect - yearTransactionCounts:', yearTransactionCounts);
+    console.log('Year selection effect - hasSetInitialYear.current:', hasSetInitialYear.current);
+    console.log('Year selection effect - current selectedYear:', selectedYear);
+    
+    if (Object.keys(yearTransactionCounts).length > 0 && !hasSetInitialYear.current) {
+      const yearWithMostTransactions = Object.entries(yearTransactionCounts)
+        .reduce((max, [year, count]) => count > max.count ? { year: parseInt(year), count } : max, 
+          { year: new Date().getFullYear(), count: 0 });
+      
+      console.log('Year selection effect - yearWithMostTransactions:', yearWithMostTransactions);
+      
+      if (yearWithMostTransactions.count > 0) {
+        console.log('Setting selected year to:', yearWithMostTransactions.year);
+        setSelectedYear(yearWithMostTransactions.year);
+        hasSetInitialYear.current = true;
+      }
+    }
+  }, [yearTransactionCounts]);
 
   // Transform transaction data for counterparty analysis - memoized
   const transformedTransactions = useMemo(() => {
@@ -250,42 +285,42 @@ const RiskDashboard: React.FC = React.memo(() => {
 
   // Entity helper functions - memoized
   const getEntityType = useCallback((entityId: string) => {
-    const entity = itemsMap[entityId];
+    const entity = items.find(item => item.entity_id === entityId);
     return entity?.entity_type ? getEntityTypeLabel(entity.entity_type as EEntityType) : 'Unknown';
-  }, [itemsMap]);
+  }, [items]);
 
   const getEntityLogo = useCallback((entityId: string) => {
-    const entity = itemsMap[entityId];
+    const entity = items.find(item => item.entity_id === entityId);
     return entity?.logo || '';
-  }, [itemsMap]);
+  }, [items]);
 
   const getEntityDescription = useCallback((entityId: string) => {
-    const entity = itemsMap[entityId];
+    const entity = items.find(item => item.entity_id === entityId);
     return entity?.description_merged || 'No description available';
-  }, [itemsMap]);
+  }, [items]);
 
   const getEntityWebsite = useCallback((entityId: string) => {
-    const entity = itemsMap[entityId];
+    const entity = items.find(item => item.entity_id === entityId);
     return entity?.url || '';
-  }, [itemsMap]);
+  }, [items]);
 
   const getEntityPhone = useCallback((entityId: string) => {
-    const entity = itemsMap[entityId];
+    const entity = items.find(item => item.entity_id === entityId);
     return entity?.contact_phone || '';
-  }, [itemsMap]);
+  }, [items]);
 
   const getEntityAddress = useCallback((entityId: string) => {
-    const entity = itemsMap[entityId];
+    const entity = items.find(item => item.entity_id === entityId);
     return entity?.contact_address || '';
-  }, [itemsMap]);
+  }, [items]);
 
   const getEntityFounded = useCallback((entityId: string) => {
-    const entity = itemsMap[entityId];
+    const entity = items.find(item => item.entity_id === entityId);
     return entity?.year_founded ? parseInt(entity.year_founded) : 0;
-  }, [itemsMap]);
+  }, [items]);
 
   const getEntityCountries = useCallback((entityId: string) => {
-    const entity = itemsMap[entityId];
+    const entity = items.find(item => item.entity_id === entityId);
     if (!entity) return [];
     
     const countries = [];
@@ -296,10 +331,10 @@ const RiskDashboard: React.FC = React.memo(() => {
       }
     }
     return countries;
-  }, [itemsMap]);
+  }, [items]);
 
   const getEntityTags = useCallback((entityId: string): string[] => {
-    const entity = itemsMap[entityId];
+    const entity = items.find(item => item.entity_id === entityId);
     if (!entity) return [];
     
     const tags: string[] = [];
@@ -310,56 +345,56 @@ const RiskDashboard: React.FC = React.memo(() => {
       }
     }
     return tags;
-  }, [itemsMap]);
+  }, [items]);
 
   // Additional entity helper functions - memoized
   const getEntityEmail = useCallback((entityId: string) => {
-    const entity = itemsMap[entityId];
+    const entity = items.find(item => item.entity_id === entityId);
     return entity?.contact_email || '';
-  }, [itemsMap]);
+  }, [items]);
 
   const getEntityTwitter = useCallback((entityId: string) => {
-    const entity = itemsMap[entityId];
+    const entity = items.find(item => item.entity_id === entityId);
     return entity?.contact_twitter || '';
-  }, [itemsMap]);
+  }, [items]);
 
   const getEntityTelegram = useCallback((entityId: string) => {
-    const entity = itemsMap[entityId];
+    const entity = items.find(item => item.entity_id === entityId);
     return entity?.contact_telegram || '';
-  }, [itemsMap]);
+  }, [items]);
 
   const getEntityEnsAddress = useCallback((entityId: string) => {
-    const entity = itemsMap[entityId];
+    const entity = items.find(item => item.entity_id === entityId);
     return entity?.ens_address || '';
-  }, [itemsMap]);
+  }, [items]);
 
   const getEntityLegalInfoUrl = useCallback((entityId: string) => {
-    const entity = itemsMap[entityId];
+    const entity = items.find(item => item.entity_id === entityId);
     return entity?.legal_info_url || '';
-  }, [itemsMap]);
+  }, [items]);
 
   const getEntityCeo = useCallback((entityId: string) => {
-    const entity = itemsMap[entityId];
+    const entity = items.find(item => item.entity_id === entityId);
     return entity?.ceo || '';
-  }, [itemsMap]);
+  }, [items]);
 
   const getEntityKeyPersonnel = useCallback((entityId: string) => {
-    const entity = itemsMap[entityId];
+    const entity = items.find(item => item.entity_id === entityId);
     return entity?.key_personnel || '';
-  }, [itemsMap]);
+  }, [items]);
 
   const getEntityTicker = useCallback((entityId: string) => {
-    const entity = itemsMap[entityId];
+    const entity = items.find(item => item.entity_id === entityId);
     return entity?.ticker || '';
-  }, [itemsMap]);
+  }, [items]);
 
   const getEntityParentId = useCallback((entityId: string) => {
-    const entity = itemsMap[entityId];
+    const entity = items.find(item => item.entity_id === entityId);
     return entity?.parent_id || '';
-  }, [itemsMap]);
+  }, [items]);
 
   const getEntitySocialMediaProfiles = useCallback((entityId: string): string[] => {
-    const entity = itemsMap[entityId];
+    const entity = items.find(item => item.entity_id === entityId);
     if (!entity) return [];
     
     const profiles: string[] = [];
@@ -370,47 +405,47 @@ const RiskDashboard: React.FC = React.memo(() => {
       }
     }
     return profiles;
-  }, [itemsMap]);
+  }, [items]);
 
   const getEntityIsCentralized = useCallback((entityId: string): boolean | undefined => {
-    const entity = itemsMap[entityId];
+    const entity = items.find(item => item.entity_id === entityId);
     return entity?.centralized ?? undefined;
-  }, [itemsMap]);
+  }, [items]);
 
   const getEntityNoKycRequired = useCallback((entityId: string) => {
-    const entity = itemsMap[entityId];
+    const entity = items.find(item => item.entity_id === entityId);
     return entity?.no_kyc_req || false;
-  }, [itemsMap]);
+  }, [items]);
 
   const getEntityIsDead = useCallback((entityId: string) => {
-    const entity = itemsMap[entityId];
+    const entity = items.find(item => item.entity_id === entityId);
     return entity?.dead || false;
-  }, [itemsMap]);
+  }, [items]);
 
   const getEntityIsOfacSanctioned = useCallback((entityId: string) => {
-    const entity = itemsMap[entityId];
+    const entity = items.find(item => item.entity_id === entityId);
     return entity?.ofac || false;
-  }, [itemsMap]);
+  }, [items]);
 
   const getEntityNote = useCallback((entityId: string) => {
-    const entity = itemsMap[entityId];
+    const entity = items.find(item => item.entity_id === entityId);
     return entity?.note || '';
-  }, [itemsMap]);
+  }, [items]);
 
   const getEntityLastUpdated = useCallback((entityId: string) => {
-    const entity = itemsMap[entityId];
+    const entity = items.find(item => item.entity_id === entityId);
     return entity?.date_updated || '';
-  }, [itemsMap]);
+  }, [items]);
 
   const getEntityLastModifiedBy = useCallback((entityId: string) => {
-    const entity = itemsMap[entityId];
+    const entity = items.find(item => item.entity_id === entityId);
     return entity?.user || '';
-  }, [itemsMap]);
+  }, [items]);
 
   const getEntityRevisitSite = useCallback((entityId: string) => {
-    const entity = itemsMap[entityId];
+    const entity = items.find(item => item.entity_id === entityId);
     return entity?.revisit_site || false;
-  }, [itemsMap]);
+  }, [items]);
 
   // Risk level helper functions - memoized
   const getRiskLevel = useCallback((score: number): string => {
@@ -742,7 +777,7 @@ const RiskDashboard: React.FC = React.memo(() => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
             <div ref={entityDetailsRef} className="rounded-2xl border p-6 bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700">
               <EntityDetails 
-                name={primaryEntityId ? (itemsMap[primaryEntityId]?.proper_name || primaryEntityId) : "Unknown Entity"}
+                name={primaryEntityId ? (items.find(item => item.entity_id === primaryEntityId)?.proper_name || primaryEntityId) : "Unknown Entity"}
                 type={primaryEntityId ? getEntityType(primaryEntityId) : "Unknown"}
                 description={primaryEntityId ? getEntityDescription(primaryEntityId) : "No description available"}
                 website={primaryEntityId ? getEntityWebsite(primaryEntityId) : ""}

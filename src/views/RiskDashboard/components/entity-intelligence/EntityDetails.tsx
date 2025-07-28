@@ -1,5 +1,5 @@
 import React from 'react';
-import { UserOutlined, GlobalOutlined, TwitterOutlined, SendOutlined, MailOutlined, PhoneOutlined, EnvironmentOutlined, WarningOutlined, TagOutlined, TeamOutlined, CalendarOutlined, LinkOutlined, DatabaseOutlined } from '@ant-design/icons';
+import { UserOutlined, GlobalOutlined, TwitterOutlined, SendOutlined, MailOutlined, PhoneOutlined, EnvironmentOutlined, WarningOutlined, TagOutlined, TeamOutlined, CalendarOutlined, LinkOutlined, DatabaseOutlined, CompassOutlined, FileTextOutlined } from '@ant-design/icons';
 import { useTheme } from '../../../../context/ThemeContext';
 
 interface EntityDetailsProps {
@@ -53,8 +53,6 @@ const EntityDetails: React.FC<EntityDetailsProps> = ({
   legalInfoUrl,
   ceo,
   keyPersonnel,
-  ticker,
-  parentId,
   entityTags = [],
   socialMediaProfiles = [],
   isCentralized,
@@ -177,190 +175,21 @@ const EntityDetails: React.FC<EntityDetailsProps> = ({
             }`}>Entity ID:</span> {entityId}
           </div>
         )}
-
-        {/* Description */}
-        {description && (
-          <div className={`text-sm ${
-            theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
-          }`}>
-            <span className={`font-medium ${
-              theme === 'dark' ? 'text-gray-200' : 'text-gray-700'
-            }`}>Description:</span> {description}
-          </div>
-        )}
-
-        {/* Leadership */}
-        {(ceo || keyPersonnel) && (
-          <div className={`text-sm ${
-            theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
-          }`}>
-            <span className={`font-medium flex items-center ${
-              theme === 'dark' ? 'text-gray-200' : 'text-gray-700'
-            }`}>
-              <TeamOutlined className="mr-1" />
-              Leadership:
-            </span>
-            <div className="ml-4 mt-1 space-y-1">
-              {ceo && <div>CEO: {ceo}</div>}
-              {keyPersonnel && (
-                <div>
-                  Key Personnel: {keyPersonnel.split(',').map(person => 
-                    <span key={person.trim()} className={`inline-block px-2 py-1 rounded text-xs mr-1 mb-1 ${
-                      theme === 'dark' 
-                        ? 'bg-gray-700 text-gray-300' 
-                        : 'bg-gray-200 text-gray-700'
-                    }`}>
-                      {person.trim()}
-                    </span>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Contact Information */}
-        {(website || email || phone || address || ensAddress) && (
-          <div className={`text-sm ${
-            theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
-          }`}>
-            <span className={`font-medium ${
-              theme === 'dark' ? 'text-gray-200' : 'text-gray-700'
-            }`}>Contact Information:</span>
-            <div className="ml-4 mt-1 space-y-1">
-              {website && (
-                <div className="flex items-center">
-                  <GlobalOutlined className="mr-2" />
-                  <a 
-                    href={`https://${website}`} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="text-brand-primary hover:text-brand-primary/80 transition-colors"
-                  >
-                    {website}
-                  </a>
-                </div>
-              )}
-              {email && (
-                <div className="flex items-center">
-                  <MailOutlined className="mr-2" />
-                  <a 
-                    href={`mailto:${email}`}
-                    className="text-brand-primary hover:text-brand-primary/80 transition-colors"
-                  >
-                    {email}
-                  </a>
-                </div>
-              )}
-              {phone && (
-                <div className="flex items-center">
-                  <PhoneOutlined className="mr-2" />
-                  {phone}
-                </div>
-              )}
-              {address && (
-                <div className="flex items-center">
-                  <EnvironmentOutlined className="mr-2" />
-                  {address}
-                </div>
-              )}
-              {ensAddress && (
-                <div className="flex items-center">
-                  <LinkOutlined className="mr-2" />
-                  ENS: {ensAddress}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Social Media */}
-        {(twitter || telegram || socialMediaProfiles.length > 0) && (
-          <div className={`text-sm ${
-            theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
-          }`}>
-            <span className={`font-medium ${
-              theme === 'dark' ? 'text-gray-200' : 'text-gray-700'
-            }`}>Social Media:</span>
-            <div className="ml-4 mt-1 space-y-1">
-              {twitter && (
-                <div className="flex items-center">
-                  <TwitterOutlined className="mr-2" />
-                  <a 
-                    href={`https://twitter.com/${twitter.replace('@', '')}`}
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="text-brand-primary hover:text-brand-primary/80 transition-colors"
-                  >
-                    {twitter}
-                  </a>
-                </div>
-              )}
-              {telegram && (
-                <div className="flex items-center">
-                  <SendOutlined className="mr-2" />
-                  <a 
-                    href={`https://t.me/${telegram.replace('@', '')}`}
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="text-brand-primary hover:text-brand-primary/80 transition-colors"
-                  >
-                    {telegram}
-                  </a>
-                </div>
-              )}
-              {socialMediaProfiles.map((profile, index) => (
-                <div key={index} className="flex items-center">
-                  {getSocialMediaIcon(profile)}
-                  <a 
-                    href={profile.startsWith('http') ? profile : `https://${profile}`}
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="text-brand-primary hover:text-brand-primary/80 transition-colors ml-2"
-                  >
-                    {profile}
-                  </a>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Additional Information */}
-        {(founded > 0 || ticker || parentId || countries.length > 0) && (
-          <div className={`text-sm ${
-            theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
-          }`}>
-            <span className={`font-medium ${
-              theme === 'dark' ? 'text-gray-200' : 'text-gray-700'
-            }`}>Additional Information:</span>
-            <div className="ml-4 mt-1 space-y-1">
-              {founded > 0 && (
-                <div className="flex items-center">
-                  <CalendarOutlined className="mr-2" />
-                  Founded: {founded}
-                </div>
-              )}
-              {ticker && (
-                <div>
-                  Ticker: {ticker.split(',').map(t => 
-                    <span key={t.trim()} className={`inline-block px-2 py-1 rounded text-xs mr-1 mb-1 ${
-                      theme === 'dark' 
-                        ? 'bg-gray-700 text-gray-300' 
-                        : 'bg-gray-200 text-gray-700'
-                    }`}>
-                      {t.trim()}
-                    </span>
-                  )}
-                </div>
-              )}
-              {parentId && (
-                <div>Parent ID: {parentId}</div>
-              )}
-              {countries.length > 0 && (
-                <div>
-                  Countries: {countries.map(country => 
-                    <span key={country} className={`inline-block px-2 py-1 rounded text-xs mr-1 mb-1 ${
+           
+            {/* Associated Countries */}
+            {countries.length > 0 && (
+              <div className={`text-sm ${
+                theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
+              }`}>
+                <span className={`font-medium flex items-center ${
+                  theme === 'dark' ? 'text-gray-200' : 'text-gray-700'
+                }`}>
+                  <CompassOutlined className="mr-1" />
+                  Associated Countries:
+                </span>
+                <div className="flex flex-wrap gap-1 mt-1">
+                  {countries.map(country => 
+                    <span key={country} className={`px-2 py-1 rounded text-xs ${
                       theme === 'dark' 
                         ? 'bg-gray-700 text-gray-300' 
                         : 'bg-gray-200 text-gray-700'
@@ -369,70 +198,251 @@ const EntityDetails: React.FC<EntityDetailsProps> = ({
                     </span>
                   )}
                 </div>
-              )}
-            </div>
-          </div>
-        )}
+              </div>
+            )}
 
-        {/* Entity Tags */}
-        {entityTags.length > 0 && (
+
+        {/* Description */}
+        {description && (
           <div className={`text-sm ${
             theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
           }`}>
             <span className={`font-medium flex items-center ${
               theme === 'dark' ? 'text-gray-200' : 'text-gray-700'
             }`}>
-              <TagOutlined className="mr-1" />
-              Entity Tags:
+              <FileTextOutlined className="mr-1" />
+              Description:
             </span>
-            <div className="ml-4 mt-1 flex flex-wrap gap-1">
-              {entityTags.map((tag, index) => (
-                <span key={index} className={`px-2 py-1 rounded text-xs ${
-                  theme === 'dark' 
-                    ? 'bg-gray-700 text-gray-300' 
-                    : 'bg-gray-200 text-gray-700'
+            <div className="mt-1 pl-4">
+              {description}
+            </div>
+          </div>
+        )}
+
+        {/* Two Column Layout for Lower Sections */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-6">
+          {/* Left Column */}
+          <div className="space-y-6">
+            {/* Leadership */}
+            {(ceo || keyPersonnel) && (
+              <div className={`text-sm mt-6 ${
+                theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
+              }`}>
+                <span className={`font-medium flex items-center ${
+                  theme === 'dark' ? 'text-gray-200' : 'text-gray-700'
                 }`}>
-                  {tag}
+                  <TeamOutlined className="mr-1" />
+                  Leadership:
                 </span>
-              ))}
-            </div>
-          </div>
-        )}
+                <div className="ml-4 mt-1 space-y-1">
+                  {ceo && <div>CEO: {ceo}</div>}
+                  {keyPersonnel && (
+                    <div>
+                      Key Personnel: {keyPersonnel.split(',').map(person => 
+                        <span key={person.trim()} className={`inline-block px-2 py-1 rounded text-xs mr-1 mb-1 ${
+                          theme === 'dark' 
+                            ? 'bg-gray-700 text-gray-300' 
+                            : 'bg-gray-200 text-gray-700'
+                        }`}>
+                          {person.trim()}
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
 
-        {/* Legal Information */}
-        {legalInfoUrl && (
-          <div className={`text-sm ${
-            theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
-          }`}>
-            <span className={`font-medium ${
-              theme === 'dark' ? 'text-gray-200' : 'text-gray-700'
-            }`}>Legal Information:</span>
-            <div className="ml-4 mt-1">
-              <a 
-                href={legalInfoUrl}
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="text-brand-primary hover:text-brand-primary/80 transition-colors flex items-center"
-              >
-                <GlobalOutlined className="mr-2" />
-                View Legal Information
-              </a>
-            </div>
-          </div>
-        )}
+            {/* Contact Information */}
+            {(website || email || phone || address || ensAddress) && (
+              <div className={`text-sm ${
+                theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
+              }`}>
+                <span className={`font-medium ${
+                  theme === 'dark' ? 'text-gray-200' : 'text-gray-700'
+                }`}>Contact Information:</span>
+                <div className="ml-4 mt-1 space-y-1">
+                  {website && (
+                    <div className="flex items-center">
+                      <GlobalOutlined className="mr-2" />
+                      <a 
+                        href={`https://${website}`} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="text-brand-primary hover:text-brand-primary/80 transition-colors"
+                      >
+                        {website}
+                      </a>
+                    </div>
+                  )}
+                  {email && (
+                    <div className="flex items-center">
+                      <MailOutlined className="mr-2" />
+                      <a 
+                        href={`mailto:${email}`}
+                        className="text-brand-primary hover:text-brand-primary/80 transition-colors"
+                      >
+                        {email}
+                      </a>
+                    </div>
+                  )}
+                  {phone && (
+                    <div className="flex items-center">
+                      <PhoneOutlined className="mr-2" />
+                      {phone}
+                    </div>
+                  )}
+                  {address && (
+                    <div className="flex items-center">
+                      <EnvironmentOutlined className="mr-2" />
+                      {address}
+                    </div>
+                  )}
+                  {ensAddress && (
+                    <div className="flex items-center">
+                      <LinkOutlined className="mr-2" />
+                      ENS: {ensAddress}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
 
-        {/* Notes */}
-        {note && (
-          <div className={`text-sm ${
-            theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
-          }`}>
-            <span className={`font-medium ${
-              theme === 'dark' ? 'text-gray-200' : 'text-gray-700'
-            }`}>Notes:</span> {note}
+            {/* Social Media */}
+            {(twitter || telegram || socialMediaProfiles.length > 0) && (
+              <div className={`text-sm ${
+                theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
+              }`}>
+                <span className={`font-medium ${
+                  theme === 'dark' ? 'text-gray-200' : 'text-gray-700'
+                }`}>Social Media:</span>
+                <div className="ml-4 mt-1 space-y-1">
+                  {twitter && (
+                    <div className="flex items-center">
+                      <TwitterOutlined className="mr-2" />
+                      <a 
+                        href={`https://twitter.com/${twitter.replace('@', '')}`}
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="text-brand-primary hover:text-brand-primary/80 transition-colors"
+                      >
+                        {twitter}
+                      </a>
+                    </div>
+                  )}
+                  {telegram && (
+                    <div className="flex items-center">
+                      <SendOutlined className="mr-2" />
+                      <a 
+                        href={`https://t.me/${telegram.replace('@', '')}`}
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="text-brand-primary hover:text-brand-primary/80 transition-colors"
+                      >
+                        {telegram}
+                      </a>
+                    </div>
+                  )}
+                  {socialMediaProfiles.map((profile, index) => (
+                    <div key={index} className="flex items-center">
+                      {getSocialMediaIcon(profile)}
+                      <a 
+                        href={profile.startsWith('http') ? profile : `https://${profile}`}
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="text-brand-primary hover:text-brand-primary/80 transition-colors ml-2"
+                      >
+                        {profile}
+                      </a>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
-        )}
 
-        {/* Metadata */}
+          {/* Right Column */}
+          <div className="space-y-6">
+            {/* Additional Information */}
+            {(founded > 0) && (
+              <div className={`text-sm mt-6 ${
+                theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
+              }`}>
+                <span className={`font-medium ${
+                  theme === 'dark' ? 'text-gray-200' : 'text-gray-700'
+                }`}>Additional Information:</span>
+                <div className="ml-4 mt-1 space-y-1">
+                  {founded > 0 && (
+                    <div className="flex items-center">
+                      <CalendarOutlined className="mr-2" />
+                      Founded: {founded}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Entity Tags */}
+            {entityTags.length > 0 && (
+              <div className={`text-sm ${
+                theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
+              }`}>
+                <span className={`font-medium flex items-center ${
+                  theme === 'dark' ? 'text-gray-200' : 'text-gray-700'
+                }`}>
+                  <TagOutlined className="mr-1" />
+                  Entity Tags:
+                </span>
+                <div className="ml-4 mt-1 flex flex-wrap gap-1">
+                  {entityTags.map((tag, index) => (
+                    <span key={index} className={`px-2 py-1 rounded text-xs ${
+                      theme === 'dark' 
+                        ? 'bg-gray-700 text-gray-300' 
+                        : 'bg-gray-200 text-gray-700'
+                    }`}>
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Legal Information */}
+            {legalInfoUrl && (
+              <div className={`text-sm ${
+                theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
+              }`}>
+                <span className={`font-medium ${
+                  theme === 'dark' ? 'text-gray-200' : 'text-gray-700'
+                }`}>Legal Information:</span>
+                <div className="ml-4 mt-1">
+                  <a 
+                    href={legalInfoUrl}
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-brand-primary hover:text-brand-primary/80 transition-colors flex items-center"
+                  >
+                    <GlobalOutlined className="mr-2" />
+                    View Legal Information
+                  </a>
+                </div>
+              </div>
+            )}
+
+            {/* Notes */}
+            {note && (
+              <div className={`text-sm ${
+                theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
+              }`}>
+                <span className={`font-medium ${
+                  theme === 'dark' ? 'text-gray-200' : 'text-gray-700'
+                }`}>Notes:</span> {note}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Metadata - Full Width */}
         {(lastModifiedBy || lastUpdated || revisitSite) && (
           <div className={`text-xs ${
             theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
