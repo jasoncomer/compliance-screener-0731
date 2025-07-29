@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { api } from '../api/api';
 
 export type TTickerSymbol = 'BTC';
@@ -12,15 +13,15 @@ interface CryptoPrices {
 
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes in milliseconds
 
-export const useCryptoPrices = () => {
-  const [prices, setPrices] = useState<CryptoPrices>({});
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<Error | null>(null);
+// Query keys for crypto prices
+export const cryptoPricesQueryKeys = {
+  all: ['crypto-prices'] as const,
+};
 
-  const fetchPrices = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
+export const useCryptoPrices = () => {
+  const { data: prices = {}, isLoading, error } = useQuery<CryptoPrices>({
+    queryKey: cryptoPricesQueryKeys.all,
+    queryFn: async () => {
       const response = await api.crypto.getPrices();
       
       const newPrices: CryptoPrices = {};
@@ -31,13 +32,12 @@ export const useCryptoPrices = () => {
         };
       });
       
-      setPrices(newPrices);
-    } catch (err) {
-      setError(err instanceof Error ? err : new Error('Failed to fetch crypto prices'));
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+      return newPrices;
+    },
+    staleTime: CACHE_DURATION,
+    gcTime: CACHE_DURATION * 2, // 10 minutes
+    refetchInterval: CACHE_DURATION,
+  });
 
   const getPrice = useCallback((symbol: TTickerSymbol): number | null => {
     const priceData = prices[symbol];
@@ -45,21 +45,11 @@ export const useCryptoPrices = () => {
 
     // Check if the price data is stale
     if (Date.now() - priceData.lastUpdated > CACHE_DURATION) {
-      fetchPrices(); // Trigger a refresh
       return priceData.price; // Return stale data while fetching
     }
 
     return priceData.price;
-  }, [prices, fetchPrices]);
-
-  useEffect(() => {
-    fetchPrices();
-    
-    // Set up periodic refresh
-    const intervalId = setInterval(fetchPrices, CACHE_DURATION);
-    
-    return () => clearInterval(intervalId);
-  }, [fetchPrices]);
+  }, [prices]);
 
   const memoizedPrices = useMemo(() => prices, [prices]);
 
@@ -68,6 +58,5 @@ export const useCryptoPrices = () => {
     isLoading,
     error,
     getPrice,
-    refreshPrices: fetchPrices,
   };
 }; 

@@ -80,11 +80,6 @@ const SideNav: React.FC<SideNavProps> = ({ theme, collapsed, onCollapse }) => {
       label: 'Block Explorer',
     },
     {
-      key: 'risk-scoring',
-      icon: <BarChart3 />,
-      label: 'Risk Scoring',
-    },
-    {
       key: 'risk-dashboard',
       icon: <BarChart3 />,
       label: 'Risk Dashboard',

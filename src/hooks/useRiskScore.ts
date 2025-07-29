@@ -1,47 +1,28 @@
-import { useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { calculateRiskScore } from '../api/riskScoring';
 import { RiskScoringResponse } from '../typings/riskScoring';
 
-interface UseRiskScoreReturn {
-  riskScore: RiskScoringResponse | null;
-  isLoading: boolean;
-  error: string | null;
-  refetch: () => Promise<void>;
-}
+// Query keys for risk scores
+export const riskScoreQueryKeys = {
+  all: ['risk-score'] as const,
+  detail: (address: string) => [...riskScoreQueryKeys.all, address] as const,
+};
 
-export const useRiskScore = (address: string): UseRiskScoreReturn => {
-  const [riskScore, setRiskScore] = useState<RiskScoringResponse | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const fetchRiskScore = async () => {
-    if (!address) {
-      setRiskScore(null);
-      return;
-    }
-
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const scores = await calculateRiskScore(address, 'address');
-      setRiskScore(scores);
-    } catch (err) {
-      console.error('Error fetching risk score:', err);
-      setError('Failed to fetch risk score');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchRiskScore();
-  }, [address]);
+export const useRiskScore = (address: string) => {
+  const { data: riskScore, isLoading, error, refetch } = useQuery<RiskScoringResponse>({
+    queryKey: riskScoreQueryKeys.detail(address),
+    queryFn: async () => {
+      return await calculateRiskScore(address, 'address');
+    },
+    enabled: !!address && address.trim().length > 0,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
+  });
 
   return {
-    riskScore,
+    riskScore: riskScore || null,
     isLoading,
-    error,
-    refetch: fetchRiskScore
+    error: error ? 'Failed to fetch risk score' : null,
+    refetch: () => refetch(),
   };
 }; 

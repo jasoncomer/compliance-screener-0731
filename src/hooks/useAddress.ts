@@ -10,14 +10,10 @@ export const addressQueryKeys = {
 
 // Hook for fetching address data
 export const useAddress = (address: string) => {
-  console.log('useAddress - called with:', { address });
-  
   return useQuery<IBtcAddress>({
     queryKey: addressQueryKeys.detail(address),
     queryFn: async () => {
-      console.log('useAddress - fetching data for address:', address);
       const result = await api.blockchain.getAddress(address);
-      console.log('useAddress - received data:', result);
       return result.data;
     },
     enabled: !!address && address.trim().length > 0,

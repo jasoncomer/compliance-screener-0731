@@ -183,7 +183,6 @@ const NewsFeed: React.FC<NewsFeedProps> = ({
   );
 
   const FeedTab: React.FC<{ data: NewsData; maxHeight?: number }> = ({ data }) => {
-    // Show only first 4 news items initially
     return (
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full w-full">
         {/* Latest Tweets Column */}
@@ -194,8 +193,7 @@ const NewsFeed: React.FC<NewsFeedProps> = ({
             <Twitter className="w-4 h-4 mr-2" />
             Latest Tweets ({data.tweets.length})
           </h4>
-          <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden p-3">
-            {/* 56px = h4 header height (p-3 + border), 48px = container padding (p-6 top + p-6 bottom), 16px = title mb-4, 12px = filter mb-3 */}
+          <div className="flex-1 overflow-y-auto overflow-x-hidden p-3">
             {data.tweets.length === 0 ? (
               <div className={`text-center py-8 ${
                 theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
@@ -221,8 +219,7 @@ const NewsFeed: React.FC<NewsFeedProps> = ({
             <Globe className="w-4 h-4 mr-2" />
             Latest News ({data.news.length})
           </h4>
-          <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden p-3">
-            {/* 56px = h4 header height (p-3 + border), 48px = container padding (p-6 top + p-6 bottom), 16px = title mb-4, 12px = filter mb-3 */}
+          <div className="flex-1 overflow-y-auto overflow-x-hidden p-3">
             {data.news.length === 0 ? (
               <div className={`text-center py-8 ${
                 theme === 'dark' ? 'text-gray-400' : 'text-gray-500'

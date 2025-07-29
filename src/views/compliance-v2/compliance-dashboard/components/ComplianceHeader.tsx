@@ -17,9 +17,6 @@ export default function ComplianceHeader() {
             Block Explorer
           </Button>
           <Button variant="ghost" className="text-gray-400">
-            Risk Scoring
-          </Button>
-          <Button variant="ghost" className="text-gray-400">
             WASP Entity Explorer
           </Button>
         </nav>
