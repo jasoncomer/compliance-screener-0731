@@ -220,9 +220,12 @@ const TopCounterparties: React.FC<TopCounterpartiesProps> = ({
                         <td className="py-3 px-2">
                           <div className="flex items-center space-x-2">
                             <div className="flex flex-col">
-                              <span className={`text-sm font-medium ${
-                                theme === 'dark' ? 'text-white' : 'text-gray-900'
-                              }`}>
+                              <span 
+                                className={`text-sm font-medium transition-colors duration-0 ${
+                                  theme === 'dark' ? 'text-white' : 'text-gray-900'
+                                }`}
+                                title={record.entity !== truncateAddress(record.address) ? `${record.entity}\nAddress: ${record.address}` : record.address}
+                              >
                                 {truncateAddress(record.address)}
                               </span>
                             </div>
@@ -307,9 +310,14 @@ const TopCounterparties: React.FC<TopCounterpartiesProps> = ({
                   <label className={`block text-sm font-medium mb-1 ${
                     theme === 'dark' ? 'text-gray-300' : 'text-gray-700'
                   }`}>Entity</label>
-                  <div className={`text-base ${
-                    theme === 'dark' ? 'text-white' : 'text-gray-900'
-                  }`}>{selectedCounterparty.entity}</div>
+                  <div 
+                    className={`text-base ${
+                      theme === 'dark' ? 'text-white' : 'text-gray-900'
+                    }`}
+                    title={selectedCounterparty.entity}
+                  >
+                    {selectedCounterparty.entity}
+                  </div>
                 </div>
                 <div>
                   <label className={`block text-sm font-medium mb-1 ${
@@ -486,4 +494,4 @@ const TopCounterparties: React.FC<TopCounterpartiesProps> = ({
   );
 };
 
-export default TopCounterparties; 
+export default TopCounterparties;
