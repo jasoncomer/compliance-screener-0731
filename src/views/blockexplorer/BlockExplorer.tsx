@@ -172,23 +172,25 @@ const BlockExplorer: React.FC = () => {
       title="Block Explorer"
       fullWidth={true}
     >
-      <div className="flex justify-between items-center gap-4 mb-6">
-        <div className="flex-1 max-w-2xl">
-          <SearchInput
-            placeholder={searchPlaceholder}
-            value={searchValue}
-            onChange={(e) => setSearchValue(e.target.value)}
-            onSearch={onSearch}
-          />
+      <div className="sticky top-0 z-20 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 px-4 py-4 mb-6">
+        <div className="flex justify-between items-center gap-4">
+          <div className="flex-1 max-w-2xl">
+            <SearchInput
+              placeholder={searchPlaceholder}
+              value={searchValue}
+              onChange={(e) => setSearchValue(e.target.value)}
+              onSearch={onSearch}
+            />
+          </div>
+          {(currentContext.type === 'transaction' || currentContext.type === 'address') && (
+            <NotesButton
+              onClick={showNotesModal}
+              title="View Notes"
+            >
+              Notes
+            </NotesButton>
+          )}
         </div>
-        {(currentContext.type === 'transaction' || currentContext.type === 'address') && (
-          <NotesButton
-            onClick={showNotesModal}
-            title="View Notes"
-          >
-            Notes
-          </NotesButton>
-        )}
       </div>
 
       {/* Main Content */}
