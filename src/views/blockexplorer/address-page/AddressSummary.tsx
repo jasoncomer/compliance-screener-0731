@@ -14,6 +14,8 @@ import { satsToBTC } from '../../../utils/crypto';
 import { colors } from '../../../styles/variables';
 import { RiskScoringResponse } from '../../../typings/riskScoring';
 import AddressAttributionEntities from './AddressAttributionEntities';
+import { getEntityTypeLabel } from '../../../utils/display-labels';
+import { EEntityType } from '../../../typings/SOT';
 
 interface AddressSummaryProps {
   address: string | undefined;
@@ -46,6 +48,7 @@ interface AddressSummaryProps {
   attributions: any;
   getEntityTags: (entityId: string) => string[];
   getTagColor: (tag: string) => string;
+  itemsMap: Record<string, any>;
 }
 
 const AddressSummary: React.FC<AddressSummaryProps> = ({
@@ -60,7 +63,8 @@ const AddressSummary: React.FC<AddressSummaryProps> = ({
   onCopyClick,
   attributions,
   getEntityTags,
-  getTagColor
+  getTagColor,
+  itemsMap
 }) => {
   const getRiskColor = (score: number) => {
     if (score > 70) return colors.danger;
@@ -81,10 +85,27 @@ const AddressSummary: React.FC<AddressSummaryProps> = ({
 
   const getDisplayName = () => {
     if (address && attributions[address]?.entity) {
-      // Get entity display name from itemsMap or use entity ID
-      return attributions[address].entity;
+      // Get entity display name from SOT data using proper_name
+      const entity = Object.values(itemsMap).find(sot => sot.entity_id === attributions[address].entity);
+      return entity?.proper_name || attributions[address].entity;
     }
     return truncateAddress(address || '');
+  };
+
+  const getEntityType = () => {
+    if (address && attributions[address]?.entity) {
+      const entity = Object.values(itemsMap).find(sot => sot.entity_id === attributions[address].entity);
+      return entity?.entity_type ? getEntityTypeLabel(entity.entity_type as EEntityType) : 'Unknown';
+    }
+    return 'Unknown';
+  };
+
+  const getEntityLogo = () => {
+    if (address && attributions[address]?.entity) {
+      const entity = Object.values(itemsMap).find(sot => sot.entity_id === attributions[address].entity);
+      return entity?.logo;
+    }
+    return null;
   };
 
 
@@ -99,17 +120,25 @@ const AddressSummary: React.FC<AddressSummaryProps> = ({
             <div className="flex flex-col justify-between bg-gradient-to-br from-slate-100 to-gray-200 dark:from-slate-800 dark:to-gray-800 shadow-md rounded-2xl p-2 flex-1 min-w-[250px] text-gray-900 dark:text-gray-100 relative border border-slate-200 dark:border-slate-700 h-[160px]">
               <div className="absolute top-2 right-2 opacity-10 text-2xl select-none pointer-events-none">#</div>
               <div className="flex items-center gap-1 mb-1">
-                <Bitcoin className="w-4 h-4 text-orange-600 dark:text-orange-400" />
+                {getEntityLogo() ? (
+                  <img 
+                    src={getEntityLogo()} 
+                    alt={getDisplayName()} 
+                    className="w-4 h-4 rounded object-contain"
+                  />
+                ) : (
+                  <Bitcoin className="w-4 h-4 text-orange-600 dark:text-orange-400" />
+                )}
                 <span className="text-xs font-medium text-gray-700 dark:text-gray-300">Bitcoin Address</span>
               </div>
-              <div className="text-sm font-bold break-all mb-1">{getDisplayName()}</div>
+              <div className="text-lg font-bold break-all mb-1">{getDisplayName()}</div>
               
               {/* Entity Type */}
               {address && attributions[address]?.entity && (
                 <div className="mb-1 p-1 bg-orange-50 dark:bg-orange-900/20 rounded border border-orange-200 dark:border-orange-800">
                   <div className="text-xs font-medium text-orange-700 dark:text-orange-300">Entity Type</div>
                   <div className="text-xs text-orange-600 dark:text-orange-400 truncate">
-                    {attributions[address].entity_type || 'Unknown'}
+                    {getEntityType()}
                   </div>
                 </div>
               )}
