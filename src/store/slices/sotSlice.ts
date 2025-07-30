@@ -37,9 +37,9 @@ const sotSlice = createSlice({
       .addCase(fetchSOT.fulfilled, (state, action) => {
         state.loading = false;
         state.items = action.payload;
-        // TODO: index by entity_id
+        // Index by entity_id for proper lookup in Risk Dashboard
         state.itemsMap = action.payload.reduce((acc, item) => {
-          acc[item._id] = item;
+          acc[item.entity_id] = item;
           return acc;
         }, {} as Record<string, SOT>);
       })

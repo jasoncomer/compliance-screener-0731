@@ -220,9 +220,12 @@ const TopCounterparties: React.FC<TopCounterpartiesProps> = ({
                         <td className="py-3 px-2">
                           <div className="flex items-center space-x-2">
                             <div className="flex flex-col">
-                              <span className={`text-sm font-medium ${
-                                theme === 'dark' ? 'text-white' : 'text-gray-900'
-                              }`}>
+                              <span 
+                                className={`text-sm font-medium transition-colors duration-0 ${
+                                  theme === 'dark' ? 'text-white' : 'text-gray-900'
+                                }`}
+                                title={record.entity !== truncateAddress(record.address) ? `${record.entity}\nAddress: ${record.address}` : record.address}
+                              >
                                 {truncateAddress(record.address)}
                               </span>
                             </div>
@@ -300,16 +303,49 @@ const TopCounterparties: React.FC<TopCounterpartiesProps> = ({
             {/* Modal Content */}
             <div className="p-6 space-y-6">
               {/* Counterparty Info */}
-              <div className={`p-4 rounded-lg grid grid-cols-2 gap-x-6 gap-y-4 ${
+              <div className={`p-4 rounded-lg grid grid-cols-2 gap-x-4 gap-y-3 ${
                 theme === 'dark' ? 'bg-gray-700' : 'bg-gray-50'
               }`}>
+                <div className="col-span-2">
+                  <label className={`block text-sm font-medium mb-1 ${
+                    theme === 'dark' ? 'text-gray-300' : 'text-gray-700'
+                  }`}>Address</label>
+                  <div className="flex items-center space-x-2">
+                    <code className={`flex-1 text-sm font-mono truncate ${
+                      theme === 'dark' ? 'text-gray-300' : 'text-gray-800'
+                    }`}>
+                      {selectedCounterparty.address}
+                    </code>
+                    <button
+                      onClick={() => copyToClipboard(selectedCounterparty.address, 'address')}
+                      className={`flex-shrink-0 p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors ${
+                        theme === 'dark' ? 'text-gray-400 hover:text-white' : 'text-gray-500 hover:text-gray-700'
+                      }`}
+                    >
+                      {copiedField === 'address' ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
+                    </button>
+                    <button
+                      onClick={openAddressInExplorer}
+                      className={`flex-shrink-0 p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors ${
+                        theme === 'dark' ? 'text-gray-400 hover:text-white' : 'text-gray-500 hover:text-gray-700'
+                      }`}
+                    >
+                      <ExternalLink className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
                 <div>
                   <label className={`block text-sm font-medium mb-1 ${
                     theme === 'dark' ? 'text-gray-300' : 'text-gray-700'
                   }`}>Entity</label>
-                  <div className={`text-base ${
-                    theme === 'dark' ? 'text-white' : 'text-gray-900'
-                  }`}>{selectedCounterparty.entity}</div>
+                  <div 
+                    className={`text-base ${
+                      theme === 'dark' ? 'text-white' : 'text-gray-900'
+                    }`}
+                    title={selectedCounterparty.entity}
+                  >
+                    {selectedCounterparty.entity}
+                  </div>
                 </div>
                 <div>
                   <label className={`block text-sm font-medium mb-1 ${
@@ -322,46 +358,18 @@ const TopCounterparties: React.FC<TopCounterpartiesProps> = ({
                 <div>
                   <label className={`block text-sm font-medium mb-1 ${
                     theme === 'dark' ? 'text-gray-300' : 'text-gray-700'
-                  }`}>BTC Amount</label>
-                  <div className={`text-base font-mono ${
-                    theme === 'dark' ? 'text-white' : 'text-gray-900'
-                  }`}>{selectedCounterparty.btcAmount}</div>
-                </div>
-                <div>
-                  <label className={`block text-sm font-medium mb-1 ${
-                    theme === 'dark' ? 'text-gray-300' : 'text-gray-700'
-                  }`}>Address</label>
-                  <div className="flex items-center space-x-2">
-                    <code className={`flex-1 text-sm font-mono break-all ${
-                      theme === 'dark' ? 'text-gray-300' : 'text-gray-800'
-                    }`}>
-                      {selectedCounterparty.address}
-                    </code>
-                    <button
-                      onClick={() => copyToClipboard(selectedCounterparty.address, 'address')}
-                      className={`p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors ${
-                        theme === 'dark' ? 'text-gray-400 hover:text-white' : 'text-gray-500 hover:text-gray-700'
-                      }`}
-                    >
-                      {copiedField === 'address' ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
-                    </button>
-                    <button
-                      onClick={openAddressInExplorer}
-                      className={`p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors ${
-                        theme === 'dark' ? 'text-gray-400 hover:text-white' : 'text-gray-500 hover:text-gray-700'
-                      }`}
-                    >
-                      <ExternalLink className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-                <div>
-                  <label className={`block text-sm font-medium mb-1 ${
-                    theme === 'dark' ? 'text-gray-300' : 'text-gray-700'
                   }`}>Transactions</label>
                   <div className={`text-base ${
                     theme === 'dark' ? 'text-white' : 'text-gray-900'
                   }`}>{selectedCounterparty.txns}</div>
+                </div>
+                <div>
+                  <label className={`block text-sm font-medium mb-1 ${
+                    theme === 'dark' ? 'text-gray-300' : 'text-gray-700'
+                  }`}>BTC Amount</label>
+                  <div className={`text-base font-mono ${
+                    theme === 'dark' ? 'text-white' : 'text-gray-900'
+                  }`}>{selectedCounterparty.btcAmount}</div>
                 </div>
               </div>
 
@@ -486,4 +494,4 @@ const TopCounterparties: React.FC<TopCounterpartiesProps> = ({
   );
 };
 
-export default TopCounterparties; 
+export default TopCounterparties;
