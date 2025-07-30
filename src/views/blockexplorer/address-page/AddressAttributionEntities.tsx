@@ -81,7 +81,7 @@ const AddressAttributionEntities: React.FC<AddressAttributionEntitiesProps> = ({
     // The EntityQuickView component handles the quick view display
   };
 
-  // Render entity with hover functionality
+    // Render entity with hover functionality
   const renderEntityWithHover = (entityId: string, label: string, defaultType?: string) => {
     const sot = getEntitySot(entityId);
     const displayName = getEntityDisplayName(entityId);

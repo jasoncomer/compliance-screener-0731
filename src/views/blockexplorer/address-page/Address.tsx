@@ -194,6 +194,7 @@ const Address: React.FC = () => {
         attributions={attributions}
         getEntityTags={getEntityTags}
         getTagColor={getTagColor}
+        itemsMap={itemsMap}
       />
 
       <div className="w-full">
