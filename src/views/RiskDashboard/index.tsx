@@ -13,6 +13,9 @@ import {
   EntityDetails,
   RiskScoreModal
 } from './components';
+// import { EnhancedD3SankeyDiagram } from './components/EnhancedD3SankeyDiagram';
+import { D3SankeyDiagram } from './components/D3SankeyDiagram';
+import { SimpleSankeyTest } from './components/SimpleSankeyTest';
 import SocialMediaFeed from './components/entity-intelligence/SocialMediaFeed';
 import { AddressSummary } from './components/AddressSummary';
 import AddressHeader from './components/address/AddressHeader';
@@ -796,6 +799,17 @@ const RiskDashboard: React.FC = React.memo(() => {
               incomingData={fundsFlowData.incoming}
               outgoingData={fundsFlowData.outgoing}
             />
+          )}
+
+          {/* D3 Sankey Diagram - Full Width */}
+          {address && (
+            <div className="rounded-2xl border p-6 bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700">
+              <SimpleSankeyTest 
+                address={address}
+                title="Simple Sankey Test"
+                maxTransactions={20}
+              />
+            </div>
           )}
 
           {/* Entity Details and Twitter Timeline - Two Columns */}
