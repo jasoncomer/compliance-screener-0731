@@ -33,6 +33,18 @@ export const AttributionProvider: React.FC<{ children: React.ReactNode }> = ({ c
         return acc;
       }, {});
 
+      // Debug: Log attribution data to see if cospend IDs are present
+      console.log('Attribution data received:', {
+        totalAttributions: data.length,
+        sampleAttributions: data.slice(0, 3).map(attr => ({
+          addr: attr.addr,
+          cospend_id: attr.cospend_id,
+          entity: attr.entity,
+          bo: attr.bo,
+          custodian: attr.custodian
+        }))
+      });
+
       const newReferenceAttributions = referenceData.reduce((acc: ReferenceAttributionMap, curr: IReferenceAttribution) => {
         acc[curr.address] = curr;
         return acc;

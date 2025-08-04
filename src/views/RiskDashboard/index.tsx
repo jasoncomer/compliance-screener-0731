@@ -14,7 +14,6 @@ import {
   RiskScoreModal
 } from './components';
 // import { EnhancedD3SankeyDiagram } from './components/EnhancedD3SankeyDiagram';
-import { D3SankeyDiagram } from './components/D3SankeyDiagram';
 import { SimpleSankeyTest } from './components/SimpleSankeyTest';
 import SocialMediaFeed from './components/entity-intelligence/SocialMediaFeed';
 import { AddressSummary } from './components/AddressSummary';
@@ -591,54 +590,103 @@ const RiskDashboard: React.FC = React.memo(() => {
     };
   }, [primaryEntityId, handleResize]);
 
-  // Generate funds flow data from real transaction data - memoized
+  // Generate funds flow data from real transaction data - memoized, grouped by cospend ID
   const fundsFlowData = useMemo(() => {
     if (!transformedTransactions.length) {
       return { incoming: [], outgoing: [] };
     }
 
-    const incomingByEntity: { [key: string]: number } = {};
-    const outgoingByEntity: { [key: string]: number } = {};
+    // Debug: Log some sample data to see what we're working with
+    console.log('Funds Flow Debug:', {
+      transactionCount: transformedTransactions.length,
+      sampleTransactions: transformedTransactions.slice(0, 3).map(tx => ({
+        from: tx.from,
+        to: tx.to,
+        type: tx.type,
+        value: tx.value,
+        attributionFrom: attributions[tx.from],
+        attributionTo: attributions[tx.to]
+      })),
+      attributionsCount: Object.keys(attributions).length,
+      sampleAttributions: Object.entries(attributions).slice(0, 3)
+    });
+
+    const incomingByCospend: { [key: string]: { value: number; addresses: string[]; entityName: string } } = {};
+    const outgoingByCospend: { [key: string]: { value: number; addresses: string[]; entityName: string } } = {};
 
     transformedTransactions.forEach(tx => {
       if (tx.type === 'in' && tx.from !== 'Unknown') {
-        const entityId = attributions[tx.from]?.entity || attributions[tx.from]?.bo || attributions[tx.from]?.custodian;
+        const attribution = attributions[tx.from];
+        const cospendId = attribution?.cospend_id || tx.from; // Use cospend_id if available, fallback to address
+        const entityId = attribution?.entity || attribution?.bo || attribution?.custodian;
         const entity = entityId ? Object.values(itemsMap).find(sot => sot.entity_id === entityId) : null;
         const entityName = entity?.proper_name || truncateAddress(tx.from);
         
-        if (!incomingByEntity[entityName]) {
-          incomingByEntity[entityName] = 0;
+        if (!incomingByCospend[cospendId]) {
+          incomingByCospend[cospendId] = { value: 0, addresses: [], entityName };
         }
-        incomingByEntity[entityName] += tx.value * btcPrice;
+        incomingByCospend[cospendId].value += tx.value * btcPrice;
+        if (!incomingByCospend[cospendId].addresses.includes(tx.from)) {
+          incomingByCospend[cospendId].addresses.push(tx.from);
+        }
+        // Use the first entity name we encounter for this cospend group
+        if (!incomingByCospend[cospendId].entityName || incomingByCospend[cospendId].entityName === truncateAddress(tx.from)) {
+          incomingByCospend[cospendId].entityName = entityName;
+        }
       } else if (tx.type === 'out' && tx.to !== 'Unknown') {
-        const entityId = attributions[tx.to]?.entity || attributions[tx.to]?.bo || attributions[tx.to]?.custodian;
+        const attribution = attributions[tx.to];
+        const cospendId = attribution?.cospend_id || tx.to; // Use cospend_id if available, fallback to address
+        const entityId = attribution?.entity || attribution?.bo || attribution?.custodian;
         const entity = entityId ? Object.values(itemsMap).find(sot => sot.entity_id === entityId) : null;
         const entityName = entity?.proper_name || truncateAddress(tx.to);
         
-        if (!outgoingByEntity[entityName]) {
-          outgoingByEntity[entityName] = 0;
+        if (!outgoingByCospend[cospendId]) {
+          outgoingByCospend[cospendId] = { value: 0, addresses: [], entityName };
         }
-        outgoingByEntity[entityName] += tx.value * btcPrice;
+        outgoingByCospend[cospendId].value += tx.value * btcPrice;
+        if (!outgoingByCospend[cospendId].addresses.includes(tx.to)) {
+          outgoingByCospend[cospendId].addresses.push(tx.to);
+        }
+        // Use the first entity name we encounter for this cospend group
+        if (!outgoingByCospend[cospendId].entityName || outgoingByCospend[cospendId].entityName === truncateAddress(tx.to)) {
+          outgoingByCospend[cospendId].entityName = entityName;
+        }
       }
     });
 
-    const incomingData = Object.entries(incomingByEntity)
-      .map(([name, value]) => ({
-        name,
-        value,
-        entityType: 'Exchange'
+    const incomingData = Object.entries(incomingByCospend)
+      .map(([cospendId, data]) => ({
+        name: data.addresses.length > 1 
+          ? `${data.entityName} (${data.addresses.length} addresses)`
+          : data.entityName,
+        value: data.value,
+        entityType: 'Exchange',
+        cospendId,
+        addressCount: data.addresses.length
       }))
       .sort((a, b) => b.value - a.value)
       .slice(0, 5);
 
-    const outgoingData = Object.entries(outgoingByEntity)
-      .map(([name, value]) => ({
-        name,
-        value,
-        entityType: 'Wallet'
+    const outgoingData = Object.entries(outgoingByCospend)
+      .map(([cospendId, data]) => ({
+        name: data.addresses.length > 1 
+          ? `${data.entityName} (${data.addresses.length} addresses)`
+          : data.entityName,
+        value: data.value,
+        entityType: 'Wallet',
+        cospendId,
+        addressCount: data.addresses.length
       }))
       .sort((a, b) => b.value - a.value)
       .slice(0, 5);
+
+    // Debug: Log the final grouped data
+    console.log('Funds Flow Grouped Data:', {
+      incomingByCospend,
+      outgoingByCospend,
+      incomingData,
+      outgoingData
+    });
 
     return { incoming: incomingData, outgoing: outgoingData };
   }, [transformedTransactions, attributions, btcPrice, itemsMap, truncateAddress]);
@@ -798,6 +846,7 @@ const RiskDashboard: React.FC = React.memo(() => {
             <CombinedFundsFlow 
               incomingData={fundsFlowData.incoming}
               outgoingData={fundsFlowData.outgoing}
+              title="Funds Flow Analysis (Grouped by Cospend ID)"
             />
           )}
 
@@ -806,7 +855,6 @@ const RiskDashboard: React.FC = React.memo(() => {
             <div className="rounded-2xl border p-6 bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700">
               <SimpleSankeyTest 
                 address={address}
-                title="Simple Sankey Test"
                 maxTransactions={20}
               />
             </div>

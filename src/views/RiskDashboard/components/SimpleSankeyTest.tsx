@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef, useMemo } from "react"
+import { useEffect, useRef, useMemo, useState } from "react"
 import * as d3 from "d3"
 import { sankey, sankeyLinkHorizontal } from "d3-sankey"
 import { getColorForEntityType, getEmojiForEntityType } from "../../../lib/entity-types"
@@ -17,6 +17,17 @@ interface SimpleSankeyTestProps {
   address: string
   maxTransactions?: number
 }
+
+interface WalletModalData {
+  entityName: string
+  address: string
+  entityType: string
+  direction: 'incoming' | 'outgoing'
+  totalValue: number
+  attribution?: any
+}
+
+
 
 const DEFAULT_COLOR = "hsl(210, 70%, 60%)" // Blue default
 
@@ -44,6 +55,9 @@ export const SimpleSankeyTest = ({
 }: SimpleSankeyTestProps) => {
   const { theme } = useTheme()
   const svgRef = useRef<SVGSVGElement>(null)
+  const [modalData, setModalData] = useState<WalletModalData | null>(null)
+  const [isModalOpen, setIsModalOpen] = useState(false)
+
 
   // Fetch transaction data - get last 40 transactions
   const { data: transactionData, isLoading: isLoadingTransactions } = useAddressTransactions(address, 1, 40)
@@ -51,7 +65,18 @@ export const SimpleSankeyTest = ({
   const { itemsMap } = useAppSelector((state: RootState) => state.sot)
 
   // Process real transaction data
-  const { nodes, links, uniqueEntityTypes } = useMemo(() => {
+  const { nodes, links, uniqueEntityTypes, incomingFlows, outgoingFlows } = useMemo(() => {
+    // Debug: Log attribution data to see if cospend IDs are available
+    console.log('SimpleSankeyTest - Attribution data:', {
+      attributionsCount: Object.keys(attributions).length,
+      sampleAttributions: Object.entries(attributions).slice(0, 3).map(([addr, attr]) => ({
+        address: addr,
+        cospend_id: attr.cospend_id,
+        entity: attr.entity,
+        bo: attr.bo,
+        custodian: attr.custodian
+      }))
+    });
     const nodeMap = new Map<string, number>()
     const addressMap = new Map<string, { displayName: string; fullAddress: string; entityType: string }>()
     const currentNodes: { id: string; name: string; color: string; entityType: string; fullAddress?: string }[] = []
@@ -104,7 +129,7 @@ export const SimpleSankeyTest = ({
     })
     
     if (sortedTransactions.length === 0) {
-      return { nodes: currentNodes, links: currentLinks, uniqueEntityTypes: Array.from(entityTypes) }
+      return { nodes: currentNodes, links: currentLinks, uniqueEntityTypes: Array.from(entityTypes), cospendData: new Map() }
     }
 
     // Aggregate incoming and outgoing flows by individual addresses
@@ -264,7 +289,13 @@ export const SimpleSankeyTest = ({
       entityTypes: Array.from(entityTypes)
     })
 
-    return { nodes: currentNodes, links: currentLinks, uniqueEntityTypes: Array.from(entityTypes) }
+    return { 
+      nodes: currentNodes, 
+      links: currentLinks, 
+      uniqueEntityTypes: Array.from(entityTypes),
+      incomingFlows,
+      outgoingFlows
+    }
   }, [address, maxTransactions, transactionData, attributions, itemsMap])
 
   useEffect(() => {
@@ -387,6 +418,8 @@ export const SimpleSankeyTest = ({
       .attr("opacity", 0.95)
       .attr("rx", 4)
       .attr("ry", 4)
+      .style("cursor", (d: any) => d.name !== "Wallet" ? "pointer" : "default")
+
       .on("mouseover", function(_, d: any) {
         d3.select(this).attr("opacity", 1)
         
@@ -406,6 +439,7 @@ export const SimpleSankeyTest = ({
 
         const displayName = d.name.replace(/In: |Out: /g, "")
         const fullAddress = d.fullAddress
+        
         tooltip.html(`
           <div class="font-semibold">${displayName}</div>
           ${fullAddress && fullAddress !== displayName ? `<div class="text-gray-500 font-mono text-xs">Full: ${fullAddress}</div>` : ''}
@@ -421,6 +455,38 @@ export const SimpleSankeyTest = ({
         d3.select(this).attr("opacity", 0.9)
         d3.select(".tooltip").remove()
       })
+      .on("click", function(_, d: any) {
+        // Only open modal for non-wallet nodes
+        if (d.name !== "Wallet") {
+          const originalNode = nodes[d.index]
+          if (originalNode) {
+            const entityName = originalNode.name.replace(/In: |Out: /g, "")
+            const direction = originalNode.name.startsWith("In:") ? 'incoming' : 'outgoing'
+            const fullAddress = originalNode.fullAddress || ""
+            
+            // Get attribution data
+            const attribution = attributions[fullAddress]
+            
+            // Get flow value
+            const flowValue = direction === 'incoming' 
+              ? incomingFlows.get(originalNode.name) || 0
+              : outgoingFlows.get(originalNode.name) || 0
+            
+            const modalData: WalletModalData = {
+              entityName,
+              address: fullAddress,
+              entityType: originalNode.entityType || "Unknown",
+              direction,
+              totalValue: flowValue,
+              attribution
+            }
+            
+            setModalData(modalData)
+            setIsModalOpen(true)
+          }
+        }
+      })
+
 
     // Add node labels (entity names only)
     nodeGroup.append("text")
@@ -475,27 +541,7 @@ export const SimpleSankeyTest = ({
                 style={{ background: 'transparent' }}
               />
             </div>
-            <div className={`mt-4 pt-4`}>
-              <h3 className={`text-sm font-semibold mb-2 ${
-                theme === 'dark' ? 'text-white' : 'text-gray-900'
-              }`}>Legend</h3>
-              <div className="flex flex-wrap gap-x-4 gap-y-2">
-                {uniqueEntityTypes.map((type) => (
-                  <div key={type} className="flex items-center gap-2 text-xs">
-                    <span className="text-base">{getEmojiForEntityType(type.toLowerCase())}</span>
-                    <div
-                      className="w-3 h-3 rounded-sm"
-                      style={{
-                        backgroundColor: getColorForEntityType(type.toLowerCase()),
-                      }}
-                    />
-                    <span className={`capitalize ${
-                      theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
-                    }`}>{type}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
+
           </>
         ) : (
           <div className="flex items-center justify-center h-64">
@@ -505,6 +551,177 @@ export const SimpleSankeyTest = ({
           </div>
         )}
       </div>
+      
+      {/* Wallet Details Modal */}
+      {isModalOpen && modalData && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className={`max-w-2xl w-full mx-4 p-6 rounded-lg ${
+            theme === 'dark' ? 'bg-gray-800' : 'bg-white'
+          } shadow-xl`}>
+            <div className="flex justify-between items-start mb-4">
+              <h3 className={`text-xl font-semibold ${
+                theme === 'dark' ? 'text-white' : 'text-gray-900'
+              }`}>
+                Wallet Details
+              </h3>
+              <button
+                onClick={() => setIsModalOpen(false)}
+                className={`p-2 rounded-lg hover:bg-opacity-80 ${
+                  theme === 'dark' ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300'
+                }`}
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            
+            <div className="space-y-4">
+              {/* Basic Information */}
+              <div className={`p-4 rounded-lg ${
+                theme === 'dark' ? 'bg-gray-700' : 'bg-gray-50'
+              }`}>
+                <h4 className={`font-semibold mb-2 ${
+                  theme === 'dark' ? 'text-white' : 'text-gray-900'
+                }`}>Basic Information</h4>
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className={`font-medium ${
+                      theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
+                    }`}>Entity Name:</span>
+                    <span className={`ml-2 ${
+                      theme === 'dark' ? 'text-white' : 'text-gray-900'
+                    }`}>{modalData.entityName}</span>
+                  </div>
+                  <div>
+                    <span className={`font-medium ${
+                      theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
+                    }`}>Entity Type:</span>
+                    <span className={`ml-2 ${
+                      theme === 'dark' ? 'text-white' : 'text-gray-900'
+                    }`}>{modalData.entityType}</span>
+                  </div>
+                  <div>
+                    <span className={`font-medium ${
+                      theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
+                    }`}>Direction:</span>
+                    <span className={`ml-2 capitalize ${
+                      modalData.direction === 'incoming' ? 'text-green-500' : 'text-red-500'
+                    }`}>{modalData.direction}</span>
+                  </div>
+                  <div>
+                    <span className={`font-medium ${
+                      theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
+                    }`}>Total Value:</span>
+                    <span className={`ml-2 ${
+                      theme === 'dark' ? 'text-white' : 'text-gray-900'
+                    }`}>{formatCurrency(modalData.totalValue)}</span>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Address Information */}
+              <div className={`p-4 rounded-lg ${
+                theme === 'dark' ? 'bg-gray-700' : 'bg-gray-50'
+              }`}>
+                <h4 className={`font-semibold mb-2 ${
+                  theme === 'dark' ? 'text-white' : 'text-gray-900'
+                }`}>Address Information</h4>
+                <div className="space-y-2">
+                  <div>
+                    <span className={`font-medium ${
+                      theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
+                    }`}>Address:</span>
+                    <div className={`mt-1 p-2 rounded font-mono text-sm ${
+                      theme === 'dark' ? 'bg-gray-600' : 'bg-white'
+                    } border ${
+                      theme === 'dark' ? 'border-gray-500' : 'border-gray-200'
+                    }`}>
+                      {modalData.address}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Attribution Information */}
+              {modalData.attribution && (
+                <div className={`p-4 rounded-lg ${
+                  theme === 'dark' ? 'bg-gray-700' : 'bg-gray-50'
+                }`}>
+                  <h4 className={`font-semibold mb-2 ${
+                    theme === 'dark' ? 'text-white' : 'text-gray-900'
+                  }`}>Attribution Information</h4>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    {modalData.attribution.entity && (
+                      <div>
+                        <span className={`font-medium ${
+                          theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
+                        }`}>Entity:</span>
+                        <span className={`ml-2 ${
+                          theme === 'dark' ? 'text-white' : 'text-gray-900'
+                        }`}>{modalData.attribution.entity}</span>
+                      </div>
+                    )}
+                    {modalData.attribution.bo && (
+                      <div>
+                        <span className={`font-medium ${
+                          theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
+                        }`}>Beneficial Owner:</span>
+                        <span className={`ml-2 ${
+                          theme === 'dark' ? 'text-white' : 'text-gray-900'
+                        }`}>{modalData.attribution.bo}</span>
+                      </div>
+                    )}
+                    {modalData.attribution.custodian && (
+                      <div>
+                        <span className={`font-medium ${
+                          theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
+                        }`}>Custodian:</span>
+                        <span className={`ml-2 ${
+                          theme === 'dark' ? 'text-white' : 'text-gray-900'
+                        }`}>{modalData.attribution.custodian}</span>
+                      </div>
+                    )}
+                    {modalData.attribution.cospend_id && (
+                      <div>
+                        <span className={`font-medium ${
+                          theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
+                        }`}>Cospend ID:</span>
+                        <span className={`ml-2 font-mono text-sm ${
+                          theme === 'dark' ? 'text-blue-400' : 'text-blue-600'
+                        }`}>{modalData.attribution.cospend_id}</span>
+                      </div>
+                    )}
+                    {modalData.attribution.script_type && (
+                      <div>
+                        <span className={`font-medium ${
+                          theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
+                        }`}>Script Type:</span>
+                        <span className={`ml-2 ${
+                          theme === 'dark' ? 'text-white' : 'text-gray-900'
+                        }`}>{modalData.attribution.script_type}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+            
+            <div className="mt-6 flex justify-end">
+              <button
+                onClick={() => setIsModalOpen(false)}
+                className={`px-4 py-2 rounded-lg ${
+                  theme === 'dark' 
+                    ? 'bg-blue-600 hover:bg-blue-700 text-white' 
+                    : 'bg-blue-500 hover:bg-blue-600 text-white'
+                }`}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   )
 } 

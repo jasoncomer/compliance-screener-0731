@@ -11,6 +11,8 @@ interface FundsDataPoint {
   name: string
   value: number
   entityType: string
+  cospendId?: string
+  addressCount?: number
 }
 
 interface CombinedFundsFlowProps {
@@ -94,7 +96,7 @@ export const CombinedFundsFlow = ({ incomingData, outgoingData, title }: Combine
   
   const { nodes, links, uniqueEntityTypes } = useMemo(() => {
     const nodeMap = new Map<string, number>()
-    const currentNodes: { name: string; color: string; riskScore?: number; entityType: string }[] = []
+    const currentNodes: { name: string; color: string; riskScore?: number; entityType: string; cospendId?: string; addressCount?: number }[] = []
     const currentLinks: {
       source: number
       target: number
@@ -102,15 +104,16 @@ export const CombinedFundsFlow = ({ incomingData, outgoingData, title }: Combine
       label: string
       color: string
       riskScore?: number
+      addressCount?: number
     }[] = []
     const entityTypes = new Set<string>()
 
-    const addNode = (name: string, entityType: string, riskScore?: number) => {
+    const addNode = (name: string, entityType: string, riskScore?: number, cospendId?: string, addressCount?: number) => {
       if (!nodeMap.has(name)) {
         // Color for Wallet node is determined later by average risk
         const color = name === "Wallet" ? DEFAULT_COLOR : getColorForEntityType(entityType.toLowerCase())
         nodeMap.set(name, currentNodes.length)
-        currentNodes.push({ name, color, riskScore, entityType })
+        currentNodes.push({ name, color, riskScore, entityType, cospendId, addressCount })
       }
       return nodeMap.get(name)!
     }
@@ -133,27 +136,29 @@ export const CombinedFundsFlow = ({ incomingData, outgoingData, title }: Combine
 
     enrichedIncomingData.forEach((item) => {
       entityTypes.add(item.entityType)
-      const sourceNodeIndex = addNode(`In: ${item.entityType}`, item.entityType, item.riskScore)
+      const sourceNodeIndex = addNode(`In: ${item.name}`, item.entityType, item.riskScore, item.cospendId, item.addressCount)
       currentLinks.push({
         source: sourceNodeIndex,
         target: centralNodeIndex,
         value: item.value,
-        label: `${item.entityType} → Wallet: ${formatCurrency(item.value)}`,
+        label: `${item.name} → Wallet: ${formatCurrency(item.value)}`,
         color: getColorFromRisk(item.riskScore),
         riskScore: item.riskScore,
+        addressCount: item.addressCount,
       })
     })
 
     enrichedOutgoingData.forEach((item) => {
       entityTypes.add(item.entityType)
-      const targetNodeIndex = addNode(`Out: ${item.entityType}`, item.entityType, item.riskScore)
+      const targetNodeIndex = addNode(`Out: ${item.name}`, item.entityType, item.riskScore, item.cospendId, item.addressCount)
       currentLinks.push({
         source: centralNodeIndex,
         target: targetNodeIndex,
         value: item.value,
-        label: `Wallet → ${item.entityType}: ${formatCurrency(item.value)}`,
+        label: `Wallet → ${item.name}: ${formatCurrency(item.value)}`,
         color: getColorFromRisk(item.riskScore),
         riskScore: item.riskScore,
+        addressCount: item.addressCount,
       })
     })
 
@@ -185,6 +190,9 @@ export const CombinedFundsFlow = ({ incomingData, outgoingData, title }: Combine
           <div className="bg-gray-800 rounded-lg shadow-lg text-sm p-3">
             <p className="font-semibold text-white">{data.label}</p>
             {data.riskScore !== undefined && <p className="text-gray-300">Risk Score: {Math.round(data.riskScore)}</p>}
+            {data.addressCount && data.addressCount > 1 && (
+              <p className="text-gray-300">Grouped by cospend ID ({data.addressCount} addresses)</p>
+            )}
           </div>
         )
       }
@@ -196,6 +204,12 @@ export const CombinedFundsFlow = ({ incomingData, outgoingData, title }: Combine
               {data.name.replace(/In: |Out: /g, "")}: {formatCurrency(data.value)}
             </p>
             {data.riskScore !== undefined && <p className="text-gray-300">Risk Score: {Math.round(data.riskScore)}</p>}
+            {data.addressCount && data.addressCount > 1 && (
+              <p className="text-gray-300">Grouped by cospend ID ({data.addressCount} addresses)</p>
+            )}
+            {data.cospendId && data.addressCount && data.addressCount > 1 && (
+              <p className="text-gray-400 text-xs">Cospend ID: {data.cospendId}</p>
+            )}
           </div>
         )
       }
@@ -208,6 +222,11 @@ export const CombinedFundsFlow = ({ incomingData, outgoingData, title }: Combine
       <h4 className={`text-xl font-semibold mb-6 ${
         theme === 'dark' ? 'text-white' : 'text-gray-900'
       }`}>{title || "Funds Flow Analysis"}</h4>
+      <p className={`text-sm mb-4 ${
+        theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
+      }`}>
+        Transactions are grouped by cospend ID to show related addresses as single entities, reducing visual complexity while showing larger transaction volumes.
+      </p>
       <div className={`p-6 ${
         theme === 'dark' ? 'bg-gray-800/50' : 'bg-gray-50'
       }`}>
