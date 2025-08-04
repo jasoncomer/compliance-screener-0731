@@ -10,8 +10,6 @@ import { useAppSelector } from "../../../store/hooks"
 import { RootState } from "../../../store/store"
 import { BtcTransaction } from "../../../typings/BtcTransaction"
 
-
-
 interface SimpleSankeyTestProps {
   address: string
   maxTransactions?: number
@@ -19,7 +17,7 @@ interface SimpleSankeyTestProps {
 
 interface WalletModalData {
   entityName: string
-  address: string
+  addresses: string[]
   entityType: string
   direction: 'incoming' | 'outgoing'
   totalValue: number
@@ -46,9 +44,65 @@ interface CenterWalletModalData {
   attribution?: any
 }
 
+// New interfaces for entity grouping
+interface EntityGroup {
+  name: string
+  entityType: string
+  addresses: string[]
+  totalAmount: number
+  entityId?: string
+  properName?: string
+}
 
+interface SankeyNode {
+  id: string
+  name: string
+  type: 'entity' | 'address'
+  entityType: string
+  entityGroup?: string
+  addresses?: string[]
+  fullAddress?: string
+  color: string
+}
 
-const DEFAULT_COLOR = "hsl(209, 50.80%, 52.90%)" // Blue default
+interface SankeyLink {
+  source: string
+  target: string
+  value: number
+  label: string
+  color: string
+  transactionIds: string[]
+}
+
+const DEFAULT_COLOR = "hsl(30, 100%, 50%)" // Orange default
+
+// Orange color palette for different entity types
+const ORANGE_PALETTE = {
+  light: "hsl(30, 100%, 85%)",    // Very light orange
+  medium: "hsl(30, 100%, 70%)",   // Light orange
+  default: "hsl(30, 100%, 50%)",  // Standard orange
+  dark: "hsl(30, 100%, 35%)",     // Dark orange
+  deep: "hsl(25, 100%, 30%)",     // Deep orange
+  warm: "hsl(35, 100%, 45%)",     // Warm orange
+  amber: "hsl(45, 100%, 50%)",    // Amber orange
+  sunset: "hsl(20, 100%, 60%)"    // Sunset orange
+}
+
+// Function to get orange color for links based on flow amount and direction
+const getLinkOrangeColor = (amount: number, direction: 'incoming' | 'outgoing', index: number): string => {
+  const orangeShades = Object.values(ORANGE_PALETTE)
+  
+  // Use amount to determine intensity - higher amounts get darker oranges
+  if (amount > 1000000000) { // > 10 BTC
+    return direction === 'incoming' ? ORANGE_PALETTE.deep : ORANGE_PALETTE.dark
+  } else if (amount > 100000000) { // > 1 BTC
+    return direction === 'incoming' ? ORANGE_PALETTE.default : ORANGE_PALETTE.warm
+  } else if (amount > 10000000) { // > 0.1 BTC
+    return direction === 'incoming' ? ORANGE_PALETTE.amber : ORANGE_PALETTE.sunset
+  } else {
+    return direction === 'incoming' ? ORANGE_PALETTE.medium : ORANGE_PALETTE.light
+  }
+}
 
 const formatCurrency = (value: number) => {
   // Convert satoshis to BTC (1 BTC = 100,000,000 satoshis)
@@ -66,7 +120,61 @@ const formatCurrency = (value: number) => {
   }
 }
 
+// Helper function to get entity information for an address
+const getEntityInfo = (address: string, attributions: any, itemsMap: any) => {
+  const attribution = attributions[address]
+  if (!attribution) {
+    return {
+      entityId: null,
+      entityType: "Unknown",
+      displayName: address.slice(0, 8) + "...",
+      properName: null
+    }
+  }
 
+  const entityId = attribution.entity || attribution.bo || attribution.custodian
+  const entity = entityId ? Object.values(itemsMap).find((item: any) => (item as any).entity_id === entityId) : null
+  
+  return {
+    entityId,
+    entityType: (entity as any)?.entity_type || "Unknown",
+    displayName: (entity as any)?.proper_name || address.slice(0, 8) + "...",
+    properName: (entity as any)?.proper_name || null
+  }
+}
+
+// Helper function to group addresses by entity
+const groupAddressesByEntity = (addresses: { addr: string; amt: number }[], attributions: any, itemsMap: any): EntityGroup[] => {
+  const entityMap = new Map<string, EntityGroup>()
+  
+  addresses.forEach(({ addr, amt }) => {
+    const { entityId, entityType, displayName, properName } = getEntityInfo(addr, attributions, itemsMap)
+    
+    // Use entity name as key, fallback to display name if no entity
+    const entityKey = properName || displayName
+    
+    if (entityMap.has(entityKey)) {
+      // Add to existing group
+      const group = entityMap.get(entityKey)!
+      if (!group.addresses.includes(addr)) {
+        group.addresses.push(addr)
+      }
+      group.totalAmount += amt
+    } else {
+      // Create new group
+      entityMap.set(entityKey, {
+        name: entityKey,
+        entityType,
+        addresses: [addr],
+        totalAmount: amt,
+        entityId,
+        properName
+      })
+    }
+  })
+  
+  return Array.from(entityMap.values())
+}
 
 export const SimpleSankeyTest = ({ 
   address, 
@@ -81,52 +189,42 @@ export const SimpleSankeyTest = ({
   const [centerWalletModalData, setCenterWalletModalData] = useState<CenterWalletModalData | null>(null)
   const [isCenterWalletModalOpen, setIsCenterWalletModalOpen] = useState(false)
 
-
   // Fetch transaction data - get last 20 transactions
   const { data: transactionData, isLoading: isLoadingTransactions } = useAddressTransactions(address, 1, 20)
   const { attributions } = useAttribution()
   const { itemsMap } = useAppSelector((state: RootState) => state.sot)
 
-  // Process real transaction data
-  const { nodes, links} = useMemo(() => {
-    // Debug: Log attribution data to see if cospend IDs are available
-    console.log('SimpleSankeyTest - Attribution data:', {
+  // Process real transaction data with entity grouping
+  const { nodes, links } = useMemo(() => {
+    console.log('SimpleSankeyTest - Processing with entity grouping:', {
+      address,
       attributionsCount: Object.keys(attributions).length,
-      sampleAttributions: Object.entries(attributions).slice(0, 3).map(([addr, attr]) => ({
-        address: addr,
-        cospend_id: attr.cospend_id,
-        entity: attr.entity,
-        bo: attr.bo,
-        custodian: attr.custodian
-      }))
-    });
+      itemsMapCount: Object.keys(itemsMap).length
+    })
+
     const nodeMap = new Map<string, number>()
-    const addressMap = new Map<string, { displayName: string; fullAddress: string; entityType: string }>()
-    const currentNodes: { id: string; name: string; color: string; entityType: string; fullAddress?: string }[] = []
-    const currentLinks: { source: number; target: number; value: number; label: string; color: string }[] = []
+    const currentNodes: SankeyNode[] = []
+    const currentLinks: SankeyLink[] = []
     const entityTypes = new Set<string>()
 
-    const addNode = (name: string, entityType: string, fullAddress?: string) => {
-      if (!nodeMap.has(name)) {
-        let color
-        if (name === "Wallet") {
-          color = "hsl(210, 80%, 60%)" // Bright blue for central wallet
-        } else if (name.startsWith("In:")) {
-          color = "hsl(120, 80%, 60%)" // Green for incoming nodes
-        } else if (name.startsWith("Out:")) {
-          color = "hsl(0, 80%, 60%)" // Red for outgoing nodes
-        } else {
-          color = `hsl(${Math.random() * 360}, 80%, 60%)` // Random vibrant colors for other nodes
-        }
+    const addNode = (node: SankeyNode): number => {
+      if (!nodeMap.has(node.id)) {
         const index = currentNodes.length
-        nodeMap.set(name, index)
-        currentNodes.push({ id: name, name, color, entityType, fullAddress })
+        nodeMap.set(node.id, index)
+        currentNodes.push(node)
       }
-      return nodeMap.get(name)!
+      return nodeMap.get(node.id)!
     }
 
-    const centralNodeName = "Address"
-    const centralNodeIndex = addNode(centralNodeName, "address")
+    // Add central address node
+    const centralNode: SankeyNode = {
+      id: "Address",
+      name: "Address",
+      type: 'address',
+      entityType: "Address",
+      color: "hsl(210, 80%, 60%)" // Bright blue for central address
+    }
+    const centralNodeIndex = addNode(centralNode)
 
     // Process real transaction data - filter for transactions involving current address
     const transactions = transactionData?.txs || []
@@ -140,90 +238,65 @@ export const SimpleSankeyTest = ({
     
     // Sort by the amount that involves the current address (highest first)
     const sortedTransactions = addressTransactions.sort((a, b) => {
-      // Calculate amount involving the current address for transaction a
       const aAddressInputs = a.inputs.filter(input => input.addr === address).reduce((sum, input) => sum + input.amt, 0)
       const aAddressOutputs = a.outputs.filter(output => output.addr === address).reduce((sum, output) => sum + output.amt, 0)
       const aAddressAmount = aAddressInputs + aAddressOutputs
       
-      // Calculate amount involving the current address for transaction b
       const bAddressInputs = b.inputs.filter(input => input.addr === address).reduce((sum, input) => sum + input.amt, 0)
       const bAddressOutputs = b.outputs.filter(output => output.addr === address).reduce((sum, output) => sum + output.amt, 0)
       const bAddressAmount = bAddressInputs + bAddressOutputs
       
       return bAddressAmount - aAddressAmount // Sort descending (highest first)
-    }).slice(0, maxTransactions) // Limit to top N biggest address transactions
-    
-    console.log('SimpleSankeyTest - Processing transactions:', {
-      address,
-      transactionCount: sortedTransactions.length,
-      sampleTransaction: sortedTransactions[0],
-      attributionsCount: Object.keys(attributions).length,
-      itemsMapCount: Object.keys(itemsMap).length,
-      topTransactionAmount: sortedTransactions[0] ? 
-        (sortedTransactions[0].inputs.reduce((sum, input) => sum + input.amt, 0) + 
-         sortedTransactions[0].outputs.reduce((sum, output) => sum + output.amt, 0)) / 100000000 : 0
-    })
+    }).slice(0, maxTransactions)
     
     if (sortedTransactions.length === 0) {
-      return { nodes: currentNodes, links: currentLinks, uniqueEntityTypes: Array.from(entityTypes), cospendData: new Map() }
+      return { nodes: currentNodes, links: currentLinks, uniqueEntityTypes: Array.from(entityTypes) }
     }
 
-    // Aggregate incoming and outgoing flows by individual addresses
-    const incomingFlows = new Map<string, number>()
-    const outgoingFlows = new Map<string, number>()
+    // Aggregate flows by entity groups
+    const incomingEntityFlows = new Map<string, { amount: number; transactionIds: string[] }>()
+    const outgoingEntityFlows = new Map<string, { amount: number; transactionIds: string[] }>()
 
     sortedTransactions.forEach((tx: BtcTransaction) => {
       console.log('Processing transaction:', {
         txid: tx.txid,
         inputs: tx.inputs.length,
-        outputs: tx.outputs.length,
-        address
+        outputs: tx.outputs.length
       })
       
       // Check if this address is receiving (has outputs to this address)
       const outputsToAddress = tx.outputs.filter(output => output.addr === address)
       const inputsFromAddress = tx.inputs.filter(input => input.addr === address)
       
-      console.log('Address involvement:', {
-        outputsToAddress: outputsToAddress.length,
-        inputsFromAddress: inputsFromAddress.length,
-        totalReceived: outputsToAddress.reduce((sum, output) => sum + output.amt, 0),
-        totalSent: inputsFromAddress.reduce((sum, input) => sum + input.amt, 0)
-      })
-      
       // Process incoming flows (when address receives)
       if (outputsToAddress.length > 0) {
         const totalReceived = outputsToAddress.reduce((sum, output) => sum + output.amt, 0)
         
-        // Group by individual source addresses
-        const sourceAddressFlows = new Map<string, number>()
+        // Get source addresses (excluding the current address)
+        const sourceAddresses = tx.inputs.filter(input => input.addr !== address)
         
-        tx.inputs.forEach(input => {
-          if (input.addr !== address) {
-            sourceAddressFlows.set(input.addr, (sourceAddressFlows.get(input.addr) || 0) + input.amt)
-          }
-        })
+        // Group source addresses by entity
+        const sourceEntityGroups = groupAddressesByEntity(sourceAddresses, attributions, itemsMap)
         
-        console.log('Incoming flow sources:', Array.from(sourceAddressFlows.entries()))
+        // Distribute received amount proportionally to entity groups
+        const totalSourceAmount = sourceEntityGroups.reduce((sum, group) => sum + group.totalAmount, 0)
         
-        // Distribute received amount proportionally to source addresses
-        const totalSourceAmount = Array.from(sourceAddressFlows.values()).reduce((sum, amt) => sum + amt, 0)
-        
-        sourceAddressFlows.forEach((sourceAmount, sourceAddr) => {
-          const proportion = sourceAmount / totalSourceAmount
+        sourceEntityGroups.forEach(entityGroup => {
+          const proportion = entityGroup.totalAmount / totalSourceAmount
           const receivedAmount = totalReceived * proportion
           
-          // Get entity info for display
-          const entityId = attributions[sourceAddr]?.entity || attributions[sourceAddr]?.bo || attributions[sourceAddr]?.custodian
-          const entity = entityId ? Object.values(itemsMap).find(item => item.entity_id === entityId) : null
-          const entityType = entity?.entity_type || "Unknown"
-          const displayName = entity?.proper_name || sourceAddr.slice(0, 8) + "..."
+          const entityKey = `In: ${entityGroup.name}`
+          const existing = incomingEntityFlows.get(entityKey)
           
-          const key = `In: ${displayName}`
-          incomingFlows.set(key, (incomingFlows.get(key) || 0) + receivedAmount)
-          
-          // Store full address for hover tooltip
-          addressMap.set(key, { displayName, fullAddress: sourceAddr, entityType })
+          if (existing) {
+            existing.amount += receivedAmount
+            existing.transactionIds.push(tx.txid)
+          } else {
+            incomingEntityFlows.set(entityKey, {
+              amount: receivedAmount,
+              transactionIds: [tx.txid]
+            })
+          }
         })
       }
       
@@ -231,108 +304,133 @@ export const SimpleSankeyTest = ({
       if (inputsFromAddress.length > 0) {
         const totalSent = inputsFromAddress.reduce((sum, input) => sum + input.amt, 0)
         
-        // Group by individual destination addresses
-        const destAddressFlows = new Map<string, number>()
+        // Get destination addresses (excluding the current address)
+        const destAddresses = tx.outputs.filter(output => output.addr !== address)
         
-        tx.outputs.forEach(output => {
-          if (output.addr !== address) {
-            destAddressFlows.set(output.addr, (destAddressFlows.get(output.addr) || 0) + output.amt)
-          }
-        })
+        // Group destination addresses by entity
+        const destEntityGroups = groupAddressesByEntity(destAddresses, attributions, itemsMap)
         
-        console.log('Outgoing flow destinations:', Array.from(destAddressFlows.entries()))
+        // Distribute sent amount proportionally to entity groups
+        const totalDestAmount = destEntityGroups.reduce((sum, group) => sum + group.totalAmount, 0)
         
-        // Distribute sent amount proportionally to destination addresses
-        const totalDestAmount = Array.from(destAddressFlows.values()).reduce((sum, amt) => sum + amt, 0)
-        
-        destAddressFlows.forEach((destAmount, destAddr) => {
-          const proportion = destAmount / totalDestAmount
+        destEntityGroups.forEach(entityGroup => {
+          const proportion = entityGroup.totalAmount / totalDestAmount
           const sentAmount = totalSent * proportion
           
-          // Get entity info for display
-          const entityId = attributions[destAddr]?.entity || attributions[destAddr]?.bo || attributions[destAddr]?.custodian
-          const entity = entityId ? Object.values(itemsMap).find(item => item.entity_id === entityId) : null
-          const entityType = entity?.entity_type || "Unknown"
-          const displayName = entity?.proper_name || destAddr.slice(0, 8) + "..."
+          const entityKey = `Out: ${entityGroup.name}`
+          const existing = outgoingEntityFlows.get(entityKey)
           
-          const key = `Out: ${displayName}`
-          outgoingFlows.set(key, (outgoingFlows.get(key) || 0) + sentAmount)
-          
-          // Store full address for hover tooltip
-          addressMap.set(key, { displayName, fullAddress: destAddr, entityType })
+          if (existing) {
+            existing.amount += sentAmount
+            existing.transactionIds.push(tx.txid)
+          } else {
+            outgoingEntityFlows.set(entityKey, {
+              amount: sentAmount,
+              transactionIds: [tx.txid]
+            })
+          }
         })
       }
     })
 
-    // Limit flows to top 20 biggest flows (10 incoming + 10 outgoing)
-    const maxFlowsPerDirection = Math.floor(maxTransactions / 2) // 10 flows per direction
+    // Limit flows to top entities per direction
+    const maxFlowsPerDirection = Math.floor(maxTransactions / 2)
     
-    // Sort and limit incoming flows
-    const sortedIncomingFlows = Array.from(incomingFlows.entries())
-      .sort(([, a], [, b]) => b - a) // Sort by value descending
+    // Sort and limit incoming entity flows
+    const sortedIncomingFlows = Array.from(incomingEntityFlows.entries())
+      .sort(([, a], [, b]) => b.amount - a.amount)
       .slice(0, maxFlowsPerDirection)
     
-    // Sort and limit outgoing flows
-    const sortedOutgoingFlows = Array.from(outgoingFlows.entries())
-      .sort(([, a], [, b]) => b - a) // Sort by value descending
+    // Sort and limit outgoing entity flows
+    const sortedOutgoingFlows = Array.from(outgoingEntityFlows.entries())
+      .sort(([, a], [, b]) => b.amount - a.amount)
       .slice(0, maxFlowsPerDirection)
     
-    // Create nodes and links for incoming flows (limited)
-    sortedIncomingFlows.forEach(([key, value]) => {
-      const entityName = key.replace("In: ", "")
+    // Create nodes and links for incoming entity flows
+    sortedIncomingFlows.forEach(([entityKey, flowData], index) => {
+      const entityName = entityKey.replace("In: ", "")
       
-      // Get stored address data
-      const addressData = addressMap.get(key)
-      const fullAddress = addressData?.fullAddress
-      const entityType = addressData?.entityType || "Wallet"
+      // Get entity info from the first address in the group
+      const sourceAddresses = sortedTransactions
+        .flatMap(tx => tx.inputs.filter(input => input.addr !== address))
+        .filter(input => {
+          const { properName } = getEntityInfo(input.addr, attributions, itemsMap)
+          return properName === entityName || (!properName && input.addr.slice(0, 8) + "..." === entityName)
+        })
+      
+      const firstAddress = sourceAddresses[0]
+      const { entityType } = firstAddress ? getEntityInfo(firstAddress.addr, attributions, itemsMap) : { entityType: "Unknown" }
       
       entityTypes.add(entityType)
       
-      const sourceNodeIndex = addNode(key, entityType, fullAddress)
+      const sourceNode: SankeyNode = {
+        id: entityKey,
+        name: entityName,
+        type: 'entity',
+        entityType,
+        entityGroup: entityName,
+        addresses: sourceAddresses.map(input => input.addr),
+        color: "hsl(210, 80%, 60%)" // Blue for incoming nodes
+      }
+      
+      const sourceNodeIndex = addNode(sourceNode)
+      
       currentLinks.push({
-        source: sourceNodeIndex,
-        target: centralNodeIndex,
-        value: value,
-        label: `${entityName} → Address: ${formatCurrency(value)}`,
-        color: `hsl(${Math.random() * 360}, 70%, 60%)`, // Random vibrant colors for links
+        source: entityKey,
+        target: "Address",
+        value: flowData.amount,
+        label: `${entityName} → Address: ${formatCurrency(flowData.amount)}`,
+        color: getLinkOrangeColor(flowData.amount, 'incoming', index),
+        transactionIds: flowData.transactionIds
       })
     })
 
-    // Create nodes and links for outgoing flows (limited)
-    sortedOutgoingFlows.forEach(([key, value]) => {
-      const entityName = key.replace("Out: ", "")
+    // Create nodes and links for outgoing entity flows
+    sortedOutgoingFlows.forEach(([entityKey, flowData], index) => {
+      const entityName = entityKey.replace("Out: ", "")
       
-      // Get stored address data
-      const addressData = addressMap.get(key)
-      const fullAddress = addressData?.fullAddress
-      const entityType = addressData?.entityType || "Wallet"
+      // Get entity info from the first address in the group
+      const destAddresses = sortedTransactions
+        .flatMap(tx => tx.outputs.filter(output => output.addr !== address))
+        .filter(output => {
+          const { properName } = getEntityInfo(output.addr, attributions, itemsMap)
+          return properName === entityName || (!properName && output.addr.slice(0, 8) + "..." === entityName)
+        })
+      
+      const firstAddress = destAddresses[0]
+      const { entityType } = firstAddress ? getEntityInfo(firstAddress.addr, attributions, itemsMap) : { entityType: "Unknown" }
       
       entityTypes.add(entityType)
       
-      const targetNodeIndex = addNode(key, entityType, fullAddress)
+      const targetNode: SankeyNode = {
+        id: entityKey,
+        name: entityName,
+        type: 'entity',
+        entityType,
+        entityGroup: entityName,
+        addresses: destAddresses.map(output => output.addr),
+        color: "hsl(210, 80%, 60%)" // Blue for outgoing nodes
+      }
+      
+      const targetNodeIndex = addNode(targetNode)
+      
       currentLinks.push({
-        source: centralNodeIndex,
-        target: targetNodeIndex,
-        value: value,
-        label: `Address → ${entityName}: ${formatCurrency(value)}`,
-        color: `hsl(${Math.random() * 360}, 70%, 60%)`, // Random vibrant colors for links
+        source: "Address",
+        target: entityKey,
+        value: flowData.amount,
+        label: `Address → ${entityName}: ${formatCurrency(flowData.amount)}`,
+        color: getLinkOrangeColor(flowData.amount, 'outgoing', index),
+        transactionIds: flowData.transactionIds
       })
     })
 
-    // Set color for the central address node
-    const centralNode = currentNodes.find(node => node.name === centralNodeName)
-    if (centralNode) {
-      centralNode.color = "hsl(210, 80%, 60%)" // Bright blue for central address
-      centralNode.entityType = "Address"
-    }
-
-    if (!entityTypes.has("Address") && currentNodes.some((node) => node.entityType === "Address")) {
+    if (!entityTypes.has("Address")) {
       entityTypes.add("Address")
     }
 
-    console.log('Final Sankey data:', {
-      incomingFlows: Array.from(incomingFlows.entries()),
-      outgoingFlows: Array.from(outgoingFlows.entries()),
+    console.log('Final Sankey data with entity grouping:', {
+      incomingEntityFlows: Array.from(incomingEntityFlows.entries()),
+      outgoingEntityFlows: Array.from(outgoingEntityFlows.entries()),
       totalNodes: currentNodes.length,
       totalLinks: currentLinks.length,
       entityTypes: Array.from(entityTypes)
@@ -341,9 +439,7 @@ export const SimpleSankeyTest = ({
     return { 
       nodes: currentNodes, 
       links: currentLinks, 
-      uniqueEntityTypes: Array.from(entityTypes),
-      incomingFlows,
-      outgoingFlows
+      uniqueEntityTypes: Array.from(entityTypes)
     }
   }, [address, maxTransactions, transactionData, attributions, itemsMap])
 
@@ -378,11 +474,17 @@ export const SimpleSankeyTest = ({
     // Prepare minimal nodes for D3 Sankey (empty objects)
     const sankeyNodesInput = nodes.map(() => ({}));
 
+    // Create a mapping from node IDs to indices
+    const nodeIdToIndex = new Map<string, number>();
+    nodes.forEach((node, index) => {
+      nodeIdToIndex.set(node.id, index);
+    });
+
     // Prepare links using indices for source/target, filtering out any undefined
     const sankeyLinksInput = links
       .map(link => {
-        const sourceIdx = link.source;
-        const targetIdx = link.target;
+        const sourceIdx = nodeIdToIndex.get(link.source);
+        const targetIdx = nodeIdToIndex.get(link.target);
         if (sourceIdx === undefined || targetIdx === undefined) return null;
         return {
           source: sourceIdx,
@@ -421,7 +523,7 @@ export const SimpleSankeyTest = ({
         // Highlight the hovered link
         d3.select(this)
           .attr("opacity", 1)
-          .style("filter", "drop-shadow(0 0 8px rgba(59, 130, 246, 0.6))")
+          .style("filter", "drop-shadow(0 0 8px rgba(255, 140, 0, 0.6))")
         
         // Dim other links
         svg.selectAll("path")
@@ -454,7 +556,7 @@ export const SimpleSankeyTest = ({
           .style("top", (event.pageY - 10) + "px")
       })
       .on("click", function(_, d: any) {
-        // Get source and target node information
+        // Get source and target node information using the D3 node indices
         const sourceNode = nodes[d.source.index]
         const targetNode = nodes[d.target.index]
         
@@ -462,13 +564,13 @@ export const SimpleSankeyTest = ({
           const linkModalData: LinkModalData = {
             sourceName: sourceNode.name.replace(/In: |Out: /g, ""),
             targetName: targetNode.name.replace(/In: |Out: /g, ""),
-            sourceAddress: sourceNode.fullAddress || "",
-            targetAddress: targetNode.fullAddress || "",
+            sourceAddress: sourceNode.addresses?.[0] || "",
+            targetAddress: targetNode.addresses?.[0] || "",
             value: d.value,
             sourceEntityType: sourceNode.entityType || "Unknown",
             targetEntityType: targetNode.entityType || "Unknown",
-            sourceAttribution: sourceNode.fullAddress ? attributions[sourceNode.fullAddress] : undefined,
-            targetAttribution: targetNode.fullAddress ? attributions[targetNode.fullAddress] : undefined
+            sourceAttribution: sourceNode.addresses?.[0] ? attributions[sourceNode.addresses[0]] : undefined,
+            targetAttribution: targetNode.addresses?.[0] ? attributions[targetNode.addresses[0]] : undefined
           }
           
           setLinkModalData(linkModalData)
@@ -502,12 +604,12 @@ export const SimpleSankeyTest = ({
       .attr("height", (d: any) => d.y1 - d.y0)
       .attr("width", (d: any) => {
         const baseWidth = d.x1 - d.x0
-        return d.name === "Wallet" ? Math.max(baseWidth, 30) : baseWidth
+        return d.name === "Address" ? Math.max(baseWidth, 30) : baseWidth
       })
       .attr("fill", (d: any) => d.color || DEFAULT_COLOR)
-      .attr("opacity", 0.95)
-      .attr("rx", 4)
-      .attr("ry", 4)
+      .attr("opacity", .95)
+      .attr("rx", 2)
+      .attr("ry", 2)
       .style("cursor", (d: any) => d.name !== "Address" ? "pointer" : "default")
 
       .on("mouseover", function(_, d: any) {
@@ -528,11 +630,11 @@ export const SimpleSankeyTest = ({
                   .style("color", theme === 'dark' ? "#ffffff" : "#000000")
 
         const displayName = d.name.replace(/In: |Out: /g, "")
-        const fullAddress = d.fullAddress
+        const addresses = d.addresses || []
         
         tooltip.html(`
           <div class="font-semibold">${displayName}</div>
-          ${fullAddress && fullAddress !== displayName ? `<div class="text-gray-500 font-mono text-xs">Full: ${fullAddress}</div>` : ''}
+          ${addresses.length > 0 ? `<div class="text-gray-500 font-mono text-xs">${addresses.length} address${addresses.length > 1 ? 'es' : ''}</div>` : ''}
         `)
         })
       .on("mousemove", function(event) {
@@ -552,10 +654,10 @@ export const SimpleSankeyTest = ({
         if (originalNode && originalNode.name === "Address") {
           // Handle center wallet node - calculate totals from links
           const totalIncoming = links
-            .filter(link => link.target === d.index)
+            .filter(link => link.target === originalNode.id)
             .reduce((sum, link) => sum + link.value, 0)
           const totalOutgoing = links
-            .filter(link => link.source === d.index)
+            .filter(link => link.source === originalNode.id)
             .reduce((sum, link) => sum + link.value, 0)
           const netFlow = totalIncoming - totalOutgoing
           
@@ -573,19 +675,19 @@ export const SimpleSankeyTest = ({
           // Handle other nodes - calculate flow value from links
           const entityName = originalNode.name.replace(/In: |Out: /g, "")
           const direction = originalNode.name.startsWith("In:") ? 'incoming' : 'outgoing'
-          const fullAddress = originalNode.fullAddress || ""
+          const firstAddress = originalNode.addresses?.[0] || ""
           
           // Get attribution data
-          const attribution = attributions[fullAddress]
+          const attribution = firstAddress ? attributions[firstAddress] : undefined
           
           // Get flow value from links
           const flowValue = direction === 'incoming' 
-            ? links.filter(link => link.target === d.index).reduce((sum, link) => sum + link.value, 0)
-            : links.filter(link => link.source === d.index).reduce((sum, link) => sum + link.value, 0)
+            ? links.filter(link => link.target === originalNode.id).reduce((sum, link) => sum + link.value, 0)
+            : links.filter(link => link.source === originalNode.id).reduce((sum, link) => sum + link.value, 0)
           
           const modalData: WalletModalData = {
             entityName,
-            address: fullAddress,
+            addresses: originalNode.addresses || [],
             entityType: originalNode.entityType || "Unknown",
             direction,
             totalValue: flowValue,
@@ -608,7 +710,7 @@ export const SimpleSankeyTest = ({
       .attr("font-size", "12px")
       .text((d: any) => {
         if (!d.name) return ""
-        if (d.name === "Wallet") return "Wallet"
+        if (d.name === "Address") return "Address"
         if (d.name.startsWith("In:") || d.name.startsWith("Out:")) {
           // Extract just the entity name part
           const parts = d.name.split(": ")
@@ -625,11 +727,11 @@ export const SimpleSankeyTest = ({
     <>
       <h4 className={`text-xl font-semibold mb-6 ${
         theme === 'dark' ? 'text-white' : 'text-gray-900'
-      }`}>Address Flow Analysis (Real Transaction Data)</h4>
+      }`}>Address Flow Analysis (Entity Grouped)</h4>
       <p className={`text-sm mb-4 ${
         theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
       }`}>
-        Showing Bitcoin (BTC) flow amounts between {nodes.length - 1} addresses from {transactionData?.txs?.length || 0} transactions (sorted by highest BTC amount)
+        Showing Bitcoin (BTC) flow amounts between {nodes.length - 1} entities from {transactionData?.txs?.length || 0} transactions. Addresses are grouped by entity for better readability.
       </p>
       <div className={`p-6 ${
         theme === 'dark' ? 'bg-gray-800/50' : 'bg-gray-50'
@@ -741,13 +843,17 @@ export const SimpleSankeyTest = ({
                   <div>
                     <span className={`font-medium ${
                       theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
-                    }`}>Address:</span>
-                    <div className={`mt-1 p-2 rounded font-mono text-sm ${
+                    }`}>Addresses ({modalData.addresses.length}):</span>
+                    <div className={`mt-1 max-h-32 overflow-y-auto space-y-1 ${
                       theme === 'dark' ? 'bg-gray-600' : 'bg-white'
                     } border ${
                       theme === 'dark' ? 'border-gray-500' : 'border-gray-200'
-                    }`}>
-                      {modalData.address}
+                    } rounded p-2`}>
+                      {modalData.addresses.map((addr, index) => (
+                        <div key={index} className="font-mono text-xs">
+                          {addr}
+                        </div>
+                      ))}
                     </div>
                   </div>
                 </div>
