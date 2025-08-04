@@ -9,7 +9,6 @@ import {
   TransactionActivity,
   TopCounterparties, 
   TransactionHistory, 
-  CombinedFundsFlow,
   EntityDetails,
   RiskScoreModal
 } from './components';
@@ -590,106 +589,7 @@ const RiskDashboard: React.FC = React.memo(() => {
     };
   }, [primaryEntityId, handleResize]);
 
-  // Generate funds flow data from real transaction data - memoized, grouped by cospend ID
-  const fundsFlowData = useMemo(() => {
-    if (!transformedTransactions.length) {
-      return { incoming: [], outgoing: [] };
-    }
 
-    // Debug: Log some sample data to see what we're working with
-    console.log('Funds Flow Debug:', {
-      transactionCount: transformedTransactions.length,
-      sampleTransactions: transformedTransactions.slice(0, 3).map(tx => ({
-        from: tx.from,
-        to: tx.to,
-        type: tx.type,
-        value: tx.value,
-        attributionFrom: attributions[tx.from],
-        attributionTo: attributions[tx.to]
-      })),
-      attributionsCount: Object.keys(attributions).length,
-      sampleAttributions: Object.entries(attributions).slice(0, 3)
-    });
-
-    const incomingByCospend: { [key: string]: { value: number; addresses: string[]; entityName: string } } = {};
-    const outgoingByCospend: { [key: string]: { value: number; addresses: string[]; entityName: string } } = {};
-
-    transformedTransactions.forEach(tx => {
-      if (tx.type === 'in' && tx.from !== 'Unknown') {
-        const attribution = attributions[tx.from];
-        const cospendId = attribution?.cospend_id || tx.from; // Use cospend_id if available, fallback to address
-        const entityId = attribution?.entity || attribution?.bo || attribution?.custodian;
-        const entity = entityId ? Object.values(itemsMap).find(sot => sot.entity_id === entityId) : null;
-        const entityName = entity?.proper_name || truncateAddress(tx.from);
-        
-        if (!incomingByCospend[cospendId]) {
-          incomingByCospend[cospendId] = { value: 0, addresses: [], entityName };
-        }
-        incomingByCospend[cospendId].value += tx.value * btcPrice;
-        if (!incomingByCospend[cospendId].addresses.includes(tx.from)) {
-          incomingByCospend[cospendId].addresses.push(tx.from);
-        }
-        // Use the first entity name we encounter for this cospend group
-        if (!incomingByCospend[cospendId].entityName || incomingByCospend[cospendId].entityName === truncateAddress(tx.from)) {
-          incomingByCospend[cospendId].entityName = entityName;
-        }
-      } else if (tx.type === 'out' && tx.to !== 'Unknown') {
-        const attribution = attributions[tx.to];
-        const cospendId = attribution?.cospend_id || tx.to; // Use cospend_id if available, fallback to address
-        const entityId = attribution?.entity || attribution?.bo || attribution?.custodian;
-        const entity = entityId ? Object.values(itemsMap).find(sot => sot.entity_id === entityId) : null;
-        const entityName = entity?.proper_name || truncateAddress(tx.to);
-        
-        if (!outgoingByCospend[cospendId]) {
-          outgoingByCospend[cospendId] = { value: 0, addresses: [], entityName };
-        }
-        outgoingByCospend[cospendId].value += tx.value * btcPrice;
-        if (!outgoingByCospend[cospendId].addresses.includes(tx.to)) {
-          outgoingByCospend[cospendId].addresses.push(tx.to);
-        }
-        // Use the first entity name we encounter for this cospend group
-        if (!outgoingByCospend[cospendId].entityName || outgoingByCospend[cospendId].entityName === truncateAddress(tx.to)) {
-          outgoingByCospend[cospendId].entityName = entityName;
-        }
-      }
-    });
-
-    const incomingData = Object.entries(incomingByCospend)
-      .map(([cospendId, data]) => ({
-        name: data.addresses.length > 1 
-          ? `${data.entityName} (${data.addresses.length} addresses)`
-          : data.entityName,
-        value: data.value,
-        entityType: 'Exchange',
-        cospendId,
-        addressCount: data.addresses.length
-      }))
-      .sort((a, b) => b.value - a.value)
-      .slice(0, 5);
-
-    const outgoingData = Object.entries(outgoingByCospend)
-      .map(([cospendId, data]) => ({
-        name: data.addresses.length > 1 
-          ? `${data.entityName} (${data.addresses.length} addresses)`
-          : data.entityName,
-        value: data.value,
-        entityType: 'Wallet',
-        cospendId,
-        addressCount: data.addresses.length
-      }))
-      .sort((a, b) => b.value - a.value)
-      .slice(0, 5);
-
-    // Debug: Log the final grouped data
-    console.log('Funds Flow Grouped Data:', {
-      incomingByCospend,
-      outgoingByCospend,
-      incomingData,
-      outgoingData
-    });
-
-    return { incoming: incomingData, outgoing: outgoingData };
-  }, [transformedTransactions, attributions, btcPrice, itemsMap, truncateAddress]);
 
   // Check if we have data to display - memoized
   const shouldShowData = useMemo(() => 
@@ -841,14 +741,7 @@ const RiskDashboard: React.FC = React.memo(() => {
             </div>
           </div>
 
-          {/* Funds Flow Analysis - Full Width */}
-          {(fundsFlowData.incoming.length > 0 || fundsFlowData.outgoing.length > 0) && (
-            <CombinedFundsFlow 
-              incomingData={fundsFlowData.incoming}
-              outgoingData={fundsFlowData.outgoing}
-              title="Funds Flow Analysis (Grouped by Cospend ID)"
-            />
-          )}
+
 
           {/* D3 Sankey Diagram - Full Width */}
           {address && (
