@@ -89,9 +89,7 @@ const ORANGE_PALETTE = {
 }
 
 // Function to get orange color for links based on flow amount and direction
-const getLinkOrangeColor = (amount: number, direction: 'incoming' | 'outgoing', index: number): string => {
-  const orangeShades = Object.values(ORANGE_PALETTE)
-  
+const getLinkOrangeColor = (amount: number, direction: 'incoming' | 'outgoing'): string => {
   // Use amount to determine intensity - higher amounts get darker oranges
   if (amount > 1000000000) { // > 10 BTC
     return direction === 'incoming' ? ORANGE_PALETTE.deep : ORANGE_PALETTE.dark
@@ -224,7 +222,7 @@ export const SimpleSankeyTest = ({
       entityType: "Address",
       color: "hsl(210, 80%, 60%)" // Bright blue for central address
     }
-    const centralNodeIndex = addNode(centralNode)
+    addNode(centralNode)
 
     // Process real transaction data - filter for transactions involving current address
     const transactions = transactionData?.txs || []
@@ -347,7 +345,7 @@ export const SimpleSankeyTest = ({
       .slice(0, maxFlowsPerDirection)
     
     // Create nodes and links for incoming entity flows
-    sortedIncomingFlows.forEach(([entityKey, flowData], index) => {
+    sortedIncomingFlows.forEach(([entityKey, flowData]) => {
       const entityName = entityKey.replace("In: ", "")
       
       // Get entity info from the first address in the group
@@ -373,20 +371,20 @@ export const SimpleSankeyTest = ({
         color: "hsl(210, 80%, 60%)" // Blue for incoming nodes
       }
       
-      const sourceNodeIndex = addNode(sourceNode)
+      addNode(sourceNode)
       
       currentLinks.push({
         source: entityKey,
         target: "Address",
         value: flowData.amount,
         label: `${entityName} → Address: ${formatCurrency(flowData.amount)}`,
-        color: getLinkOrangeColor(flowData.amount, 'incoming', index),
+        color: getLinkOrangeColor(flowData.amount, 'incoming'),
         transactionIds: flowData.transactionIds
       })
     })
 
     // Create nodes and links for outgoing entity flows
-    sortedOutgoingFlows.forEach(([entityKey, flowData], index) => {
+    sortedOutgoingFlows.forEach(([entityKey, flowData]) => {
       const entityName = entityKey.replace("Out: ", "")
       
       // Get entity info from the first address in the group
@@ -412,14 +410,14 @@ export const SimpleSankeyTest = ({
         color: "hsl(210, 80%, 60%)" // Blue for outgoing nodes
       }
       
-      const targetNodeIndex = addNode(targetNode)
+      addNode(targetNode)
       
       currentLinks.push({
         source: "Address",
         target: entityKey,
         value: flowData.amount,
         label: `Address → ${entityName}: ${formatCurrency(flowData.amount)}`,
-        color: getLinkOrangeColor(flowData.amount, 'outgoing', index),
+        color: getLinkOrangeColor(flowData.amount, 'outgoing'),
         transactionIds: flowData.transactionIds
       })
     })
