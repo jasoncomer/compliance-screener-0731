@@ -1,7 +1,6 @@
 "use client"
 
 import { useState } from "react"
-import { SimpleSankeyTest } from "./SimpleSankeyTest"
 import { EnhancedD3SankeyDiagram } from "./EnhancedD3SankeyDiagram"
 
 interface ExampleData {

@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useMemo, useState, useCallback } from "react"
 import * as d3 from "d3"
-import { sankey, sankeyLinkHorizontal, SankeyGraph, SankeyNode, SankeyLink } from "d3-sankey"
+import { sankey, sankeyLinkHorizontal, SankeyNode, SankeyLink } from "d3-sankey"
 import { riskScores } from "../../../lib/risk-scores"
 import { getColorForEntityType, getEmojiForEntityType } from "../../../lib/entity-types"
 import { useTheme } from "../../../context/ThemeContext"
@@ -108,7 +108,7 @@ export const EnhancedD3SankeyDiagram = ({
     }
 
     const centralNodeName = "Wallet"
-    const centralNodeIndex = addNode(centralNodeName, "wallet", 0)
+    addNode(centralNodeName, "wallet", 0)
 
     const enrichedIncomingData = incomingData.map((d) => ({
       ...d,
@@ -185,14 +185,25 @@ export const EnhancedD3SankeyDiagram = ({
       .nodePadding(10)
       .extent([[0, 0], [chartWidth, chartHeight]])
 
-    // Prepare data for D3
-    const sankeyData: SankeyGraph<CustomSankeyNode, CustomSankeyLink> = {
-      nodes: nodes.map(node => ({ ...node })),
-      links: links.map(link => ({ ...link }))
-    }
+    // Prepare data for D3 - create minimal nodes and links with indices
+    const sankeyNodesInput = nodes.map(() => ({}))
+    const sankeyLinksInput = links.map((link) => {
+      const sourceIndex = nodes.findIndex(node => node.name === link.source)
+      const targetIndex = nodes.findIndex(node => node.name === link.target)
+      return {
+        source: sourceIndex,
+        target: targetIndex,
+        value: link.value,
+        label: link.label,
+        color: link.color
+      }
+    }).filter(link => link.source !== -1 && link.target !== -1)
 
     // Generate the Sankey layout
-    const { nodes: sankeyNodes, links: sankeyLinks } = sankeyGenerator(sankeyData)
+    const { nodes: sankeyNodes, links: sankeyLinks } = sankeyGenerator({
+      nodes: sankeyNodesInput as any,
+      links: sankeyLinksInput as any
+    })
 
     // Create the link generator
     const linkGenerator = sankeyLinkHorizontal<CustomSankeyNode, CustomSankeyLink>()
@@ -228,7 +239,7 @@ export const EnhancedD3SankeyDiagram = ({
       .attr("fill", "none")
       .attr("opacity", 0.5)
       .style("cursor", "pointer")
-      .on("mouseover", function(event, d) {
+      .on("mouseover", function(_, d) {
         d3.select(this).attr("opacity", 0.8)
         
         // Show tooltip
@@ -274,17 +285,17 @@ export const EnhancedD3SankeyDiagram = ({
 
     // Add node rectangles
     nodeGroup.append("rect")
-      .attr("height", (d) => d.y1 - d.y0)
+      .attr("height", (d) => (d.y1 || 0) - (d.y0 || 0))
       .attr("width", (d) => {
         // Make Wallet node wider
-        const baseWidth = d.x1 - d.x0
+        const baseWidth = (d.x1 || 0) - (d.x0 || 0)
         return d.name === "Wallet" ? Math.max(baseWidth, 30) : baseWidth
       })
       .attr("fill", (d) => d.color || DEFAULT_COLOR)
       .attr("opacity", 0.9)
       .attr("rx", 2)
       .attr("ry", 2)
-      .on("mouseover", function(event, d) {
+      .on("mouseover", function(_, d) {
         d3.select(this).attr("opacity", 1)
         
         // Show tooltip
@@ -320,10 +331,10 @@ export const EnhancedD3SankeyDiagram = ({
 
     // Add node labels
     nodeGroup.append("text")
-      .attr("x", (d) => d.x0 < chartWidth / 2 ? -6 : 6)
-      .attr("y", (d) => (d.y1 - d.y0) / 2)
+      .attr("x", (d) => (d.x0 || 0) < chartWidth / 2 ? -6 : 6)
+      .attr("y", (d) => ((d.y1 || 0) - (d.y0 || 0)) / 2)
       .attr("dy", "0.35em")
-      .attr("text-anchor", (d) => d.x0 < chartWidth / 2 ? "end" : "start")
+      .attr("text-anchor", (d) => (d.x0 || 0) < chartWidth / 2 ? "end" : "start")
       .attr("fill", theme === 'dark' ? "#ffffff" : "#000000")
       .attr("font-size", "12px")
       .attr("font-weight", "500")

@@ -78,7 +78,7 @@ export const D3SankeyDiagram = ({
     }
 
     const centralNodeName = "Wallet"
-    const centralNodeIndex = addNode(centralNodeName, "wallet", 0)
+    addNode(centralNodeName, "wallet", 0)
 
     const enrichedIncomingData = incomingData.map((d) => ({
       ...d,
@@ -93,7 +93,7 @@ export const D3SankeyDiagram = ({
 
     enrichedIncomingData.forEach((item) => {
       entityTypes.add(item.entityType)
-      const sourceNodeIndex = addNode(`In: ${item.entityType}`, item.entityType, item.riskScore)
+      addNode(`In: ${item.entityType}`, item.entityType, item.riskScore)
       currentLinks.push({
         source: `In: ${item.entityType}`,
         target: centralNodeName,
@@ -106,7 +106,7 @@ export const D3SankeyDiagram = ({
 
     enrichedOutgoingData.forEach((item) => {
       entityTypes.add(item.entityType)
-      const targetNodeIndex = addNode(`Out: ${item.entityType}`, item.entityType, item.riskScore)
+      addNode(`Out: ${item.entityType}`, item.entityType, item.riskScore)
       currentLinks.push({
         source: centralNodeName,
         target: `Out: ${item.entityType}`,
@@ -151,14 +151,25 @@ export const D3SankeyDiagram = ({
       .nodePadding(10)
       .extent([[0, 0], [chartWidth, chartHeight]])
 
-    // Prepare data for D3
-    const sankeyData = {
-      nodes: nodes.map(node => ({ ...node })),
-      links: links.map(link => ({ ...link }))
-    }
+    // Prepare data for D3 - create minimal nodes and links with indices
+    const sankeyNodesInput = nodes.map(() => ({}))
+    const sankeyLinksInput = links.map((link) => {
+      const sourceIndex = nodes.findIndex(node => node.name === link.source)
+      const targetIndex = nodes.findIndex(node => node.name === link.target)
+      return {
+        source: sourceIndex,
+        target: targetIndex,
+        value: link.value,
+        label: link.label,
+        color: link.color
+      }
+    }).filter(link => link.source !== -1 && link.target !== -1)
 
     // Generate the Sankey layout
-    const { nodes: sankeyNodes, links: sankeyLinks } = sankeyGenerator(sankeyData)
+    const { nodes: sankeyNodes, links: sankeyLinks } = sankeyGenerator({
+      nodes: sankeyNodesInput,
+      links: sankeyLinksInput
+    })
 
     // Create the link generator
     const linkGenerator = sankeyLinkHorizontal()
@@ -174,7 +185,7 @@ export const D3SankeyDiagram = ({
       .attr("stroke-width", (d: any) => Math.max(1, d.width))
       .attr("fill", "none")
       .attr("opacity", 0.5)
-      .on("mouseover", function(event, d: any) {
+      .on("mouseover", function(_, d: any) {
         d3.select(this).attr("opacity", 0.8)
         
         // Show tooltip
@@ -227,7 +238,7 @@ export const D3SankeyDiagram = ({
       .attr("opacity", 0.9)
       .attr("rx", 2)
       .attr("ry", 2)
-      .on("mouseover", function(event, d: any) {
+      .on("mouseover", function(_, d: any) {
         d3.select(this).attr("opacity", 1)
         
         // Show tooltip
