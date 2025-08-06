@@ -14,9 +14,4 @@ export { EntityDetails, SocialMediaFeed, GeographicPresence } from './entity-int
 export { DataTabs } from './DataTabs';
 
 // Sankey diagram components
-export { D3SankeyDiagram } from './D3SankeyDiagram'
-export { EnhancedD3SankeyDiagram } from './EnhancedD3SankeyDiagram'
-export { SankeyExample } from './SankeyExample'
-export { SankeyExamples } from './SankeyExamples'
-export { CombinedFundsFlow } from './CombinedFundsFlow'
 export { SimpleSankeyTest } from './SimpleSankeyTest' 

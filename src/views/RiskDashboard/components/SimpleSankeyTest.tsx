@@ -76,30 +76,79 @@ interface SankeyLink {
 
 const DEFAULT_COLOR = "hsl(30, 100%, 50%)" // Orange default
 
-// Orange color palette for different entity types
-const ORANGE_PALETTE = {
-  light: "hsl(30, 100%, 85%)",    // Very light orange
-  medium: "hsl(30, 100%, 70%)",   // Light orange
-  default: "hsl(30, 100%, 50%)",  // Standard orange
-  dark: "hsl(30, 100%, 35%)",     // Dark orange
-  deep: "hsl(25, 100%, 30%)",     // Deep orange
-  warm: "hsl(35, 100%, 45%)",     // Warm orange
-  amber: "hsl(45, 100%, 50%)",    // Amber orange
-  sunset: "hsl(20, 100%, 60%)"    // Sunset orange
+// Color palette for different entity types and flow directions
+const COLOR_PALETTE = {
+  // Incoming flows (green tones)
+  incoming: {
+    exchange: "hsl(120, 70%, 50%)",      // Green for exchanges
+    mining: "hsl(160, 70%, 45%)",        // Teal for mining
+    defi: "hsl(140, 80%, 40%)",          // Dark green for DeFi
+    gambling: "hsl(100, 80%, 45%)",      // Light green for gambling
+    mixer: "hsl(180, 70%, 40%)",         // Cyan for mixers
+    darknet: "hsl(200, 80%, 35%)",       // Blue-green for darknet
+    default: "hsl(130, 70%, 50%)"        // Default green
+  },
+  // Outgoing flows (red/purple tones)
+  outgoing: {
+    exchange: "hsl(0, 70%, 55%)",        // Red for exchanges
+    mining: "hsl(340, 70%, 50%)",        // Pink for mining
+    defi: "hsl(280, 70%, 50%)",          // Purple for DeFi
+    gambling: "hsl(320, 80%, 45%)",      // Magenta for gambling
+    mixer: "hsl(260, 70%, 45%)",         // Indigo for mixers
+    darknet: "hsl(240, 80%, 40%)",       // Blue for darknet
+    default: "hsl(0, 70%, 50%)"          // Default red
+  },
+  // Amount-based intensity modifiers
+  intensity: {
+    high: 0.9,      // High amount - more saturated
+    medium: 0.7,    // Medium amount - normal saturation
+    low: 0.5        // Low amount - less saturated
+  }
 }
 
-// Function to get orange color for links based on flow amount and direction
-const getLinkOrangeColor = (amount: number, direction: 'incoming' | 'outgoing'): string => {
-  // Use amount to determine intensity - higher amounts get darker oranges
-  if (amount > 1000000000) { // > 10 BTC
-    return direction === 'incoming' ? ORANGE_PALETTE.deep : ORANGE_PALETTE.dark
-  } else if (amount > 100000000) { // > 1 BTC
-    return direction === 'incoming' ? ORANGE_PALETTE.default : ORANGE_PALETTE.warm
-  } else if (amount > 10000000) { // > 0.1 BTC
-    return direction === 'incoming' ? ORANGE_PALETTE.amber : ORANGE_PALETTE.sunset
+// Function to get color for links based on entity type, flow amount, and direction
+const getLinkColor = (amount: number, direction: 'incoming' | 'outgoing', entityType: string = 'Unknown'): string => {
+  const palette = direction === 'incoming' ? COLOR_PALETTE.incoming : COLOR_PALETTE.outgoing
+  
+  // Determine entity type for color selection
+  const normalizedEntityType = entityType.toLowerCase()
+  let baseColor: string
+  
+  if (normalizedEntityType.includes('exchange') || normalizedEntityType.includes('binance') || normalizedEntityType.includes('coinbase')) {
+    baseColor = palette.exchange
+  } else if (normalizedEntityType.includes('mining') || normalizedEntityType.includes('pool')) {
+    baseColor = palette.mining
+  } else if (normalizedEntityType.includes('defi') || normalizedEntityType.includes('uniswap') || normalizedEntityType.includes('compound')) {
+    baseColor = palette.defi
+  } else if (normalizedEntityType.includes('gambling') || normalizedEntityType.includes('casino') || normalizedEntityType.includes('bet')) {
+    baseColor = palette.gambling
+  } else if (normalizedEntityType.includes('mixer') || normalizedEntityType.includes('tornado') || normalizedEntityType.includes('privacy')) {
+    baseColor = palette.mixer
+  } else if (normalizedEntityType.includes('darknet') || normalizedEntityType.includes('market') || normalizedEntityType.includes('silk')) {
+    baseColor = palette.darknet
   } else {
-    return direction === 'incoming' ? ORANGE_PALETTE.medium : ORANGE_PALETTE.light
+    baseColor = palette.default
   }
+  
+  // Adjust intensity based on amount
+  let intensity: number
+  if (amount > 1000000000) { // > 10 BTC
+    intensity = COLOR_PALETTE.intensity.high
+  } else if (amount > 100000000) { // > 1 BTC
+    intensity = COLOR_PALETTE.intensity.medium
+  } else {
+    intensity = COLOR_PALETTE.intensity.low
+  }
+  
+  // Convert HSL to RGB, adjust saturation, then back to HSL
+  const hslMatch = baseColor.match(/hsl\((\d+),\s*(\d+)%,\s*(\d+)%\)/)
+  if (hslMatch) {
+    const [, h, s, l] = hslMatch
+    const adjustedSaturation = Math.round(parseInt(s) * intensity)
+    return `hsl(${h}, ${adjustedSaturation}%, ${l}%)`
+  }
+  
+  return baseColor
 }
 
 const formatCurrency = (value: number) => {
@@ -378,7 +427,7 @@ export const SimpleSankeyTest = ({
         target: "Address",
         value: flowData.amount,
         label: `${entityName} → Address: ${formatCurrency(flowData.amount)}`,
-        color: getLinkOrangeColor(flowData.amount, 'incoming'),
+        color: getLinkColor(flowData.amount, 'incoming', entityType),
         transactionIds: flowData.transactionIds
       })
     })
@@ -417,7 +466,7 @@ export const SimpleSankeyTest = ({
         target: entityKey,
         value: flowData.amount,
         label: `Address → ${entityName}: ${formatCurrency(flowData.amount)}`,
-        color: getLinkOrangeColor(flowData.amount, 'outgoing'),
+        color: getLinkColor(flowData.amount, 'outgoing', entityType),
         transactionIds: flowData.transactionIds
       })
     })
@@ -521,7 +570,7 @@ export const SimpleSankeyTest = ({
         // Highlight the hovered link
         d3.select(this)
           .attr("opacity", 1)
-          .style("filter", "drop-shadow(0 0 8px rgba(255, 140, 0, 0.6))")
+          .style("filter", "drop-shadow(0 0 8px rgba(0, 0, 0, 0.3))")
         
         // Dim other links
         svg.selectAll("path")
@@ -559,14 +608,48 @@ export const SimpleSankeyTest = ({
         const targetNode = nodes[d.target.index]
         
         if (sourceNode && targetNode) {
+          // Get proper entity information for source
+          let sourceName = sourceNode.name.replace(/In: |Out: /g, "")
+          let sourceEntityType = sourceNode.entityType || "Unknown"
+          
+          if (sourceNode.addresses?.[0]) {
+            const sourceAddress = sourceNode.addresses[0]
+            const sourceAttribution = attributions[sourceAddress]
+            if (sourceAttribution) {
+              const entityId = sourceAttribution.entity || sourceAttribution.bo || sourceAttribution.custodian
+              const entity = entityId ? Object.values(itemsMap).find((item: any) => (item as any).entity_id === entityId) : null
+              if (entity) {
+                sourceName = (entity as any).proper_name || sourceName
+                sourceEntityType = (entity as any).entity_type || sourceEntityType
+              }
+            }
+          }
+          
+          // Get proper entity information for target
+          let targetName = targetNode.name.replace(/In: |Out: /g, "")
+          let targetEntityType = targetNode.entityType || "Unknown"
+          
+          if (targetNode.addresses?.[0]) {
+            const targetAddress = targetNode.addresses[0]
+            const targetAttribution = attributions[targetAddress]
+            if (targetAttribution) {
+              const entityId = targetAttribution.entity || targetAttribution.bo || targetAttribution.custodian
+              const entity = entityId ? Object.values(itemsMap).find((item: any) => (item as any).entity_id === entityId) : null
+              if (entity) {
+                targetName = (entity as any).proper_name || targetName
+                targetEntityType = (entity as any).entity_type || targetEntityType
+              }
+            }
+          }
+          
           const linkModalData: LinkModalData = {
-            sourceName: sourceNode.name.replace(/In: |Out: /g, ""),
-            targetName: targetNode.name.replace(/In: |Out: /g, ""),
+            sourceName,
+            targetName,
             sourceAddress: sourceNode.addresses?.[0] || "",
             targetAddress: targetNode.addresses?.[0] || "",
             value: d.value,
-            sourceEntityType: sourceNode.entityType || "Unknown",
-            targetEntityType: targetNode.entityType || "Unknown",
+            sourceEntityType,
+            targetEntityType,
             sourceAttribution: sourceNode.addresses?.[0] ? attributions[sourceNode.addresses[0]] : undefined,
             targetAttribution: targetNode.addresses?.[0] ? attributions[targetNode.addresses[0]] : undefined
           }
@@ -743,7 +826,7 @@ export const SimpleSankeyTest = ({
           </div>
         ) : links.length > 0 ? (
           <>
-            <div style={{ width: "100%", overflow: "auto" }}>
+            <div style={{ width: "100%", display: "flex", justifyContent: "center" }}>
               <svg
                 ref={svgRef}
                 width={800}
