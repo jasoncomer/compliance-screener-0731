@@ -7,9 +7,9 @@ import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import {
   fetchOrganizations,
   inviteMember,
-  revokeInvitation,
+  revokeInvitationAsync,
+  removeMember,
   selectCurrentOrganization,
-  selectPendingInvitations,
   updateOrganization,
 } from '../../store/slices/organizationsSlice';
 import ViewWrapper from '../../components/ViewWrapper';
@@ -29,7 +29,7 @@ const Settings = () => {
   const { user } = useAppContext();
   const dispatch = useAppDispatch();
   const organization = useAppSelector(selectCurrentOrganization);
-  const pendingInvitations = useAppSelector(selectPendingInvitations);
+
   const [activeSection, setActiveSection] = useState<SettingSection>('profile');
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
 
@@ -73,18 +73,39 @@ const Settings = () => {
   // };
 
   const handleRevokeInvitation = async (invitationId: string) => {
-    // This API endpoint doesn't exist yet, should be added
     if (!organization) return;
 
     try {
-      // When API is available:
-      // await api.organizations.revokeInvitation(organization._id, invitationId);
-
-      dispatch(revokeInvitation(invitationId));
+      // Call the async thunk which handles the API call and state update
+      await dispatch(revokeInvitationAsync({ 
+        organizationId: organization._id, 
+        invitationId 
+      })).unwrap();
+      
+      // Refresh organization data to reflect the changes
+      await dispatch(fetchOrganizations());
+      
       message.success('Invitation revoked successfully');
     } catch (error) {
       console.error('Error revoking invitation:', error);
       message.error('Failed to revoke invitation');
+    }
+  };
+
+  const handleRemoveMember = async (memberId: string) => {
+    if (!organization) return;
+
+    try {
+      await dispatch(removeMember({
+        organizationId: organization._id,
+        memberId
+      })).unwrap();
+
+      await dispatch(fetchOrganizations());
+      message.success('Member removed successfully');
+    } catch (error) {
+      console.error('Error removing member:', error);
+      message.error('Failed to remove member');
     }
   };
 
@@ -133,10 +154,10 @@ const Settings = () => {
           <OrganizationSection
             theme={theme}
             currentUser={user || undefined}
-            pendingInvitations={pendingInvitations}
             onInviteMember={handleInviteMember}
             onRevokeInvitation={handleRevokeInvitation}
             onUpdateOrganization={handleUpdateOrganization}
+            onRemoveMember={handleRemoveMember}
           />
         );
       case 'subscription':

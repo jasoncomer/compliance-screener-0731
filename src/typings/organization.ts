@@ -7,10 +7,10 @@ export enum EMemberRole {
 export enum EMemberStatus {
   PENDING = 'pending',
   ACTIVE = 'active',
-  REMOVED = 'removed',
 }
 
 export interface IMember {
+  _id?: string; // MongoDB document ID
   userId?: string | null; // Optional for pending invitations
   email?: string; // Email for pending invitations
   role: EMemberRole;
@@ -81,4 +81,9 @@ export interface IInvitation {
   createdAt: string;
   expiresAt: string;
   inviteCode: string; // Unique code for this invitation
+}
+
+export interface IInviteResponse {
+  inviteResults: Array<{ email: string; status: string }>;
+  organization: IOrganization;
 }

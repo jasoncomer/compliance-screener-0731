@@ -7,6 +7,8 @@ import {
   IOrganizationMember,
   IOrganizationInvite,
   IOrganizationJoin,
+  IInviteResponse,
+  IInvitation,
   EMemberRole
 } from '../typings/organization';
 
@@ -42,7 +44,7 @@ export const organizations = {
   },
 
   // Invite members to organization
-  invite: async (organizationId: string, data: IOrganizationInvite): Promise<IBSApiResponse<null>> => {
+  invite: async (organizationId: string, data: IOrganizationInvite): Promise<IBSApiResponse<IInviteResponse>> => {
     const response = await axiosInstance.post(`/organizations/${organizationId}/invite`, data);
     return response.data;
   },
@@ -75,6 +77,33 @@ export const organizations = {
   // Remove member from organization
   removeMember: async (organizationId: string, memberId: string): Promise<IBSApiResponse<null>> => {
     const response = await axiosInstance.delete(`/organizations/${organizationId}/members/${memberId}`);
+    return response.data;
+  },
+
+  // Get user's pending invitations
+  getUserPendingInvitations: async (): Promise<IBSApiResponse<IInvitation[]>> => {
+    const response = await axiosInstance.get('/organizations/user/invitations');
+    return response.data;
+  },
+
+  // Respond to an invitation (accept or reject)
+  respondToInvitation: async (
+    organizationId: string, 
+    invitationId: string, 
+    action: 'accept' | 'reject'
+  ): Promise<IBSApiResponse<IOrganization>> => {
+    const response = await axiosInstance.post(`/organizations/${organizationId}/invitations/${invitationId}/respond`, {
+      action
+    });
+    return response.data;
+  },
+
+  // Revoke an invitation
+  revokeInvitation: async (
+    organizationId: string,
+    invitationId: string
+  ): Promise<IBSApiResponse<null>> => {
+    const response = await axiosInstance.delete(`/organizations/${organizationId}/invitations/${invitationId}`);
     return response.data;
   }
 }; 
