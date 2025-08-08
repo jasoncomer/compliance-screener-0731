@@ -1,20 +1,20 @@
 import Papa from 'papaparse';
 import type { MonitoredAddress, AddressUploadFormat, AddressUploadResponse } from '../typings/addresses';
 import type { ParseResult } from 'papaparse';
+import { isValidBlockchainAddress, getBlockchainType } from '../utils/addressValidation';
 
 export class AddressService {
   private static validateAddress(address: string, blockchain: string): boolean {
-    // Add blockchain-specific address validation
-    switch (blockchain.toLowerCase()) {
-      case 'ethereum':
-        return /^0x[a-fA-F0-9]{40}$/.test(address);
-      case 'bitcoin':
-        // Basic Bitcoin address validation - can be enhanced
-        return /^[13][a-km-zA-HJ-NP-Z1-9]{25,34}$/.test(address) || 
-               /^bc1[ac-hj-np-z02-9]{11,71}$/.test(address);
-      default:
-        return true;
+    // Use the new comprehensive address validation
+    const isValid = isValidBlockchainAddress(address);
+    const detectedType = getBlockchainType(address);
+    
+    // If blockchain is specified, check if it matches the detected type
+    if (blockchain.toLowerCase() !== 'auto' && detectedType) {
+      return isValid && detectedType.toLowerCase() === blockchain.toLowerCase();
     }
+    
+    return isValid;
   }
 
   private static parseCsvFile(file: File): Promise<AddressUploadFormat[]> {

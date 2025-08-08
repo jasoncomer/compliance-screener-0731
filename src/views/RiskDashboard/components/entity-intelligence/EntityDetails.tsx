@@ -1,6 +1,7 @@
 import React from 'react';
 import { UserOutlined, GlobalOutlined, TwitterOutlined, SendOutlined, MailOutlined, PhoneOutlined, EnvironmentOutlined, WarningOutlined, TagOutlined, TeamOutlined, CalendarOutlined, LinkOutlined, DatabaseOutlined, CompassOutlined, FileTextOutlined } from '@ant-design/icons';
 import { useTheme } from '../../../../context/ThemeContext';
+import { SimpleLogo } from '../../../../components/common/Logo';
 
 interface EntityDetailsProps {
   name: string;
@@ -43,7 +44,6 @@ const EntityDetails: React.FC<EntityDetailsProps> = ({
   phone,
   address,
   founded,
-  logo,
   countries,
   entityId,
   email,
@@ -110,16 +110,14 @@ const EntityDetails: React.FC<EntityDetailsProps> = ({
       }`}>Entity Details</h4>
       {/* Header with logo and name */}
       <div className="flex items-center mb-6">
-        {logo && (
-          <img 
-            src={logo} 
-            alt="Entity logo" 
-            className="w-12 h-12 rounded-full mr-4 object-cover"
-            onError={(e) => {
-              e.currentTarget.style.display = 'none';
-            }} 
+        <div className="mr-4">
+          <SimpleLogo
+            entityId={entityId}
+            entityType={type}
+            size="large"
+            shape="circle"
           />
-        )}
+        </div>
         <div className="flex-1">
           <div className={`font-semibold text-lg ${
             theme === 'dark' ? 'text-white' : 'text-gray-900'

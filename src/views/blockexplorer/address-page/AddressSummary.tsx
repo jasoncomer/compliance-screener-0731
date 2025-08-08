@@ -16,6 +16,7 @@ import { RiskScoringResponse } from '../../../typings/riskScoring';
 import AddressAttributionEntities from './AddressAttributionEntities';
 import { getEntityTypeLabel } from '../../../utils/display-labels';
 import { EEntityType } from '../../../typings/SOT';
+import { SimpleLogo } from '../../../components/common/Logo';
 
 interface AddressSummaryProps {
   address: string | undefined;
@@ -100,13 +101,7 @@ const AddressSummary: React.FC<AddressSummaryProps> = ({
     return 'Unknown';
   };
 
-  const getEntityLogo = () => {
-    if (address && attributions[address]?.entity) {
-      const entity = Object.values(itemsMap).find(sot => sot.entity_id === attributions[address].entity);
-      return entity?.logo;
-    }
-    return null;
-  };
+
 
 
 
@@ -120,11 +115,12 @@ const AddressSummary: React.FC<AddressSummaryProps> = ({
             <div className="flex flex-col justify-between bg-gradient-to-br from-slate-100 to-gray-200 dark:from-slate-800 dark:to-gray-800 shadow-md rounded-2xl p-2 flex-1 min-w-[250px] text-gray-900 dark:text-gray-100 relative border border-slate-200 dark:border-slate-700 h-[160px]">
               <div className="absolute top-2 right-2 opacity-10 text-2xl select-none pointer-events-none">#</div>
               <div className="flex items-center gap-1 mb-1">
-                {getEntityLogo() ? (
-                  <img 
-                    src={getEntityLogo()} 
-                    alt={getDisplayName()} 
-                    className="w-4 h-4 rounded object-contain"
+                {address && attributions[address]?.entity ? (
+                  <SimpleLogo
+                    entityId={attributions[address].entity}
+                    entityType={getEntityType()}
+                    size="small"
+                    shape="circle"
                   />
                 ) : (
                   <Bitcoin className="w-4 h-4 text-orange-600 dark:text-orange-400" />

@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { BarChart3, AlertCircle, Loader2 } from 'lucide-react';
-import SearchInput from '../../components/common/SearchInput';
+import AddressSearchInput from '../../components/common/AddressSearchInput';
 import EmptyState from '../../components/common/EmptyState';
 import ViewWrapper from '../../components/ViewWrapper';
 import { useTheme } from '../../context/ThemeContext';
@@ -690,13 +690,14 @@ const RiskDashboard: React.FC = React.memo(() => {
     >
       {/* Search Bar */}
       <div className="mb-6 max-w-2xl">
-        <SearchInput
-          placeholder="Enter blockchain address (e.g., 0x1234... or bc1qxy2...)"
+        <AddressSearchInput
+          placeholder="Enter Bitcoin or Ethereum address (e.g., 0x1234... or bc1qxy2...)"
           value={searchValue}
           onChange={(e) => setSearchValue(e.target.value)}
           onSearch={handleSearch}
           loading={loading}
           disabled={loading}
+          showValidation={true}
         />
       </div>
 

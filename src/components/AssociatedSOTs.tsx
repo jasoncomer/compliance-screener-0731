@@ -1,16 +1,15 @@
 import React from 'react';
 import styled from 'styled-components';
-import { Typography, Card, Avatar } from 'antd';
 import { UserOutlined } from '@ant-design/icons';
+import { SimpleLogo } from './common/Logo';
 import { SOT } from '../typings/interfaces';
 import { useSelector } from 'react-redux';
 import { RootState } from '../store/store';
 import { getEntityTypeLabel } from '../utils/display-labels';
 import { EEntityType } from '../typings/SOT';
+import { Card } from './ui/card';
 
 import { colors } from '../styles/variables';
-
-const { Title } = Typography;
 
 const AssociatedSOTsWrapper = styled.div`
   text-align: left;
@@ -22,10 +21,11 @@ const AssociatedSOTsWrapper = styled.div`
 
 const EntitySection = styled.div`
   margin-bottom: 14px;
-  h4.ant-typography {
+  h4 {
     margin-bottom: 12px;
     margin-top: 0px;
     font-size: 16px;
+    font-weight: 600;
   }
 `;
 
@@ -69,7 +69,7 @@ const StyledCard = styled(Card)`
     border-color: ${({ theme }) => theme.theme === 'dark' ? '#404040' : '#b9b9b9'};
   }
   
-  .ant-card-body {
+  .card-content {
     padding: 12px;
     border-radius: 8px;
   }
@@ -157,18 +157,20 @@ const AssociatedSOTs: React.FC<AssociatedSOTsProps> = ({ associatedSots, onSelec
     
     return (
       <EntitySection>
-        <Title level={4}>{title} ({entities.length})</Title>
+        <h4>{title} ({entities.length})</h4>
         <AssociatedList>
           {entities.map((associatedSot) => (
             <StyledCard 
               key={associatedSot._id}
               onClick={() => onSelectSot(associatedSot)}
+              className="card-content"
             >
               <CardContent>
-                <Avatar
+                <SimpleLogo
+                  entityId={associatedSot.entity_id}
+                  entityType={associatedSot.entity_type}
                   size="large"
-                  src={associatedSot.logo}
-                  icon={!associatedSot.logo && <UserOutlined />}
+                  fallbackIcon={<UserOutlined />}
                 />
                 <EntityInfo>
                   <div className="entity-name">
