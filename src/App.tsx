@@ -31,6 +31,7 @@ import { fetchOrganizations } from './store/slices/organizationsSlice';
 import { useAnalytics } from './hooks/useAnalytics';
 import { ComplianceDashboard } from "./views/compliance-v2/compliance-dashboard";
 import { Toaster } from './components/ui/toaster';
+import OAuthCallback from './components/OAuthCallback';
 
 function App() {
   const dispatch = useAppDispatch();
@@ -120,6 +121,7 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={user ? <Navigate to="/home/compliance-screener" replace /> : <Register />} />
           <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/auth/callback" element={<OAuthCallback />} />
           <Route path="/welcome" element={
             <ProtectedRoute>
               <Welcome />
