@@ -149,18 +149,7 @@ export class LogoService {
     }
   }
 
-  /**
-   * Delete a logo
-   */
-  static async deleteLogo(filename: string): Promise<boolean> {
-    try {
-      await axiosInstance.delete(`${this.baseUrl}/${filename}`);
-      return true;
-    } catch (error: any) {
-      console.error('Error deleting logo:', error);
-      return false;
-    }
-  }
+
 
   /**
    * Get logo URL with fallback hierarchy:

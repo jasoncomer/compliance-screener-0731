@@ -14,7 +14,6 @@ interface UseLogoReturn {
   error: string | null;
   refetch: () => Promise<void>;
   uploadLogo: (file: File) => Promise<boolean>;
-  deleteLogo: (filename: string) => Promise<boolean>;
 }
 
 // Simple in-memory cache
@@ -114,35 +113,7 @@ export const useLogo = (options: UseLogoOptions = {}): UseLogoReturn => {
     }
   }, [entityId, entityType, cacheKey]);
 
-  const deleteLogo = useCallback(async (filename: string): Promise<boolean> => {
-    setIsLoading(true);
-    setError(null);
 
-    try {
-      const success = await LogoService.deleteLogo(filename);
-      
-      if (success) {
-        setLogoUrl(null);
-        
-        // Clear cache
-        if (cacheKey) {
-          logoCache.delete(cacheKey);
-        }
-        
-        return true;
-      } else {
-        setError('Failed to delete logo');
-        return false;
-      }
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to delete logo';
-      setError(errorMessage);
-      console.error('Error deleting logo:', err);
-      return false;
-    } finally {
-      setIsLoading(false);
-    }
-  }, [cacheKey]);
 
   const refetch = useCallback(async () => {
     // Clear cache to force fresh fetch
@@ -181,7 +152,6 @@ export const useLogo = (options: UseLogoOptions = {}): UseLogoReturn => {
     error,
     refetch,
     uploadLogo,
-    deleteLogo,
   };
 };
 
