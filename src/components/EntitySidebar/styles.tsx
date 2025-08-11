@@ -104,7 +104,7 @@ interface CardContentProps {
 }
 
 export const CardContent: React.FC<CardContentProps> = ({ children, className }) => (
-  <div className={cn("flex items-center gap-2", className)}>
+  <div className={cn("flex items-center gap-3", className)}>
     {children}
   </div>
 );

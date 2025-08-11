@@ -1,6 +1,5 @@
 import React from 'react';
-import { Avatar, Card } from 'antd';
-import { User } from 'lucide-react';
+import { Card } from 'antd';
 import { useTheme } from '../../../context/ThemeContext';
 import { useAttribution } from '../../../context/AttributionContext';
 import { useAppSelector } from '../../../store/hooks';
@@ -9,6 +8,7 @@ import { RootState } from '../../../store/store';
 import { getEntityTypeLabel, capitalizeFirstLetter } from '../../../utils/display-labels';
 import { EEntityType } from '../../../typings/SOT';
 import EntityQuickView from '../../../components/EntityQuickView';
+import { SimpleLogo } from '../../../components/common/Logo';
 import {
   EntityRow,
   EntitiesContainer,
@@ -49,12 +49,7 @@ const AddressAttributionEntities: React.FC<AddressAttributionEntitiesProps> = ({
     return entity?.proper_name || entityId;
   };
 
-  // Function to get the entity logo
-  const getEntityLogo = (entityId: string) => {
-    if (!entityId) return null;
-    const entity = Object.values(itemsMap).find(sot => sot.entity_id === entityId);
-    return entity?.logo;
-  };
+
 
   // Function to get the entity type
   const getEntityType = (entityId: string) => {
@@ -89,10 +84,11 @@ const AddressAttributionEntities: React.FC<AddressAttributionEntitiesProps> = ({
     
     return (
       <EntityRow>
-        <Avatar
-          size={40}
-          src={getEntityLogo(entityId)}
-          icon={!getEntityLogo(entityId) && <User className="w-5 h-5" />}
+        <SimpleLogo
+          entityId={entityId}
+          entityType={entityType}
+          size="default"
+          shape="circle"
         />
         <EntityInfo>
           <div className="field-group">

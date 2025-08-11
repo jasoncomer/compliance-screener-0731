@@ -6,14 +6,103 @@ import { IOrganization, IMember, IInvitation, EMemberRole, IOrganizationMember }
 import { IUser } from '../../../typings/interfaces';
 import Input from '../../../components/common/Input';
 import { useAppSelector, useAppDispatch } from '../../../store/hooks';
-import { selectActiveOrgMembers, updateMemberRole, selectCurrentOrganization, updateOrganization } from '../../../store/slices/organizationsSlice';
+import { selectActiveOrgMembers, updateMemberRole, selectCurrentOrganization, updateOrganization, selectActiveOrgPendingInvitations } from '../../../store/slices/organizationsSlice';
+
+// Helper function to get current user's role and permissions
+const getUserRoleAndPermissions = (
+  organization: IOrganization | null,
+  currentUser: IUser | undefined,
+  members: IOrganizationMember[]
+): { role: EMemberRole | null; isOwner: boolean; isAdmin: boolean; isManager: boolean; canChangeRoles: boolean } => {
+  if (!organization || !currentUser) {
+    return { role: null, isOwner: false, isAdmin: false, isManager: false, canChangeRoles: false };
+  }
+
+  const isOwner = organization.ownerId === currentUser._id;
+  const currentMember = members.find(m => m.userId === currentUser._id);
+  const role = currentMember?.role || null;
+  const isAdmin = role === EMemberRole.ADMIN;
+  const isManager = role === EMemberRole.MANAGER;
+  const canChangeRoles = isOwner || isAdmin || isManager;
+
+  return { role, isOwner, isAdmin, isManager, canChangeRoles };
+};
+
+// Helper function to check if user can change a specific member's role
+const canChangeMemberRole = (
+  targetMember: IMember,
+  isOwner: boolean,
+  isAdmin: boolean,
+  isManager: boolean
+): boolean => {
+  // Owner can change any role except their own
+  if (isOwner) return true;
+  
+  // Admin can change any role except owner's
+  if (isAdmin) return true;
+  
+  // Manager can only change team_member roles, not admin roles
+  if (isManager) {
+    return targetMember.role !== EMemberRole.ADMIN;
+  }
+  
+  return false;
+};
+
+// Helper function to get available role options for a member
+const getAvailableRoleOptions = (
+  isOwner: boolean,
+  isAdmin: boolean,
+  isManager: boolean
+): EMemberRole[] => {
+  const allRoles = [EMemberRole.MANAGER, EMemberRole.TEAM_MEMBER, EMemberRole.ADMIN];
+  
+  // Owner can assign any role
+  if (isOwner) return allRoles;
+  
+  // Admin can assign any role
+  if (isAdmin) return allRoles;
+  
+  // Manager can only assign manager and team_member roles
+  if (isManager) {
+    return [EMemberRole.MANAGER, EMemberRole.TEAM_MEMBER];
+  }
+  
+  return [];
+};
+
+// Helper function to check if user can remove a specific member
+const canRemoveMember = (
+  targetMember: IMember,
+  isOwner: boolean,
+  isAdmin: boolean,
+  isManager: boolean,
+  currentUserId?: string
+): boolean => {
+  // Cannot remove yourself
+  if (currentUserId && targetMember.userId === currentUserId) {
+    return false;
+  }
+  
+  // Owner can remove any member except themselves
+  if (isOwner) return true;
+  
+  // Admin can remove any member except owner
+  if (isAdmin) return true;
+  
+  // Manager can only remove team members, not admins or other managers
+  if (isManager) {
+    return targetMember.role === EMemberRole.TEAM_MEMBER;
+  }
+  
+  return false;
+};
 
 
 interface OrganizationSectionProps {
   theme: 'dark' | 'light';
   onUpdateOrganization?: (data: Partial<IOrganization>) => void;
   currentUser?: IUser;
-  pendingInvitations: IInvitation[];
   onInviteMember?: (email: string, role: EMemberRole) => void;
   onRemoveMember?: (memberId: string) => void;
   onRevokeInvitation?: (invitationId: string) => Promise<void> | void;
@@ -23,12 +112,12 @@ const OrganizationSection: React.FC<OrganizationSectionProps> = ({
   theme,
   onUpdateOrganization,
   currentUser,
-  pendingInvitations = [],
   onInviteMember,
   onRemoveMember,
   onRevokeInvitation
 }) => {
   const members = useAppSelector(selectActiveOrgMembers);
+  const pendingInvitations = useAppSelector(selectActiveOrgPendingInvitations);
   const dispatch = useAppDispatch();
   const organization = useAppSelector(selectCurrentOrganization);
   const [isEditModalVisible, setIsEditModalVisible] = useState(false);
@@ -42,6 +131,9 @@ const OrganizationSection: React.FC<OrganizationSectionProps> = ({
   const [updatingRoleForMemberId, setUpdatingRoleForMemberId] = useState<string | null>(null);
   const [revokingInvitationId, setRevokingInvitationId] = useState<string | null>(null);
   const [isSubmittingCompliance, setIsSubmittingCompliance] = useState(false);
+
+  // Get current user's role and permissions at component level
+  const { isOwner, isAdmin, isManager } = getUserRoleAndPermissions(organization, currentUser, members);
 
   const onCsamChange = (checked: boolean) => {
     if (onUpdateOrganization && organization) {
@@ -210,7 +302,11 @@ const OrganizationSection: React.FC<OrganizationSectionProps> = ({
         render: (role: EMemberRole, record: IMember) => {
           const currentMember = members.find(m => m.userId === record.userId);
           const currentRole = currentMember?.role || role;
-          console.log('updating ', updatingRoleForMemberId, currentRole, record.userId);
+          
+          // Check if current user can change this member's role
+          const canChange = canChangeMemberRole(record, isOwner, isAdmin, isManager);
+          const availableRoles = getAvailableRoleOptions(isOwner, isAdmin, isManager);
+          
           return (
             <Select
               key={`role-${record.userId}-${currentRole}`}
@@ -234,12 +330,23 @@ const OrganizationSection: React.FC<OrganizationSectionProps> = ({
                     });
                 }
               }}
-              disabled={!record.userId || record.userId === currentUser?._id || updatingRoleForMemberId != null && updatingRoleForMemberId === record.userId}
+              disabled={
+                !record.userId || 
+                record.userId === currentUser?._id || 
+                !canChange ||
+                updatingRoleForMemberId != null && updatingRoleForMemberId === record.userId
+              }
               loading={updatingRoleForMemberId != null && updatingRoleForMemberId === record.userId}
             >
-              <Select.Option value="manager">Manager</Select.Option>
-              <Select.Option value="team_member">Team Member</Select.Option>
-              <Select.Option value="admin">Admin</Select.Option>
+              {availableRoles.includes(EMemberRole.MANAGER) && (
+                <Select.Option value="manager">Manager</Select.Option>
+              )}
+              {availableRoles.includes(EMemberRole.TEAM_MEMBER) && (
+                <Select.Option value="team_member">Team Member</Select.Option>
+              )}
+              {availableRoles.includes(EMemberRole.ADMIN) && (
+                <Select.Option value="admin">Admin</Select.Option>
+              )}
             </Select>
           );
         },
@@ -252,21 +359,25 @@ const OrganizationSection: React.FC<OrganizationSectionProps> = ({
       {
         title: 'Actions',
         key: 'actions',
-        render: (_: any, record: IMember) => (
-          <Button
-            danger
-            type="link"
-            disabled={!record.userId || record.userId === currentUser?._id}
-            onClick={() => {
-              const memberId = record.userId;
-              if (memberId) {
-                onRemoveMember?.(memberId);
-              }
-            }}
-          >
-            Remove
-          </Button>
-        ),
+        render: (_: any, record: IMember) => {
+          const canRemove = canRemoveMember(record, isOwner, isAdmin, isManager, currentUser?._id);
+          
+          return (
+            <Button
+              danger
+              type="link"
+              disabled={!record.userId || record.userId === currentUser?._id || !canRemove}
+              onClick={() => {
+                const memberId = record.userId;
+                if (memberId) {
+                  onRemoveMember?.(memberId);
+                }
+              }}
+            >
+              Remove
+            </Button>
+          );
+        },
       },
     ];
 
@@ -279,11 +390,39 @@ const OrganizationSection: React.FC<OrganizationSectionProps> = ({
       {
         title: 'Role',
         dataIndex: 'role',
-        render: (role: EMemberRole) => (
-          <Tag color={role === EMemberRole.MANAGER ? 'blue' : 'green'}>
-            {role === EMemberRole.MANAGER ? 'Manager' : 'Team Member'}
-          </Tag>
-        ),
+        render: (role: EMemberRole) => {
+          const getRoleColor = (role: EMemberRole) => {
+            switch (role) {
+              case EMemberRole.ADMIN:
+                return 'red';
+              case EMemberRole.MANAGER:
+                return 'blue';
+              case EMemberRole.TEAM_MEMBER:
+                return 'green';
+              default:
+                return 'default';
+            }
+          };
+
+          const getRoleLabel = (role: EMemberRole) => {
+            switch (role) {
+              case EMemberRole.ADMIN:
+                return 'Admin';
+              case EMemberRole.MANAGER:
+                return 'Manager';
+              case EMemberRole.TEAM_MEMBER:
+                return 'Team Member';
+              default:
+                return role;
+            }
+          };
+
+          return (
+            <Tag color={getRoleColor(role)}>
+              {getRoleLabel(role)}
+            </Tag>
+          );
+        },
       },
       {
         title: 'Expires',
@@ -438,9 +577,13 @@ const OrganizationSection: React.FC<OrganizationSectionProps> = ({
             initialValue="team_member"
           >
             <Select>
-              <Select.Option value="manager">Manager</Select.Option>
+              {(isOwner || isAdmin) && (
+                <Select.Option value="admin">Admin</Select.Option>
+              )}
+              {(isOwner || isAdmin || isManager) && (
+                <Select.Option value="manager">Manager</Select.Option>
+              )}
               <Select.Option value="team_member">Team Member</Select.Option>
-              <Select.Option value="admin">Admin</Select.Option>
             </Select>
           </Form.Item>
         </Form>

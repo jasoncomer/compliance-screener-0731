@@ -1,6 +1,5 @@
 import React from 'react';
-import { Avatar } from 'antd';
-import { UserOutlined } from '@ant-design/icons';
+import { SimpleLogo } from '../common/Logo';
 import { SOT } from '../../typings/interfaces';
 import { getEntityTypeLabel } from '../../utils/display-labels';
 import { EEntityType } from '../../typings/SOT';
@@ -36,7 +35,12 @@ export const EntityListSection: React.FC<EntityListSectionProps> = ({
           {entities.map((entity) => (
             <StyledCard key={entity._id} onClick={() => onSelectEntity(entity)}>
               <CardContent>
-                <Avatar size="large" src={entity.logo} icon={!entity.logo && <UserOutlined />} />
+                <SimpleLogo
+                  entityId={entity.entity_id}
+                  entityType={entity.entity_type}
+                  size="large"
+                  style={{ flexShrink: 0 }}
+                />
                 <EntityInfo>
                   <div className="entity-name">{entity.proper_name || entity.entity_id}</div>
                   <div className="entity-type">

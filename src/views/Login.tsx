@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { BtnDiv, FormWrapper } from '../styles/Common';
-import { Button, notification, Modal, Form } from 'antd';
+import { Button, notification, Modal, Form, Divider } from 'antd';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { api, setAuthToken } from '../api/api';
 import { useAppContext } from '../context/AppContext';
@@ -9,6 +9,7 @@ import Input from '../components/common/Input';
 import { useAnalytics } from '../hooks/useAnalytics';
 import { useTheme } from '../context/ThemeContext';
 import { colors } from '../styles/variables';
+import GoogleLoginButton from '../components/GoogleLoginButton';
 
 import type { NotificationArgsProps } from 'antd';
 
@@ -114,6 +115,17 @@ const Login = () => {
       <FormWrapper theme={{ theme }}>
         <img src='https://framerusercontent.com/images/3djlle6W5wE61QQGlOQuLh5QvQ.jpg' style={{ width: '300px' }} />
         <h2 style={{ color: colors.primary }}>Login</h2>
+        
+        {/* Google OAuth Button */}
+        <GoogleLoginButton
+          onError={(error) => {
+            trackError(error, { context: 'google_oauth' });
+            openNotification('topRight', 'Google Login Failed', 'Failed to initiate Google login. Please try again.');
+          }}
+        />
+        
+        <Divider style={{ margin: '20px 0', color: '#888' }}>or</Divider>
+        
         <form onSubmit={(e) => {
           e.preventDefault();
           handleLogin();

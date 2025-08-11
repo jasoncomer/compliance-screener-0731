@@ -1,10 +1,11 @@
 import React from 'react';
 
-import { Card, Typography, Tag, Avatar } from 'antd';
+import { Card, Typography, Tag } from 'antd';
 import { UserOutlined, GlobalOutlined, TwitterOutlined, SendOutlined, GithubOutlined, LinkedinOutlined, FacebookOutlined, InstagramOutlined, YoutubeOutlined, RedditOutlined, WarningOutlined } from '@ant-design/icons';
 import styled from 'styled-components';
 import { SOTV2 } from '../../typings/interfaces';
 import { colors } from '../../styles/variables';
+import { SimpleLogo } from '../../components/common/Logo';
 
 const { Title, Text } = Typography;
 
@@ -79,10 +80,7 @@ const HeaderInfo = styled.div`
   text-align: left;
 `;
 
-const StyledAvatar = styled(Avatar)`
-  width: 64px;
-  height: 64px;
-`;
+
 
 const SanctionedPill = styled.div`
   display: inline-flex;
@@ -133,9 +131,11 @@ const EntityDetails: React.FC<EntityDetailsProps> = ({ sot }) => {
   return (
     <Card style={{ border: 'none', marginTop: '24px' }}>
       <HeaderSection >
-        <StyledAvatar
-          src={sot.logo}
-          icon={!sot.logo && <UserOutlined />}
+        <SimpleLogo
+          entityId={sot.entity_id}
+          entityType={sot.entity_type}
+          size={64}
+          fallbackIcon={<UserOutlined />}
         />
         <HeaderInfo>
           <Title level={4} style={{ margin: 0 }}>{sot.proper_name || sot.entity_id}</Title>

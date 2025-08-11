@@ -1,7 +1,8 @@
 import React from 'react';
 import styled from 'styled-components';
-import { Card, Avatar, Tag, Typography, Popover } from 'antd';
+import { Card, Tag, Typography, Popover } from 'antd';
 import { UserOutlined, GlobalOutlined, TwitterOutlined, SendOutlined, EyeOutlined } from '@ant-design/icons';
+import { SimpleLogo } from './common/Logo';
 import { SOT } from '../typings/interfaces';
 import { EEntityType } from '../typings/SOT';
 import { getEntityTypeLabel } from '../utils/display-labels';
@@ -97,10 +98,11 @@ const CompactSOTView: React.FC<{
     <Card 
       title={sot.proper_name || sot.entity_id}
       extra={
-        <Avatar
-          size="small" 
-          src={sot.logo}
-          icon={!sot.logo && <UserOutlined />}
+        <SimpleLogo
+          entityId={sot.entity_id}
+          entityType={sot.entity_type}
+          size="small"
+          fallbackIcon={<UserOutlined />}
         />
       }
       style={{ marginBottom: 0 }}
@@ -225,13 +227,13 @@ const EntityQuickView: React.FC<EntityQuickViewProps> = ({
       title={`Quick View: ${entity.proper_name || entity.entity_id}`}
       trigger="hover"
       placement={popoverPlacement}
-      destroyTooltipOnHide
+      destroyOnHidden
       overlayStyle={{ zIndex: 1050 }}
-      overlayInnerStyle={{ maxWidth: '100vw' }}
+      styles={{ body: { maxWidth: '100vw' } }}
       autoAdjustOverflow={true}
       mouseEnterDelay={0.3}
       mouseLeaveDelay={0.2}
-      onVisibleChange={(visible) => {
+      onOpenChange={(visible) => {
         if (visible) {
           // When popover becomes visible, prevent any parent click events
           // that might close the dropdown

@@ -182,7 +182,7 @@ const TransactionDetailsHeader = forwardRef<{ highlightAssignSelector: () => voi
             suffixIcon={assigningUser ? <LoadingOutlined /> : <UserOutlined />}
           >
             {organizationMembers.map(member => {
-              const isDisabled = member.status === EMemberStatus.REMOVED || member.status === EMemberStatus.PENDING;
+              const isDisabled = member.status === EMemberStatus.PENDING;
               return (
                 <Select.Option key={member.userId} value={member.userId} disabled={isDisabled} className="capitalize">
                   {getUserDisplayName(member as IOrganizationMember)}

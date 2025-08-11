@@ -2,6 +2,7 @@ import React from 'react';
 import styled from 'styled-components';
 import { Typography, Card, Avatar } from 'antd';
 import { UserOutlined } from '@ant-design/icons';
+import { SimpleLogo } from './common/Logo';
 import { SOT } from '../typings/interfaces';
 import { useSelector } from 'react-redux';
 import { RootState } from '../store/store';
@@ -179,7 +180,16 @@ const EntitySidebar = ({ currentEntityId, onSelectSot }: EntitySidebarProps) => 
   const renderEntityCard = (entity: SOT | string, type: string, isClickable = true) => (
     <StyledCard key={typeof entity === 'string' ? entity : entity._id} onClick={isClickable && typeof entity !== 'string' ? () => onSelectSot(entity) : undefined}>
       <CardContent>
-        <Avatar size="large" src={typeof entity === 'string' ? undefined : entity.logo} icon={<UserOutlined />} />
+        {typeof entity === 'string' ? (
+          <Avatar size="large" icon={<UserOutlined />} />
+        ) : (
+          <SimpleLogo
+            entityId={entity.entity_id}
+            entityType={entity.entity_type}
+            size="large"
+            fallbackIcon={<UserOutlined />}
+          />
+        )}
         <EntityInfo>
           <div className="entity-name">{typeof entity === 'string' ? entity : entity.proper_name || entity.entity_id}</div>
           <div className="entity-type">

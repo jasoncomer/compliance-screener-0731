@@ -1,5 +1,6 @@
 import { api } from "../api/api";
 import { BtcTransaction } from "../typings/BtcTransaction";
+import { isValidBitcoinAddress as validateBitcoinAddress } from './addressValidation';
 
 const satsToBTC = (sats: number) => sats / 100000000;
 const BTCToSats = (btc: number) => btc * 100000000;
@@ -45,12 +46,7 @@ const fetchBlockchainData = async (input: string, type: string) => {
  * @returns True if the address is valid, false otherwise
  */
 const isValidBitcoinAddress = (address: string): boolean => {
-  // Regular expressions for different Bitcoin address formats
-  const p2pkhRegex = /^[13][a-km-zA-HJ-NP-Z1-9]{25,34}$/;
-  const p2shRegex = /^3[a-km-zA-HJ-NP-Z1-9]{25,34}$/;
-  const bech32Regex = /^(bc1)[a-zA-HJ-NP-Z0-9]{39,59}$/;
-
-  return p2pkhRegex.test(address) || p2shRegex.test(address) || bech32Regex.test(address);
+  return validateBitcoinAddress(address);
 }
 
 /**

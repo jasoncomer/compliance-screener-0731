@@ -132,7 +132,7 @@ const BulkSelectComponent: React.FC<BulkSelectComponentProps> = ({
           suffixIcon={<UserOutlined />}
         >
           {organizationMembers.map(member => {
-            const isDisabled = member.status === EMemberStatus.REMOVED || member.status === EMemberStatus.PENDING;
+            const isDisabled = member.status === EMemberStatus.PENDING;
             return (
               <Select.Option key={member.userId} value={member.userId} disabled={isDisabled}>
                 {getUserDisplayName(member as IOrganizationMember)}
