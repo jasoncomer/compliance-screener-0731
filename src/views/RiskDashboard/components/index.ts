@@ -5,10 +5,13 @@ export { AddressHeader, AddressSummary } from './address';
 export { RiskAssessment, TransactionActivity, RiskScoreModal } from './risk-analysis';
 
 // Transaction analysis components
-export { TopCounterparties, TransactionHistory, CombinedFundsFlow } from './transaction-analysis';
+export { TopCounterparties, TransactionHistory } from './transaction-analysis';
 
 // Entity intelligence components
 export { EntityDetails, SocialMediaFeed, GeographicPresence } from './entity-intelligence';
 
 // Utility components
-export { DataTabs } from './DataTabs'; 
+export { DataTabs } from './DataTabs';
+
+// Sankey diagram components
+export { SimpleSankeyTest } from './SimpleSankeyTest' 

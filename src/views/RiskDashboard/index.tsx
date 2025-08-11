@@ -9,10 +9,11 @@ import {
   TransactionActivity,
   TopCounterparties, 
   TransactionHistory, 
-  CombinedFundsFlow,
   EntityDetails,
   RiskScoreModal
 } from './components';
+// import { EnhancedD3SankeyDiagram } from './components/EnhancedD3SankeyDiagram';
+import { SimpleSankeyTest } from './components/SimpleSankeyTest';
 import SocialMediaFeed from './components/entity-intelligence/SocialMediaFeed';
 import { AddressSummary } from './components/AddressSummary';
 import AddressHeader from './components/address/AddressHeader';
@@ -588,57 +589,7 @@ const RiskDashboard: React.FC = React.memo(() => {
     };
   }, [primaryEntityId, handleResize]);
 
-  // Generate funds flow data from real transaction data - memoized
-  const fundsFlowData = useMemo(() => {
-    if (!transformedTransactions.length) {
-      return { incoming: [], outgoing: [] };
-    }
 
-    const incomingByEntity: { [key: string]: number } = {};
-    const outgoingByEntity: { [key: string]: number } = {};
-
-    transformedTransactions.forEach(tx => {
-      if (tx.type === 'in' && tx.from !== 'Unknown') {
-        const entityId = attributions[tx.from]?.entity || attributions[tx.from]?.bo || attributions[tx.from]?.custodian;
-        const entity = entityId ? Object.values(itemsMap).find(sot => sot.entity_id === entityId) : null;
-        const entityName = entity?.proper_name || truncateAddress(tx.from);
-        
-        if (!incomingByEntity[entityName]) {
-          incomingByEntity[entityName] = 0;
-        }
-        incomingByEntity[entityName] += tx.value * btcPrice;
-      } else if (tx.type === 'out' && tx.to !== 'Unknown') {
-        const entityId = attributions[tx.to]?.entity || attributions[tx.to]?.bo || attributions[tx.to]?.custodian;
-        const entity = entityId ? Object.values(itemsMap).find(sot => sot.entity_id === entityId) : null;
-        const entityName = entity?.proper_name || truncateAddress(tx.to);
-        
-        if (!outgoingByEntity[entityName]) {
-          outgoingByEntity[entityName] = 0;
-        }
-        outgoingByEntity[entityName] += tx.value * btcPrice;
-      }
-    });
-
-    const incomingData = Object.entries(incomingByEntity)
-      .map(([name, value]) => ({
-        name,
-        value,
-        entityType: 'Exchange'
-      }))
-      .sort((a, b) => b.value - a.value)
-      .slice(0, 5);
-
-    const outgoingData = Object.entries(outgoingByEntity)
-      .map(([name, value]) => ({
-        name,
-        value,
-        entityType: 'Wallet'
-      }))
-      .sort((a, b) => b.value - a.value)
-      .slice(0, 5);
-
-    return { incoming: incomingData, outgoing: outgoingData };
-  }, [transformedTransactions, attributions, btcPrice, itemsMap, truncateAddress]);
 
   // Check if we have data to display - memoized
   const shouldShowData = useMemo(() => 
@@ -791,12 +742,16 @@ const RiskDashboard: React.FC = React.memo(() => {
             </div>
           </div>
 
-          {/* Funds Flow Analysis - Full Width */}
-          {(fundsFlowData.incoming.length > 0 || fundsFlowData.outgoing.length > 0) && (
-            <CombinedFundsFlow 
-              incomingData={fundsFlowData.incoming}
-              outgoingData={fundsFlowData.outgoing}
-            />
+
+
+          {/* D3 Sankey Diagram - Full Width */}
+          {address && (
+            <div className="rounded-2xl border p-6 bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700">
+              <SimpleSankeyTest 
+                address={address}
+                maxTransactions={20}
+              />
+            </div>
           )}
 
           {/* Entity Details and Twitter Timeline - Two Columns */}
