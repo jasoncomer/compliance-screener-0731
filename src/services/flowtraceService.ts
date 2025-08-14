@@ -48,12 +48,39 @@ export const flowtraceService = {
       this.fetchRiskScore(address, 'address').catch(() => ({ score: undefined })),
     ]);
     const entry = Array.isArray((attr as any)?.data) ? (attr as any).data.find((a: any) => a.address === address) : undefined;
+    
+    // Fetch logo from SOT if entityId exists
+    let logoUrl: string | null = null;
+    if (entry?.entityId || entry?.entity_id) {
+      try {
+        const sotResponse = await axiosInstance.get(`/sot/entity/${entry.entityId || entry.entity_id}`).catch(() => null);
+        if (sotResponse?.data?.data?.logo) {
+          logoUrl = sotResponse.data.data.logo;
+        }
+      } catch (error) {
+        // SOT lookup failed, continue to fallback
+      }
+    }
+    
+    // If no logo from SOT and entityType exists, try fallback from EntityTypeMasterlist
+    if (!logoUrl && (entry?.entityType || entry?.entity_type)) {
+      try {
+        const entityTypeResponse = await axiosInstance.get(`/entity-type-masterlist/type/${entry.entityType || entry.entity_type}`).catch(() => null);
+        if (entityTypeResponse?.data?.data?.entity_type_default_logo) {
+          logoUrl = entityTypeResponse.data.data.entity_type_default_logo;
+        }
+      } catch (error) {
+        // EntityTypeMasterlist lookup failed
+      }
+    }
+    
     return {
       entityId: entry?.entityId || entry?.entity_id,
       entityType: entry?.entityType || entry?.entity_type,
       label: entry?.label || entry?.name,
       riskScore: (risk as any)?.score,
-    } as { entityId?: string; entityType?: string; label?: string; riskScore?: number };
+      logoUrl,
+    } as { entityId?: string; entityType?: string; label?: string; riskScore?: number; logoUrl?: string | null };
   },
   fetchSOT() {
     return axiosInstance.get(`/sot`).then(r => r.data);
