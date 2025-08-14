@@ -41,8 +41,32 @@ export const flowtraceService = {
       .post(`/attribution/addresses`, { addresses })
       .then(r => r.data);
   },
+  async fetchEntityProfile(address: string) {
+    // Combine attribution + risk score for an address
+    const [attr, risk] = await Promise.all([
+      this.fetchAttribution([address]).catch(() => ({ data: [] })),
+      this.fetchRiskScore(address, 'address').catch(() => ({ score: undefined })),
+    ]);
+    const entry = Array.isArray((attr as any)?.data) ? (attr as any).data.find((a: any) => a.address === address) : undefined;
+    return {
+      entityId: entry?.entityId || entry?.entity_id,
+      entityType: entry?.entityType || entry?.entity_type,
+      label: entry?.label || entry?.name,
+      riskScore: (risk as any)?.score,
+    } as { entityId?: string; entityType?: string; label?: string; riskScore?: number };
+  },
   fetchSOT() {
     return axiosInstance.get(`/sot`).then(r => r.data);
+  },
+  fetchAddressSummary(address: string) {
+    return axiosInstance.get(`/blockchain/address/${address}/summary`).then(r => r.data);
+  },
+  async fetchTotals(address: string) {
+    const [txs] = await Promise.all([
+      this.fetchTransactions(address, 1, 1).catch(() => ({ txs: [], pagination: { totalTxs: 0 } } as any)),
+    ]);
+    const totalTxs = (txs as any)?.pagination?.totalTxs ?? (txs as any)?.total ?? 0;
+    return { totalTxs };
   },
 };
 

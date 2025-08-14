@@ -8,6 +8,11 @@ export type FTNode = {
   type?: string;
   risk?: number;
   logoUrl?: string;
+  balance?: number | string;
+  usdValue?: number | string;
+  txCount?: number;
+  entityId?: string;
+  entityType?: string;
 };
 
 export type FTConnection = {
@@ -37,8 +42,12 @@ const NetworkGraph: React.FC<Props> = ({
   nodes,
   setNodes,
   connections,
+  setConnections,
   highlightedNodes,
   highlightedEdges,
+  onEdgeClick,
+  onNodeClick,
+  centerNodeId,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [pan, setPan] = useState({ x: 0, y: 0 });
@@ -47,8 +56,11 @@ const NetworkGraph: React.FC<Props> = ({
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [draggedNodeId, setDraggedNodeId] = useState<string | null>(null);
   const [pressStart, setPressStart] = useState<{ x: number; y: number } | null>(null);
+  const [hoverNodeId, setHoverNodeId] = useState<string | null>(null);
 
   const dpi = typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1;
+  const [renderTick, setRenderTick] = useState(0);
+  const imageCacheRef = useRef<Map<string, HTMLImageElement>>(new Map());
 
   const drawArrow = useCallback((ctx: CanvasRenderingContext2D, x1: number, y1: number, x2: number, y2: number, label?: string) => {
     ctx.beginPath();
@@ -126,6 +138,29 @@ const NetworkGraph: React.FC<Props> = ({
       ctx.strokeStyle = active ? '#f97316' : '#374151';
       ctx.stroke();
 
+      // draw logo if available
+      if (n.logoUrl) {
+        const cache = imageCacheRef.current;
+        let img = cache.get(n.logoUrl);
+        if (!img) {
+          img = new Image();
+          img.crossOrigin = 'anonymous';
+          img.onload = () => setRenderTick((t) => t + 1);
+          img.src = n.logoUrl;
+          cache.set(n.logoUrl, img);
+        }
+        if (img && img.complete) {
+          const size = (radius - 4) * 2;
+          ctx.save();
+          ctx.beginPath();
+          ctx.arc(n.x, n.y, radius - 4, 0, Math.PI * 2);
+          ctx.closePath();
+          ctx.clip();
+          ctx.drawImage(img, n.x - size / 2, n.y - size / 2, size, size);
+          ctx.restore();
+        }
+      }
+
       // risk ring
       if (typeof n.risk === 'number') {
         const risk = clamp(n.risk, 0, 100);
@@ -144,10 +179,33 @@ const NetworkGraph: React.FC<Props> = ({
         ctx.textAlign = 'center';
         ctx.fillText(n.label, n.x, n.y + radius + 14);
       }
+
+      // delete (X) button at top-right of node
+      const delR = 8; // icon radius
+      const delCx = n.x + radius + 6; // a bit offset from circle edge
+      const delCy = n.y - radius - 6;
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(delCx, delCy, delR, 0, Math.PI * 2);
+      ctx.fillStyle = '#ef4444';
+      ctx.fill();
+      ctx.lineWidth = 1.5 / zoom;
+      ctx.strokeStyle = '#7f1d1d';
+      ctx.stroke();
+      // draw X
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 1.8 / zoom;
+      ctx.beginPath();
+      ctx.moveTo(delCx - delR / 2, delCy - delR / 2);
+      ctx.lineTo(delCx + delR / 2, delCy + delR / 2);
+      ctx.moveTo(delCx + delR / 2, delCy - delR / 2);
+      ctx.lineTo(delCx - delR / 2, delCy + delR / 2);
+      ctx.stroke();
+      ctx.restore();
     });
 
     ctx.restore();
-  }, [dpi, drawArrow, nodes, connections, pan.x, pan.y, zoom, highlightedNodes]);
+  }, [dpi, drawArrow, nodes, connections, pan.x, pan.y, zoom, highlightedNodes, renderTick]);
 
   useEffect(() => {
     draw();
@@ -171,7 +229,7 @@ const NetworkGraph: React.FC<Props> = ({
   };
 
   const hitNode = (wx: number, wy: number) => {
-    const r = 22; // radius + padding
+    const r = 26; // include logo area and make easier to click
     for (let i = nodes.length - 1; i >= 0; i--) {
       const n = nodes[i];
       const dx = wx - n.x;
@@ -197,26 +255,47 @@ const NetworkGraph: React.FC<Props> = ({
     return Math.hypot(px - bx, py - by);
   };
 
-  const onWheel: React.WheelEventHandler<HTMLCanvasElement> = (e) => {
-    e.preventDefault();
-    const delta = -e.deltaY;
-    const factor = delta > 0 ? 1.1 : 0.9;
-    const rect = (e.target as HTMLCanvasElement).getBoundingClientRect();
-    const mx = e.clientX - rect.left;
-    const my = e.clientY - rect.top;
-    const before = toWorld(mx, my);
-    const nextZoom = clamp(zoom * factor, 0.25, 4);
-    setZoom(nextZoom);
-    // keep mouse position stable
-    const after = toWorld(mx, my);
-    setPan((p) => ({ x: p.x + (after.x - before.x) * nextZoom, y: p.y + (after.y - before.y) * nextZoom }));
-  };
+  // Non-passive wheel listener to allow preventDefault (avoids console warnings)
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const handleWheel = (e: WheelEvent) => {
+      if (e.cancelable) e.preventDefault();
+      const delta = -e.deltaY;
+      const factor = delta > 0 ? 1.1 : 0.9;
+      const rect = canvas.getBoundingClientRect();
+      const mx = e.clientX - rect.left;
+      const my = e.clientY - rect.top;
+      const before = toWorld(mx, my);
+      const nextZoom = clamp(zoom * factor, 0.25, 4);
+      setZoom(nextZoom);
+      const after = toWorld(mx, my);
+      setPan((p) => ({ x: p.x + (after.x - before.x) * nextZoom, y: p.y + (after.y - before.y) * nextZoom }));
+    };
+    canvas.addEventListener('wheel', handleWheel, { passive: false });
+    return () => canvas.removeEventListener('wheel', handleWheel as EventListener);
+  }, [zoom, pan.x, pan.y]);
 
   const onPointerDown: React.PointerEventHandler<HTMLCanvasElement> = (e) => {
     const rect = (e.target as HTMLCanvasElement).getBoundingClientRect();
     const mx = e.clientX - rect.left;
     const my = e.clientY - rect.top;
     const w = toWorld(mx, my);
+    // 1) Check delete-X hit BEFORE node hit radius so clicks just outside the node circle are captured
+    for (let i = nodes.length - 1; i >= 0; i--) {
+      const n = nodes[i];
+      const radius = 20;
+      const delR = 8;
+      const delCx = n.x + radius + 6;
+      const delCy = n.y - radius - 6;
+      const dx = w.x - delCx;
+      const dy = w.y - delCy;
+      if (dx * dx + dy * dy <= (delR + 5) * (delR + 5)) {
+        setNodes((prev) => prev.filter((node) => node.id !== n.id));
+        setConnections((prev) => prev.filter((c) => c.from !== n.id && c.to !== n.id));
+        return;
+      }
+    }
     const id = hitNode(w.x, w.y);
     if (id) {
       setDraggedNodeId(id);
@@ -267,16 +346,35 @@ const NetworkGraph: React.FC<Props> = ({
     }
   };
 
+  // Track hover to update cursor for logo/node area
+  const onPointerMoveHover: React.PointerEventHandler<HTMLCanvasElement> = (e) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
+    const w = toWorld(mx, my);
+    const id = hitNode(w.x, w.y);
+    setHoverNodeId(id);
+    if (id) {
+      canvas.style.cursor = 'pointer';
+    } else if (dragging || draggedNodeId) {
+      canvas.style.cursor = 'grabbing';
+    } else {
+      canvas.style.cursor = 'default';
+    }
+  };
+
   const onPointerUp: React.PointerEventHandler<HTMLCanvasElement> = () => {
+    const wasDragging = dragging;
     setDragging(false);
     if (draggedNodeId && pressStart) {
-      // If movement during drag was small, treat it as a click
       const node = nodes.find((n) => n.id === draggedNodeId);
       if (node) {
         const dx = Math.abs(node.x - pressStart.x);
         const dy = Math.abs(node.y - pressStart.y);
-        if (dx < 2 && dy < 2) {
-          // Click
+        // Treat as click if we were not panning and movement was tiny
+        if (!wasDragging || (dx < 5 && dy < 5)) {
           if (onNodeClick) onNodeClick({ id: draggedNodeId });
         }
       }
@@ -289,9 +387,8 @@ const NetworkGraph: React.FC<Props> = ({
     <canvas
       ref={canvasRef}
       className="w-full h-full bg-white dark:bg-black"
-      onWheel={onWheel}
       onPointerDown={onPointerDown}
-      onPointerMove={onPointerMove}
+      onPointerMove={(e) => { onPointerMove(e); onPointerMoveHover(e); }}
       onPointerUp={onPointerUp}
     />
   );
