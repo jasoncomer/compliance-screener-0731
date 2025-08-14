@@ -8,7 +8,8 @@ import {
   Search,
   BarChart3,
   Globe,
-  Database
+  Database,
+  GitBranch
 } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { cn } from '../lib/utils';
@@ -83,6 +84,11 @@ const SideNav: React.FC<SideNavProps> = ({ theme, collapsed, onCollapse }) => {
       key: 'risk-dashboard',
       icon: <BarChart3 />,
       label: 'Risk Dashboard',
+    },
+    {
+      key: 'flow-trace',
+      icon: <GitBranch />,
+      label: 'FlowTrace',
     },
     {
       key: 'blockham',
