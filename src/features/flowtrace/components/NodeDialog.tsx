@@ -20,7 +20,7 @@ type Props = {
   label?: string;
 };
 
-const NodeDialog: React.FC<Props> = ({ open, address, onOpenChange, riskScore, entityId, entityType, label }) => {
+const NodeDialog: React.FC<Props> = ({ open, address, onOpenChange, riskScore, entityType, label }) => {
   const [loading, setLoading] = useState(false);
   const [balance, setBalance] = useState<string | number | undefined>();
   const [usdValue, setUsdValue] = useState<string | number | undefined>();

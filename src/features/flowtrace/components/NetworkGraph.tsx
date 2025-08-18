@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 
 export type FTNode = {
   id: string;
@@ -13,53 +13,69 @@ export type FTNode = {
   txCount?: number;
   entityId?: string;
   entityType?: string;
+  bo?: string;
+  custodian?: string;
 };
 
-export type FTConnection = {
-  from: string;
-  to: string;
-  amount?: number | string;
-  currency?: string;
-  txHash?: string;
-  color?: string;
-};
+export interface FTConnection {
+  from: string
+  to: string
+  amount: string
+  // When available, represents the amount actually received by the destination (e.g., specific UTXO value)
+  receivedAmount?: string
+  currency: string
+  date: string
+  txHash: string
+  // Unique key to identify a specific UTXO within a tx when in individual mode
+  utxoKey?: string
+  type?: "in" | "out"
+  usdValue?: string
+  fee?: string
+  note?: string
+  groupId?: string // For grouping multiple transactions between same nodes
+  passThroughNodes?: string[] // Track pass-through nodes that were aggregated
+  originalConnections?: FTConnection[] // Track original connections that were aggregated
+  customColor?: string // Custom color for individual edges
+  isAggregated?: boolean // Indicates if this connection is an aggregated edge
+  utxoCount?: number // Number of UTXOs represented by this aggregated edge
+  _aggregatedText?: {
+    amount: string
+    count: number
+    currency: string
+  } // For individual mode: aggregated text info to prevent stacking
+}
 
-type Props = {
-  nodes: FTNode[];
-  setNodes: React.Dispatch<React.SetStateAction<FTNode[]>>;
-  connections: FTConnection[];
-  setConnections: React.Dispatch<React.SetStateAction<FTConnection[]>>;
-  highlightedNodes?: Set<string>;
-  highlightedEdges?: Set<string>;
-  onEdgeClick?: (payload: { index: number; connection: FTConnection }) => void;
-  onNodeClick?: (payload: { id: string }) => void;
-  centerNodeId?: string | null;
-};
+interface NetworkGraphProps {
+  nodes: FTNode[]
+  connections: FTConnection[]
+  onNodeClick: (node: FTNode) => void
+  onNodeDrag: (nodeId: string, x: number, y: number) => void
+  onEdgeClick: (connection: FTConnection) => void
+  onNodeRemove: (nodeId: string) => void
+  utxoCollapseMode: "aggregated" | "individual"
+}
 
-const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(max, v));
-
-const NetworkGraph: React.FC<Props> = ({
+export const NetworkGraph: React.FC<NetworkGraphProps> = ({
   nodes,
-  setNodes,
   connections,
-  setConnections,
-  highlightedNodes,
-  highlightedEdges,
-  onEdgeClick,
   onNodeClick,
-  centerNodeId,
+  onNodeDrag,
+  onEdgeClick,
+  onNodeRemove,
+  utxoCollapseMode
 }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
-  const [dragging, setDragging] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [draggedNodeId, setDraggedNodeId] = useState<string | null>(null);
-  const [pressStart, setPressStart] = useState<{ x: number; y: number } | null>(null);
   const [hoverNodeId, setHoverNodeId] = useState<string | null>(null);
+  const [renderTick, setRenderTick] = useState(0);
+
+  const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(max, v));
 
   const dpi = typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1;
-  const [renderTick, setRenderTick] = useState(0);
   const imageCacheRef = useRef<Map<string, HTMLImageElement>>(new Map());
 
   const drawArrow = useCallback((ctx: CanvasRenderingContext2D, x1: number, y1: number, x2: number, y2: number, label?: string) => {
@@ -88,7 +104,90 @@ const NetworkGraph: React.FC<Props> = ({
     }
   }, []);
 
-  const draw = useCallback(() => {
+  // Function to draw curved line for multiple connections
+  const drawCurvedConnection = (
+    ctx: CanvasRenderingContext2D,
+    fromX: number,
+    fromY: number,
+    toX: number,
+    toY: number,
+    curveOffset: number,
+  ) => {
+    const midX = (fromX + toX) / 2
+    const midY = (fromY + toY) / 2
+
+    // Calculate perpendicular offset for curve
+    const dx = toX - fromX
+    const dy = toY - fromY
+    const length = Math.sqrt(dx * dx + dy * dy)
+    const unitX = -dy / length
+    const unitY = dx / length
+
+    const controlX = midX + unitX * curveOffset
+    const controlY = midY + unitY * curveOffset
+
+    ctx.beginPath()
+    ctx.moveTo(fromX, fromY)
+    ctx.quadraticCurveTo(controlX, controlY, toX, toY)
+    ctx.stroke()
+
+    return { midX: controlX, midY: controlY }
+  }
+
+  // Function to draw curved arrow
+  const drawCurvedArrow = (
+    ctx: CanvasRenderingContext2D,
+    fromX: number,
+    fromY: number,
+    toX: number,
+    toY: number,
+    curveOffset: number,
+    arrowSize: number = 6,
+  ) => {
+    const midX = (fromX + toX) / 2
+    const midY = (fromY + toY) / 2
+
+    // Calculate perpendicular offset for curve
+    const dx = toX - fromX
+    const dy = toY - fromY
+    const length = Math.sqrt(dx * dx + dy * dy)
+    const unitX = -dy / length
+    const unitY = dx / length
+
+    const controlX = midX + unitX * curveOffset
+    const controlY = midY + unitY * curveOffset
+
+    // Calculate arrow position on the curve (80% along the curve)
+    const t = 0.8
+    const arrowX = fromX * (1 - t) * (1 - t) + 2 * controlX * t * (1 - t) + toX * t * t
+    const arrowY = fromY * (1 - t) * (1 - t) + 2 * controlY * t * (1 - t) + toY * t * t
+
+    // Calculate tangent vector at arrow position
+    const tangentX = 2 * (controlX - fromX) * (1 - t) + 2 * (toX - controlX) * t
+    const tangentY = 2 * (controlY - fromY) * (1 - t) + 2 * (toY - controlY) * t
+    const tangentLength = Math.sqrt(tangentX * tangentX + tangentY * tangentY)
+    
+    if (tangentLength === 0) return { midX: controlX, midY: controlY }
+    
+    const unitTangentX = tangentX / tangentLength
+    const unitTangentY = tangentY / tangentLength
+    
+    // Calculate perpendicular vector for arrow wings
+    const perpX = -unitTangentY
+    const perpY = unitTangentX
+    
+    // Draw arrow
+    ctx.beginPath()
+    ctx.moveTo(arrowX, arrowY)
+    ctx.lineTo(arrowX - unitTangentX * arrowSize + perpX * arrowSize * 0.5, arrowY - unitTangentY * arrowSize + perpY * arrowSize * 0.5)
+    ctx.lineTo(arrowX - unitTangentX * arrowSize - perpX * arrowSize * 0.5, arrowY - unitTangentY * arrowSize - perpY * arrowSize * 0.5)
+    ctx.closePath()
+    ctx.fill()
+
+    return { midX: controlX, midY: controlY }
+  }
+
+  const drawConnections = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
@@ -109,27 +208,271 @@ const NetworkGraph: React.FC<Props> = ({
     ctx.translate(pan.x, pan.y);
     ctx.scale(zoom, zoom);
 
-    // edges
-    ctx.lineWidth = 1.5 / zoom;
-    connections.forEach((c) => {
-      const a = nodes.find((n) => n.id === c.from);
-      const b = nodes.find((n) => n.id === c.to);
-      if (!a || !b) return;
-      ctx.strokeStyle = c.color || '#9ca3af';
-      ctx.fillStyle = c.color || '#9ca3af';
-      const label =
-        c.amount !== undefined && c.currency
-          ? `${String(c.amount)} ${c.currency}`
-          : c.amount !== undefined
-            ? String(c.amount)
-            : undefined;
-      drawArrow(ctx, a.x, a.y, b.x, b.y, label);
-    });
+    // Clear canvas with theme-aware background
+    const isDark = document.documentElement.classList.contains('dark')
+    ctx.fillStyle = isDark ? "#0f172a" : "#ffffff"
+    ctx.fillRect(-pan.x, -pan.y, canvas.offsetWidth, canvas.offsetHeight)
 
-    // nodes
+    // Draw connections based on UTXO collapse mode
+    if (utxoCollapseMode === "aggregated") {
+      // Draw connections based on displayConnections (which handles collapsed vs individual)
+      // Group connections by from-to pairs using JSON keys to avoid '-' split issues
+      const connectionGroups = new Map<string, FTConnection[]>()
+
+      // Filter out self-loops (from === to) to avoid zero-length edges
+      const drawableConnections = connections.filter((c) => c.from !== c.to)
+
+      drawableConnections.forEach((connection) => {
+        // Use the original connection type or determine from the connection data
+        const connectionType = connection.type || "out"
+        const key = JSON.stringify({ from: connection.from, to: connection.to, type: connectionType })
+        if (!connectionGroups.has(key)) {
+          connectionGroups.set(key, [])
+        }
+        connectionGroups.get(key)!.push(connection)
+      })
+
+      connectionGroups.forEach((connections, key) => {
+        const { from: fromId, to: toId } = JSON.parse(key)
+        const fromNode = nodes.find((n) => n.id === fromId)
+        const toNode = nodes.find((n) => n.id === toId)
+        if (!fromNode || !toNode) {
+          return
+        }
+
+        if (connections.length === 1) {
+          // Single connection - draw straight line
+          const connection = connections[0]
+          const edgeColor = connection.customColor || (isDark ? "#6b7280" : "#9ca3af")
+          
+          ctx.strokeStyle = edgeColor
+          ctx.lineWidth = connection.isAggregated ? 2 : 1.5
+          ctx.setLineDash([])
+          
+          ctx.beginPath()
+          ctx.moveTo(fromNode.x, fromNode.y)
+          ctx.lineTo(toNode.x, toNode.y)
+          ctx.stroke()
+
+          ctx.fillStyle = edgeColor
+          drawArrow(ctx, fromNode.x, fromNode.y, toNode.x, toNode.y)
+
+          // Draw text on edge
+          const midX = (fromNode.x + toNode.x) / 2
+          const midY = (fromNode.y + toNode.y) / 2
+
+          ctx.fillStyle = isDark ? "#e5e7eb" : "#374151"
+          ctx.font = connection.isAggregated ? "12px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" : "11px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
+          ctx.textAlign = "center"
+          
+          let amountText: string
+          if (connection.isAggregated && connection._aggregatedText) {
+            amountText = `${connection._aggregatedText.amount} ${connection._aggregatedText.currency} (${connection._aggregatedText.count} UTXOs)`
+          } else {
+            const valueToShow = connection.receivedAmount || connection.amount
+            amountText = valueToShow ? `${valueToShow} ${connection.currency}` : connection.currency
+          }
+          
+          const dx = toNode.x - fromNode.x
+          const dy = toNode.y - fromNode.y
+          let angle = Math.atan2(dy, dx)
+          
+          if (angle > Math.PI / 2 || angle < -Math.PI / 2) {
+            angle += Math.PI
+          }
+          
+          ctx.save()
+          ctx.translate(midX, midY)
+          ctx.rotate(angle)
+          ctx.fillText(amountText, 0, 0)
+          ctx.restore()
+        } else {
+          // Multiple connections - draw curved lines with offsets
+          connections.forEach((connection, index) => {
+            const edgeColor = connection.customColor || (isDark ? "#6b7280" : "#9ca3af")
+            
+            ctx.strokeStyle = edgeColor
+            ctx.lineWidth = connection.isAggregated ? 2 : 1.5
+            ctx.setLineDash([])
+            
+            // Calculate curve offset to prevent stacking
+            const curveOffset = (index - (connections.length - 1) / 2) * 50
+            const midX = (fromNode.x + toNode.x) / 2
+            const midY = (fromNode.y + toNode.y) / 2
+            
+            // Calculate curve control point
+            const dx = toNode.x - fromNode.x
+            const dy = toNode.y - fromNode.y
+            const length = Math.sqrt(dx * dx + dy * dy)
+            const unitX = -dy / length
+            const unitY = dx / length
+            
+            const controlX = midX + unitX * curveOffset
+            const controlY = midY + unitY * curveOffset
+            
+            // Draw curved connection
+            drawCurvedConnection(ctx, fromNode.x, fromNode.y, toNode.x, toNode.y, curveOffset)
+            
+            // Draw curved arrow
+            drawCurvedArrow(ctx, fromNode.x, fromNode.y, toNode.x, toNode.y, curveOffset, 8)
+            
+            // Draw text on the curve at the same offset as the edge
+            ctx.fillStyle = isDark ? "#e5e7eb" : "#374151"
+            ctx.font = connection.isAggregated ? "12px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" : "11px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
+            ctx.textAlign = "center"
+            
+            let amountText: string
+            if (connection.isAggregated && connection._aggregatedText) {
+              amountText = `${connection._aggregatedText.amount} ${connection._aggregatedText.currency} (${connection._aggregatedText.count} UTXOs)`
+            } else {
+              const valueToShow = connection.receivedAmount || connection.amount
+              amountText = valueToShow ? `${valueToShow} ${connection.currency}` : connection.currency
+            }
+            
+            const textX = controlX
+            const textY = controlY
+            
+            const textDx = toNode.x - fromNode.x
+            const textDy = toNode.y - fromNode.y
+            let angle = Math.atan2(textDy, textDx)
+            
+            if (angle > Math.PI / 2 || angle < -Math.PI / 2) {
+              angle += Math.PI
+            }
+            
+            ctx.save()
+            ctx.translate(textX, textY)
+            ctx.rotate(angle)
+            ctx.fillText(amountText, 0, 0)
+            ctx.restore()
+          })
+        }
+      })
+    } else {
+      // Individual mode - draw all connections as-is with curved offsets for multiple edges
+      const connectionGroups = new Map<string, FTConnection[]>()
+
+      // Filter out self-loops (from === to) in individual mode as well
+      const drawable = connections.filter((c) => c.from !== c.to)
+
+      drawable.forEach((connection) => {
+        const key = JSON.stringify({ from: connection.from, to: connection.to, type: connection.type || "out" })
+        if (!connectionGroups.has(key)) {
+          connectionGroups.set(key, [])
+        }
+        connectionGroups.get(key)!.push(connection)
+      })
+
+      connectionGroups.forEach((connections, key) => {
+        const { from: fromId, to: toId } = JSON.parse(key)
+        const fromNode = nodes.find((n) => n.id === fromId)
+        const toNode = nodes.find((n) => n.id === toId)
+        if (!fromNode || !toNode) return
+
+        if (connections.length === 1) {
+          // Single connection - draw straight line
+          const connection = connections[0]
+          const edgeColor = connection.customColor || (isDark ? "#6b7280" : "#9ca3af")
+          
+          ctx.strokeStyle = edgeColor
+          ctx.lineWidth = 1.5
+          ctx.setLineDash([])
+          
+          ctx.beginPath()
+          ctx.moveTo(fromNode.x, fromNode.y)
+          ctx.lineTo(toNode.x, toNode.y)
+          ctx.stroke()
+
+          ctx.fillStyle = edgeColor
+          drawArrow(ctx, fromNode.x, fromNode.y, toNode.x, toNode.y, "8")
+
+          // Draw text on edge
+          const midX = (fromNode.x + toNode.x) / 2
+          const midY = (fromNode.y + toNode.y) / 2
+
+          ctx.fillStyle = isDark ? "#e5e7eb" : "#374151"
+          ctx.font = "11px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
+          ctx.textAlign = "center"
+          
+          const valueToShow = connection.receivedAmount || connection.amount
+          const amountText = valueToShow ? `${valueToShow} ${connection.currency}` : connection.currency
+          
+          const textDx = toNode.x - fromNode.x
+          const textDy = toNode.y - fromNode.y
+          let angle = Math.atan2(textDy, textDx)
+          
+          if (angle > Math.PI / 2 || angle < -Math.PI / 2) {
+            angle += Math.PI
+          }
+          
+          ctx.save()
+          ctx.translate(midX, midY)
+          ctx.rotate(angle)
+          ctx.fillText(amountText, 0, 0)
+          ctx.restore()
+        } else {
+          // Multiple connections - draw curved lines with offsets
+          connections.forEach((connection, index) => {
+            const edgeColor = connection.customColor || (isDark ? "#6b7280" : "#9ca3af")
+            
+            ctx.strokeStyle = edgeColor
+            ctx.lineWidth = 1.5
+            ctx.setLineDash([])
+            
+            // Calculate curve offset to prevent stacking
+            const curveOffset = (index - (connections.length - 1) / 2) * 50
+            const midX = (fromNode.x + toNode.x) / 2
+            const midY = (fromNode.y + toNode.y) / 2
+            
+            // Calculate curve control point
+            const dx = toNode.x - fromNode.x
+            const dy = toNode.y - fromNode.y
+            const length = Math.sqrt(dx * dx + dy * dy)
+            const unitX = -dy / length
+            const unitY = dx / length
+            
+            const controlX = midX + unitX * curveOffset
+            const controlY = midY + unitY * curveOffset
+            
+            // Draw curved connection
+            drawCurvedConnection(ctx, fromNode.x, fromNode.y, toNode.x, toNode.y, curveOffset)
+            
+            // Draw curved arrow
+            drawCurvedArrow(ctx, fromNode.x, fromNode.y, toNode.x, toNode.y, curveOffset, 8)
+            
+            // Draw text on the curve at the same offset as the edge
+            ctx.fillStyle = isDark ? "#e5e7eb" : "#374151"
+            ctx.font = "11px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
+            ctx.textAlign = "center"
+            
+            const valueToShow = connection.receivedAmount || connection.amount
+            const amountText = valueToShow ? `${valueToShow} ${connection.currency}` : connection.currency
+            
+            const textX = controlX
+            const textY = controlY
+            
+            const textDx = toNode.x - fromNode.x
+            const textDy = toNode.y - fromNode.y
+            let angle = Math.atan2(textDy, textDx)
+            
+            if (angle > Math.PI / 2 || angle < -Math.PI / 2) {
+              angle += Math.PI
+            }
+            
+            ctx.save()
+            ctx.translate(textX, textY)
+            ctx.rotate(angle)
+            ctx.fillText(amountText, 0, 0)
+            ctx.restore()
+          })
+        }
+      })
+    }
+
+    // Draw nodes
     nodes.forEach((n) => {
       const radius = 20;
-      const active = highlightedNodes?.has(n.id);
+      const active = hoverNodeId === n.id;
       ctx.beginPath();
       ctx.arc(n.x, n.y, radius, 0, Math.PI * 2);
       ctx.fillStyle = '#111827';
@@ -172,12 +515,54 @@ const NetworkGraph: React.FC<Props> = ({
         ctx.stroke();
       }
 
-      // label
-      if (n.label) {
-        ctx.fillStyle = '#9ca3af';
-        ctx.font = `${12 / zoom}px Inter, system-ui, sans-serif`;
+      // label and additional info
+      let yOffset = radius + 14;
+      
+      // Entity name (primary label)
+      if (n.label && n.label !== n.id) {
+        ctx.fillStyle = '#ffffff';
+        ctx.font = `bold ${12 / zoom}px Inter, system-ui, sans-serif`;
         ctx.textAlign = 'center';
-        ctx.fillText(n.label, n.x, n.y + radius + 14);
+        ctx.fillText(n.label, n.x, n.y + yOffset);
+        yOffset += 16 / zoom;
+      }
+      
+      // Address (truncated)
+      const addressText = n.id.length > 12 ? `${n.id.slice(0, 6)}...${n.id.slice(-6)}` : n.id;
+      ctx.fillStyle = '#9ca3af';
+      ctx.font = `${10 / zoom}px Inter, system-ui, sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.fillText(addressText, n.x, n.y + yOffset);
+      yOffset += 14 / zoom;
+      
+      // Risk score
+      if (typeof n.risk === 'number') {
+        const riskColor = n.risk > 70 ? '#ef4444' : n.risk > 40 ? '#f59e0b' : '#10b981';
+        ctx.fillStyle = riskColor;
+        ctx.font = `bold ${10 / zoom}px Inter, system-ui, sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.fillText(`Risk: ${n.risk}`, n.x, n.y + yOffset);
+        yOffset += 14 / zoom;
+      }
+      
+      // Balance
+      if (n.balance !== undefined) {
+        const balanceValue = typeof n.balance === 'number' ? n.balance / 100000000 : Number(n.balance) / 100000000;
+        const balanceText = balanceValue.toFixed(8);
+        ctx.fillStyle = '#10b981';
+        ctx.font = `${10 / zoom}px Inter, system-ui, sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.fillText(`Balance: ${balanceText}`, n.x, n.y + yOffset);
+        yOffset += 14 / zoom;
+      }
+      
+      // USD Value
+      if (n.usdValue !== undefined) {
+        const usdText = typeof n.usdValue === 'number' ? `$${n.usdValue.toLocaleString()}` : String(n.usdValue);
+        ctx.fillStyle = '#3b82f6';
+        ctx.font = `${10 / zoom}px Inter, system-ui, sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.fillText(usdText, n.x, n.y + yOffset);
       }
 
       // delete (X) button at top-right of node
@@ -205,17 +590,17 @@ const NetworkGraph: React.FC<Props> = ({
     });
 
     ctx.restore();
-  }, [dpi, drawArrow, nodes, connections, pan.x, pan.y, zoom, highlightedNodes, renderTick]);
+  }, [dpi, drawArrow, nodes, connections, pan.x, pan.y, zoom, hoverNodeId, renderTick, utxoCollapseMode]);
 
   useEffect(() => {
-    draw();
-  }, [draw]);
+    drawConnections();
+  }, [drawConnections]);
 
   // Center on a node by id when requested
   useEffect(() => {
     if (!canvasRef.current) return;
     if (!nodes.length) return;
-    const id = (typeof (arguments as any) !== 'undefined') ? undefined : undefined; // noop to satisfy TS checker in this context
+    // Center logic can be added here if needed
   }, []);
 
   useEffect(() => {
@@ -291,8 +676,7 @@ const NetworkGraph: React.FC<Props> = ({
       const dx = w.x - delCx;
       const dy = w.y - delCy;
       if (dx * dx + dy * dy <= (delR + 5) * (delR + 5)) {
-        setNodes((prev) => prev.filter((node) => node.id !== n.id));
-        setConnections((prev) => prev.filter((c) => c.from !== n.id && c.to !== n.id));
+        onNodeRemove(n.id);
         return;
       }
     }
@@ -300,7 +684,7 @@ const NetworkGraph: React.FC<Props> = ({
     if (id) {
       setDraggedNodeId(id);
       setDragStart({ x: w.x, y: w.y });
-      setPressStart({ x: w.x, y: w.y });
+      setIsDragging(false); // Reset wasDragging on new drag
     } else {
       // try edge hit-test first
       let bestIdx = -1;
@@ -318,30 +702,28 @@ const NetworkGraph: React.FC<Props> = ({
       const threshold = 8 / zoom; // world units threshold adjusted by zoom
       if (bestIdx >= 0 && bestDist <= threshold) {
         const conn = connections[bestIdx];
-        if (conn && onEdgeClick) onEdgeClick({ index: bestIdx, connection: conn });
+        if (conn && onEdgeClick) onEdgeClick(conn);
         // do not start panning on edge click
         return;
       }
       // fallback to start panning
-      setDragging(true);
+      setIsDragging(true);
       setDragStart({ x: mx - pan.x, y: my - pan.y });
     }
   };
 
   const onPointerMove: React.PointerEventHandler<HTMLCanvasElement> = (e) => {
-    if (!dragging && !draggedNodeId) return;
+    if (!isDragging && !draggedNodeId) return;
     const rect = (e.target as HTMLCanvasElement).getBoundingClientRect();
     const mx = e.clientX - rect.left;
     const my = e.clientY - rect.top;
     if (draggedNodeId) {
-      const w = toWorld(mx, my);
-      const dx = w.x - dragStart.x;
-      const dy = w.y - dragStart.y;
+      const w = { x: mx / zoom, y: my / zoom };
       setDragStart({ x: w.x, y: w.y });
-      setNodes((prev) => prev.map((n) => (n.id === draggedNodeId ? { ...n, x: n.x + dx, y: n.y + dy } : n)));
+      onNodeDrag(draggedNodeId, w.x, w.y);
       return;
     }
-    if (dragging) {
+    if (isDragging) {
       setPan({ x: mx - dragStart.x, y: my - dragStart.y });
     }
   };
@@ -358,7 +740,7 @@ const NetworkGraph: React.FC<Props> = ({
     setHoverNodeId(id);
     if (id) {
       canvas.style.cursor = 'pointer';
-    } else if (dragging || draggedNodeId) {
+    } else if (isDragging || draggedNodeId) {
       canvas.style.cursor = 'grabbing';
     } else {
       canvas.style.cursor = 'default';
@@ -366,21 +748,21 @@ const NetworkGraph: React.FC<Props> = ({
   };
 
   const onPointerUp: React.PointerEventHandler<HTMLCanvasElement> = () => {
-    const wasDragging = dragging;
-    setDragging(false);
-    if (draggedNodeId && pressStart) {
+    const wasDragging = isDragging;
+    setIsDragging(false);
+    if (draggedNodeId) {
       const node = nodes.find((n) => n.id === draggedNodeId);
       if (node) {
-        const dx = Math.abs(node.x - pressStart.x);
-        const dy = Math.abs(node.y - pressStart.y);
+        const dx = Math.abs(node.x - dragStart.x);
+        const dy = Math.abs(node.y - dragStart.y);
         // Treat as click if we were not panning and movement was tiny
         if (!wasDragging || (dx < 5 && dy < 5)) {
-          if (onNodeClick) onNodeClick({ id: draggedNodeId });
+          if (onNodeClick) onNodeClick(node);
         }
       }
     }
     setDraggedNodeId(null);
-    setPressStart(null);
+    setDragStart({ x: 0, y: 0 }); // Reset dragStart on pointer up
   };
 
   return (
@@ -393,7 +775,5 @@ const NetworkGraph: React.FC<Props> = ({
     />
   );
 };
-
-export default NetworkGraph;
 
 

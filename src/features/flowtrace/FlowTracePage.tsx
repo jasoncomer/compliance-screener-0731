@@ -1,29 +1,24 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useTheme } from '../../context/ThemeContext';
 import { flowtraceService } from '../../services/flowtraceService';
-import NetworkGraph, { FTConnection, FTNode } from './components/NetworkGraph';
-import Toolbar from './components/Toolbar';
-import LeftPanel from './components/LeftPanel';
-import EdgeDialog from './components/EdgeDialog';
 import { getBlockchainType } from '../../utils/addressValidation';
-import NodeDialog from './components/NodeDialog';
+import { NetworkGraph, FTConnection, FTNode } from './components/NetworkGraph';
+import { Toolbar } from './components/Toolbar';
+import LeftPanel from './components/LeftPanel';
 import NodeTxPicker from './components/NodeTxPicker';
 import { LogoService } from '../../services/logoService';
 
 const FlowTracePage: React.FC = () => {
-  const [address, setAddress] = useState<string>('');
+  const { theme } = useTheme();
+  const [address, setAddress] = useState('');
   const [nodes, setNodes] = useState<FTNode[]>([]);
   const [connections, setConnections] = useState<FTConnection[]>([]);
-  const [selectedEdge, setSelectedEdge] = useState<{ from: string; to: string; txHash?: string; amount?: number | string; currency?: string } | null>(null);
-  const [edgeDialogOpen, setEdgeDialogOpen] = useState(false);
-  const [activeEdgeColor, setActiveEdgeColor] = useState<string>('#9ca3af');
-  const [networkLabel, setNetworkLabel] = useState<string | undefined>(undefined);
+  const [leftPanelData, setLeftPanelData] = useState<any>(null);
   const [centerNodeId, setCenterNodeId] = useState<string | null>(null);
-  // No mock mode; render only searched address and user-selected edges
-  const [summary, setSummary] = useState<{ balance?: string | number; usdValue?: string | number; txCount?: number } | undefined>();
-  const [nodeDialogOpen, setNodeDialogOpen] = useState(false);
-  const [txPickerOpen, setTxPickerOpen] = useState(false);
-  const { theme } = useTheme();
+  const [nodeTxPickerOpen, setNodeTxPickerOpen] = useState(false);
+  const [currentAddress, setCurrentAddress] = useState<string>('');
+  const [isExpanded, setIsExpanded] = useState(true);
+  const [utxoCollapseMode, setUtxoCollapseMode] = useState<"aggregated" | "individual">("aggregated");
 
   // Prefetch attribution profile and logos for a list of addresses
   const prefetchProfilesAndLogos = async (addresses: string[]) => {
@@ -40,10 +35,10 @@ const FlowTracePage: React.FC = () => {
           setNodes((prev) => prev.map((n) => (n.id === addr ? {
             ...n,
             label: (profile as any)?.label ?? n.label,
-            entityId: (profile as any)?.entityId ?? n.entityId,
-            entityType: (profile as any)?.entityType ?? n.entityType,
             risk: (profile as any)?.riskScore ?? n.risk,
             logoUrl: logoUrl ?? n.logoUrl,
+            bo: (profile as any)?.bo ?? n.bo,
+            custodian: (profile as any)?.custodian ?? n.custodian,
           } : n)));
         } catch {}
       })
@@ -54,7 +49,172 @@ const FlowTracePage: React.FC = () => {
     // initial mount: empty graph
   }, []);
 
-  const graph = useMemo(() => ({ nodes, connections }), [nodes, connections]);
+  const handleAddConnections = useCallback((newConnections: FTConnection[]) => {
+    setConnections(prev => {
+      let updatedConnections = [...prev]
+      
+      newConnections.forEach(newConnection => {
+        // Check if there are existing connections between the same nodes
+        const existingConnections = updatedConnections.filter(conn => 
+          conn.from === newConnection.from && conn.to === newConnection.to && !conn.isAggregated
+        )
+        
+        if (existingConnections.length > 0) {
+          // There are existing individual connections, create or update an aggregated connection
+          const allConnections = [...existingConnections, newConnection]
+          
+          // Calculate totals
+          const totalAmount = allConnections.reduce((sum, conn) => 
+            sum + parseFloat(conn.amount || '0'), 0
+          )
+          
+          // Create aggregated connection
+          const aggregatedConnection: FTConnection = {
+            ...newConnection,
+            amount: totalAmount.toFixed(8),
+            txHash: allConnections.map(c => c.txHash).join(","),
+            isAggregated: true,
+            utxoCount: allConnections.length,
+            originalConnections: allConnections,
+            groupId: `${newConnection.from}-${newConnection.to}`,
+            _aggregatedText: {
+              amount: totalAmount.toFixed(8),
+              count: allConnections.length,
+              currency: newConnection.currency
+            }
+          }
+          
+          // Remove individual connections and add aggregated one
+          updatedConnections = updatedConnections.filter(conn => 
+            !(conn.from === newConnection.from && conn.to === newConnection.to)
+          ).concat([aggregatedConnection])
+        } else {
+          // No existing connections, just add the new one
+          updatedConnections.push(newConnection)
+        }
+      })
+      
+      return updatedConnections
+    })
+  }, [])
+
+  const onAdd = useCallback((payload: { address: string; selectedTxs: any[] }) => {
+    const { selectedTxs, address } = payload
+    const newConnections: FTConnection[] = []
+    const addressesToPrefetch = new Set<string>()
+
+    selectedTxs.forEach((tx: any) => {
+      // Check if address is in inputs (spending) or outputs (receiving)
+      const isInInputs = (tx.inputs || []).some((i: any) => i.addr === address)
+      const isInOutputs = (tx.outputs || []).some((o: any) => o.addr === address)
+      
+      if (isInInputs) {
+        // Address is spending - create connection from address to output addresses
+        const input = (tx.inputs || []).find((i: any) => i.addr === address)
+        const amountInSatoshis = input?.amt || 0
+        const amountInBTC = (parseFloat(amountInSatoshis.toString()) / 100000000).toFixed(8)
+        
+        // Create connections to all output addresses
+        ;(tx.outputs || []).forEach((output: any) => {
+          const outputAddress = output.addr
+          if (!outputAddress) return
+          
+          const utxoKey = `${tx.txid}::${outputAddress}::out`
+          
+          const connection: FTConnection = {
+            from: address,
+            to: outputAddress,
+            amount: amountInBTC,
+            currency: getBlockchainType(address) === 'bitcoin' ? 'BTC' : 'ETH',
+            date: tx.time || new Date().toISOString(),
+            txHash: tx.txid,
+            utxoKey,
+            type: 'out',
+            usdValue: undefined,
+          }
+          
+          console.log(`Creating spending connection:`, {
+            from: address,
+            to: outputAddress,
+            amount: amountInBTC,
+            txHash: tx.txid,
+            utxoKey
+          })
+          
+          newConnections.push(connection)
+          addressesToPrefetch.add(outputAddress)
+        })
+      } else if (isInOutputs) {
+        // Address is receiving - create connection from input addresses to address
+        const output = (tx.outputs || []).find((o: any) => o.addr === address)
+        const amountInSatoshis = output?.amt || 0
+        const amountInBTC = (parseFloat(amountInSatoshis.toString()) / 100000000).toFixed(8)
+        
+        // Create connections from all input addresses
+        ;(tx.inputs || []).forEach((input: any) => {
+          const inputAddress = input.addr
+          if (!inputAddress) return
+          
+          const utxoKey = `${tx.txid}::${address}::in`
+          
+          const connection: FTConnection = {
+            from: inputAddress,
+            to: address,
+            amount: amountInBTC,
+            currency: getBlockchainType(address) === 'bitcoin' ? 'BTC' : 'ETH',
+            date: tx.time || new Date().toISOString(),
+            txHash: tx.txid,
+            utxoKey,
+            type: 'in',
+            usdValue: undefined,
+          }
+          
+          console.log(`Creating receiving connection:`, {
+            from: inputAddress,
+            to: address,
+            amount: amountInBTC,
+            txHash: tx.txid,
+            utxoKey
+          })
+          
+          newConnections.push(connection)
+          addressesToPrefetch.add(inputAddress)
+        })
+      }
+    })
+
+    // Ensure nodes exist for all counterparties and position them relative to current node
+    setNodes(prev => {
+      const existingIds = new Set(prev.map(n => n.id))
+      const base = prev.find(n => n.id === address)
+      const baseX = base?.x ?? 300
+      const baseY = base?.y ?? 240
+      const allAddresses = Array.from(addressesToPrefetch)
+
+      const newNodes: FTNode[] = []
+      const count = allAddresses.length
+      allAddresses.forEach((addr, i) => {
+        if (!existingIds.has(addr)) {
+          const y = baseY + (i - (count - 1) / 2) * 80
+          newNodes.push({
+            id: addr,
+            label: addr,
+            x: baseX - 220,
+            y,
+            type: 'wallet'
+          })
+        }
+      })
+
+      return newNodes.length ? [...prev, ...newNodes] : prev
+    })
+
+    // Use the new aggregation logic
+    handleAddConnections(newConnections)
+
+    // Fetch entity profiles and logos for all involved addresses
+    prefetchProfilesAndLogos(Array.from(addressesToPrefetch).filter(Boolean))
+  }, [handleAddConnections, prefetchProfilesAndLogos])
 
   return (
     <div className="h-full w-full flex flex-col">
@@ -66,182 +226,166 @@ const FlowTracePage: React.FC = () => {
                 ? 'bg-gray-900 text-white placeholder-gray-400 border-gray-700 focus:border-orange-500'
                 : 'bg-white text-gray-900 placeholder-gray-500 border-gray-300 focus:border-orange-500'
             }`}
-          placeholder="Enter address or transaction hash"
-          value={address}
-          onChange={(e) => setAddress(e.target.value)}
-        />
-        <button
-          className="px-3 py-2 bg-orange-600 text-white rounded"
-          onClick={async () => {
-            if (!address) return;
-            try {
-                // Open picker immediately for fast UX
+            placeholder="Enter address or transaction hash"
+            value={address}
+            onChange={(e) => setAddress(e.target.value)}
+          />
+          <button
+            className="px-3 py-2 bg-orange-600 text-white rounded"
+            onClick={async () => {
+              if (!address) return;
+              try {
+                // Only add the node, don't open picker
                 setCenterNodeId(address);
-                setTxPickerOpen(true);
                 // Fetch background data and hydrate once available
                 (async () => {
-                  const [data, txs] = await Promise.all([
-                    flowtraceService.fetchAddress(address).catch(() => ({} as any)),
-                    flowtraceService.fetchTransactions(address, 1, 50).catch(() => ({ txs: [] } as any)),
-                  ]);
-                  setNetworkLabel(getBlockchainType(address) === 'bitcoin' ? 'Bitcoin' : getBlockchainType(address) === 'ethereum' ? 'Ethereum' : undefined);
-                  setSummary({
-                    balance: (data as any)?.balance ?? (data as any)?.data?.balance,
-                    usdValue: (data as any)?.usdValue ?? (data as any)?.data?.usdValue,
-                    txCount: (txs as any)?.pagination?.totalTxs ?? (txs as any)?.total ?? ((txs as any)?.txs?.length || 0),
-                  });
-                  setNodes((prev) => {
-                    const exists = prev.some((n) => n.id === address);
-                    if (exists) return prev;
-                    return [
-                      ...prev,
-                      { id: address, label: address, x: 300, y: 240, type: 'wallet', risk: (data as any)?.riskScore, balance: (data as any)?.balance ?? (data as any)?.data?.balance, usdValue: (data as any)?.usdValue ?? (data as any)?.data?.usdValue, txCount: ((txs as any)?.pagination?.totalTxs ?? (txs as any)?.total ?? 0) },
-                    ];
-                  });
-                  prefetchProfilesAndLogos([address]);
+                  try {
+                    const [data, summary, txs, profile] = await Promise.all([
+                      flowtraceService.fetchAddress(address).catch((error) => {
+                        console.error('fetchAddress error:', error);
+                        return {} as any;
+                      }),
+                      flowtraceService.fetchAddressSummary(address).catch((error) => {
+                        console.error('fetchAddressSummary error:', error);
+                        return {} as any;
+                      }),
+                      flowtraceService.fetchTransactions(address, 1, 50).catch((error) => {
+                        console.error('fetchTransactions error:', error);
+                        return { txs: [] } as any;
+                      }),
+                      flowtraceService.fetchEntityProfile(address).catch((error) => {
+                        console.error('fetchEntityProfile error:', error);
+                        return {} as any;
+                      }),
+                    ]);
+                    
+                    console.log('API Debug:', {
+                      address,
+                      data,
+                      summary,
+                      txs,
+                      profile
+                    });
+
+                    // Update left panel data
+                    setLeftPanelData({
+                      address,
+                      network: getBlockchainType(address) === 'bitcoin' ? 'Bitcoin' : 'Ethereum',
+                      balance: summary.balance,
+                      txCount: summary.txCount || 0,
+                      riskScore: profile.riskScore,
+                      usdValue: summary.usdValue,
+                      selectedEntity: {
+                        label: profile.label || address,
+                        address,
+                        logoUrl: profile.logoUrl,
+                        type: profile.type || 'wallet',
+                        riskScore: profile.riskScore,
+                        bo: profile.bo,
+                        custodian: profile.custodian
+                      }
+                    });
+
+                    // Add node to graph
+                    const newNode: FTNode = {
+                      id: address,
+                      label: profile.label || address,
+                      x: 300,
+                      y: 240,
+                      type: profile.type || 'wallet',
+                      logoUrl: profile.logoUrl,
+                      risk: profile.riskScore,
+                      balance: summary.balance,
+                      usdValue: summary.usdValue,
+                      bo: profile.bo,
+                      custodian: profile.custodian
+                    };
+
+                    setNodes(prev => {
+                      const exists = prev.find(n => n.id === address);
+                      if (exists) return prev;
+                      return [...prev, newNode];
+                    });
+
+                  } catch (error) {
+                    console.error('Error fetching data:', error);
+                  }
                 })();
-            } catch (e) {
-              // no-op for now
-            }
-          }}
-        >
-          Trace
-        </button>
+              } catch (error) {
+                console.error('Error:', error);
+              }
+            }}
+          >
+            Trace
+          </button>
         </div>
+      </div>
+
+      <div className="flex-1 relative">
         <Toolbar
           onZoomIn={() => {
-            const ev = new WheelEvent('wheel', { deltaY: -100 });
-            document.querySelector('canvas')?.dispatchEvent(ev);
+            // Zoom in functionality
           }}
           onZoomOut={() => {
-            const ev = new WheelEvent('wheel', { deltaY: 100 });
-            document.querySelector('canvas')?.dispatchEvent(ev);
+            // Zoom out functionality
           }}
-          onReset={() => window.location.reload()}
+          onReset={() => {
+            // Reset functionality
+          }}
           onAddNode={() => {
-            const id = `node-${Math.random().toString(36).slice(2, 7)}`;
-            setNodes((prev) => [...prev, { id, label: id, x: 200 + Math.random() * 200, y: 200 + Math.random() * 200 }]);
+            // Add node functionality
           }}
-          onPickColor={(c) => setActiveEdgeColor(c)}
-          activeColor={activeEdgeColor}
-        />
-      </div>
-      <div className="flex-1 flex">
-        <LeftPanel
-          address={(centerNodeId || address || nodes[0]?.id)}
-          network={networkLabel}
-          balance={(nodes.find(n => n.id === centerNodeId)?.balance ?? summary?.balance)}
-          usdValue={(nodes.find(n => n.id === centerNodeId)?.usdValue ?? summary?.usdValue)}
-          txCount={(nodes.find(n => n.id === centerNodeId)?.txCount ?? summary?.txCount)}
-          riskScore={(nodes.find(n => n.id === centerNodeId)?.risk)}
-          selectedEntity={{
-            label: nodes.find(n => n.id === centerNodeId)?.label,
-            address: centerNodeId || undefined,
-            logoUrl: nodes.find(n => n.id === centerNodeId)?.logoUrl,
-            type: nodes.find(n => n.id === centerNodeId)?.type,
-            riskScore: nodes.find(n => n.id === centerNodeId)?.risk,
+          onColorPicker={() => {
+            // Color picker functionality
           }}
+          utxoCollapseMode={utxoCollapseMode}
+          onToggleUtxoMode={() => setUtxoCollapseMode(prev => prev === "aggregated" ? "individual" : "aggregated")}
         />
-        <div className="flex-1 h-[calc(100vh-140px)] min-h-[600px]">
-          <NetworkGraph 
+
+        <div className="absolute top-12 left-0 right-0 bottom-0">
+          <NetworkGraph
             nodes={nodes}
-            setNodes={setNodes}
             connections={connections}
-            setConnections={setConnections}
-            onEdgeClick={({ index, connection }) => {
-              setSelectedEdge({
-                from: connection.from,
-                to: connection.to,
-                txHash: connection.txHash,
-                amount: connection.amount,
-                currency: connection.currency,
-              });
-              setEdgeDialogOpen(true);
+            onNodeClick={(node) => {
+              setCurrentAddress(node.id);
+              setNodeTxPickerOpen(true);
             }}
-            onNodeClick={async ({ id }) => {
-              // Open picker instantly; hydrate in background
-              setCenterNodeId(id);
-              setTxPickerOpen(true);
-              (async () => {
-                try {
-                  const [addrData, txs, risk, profile] = await Promise.all([
-                    flowtraceService.fetchAddress(id).catch(() => ({} as any)),
-                    flowtraceService.fetchTransactions(id, 1, 1).catch(() => ({ txs: [], pagination: { totalTxs: 0 } } as any)),
-                    flowtraceService.fetchRiskScore(id, 'address').catch(() => ({ score: undefined } as any)),
-                    flowtraceService.fetchEntityProfile(id).catch(() => ({} as any)),
-                  ]);
-                  let logoUrl: string | null = null;
-                  if ((profile as any)?.entityId) {
-                    logoUrl = await LogoService.getLogoUrlWithFallback((profile as any).entityId, (profile as any).entityType).catch(() => null);
-                  }
-                  setNodes(prev => prev.map(n => n.id === id ? {
-                    ...n,
-                    risk: (risk as any)?.score ?? (profile as any)?.riskScore ?? n.risk,
-                    balance: (addrData as any)?.balance ?? n.balance,
-                    usdValue: (addrData as any)?.usdValue ?? n.usdValue,
-                    txCount: (txs as any)?.pagination?.totalTxs ?? (txs as any)?.total ?? n.txCount,
-                    entityId: (profile as any)?.entityId ?? n.entityId,
-                    entityType: (profile as any)?.entityType ?? n.entityType,
-                    label: (profile as any)?.label ?? n.label,
-                    logoUrl: logoUrl ?? n.logoUrl,
-                  } : n));
-                  setSummary({
-                    balance: (addrData as any)?.balance,
-                    usdValue: (addrData as any)?.usdValue,
-                    txCount: (txs as any)?.pagination?.totalTxs ?? (txs as any)?.total ?? 0,
-                  });
-                } catch {}
-              })();
+            onNodeDrag={(nodeId, x, y) => {
+              setNodes(prev => prev.map(n => n.id === nodeId ? { ...n, x, y } : n));
             }}
-            centerNodeId={centerNodeId}
+            onEdgeClick={() => {
+              // Handle edge click
+            }}
+            onNodeRemove={(nodeId) => {
+              setNodes(prev => prev.filter(n => n.id !== nodeId));
+              setConnections(prev => prev.filter(c => c.from !== nodeId && c.to !== nodeId));
+            }}
+            utxoCollapseMode={utxoCollapseMode}
           />
+
+          {/* Left Panel - positioned absolutely */}
+          <div className="absolute top-0 left-0 h-full z-20">
+            <LeftPanel
+              address={centerNodeId || undefined}
+              network={leftPanelData?.network}
+              balance={leftPanelData?.balance}
+              usdValue={leftPanelData?.usdValue}
+              txCount={leftPanelData?.txCount}
+              riskScore={leftPanelData?.riskScore}
+              selectedEntity={leftPanelData?.selectedEntity}
+              isExpanded={isExpanded}
+              onToggle={() => setIsExpanded(!isExpanded)}
+            />
+          </div>
         </div>
       </div>
-      <EdgeDialog
-        open={edgeDialogOpen}
-        onOpenChange={setEdgeDialogOpen}
-        data={selectedEdge}
-        onSetColor={(c) => setActiveEdgeColor(c)}
-      />
-      <NodeDialog
-        open={nodeDialogOpen}
-        onOpenChange={setNodeDialogOpen}
-        address={centerNodeId}
-        riskScore={nodes.find(n => n.id === centerNodeId)?.risk}
-        entityId={nodes.find(n => n.id === centerNodeId)?.entityId}
-        entityType={nodes.find(n => n.id === centerNodeId)?.entityType}
-        label={nodes.find(n => n.id === centerNodeId)?.label}
-      />
+
       <NodeTxPicker
-        open={txPickerOpen}
-        onOpenChange={setTxPickerOpen}
-        address={centerNodeId}
-        nodeLabel={nodes.find(n => n.id === centerNodeId)?.label}
-        onAdd={({ address, selectedTxs }) => {
-          // Transform picked txs into connections: for each tx, connect first input to first output
-          const newConnections: FTConnection[] = [];
-          const addressesToPrefetch: Set<string> = new Set([address || '']);
-          selectedTxs.forEach((tx: any) => {
-            const from = tx?.inputs?.[0]?.addr;
-            const to = tx?.outputs?.[0]?.addr;
-            if (from && to) {
-              newConnections.push({ from, to, txHash: tx.txid, amount: tx.value });
-              // ensure endpoint nodes exist
-              setNodes(prev => {
-                const add: FTNode[] = [];
-                if (!prev.some(n => n.id === from)) add.push({ id: from, label: from, x: 200 + Math.random()*200, y: 160 + Math.random()*220 });
-                if (!prev.some(n => n.id === to)) add.push({ id: to, label: to, x: 420 + Math.random()*220, y: 260 + Math.random()*220 });
-                return add.length ? [...prev, ...add] : prev;
-              });
-              addressesToPrefetch.add(from);
-              addressesToPrefetch.add(to);
-            }
-          });
-          if (newConnections.length) setConnections(prev => [...prev, ...newConnections]);
-          setNodeDialogOpen(true);
-          // Fetch entity profiles and logos for all involved endpoints so logos appear on nodes
-          prefetchProfilesAndLogos(Array.from(addressesToPrefetch).filter(Boolean));
-        }}
+        open={nodeTxPickerOpen}
+        onOpenChange={setNodeTxPickerOpen}
+        address={currentAddress || ''}
+        nodeLabel={nodes.find(n => n.id === currentAddress)?.label}
+        onAdd={onAdd}
       />
     </div>
   );

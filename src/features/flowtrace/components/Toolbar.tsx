@@ -1,41 +1,79 @@
-import React from 'react';
-import { Button } from '../../../components/ui/button';
+import React from 'react'
+import { ZoomIn, ZoomOut, RotateCcw, Plus, Palette, Layers, Split } from 'lucide-react'
 
-type Props = {
-  onZoomIn: () => void;
-  onZoomOut: () => void;
-  onReset: () => void;
-  onAddNode: () => void;
-  onPickColor: (color: string) => void;
-  activeColor?: string;
-};
+interface ToolbarProps {
+  onZoomIn: () => void
+  onZoomOut: () => void
+  onReset: () => void
+  onAddNode: () => void
+  onColorPicker: () => void
+  utxoCollapseMode: "aggregated" | "individual"
+  onToggleUtxoMode: () => void
+}
 
-const COLORS = ['#9ca3af', '#f97316', '#ef4444', '#10b981', '#3b82f6', '#a855f7'];
-
-const Toolbar: React.FC<Props> = ({ onZoomIn, onZoomOut, onReset, onAddNode, onPickColor, activeColor }) => {
+export const Toolbar: React.FC<ToolbarProps> = ({
+  onZoomIn,
+  onZoomOut,
+  onReset,
+  onAddNode,
+  onColorPicker,
+  utxoCollapseMode,
+  onToggleUtxoMode
+}) => {
   return (
-    <div className="flex items-center gap-2 p-2 bg-white/60 dark:bg-black/40 backdrop-blur border border-gray-200 dark:border-gray-800 rounded-md">
-      <Button size="sm" variant="outline" onClick={onZoomOut}>-</Button>
-      <Button size="sm" variant="outline" onClick={onZoomIn}>+</Button>
-      <Button size="sm" variant="outline" onClick={onReset}>Reset</Button>
-      <div className="mx-2 h-6 w-px bg-gray-300 dark:bg-gray-700" />
-      <div className="flex items-center gap-1">
-        {COLORS.map((c) => (
-          <button
-            key={c}
-            onClick={() => onPickColor(c)}
-            className="h-5 w-5 rounded-full border"
-            style={{ backgroundColor: c, outline: activeColor === c ? `2px solid ${c}` : 'none' }}
-            aria-label={`Pick ${c}`}
-          />
-        ))}
+    <div className="absolute top-0 left-0 right-0 z-10 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-3">
+      <div className="flex items-center gap-2">
+        <button
+          onClick={onZoomIn}
+          className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
+          title="Zoom In"
+        >
+          <ZoomIn className="h-4 w-4" />
+        </button>
+        <button
+          onClick={onZoomOut}
+          className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
+          title="Zoom Out"
+        >
+          <ZoomOut className="h-4 w-4" />
+        </button>
+        <button
+          onClick={onReset}
+          className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
+          title="Reset View"
+        >
+          <RotateCcw className="h-4 w-4" />
+        </button>
+        <div className="w-px h-6 bg-gray-200 dark:bg-gray-600 mx-2"></div>
+        <button
+          onClick={onAddNode}
+          className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
+          title="Add Node"
+        >
+          <Plus className="h-4 w-4" />
+        </button>
+        <button
+          onClick={onColorPicker}
+          className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
+          title="Color Picker"
+        >
+          <Palette className="h-4 w-4" />
+        </button>
+        <div className="w-px h-6 bg-gray-200 dark:bg-gray-600 mx-2"></div>
+        <button
+          onClick={onToggleUtxoMode}
+          className={`p-2 rounded transition-colors ${
+            utxoCollapseMode === "individual" 
+              ? "bg-orange-100 dark:bg-orange-900 text-orange-600 dark:text-orange-400" 
+              : "hover:bg-gray-100 dark:hover:bg-gray-700"
+          }`}
+          title={utxoCollapseMode === "aggregated" ? "Show Individual UTXOs" : "Show Aggregated UTXOs"}
+        >
+          {utxoCollapseMode === "aggregated" ? <Split className="h-4 w-4" /> : <Layers className="h-4 w-4" />}
+        </button>
       </div>
-      <div className="mx-2 h-6 w-px bg-gray-300 dark:bg-gray-700" />
-      <Button size="sm" variant="outline" onClick={onAddNode}>Add Node</Button>
     </div>
-  );
-};
-
-export default Toolbar;
+  )
+}
 
 

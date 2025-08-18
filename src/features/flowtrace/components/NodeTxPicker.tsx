@@ -14,9 +14,7 @@ const NodeTxPicker: React.FC<Props> = ({ open, address, onOpenChange, onAdd, nod
   const [loading, setLoading] = useState(false);
   const [txs, setTxs] = useState<any[]>([]);
   const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
-  const [pageSize] = useState(25);
   const [search, setSearch] = useState('');
   const [sort, setSort] = useState<'date_desc' | 'date_asc'>('date_desc');
 
@@ -25,15 +23,22 @@ const NodeTxPicker: React.FC<Props> = ({ open, address, onOpenChange, onAdd, nod
       if (!open || !address) return;
       setLoading(true);
       try {
-        const resp = await flowtraceService.fetchTransactions(address, page, pageSize).catch(() => ({ txs: [], pagination: { totalTxs: 0 } } as any));
-        setTxs((resp as any)?.txs || []);
-        setTotal((resp as any)?.pagination?.totalTxs ?? (resp as any)?.total ?? ((resp as any)?.txs?.length || 0));
+        // Use fetchAllTransactions to get all transactions for the address
+        const resp = await flowtraceService.fetchAllTransactions(address, 100).catch(() => ({ txs: [], pagination: { totalTxs: 0 } } as any));
+        
+        // Show both UTXOs (address in outputs) and spending transactions (address in inputs)
+        const allTransactions = (resp as any)?.txs || [];
+        
+        setTxs(allTransactions);
+        setTotal(allTransactions.length);
+        
+        console.log(`NodeTxPicker: Found ${allTransactions.length} transactions for address ${address}`);
       } finally {
         setLoading(false);
       }
     };
     run();
-  }, [open, address, page, pageSize]);
+  }, [open, address]);
 
   const toggle = (txid: string) => {
     setSelected((prev) => {
@@ -67,6 +72,7 @@ const NodeTxPicker: React.FC<Props> = ({ open, address, onOpenChange, onAdd, nod
   };
 
   const filteredTxs = useMemo(() => {
+    // Show all transactions (both UTXOs and spending transactions)
     const list = [...txs];
     const q = search.trim().toLowerCase();
     let res = q
@@ -79,7 +85,7 @@ const NodeTxPicker: React.FC<Props> = ({ open, address, onOpenChange, onAdd, nod
     if (sort === 'date_asc') res = res.sort((a: any, b: any) => (a.time || 0) - (b.time || 0));
     else res = res.sort((a: any, b: any) => (b.time || 0) - (a.time || 0));
     return res;
-  }, [txs, search, sort]);
+  }, [txs, search, sort, address]);
 
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!o) setSelected(new Set()); onOpenChange(o); }}>
@@ -124,7 +130,7 @@ const NodeTxPicker: React.FC<Props> = ({ open, address, onOpenChange, onAdd, nod
               <button className="px-2 py-1 border rounded mr-2" onClick={() => setSelected(new Set())}>Deselect All</button>
               <span>{selected.size} of {filteredTxs.length} selected</span>
             </div>
-            <div>Showing {filteredTxs.length} of {total} inputs</div>
+            <div>Showing {filteredTxs.length} of {total} transactions for {address}</div>
           </div>
         </div>
         <div className="flex-1 min-h-0 border rounded overflow-hidden">
@@ -133,11 +139,11 @@ const NodeTxPicker: React.FC<Props> = ({ open, address, onOpenChange, onAdd, nod
               <thead className="sticky top-0 z-10">
                 <tr className="bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300">
                   <th className="text-left p-2 w-8"><input type="checkbox" onChange={toggleAll} checked={allOnPageIds.length>0 && allOnPageIds.every(id => selected.has(id))} /></th>
-                  <th className="text-left p-2 w-[260px]">Tx Hash</th>
-                  <th className="text-left p-2 w-[260px]">Inputs</th>
-                  <th className="text-left p-2 w-[260px]">Outputs</th>
-                  <th className="text-left p-2 w-[100px]">Value</th>
-                  <th className="text-left p-2 w-[140px]">Time</th>
+                  <th className="text-left p-2 w-[150px]">Input Address</th>
+                  <th className="text-left p-2 w-[150px]">Output Address</th>
+                  <th className="text-left p-2 w-[120px]">Amount</th>
+                  <th className="text-left p-2 w-[80px]">Direction</th>
+                  <th className="text-left p-2 w-[120px]">Tx Hash</th>
                 </tr>
               </thead>
               <tbody>
@@ -146,16 +152,71 @@ const NodeTxPicker: React.FC<Props> = ({ open, address, onOpenChange, onAdd, nod
                 ) : filteredTxs.length === 0 ? (
                   <tr><td className="p-4 text-gray-500" colSpan={6}>No transactions</td></tr>
                 ) : (
-                  filteredTxs.map((t) => (
-                    <tr key={t.txid} className="border-t">
-                      <td className="p-2"><input type="checkbox" checked={selected.has(t.txid)} onChange={() => toggle(t.txid)} /></td>
-                      <td className="p-2 truncate max-w-[260px]" title={t.txid}>{t.txid}</td>
-                      <td className="p-2 truncate max-w-[260px]">{(t.inputs||[]).map((i:any)=>i.addr).filter(Boolean).slice(0,2).join(', ')}</td>
-                      <td className="p-2 truncate max-w-[260px]">{(t.outputs||[]).map((o:any)=>o.addr).filter(Boolean).slice(0,2).join(', ')}</td>
-                      <td className="p-2">{t.value ?? '—'}</td>
-                      <td className="p-2">{t.time ?? '—'}</td>
-                    </tr>
-                  ))
+                  filteredTxs.map((t) => {
+                    // Check if address is in inputs (spending) or outputs (receiving)
+                    const isInInputs = (t.inputs || []).some((i: any) => i.addr === address);
+                    const isInOutputs = (t.outputs || []).some((o: any) => o.addr === address);
+                    
+                    // Determine direction
+                    const direction = isInInputs ? 'out' : 'in';
+                    
+                    // Find the relevant amount
+                    let amountInSatoshis = 0;
+                    let inputAddress = 'Unknown';
+                    let outputAddress = 'Unknown';
+                    
+                    if (isInInputs) {
+                      // Address is spending - find the input amount
+                      const input = (t.inputs || []).find((i: any) => i.addr === address);
+                      amountInSatoshis = input?.amt || 0;
+                      inputAddress = address || 'Unknown';
+                      // Find the first output address
+                      outputAddress = (t.outputs || [])[0]?.addr || 'Unknown';
+                    } else if (isInOutputs) {
+                      // Address is receiving - find the output amount
+                      const output = (t.outputs || []).find((o: any) => o.addr === address);
+                      amountInSatoshis = output?.amt || 0;
+                      // Find the first input address
+                      inputAddress = (t.inputs || [])[0]?.addr || 'Unknown';
+                      outputAddress = address || 'Unknown';
+                    }
+                    
+                    // Convert from satoshis to BTC
+                    const amountInBTC = amountInSatoshis / 100000000;
+                    const amount = amountInBTC.toFixed(8);
+                    
+                    return (
+                      <tr key={t.txid} className="border-t hover:bg-gray-50 dark:hover:bg-gray-800">
+                        <td className="p-2"><input type="checkbox" checked={selected.has(t.txid)} onChange={() => toggle(t.txid)} /></td>
+                        <td className="p-2">
+                          <div className="font-mono text-sm text-gray-900 dark:text-gray-100">
+                            {inputAddress.length > 12 ? `${inputAddress.slice(0, 6)}...${inputAddress.slice(-6)}` : inputAddress}
+                          </div>
+                        </td>
+                        <td className="p-2">
+                          <div className="font-mono text-sm text-gray-900 dark:text-gray-100">
+                            {outputAddress.length > 12 ? `${outputAddress.slice(0, 6)}...${outputAddress.slice(-6)}` : outputAddress}
+                          </div>
+                        </td>
+                        <td className="p-2">
+                          <div className="font-medium text-gray-900 dark:text-gray-100">{amount} BTC</div>
+                        </td>
+                        <td className="p-2">
+                          <div className="flex items-center">
+                            <div className={`w-2 h-2 rounded-full mr-2 ${direction === 'in' ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                            <span className={`text-sm font-medium ${direction === 'in' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                              {direction.toUpperCase()}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="p-2">
+                          <div className="font-mono text-xs text-gray-600 dark:text-gray-400 truncate max-w-[120px]" title={t.txid}>
+                            {t.txid.length > 12 ? `${t.txid.slice(0, 6)}...${t.txid.slice(-6)}` : t.txid}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
                 )}
               </tbody>
             </table>
@@ -164,12 +225,7 @@ const NodeTxPicker: React.FC<Props> = ({ open, address, onOpenChange, onAdd, nod
         <div className="flex justify-between items-center mt-2 text-sm">
           <button className="px-3 py-2 border rounded" onClick={()=> onOpenChange(false)}>Cancel</button>
           <div className="flex items-center gap-3">
-            <span className="text-xs text-gray-500">Total: {total}</span>
-            <div className="flex items-center gap-2">
-              <button className="px-2 py-1 border rounded" onClick={()=> setPage((p)=> Math.max(1,p-1))} disabled={page===1}>Prev</button>
-              <span>Page {page}</span>
-              <button className="px-2 py-1 border rounded" onClick={()=> setPage((p)=> p+1)} disabled={txs.length < pageSize}>Next</button>
-            </div>
+            <span className="text-xs text-gray-500">Total transactions: {total}</span>
             <button className="px-4 py-2 bg-orange-600 text-white rounded disabled:opacity-50" disabled={!selected.size} onClick={confirm}>Confirm Expansion ({selected.size})</button>
           </div>
         </div>
