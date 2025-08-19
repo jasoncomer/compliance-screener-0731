@@ -64,12 +64,12 @@ export const DrawingToolbar: React.FC<DrawingToolbarProps> = ({
   }
 
   return (
-    <div className="absolute top-4 right-4 z-20 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 p-4">
-      <div className="flex items-center gap-4">
+    <div className="absolute top-16 right-4 z-20 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 p-3">
+      <div className="flex flex-col gap-3">
         {/* Drawing Tools */}
         <div className="flex flex-col gap-2">
           <div className="text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">Tools</div>
-          <div className="flex gap-1">
+          <div className="flex flex-col gap-1">
             <button
               onClick={() => onToolChange('select')}
               className={`p-2 rounded transition-colors ${
@@ -131,7 +131,7 @@ export const DrawingToolbar: React.FC<DrawingToolbarProps> = ({
         {/* Action History */}
         <div className="flex flex-col gap-2">
           <div className="text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">Actions</div>
-          <div className="flex gap-1">
+          <div className="flex flex-col gap-1">
             <button
               onClick={onUndo}
               disabled={!canUndo}
@@ -174,7 +174,7 @@ export const DrawingToolbar: React.FC<DrawingToolbarProps> = ({
         {/* Color Palette */}
         <div className="flex flex-col gap-2">
           <div className="text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">Colors</div>
-          <div className="flex gap-1">
+          <div className="flex flex-col gap-1">
             <button
               onClick={() => setShowColorPicker(!showColorPicker)}
               className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
@@ -182,7 +182,7 @@ export const DrawingToolbar: React.FC<DrawingToolbarProps> = ({
             >
               <Palette className="h-4 w-4" />
             </button>
-            <div className="flex gap-1">
+            <div className="grid grid-cols-2 gap-1">
               {COLORS.map((color) => (
                 <button
                   key={color}
@@ -213,18 +213,20 @@ export const DrawingToolbar: React.FC<DrawingToolbarProps> = ({
         </div>
 
         {/* Close Button */}
-        <button
-          onClick={onToggleVisibility}
-          className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
-          title="Hide Drawing Tools"
-        >
-          <span className="text-gray-600 dark:text-gray-300">×</span>
-        </button>
+        <div className="flex justify-center">
+          <button
+            onClick={onToggleVisibility}
+            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
+            title="Hide Drawing Tools"
+          >
+            <span className="text-gray-600 dark:text-gray-300">×</span>
+          </button>
+        </div>
       </div>
 
       {/* Color Picker Dropdown */}
       {showColorPicker && (
-        <div className="absolute top-full left-0 mt-2 p-3 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700">
+        <div className="absolute left-full top-0 ml-2 p-3 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700">
           <input
             type="color"
             value={activeColor}

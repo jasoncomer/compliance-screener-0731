@@ -633,36 +633,40 @@ const RiskDashboard: React.FC = React.memo(() => {
     }
   }, [handleAddressSearch]);
 
+  const isEmptyState = !shouldShowData && !loading && !isLoadingAnyData;
+
   return (
     <ViewWrapper
       icon={<BarChart3 className="w-8 h-8 text-orange-500" />}
-      title="Risk Dashboard"
+      title={isEmptyState ? "Risk Dashboard" : ""}
       fullWidth={true}
     >
-      {/* Search Bar */}
-      <div className="mb-6 max-w-2xl">
-        <AddressSearchInput
-          placeholder="Enter Bitcoin or Ethereum address (e.g., 0x1234... or bc1qxy2...)"
-          value={searchValue}
-          onChange={(e) => setSearchValue(e.target.value)}
-          onSearch={handleSearch}
-          loading={loading}
-          disabled={loading}
-          showValidation={true}
-        />
+      {/* Sticky Search Bar */}
+      <div className={`sticky top-[0] z-20 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 px-4 ${isEmptyState ? 'pt-2 py-4 mb-2' : 'py-4'}`}>
+        <div className="flex justify-between items-center gap-4">
+          <div className="flex-1 max-w-2xl">
+            <AddressSearchInput
+              placeholder="Enter Bitcoin or Ethereum address (e.g., 0x1234... or bc1qxy2...)"
+              value={searchValue}
+              onChange={(e) => setSearchValue(e.target.value)}
+              onSearch={handleSearch}
+              loading={loading}
+              disabled={loading}
+              showValidation={true}
+            />
+          </div>
+        </div>
       </div>
 
-      {/* Welcome Message - Show when no search has been performed and no data available */}
-      {!shouldShowData && !loading && !isLoadingAnyData && (
+      {/* Main Content */}
+      {isEmptyState ? (
         <EmptyState
           variant="initial"
           icon={<BarChart3 className="w-12 h-12" />}
           title="Welcome to Risk Dashboard"
           description="Analyze blockchain addresses for risk assessment, transaction patterns, and entity intelligence. Get comprehensive insights into address behavior, counterparty analysis, and risk scoring."
         />
-      )}
-
-      {shouldShowData && !loading && !isLoadingAnyData && (
+      ) : (
         <div className="space-y-6">
           {/* Address Header - Full Width */}
           <div className="rounded-2xl border p-6 bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700">

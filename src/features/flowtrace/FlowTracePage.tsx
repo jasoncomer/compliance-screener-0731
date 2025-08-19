@@ -1,17 +1,21 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useTheme } from '../../context/ThemeContext';
 import { flowtraceService } from '../../services/flowtraceService';
+import { Network } from 'lucide-react';
 
 import { getBlockchainType } from '../../utils/addressValidation';
 import { NetworkGraph, FTConnection, FTNode, NetworkGraphHandle } from './components/NetworkGraph';
 import { Toolbar } from './components/Toolbar';
 import { DrawingToolbar, DrawingTool } from './components/DrawingToolbar';
 
-import { LoadingIndicator, LoadingOverlay } from './components/LoadingIndicator';
+import { LoadingOverlay } from './components/LoadingIndicator';
 import { DebugPanel } from './components/DebugPanel';
 import { HelpSystem } from './components/HelpSystem';
 import LeftPanel from './components/LeftPanel';
 import NodeTxPicker from './components/NodeTxPicker';
+import FlowTraceEmptyState from './components/FlowTraceEmptyState';
+import AddressSearchInput from '../../components/common/AddressSearchInput';
+import ViewWrapper from '../../components/ViewWrapper';
 
 const FlowTracePage: React.FC = () => {
   const { theme } = useTheme();
@@ -473,140 +477,140 @@ const FlowTracePage: React.FC = () => {
     prefetchProfilesAndLogos(Array.from(addressesToPrefetch).filter(Boolean))
   }, [handleAddConnections, prefetchProfilesAndLogos])
 
+  const isEmptyState = nodes.length === 0 && !isLoading;
+
   return (
-    <div className="h-full w-full flex flex-col">
-      <div className="p-3 border-b border-gray-200 dark:border-gray-800 flex items-center gap-2 justify-between">
-        <form 
-          className="flex items-center gap-2"
-          onSubmit={(e) => {
-            e.preventDefault();
-            handleTrace();
-          }}
-        >
-          <input
-            className={`text-sm px-3 py-2 rounded border w-96 transition-colors ${
-              theme === 'dark'
-                ? 'bg-gray-900 text-white placeholder-gray-400 border-gray-700 focus:border-orange-500'
-                : 'bg-white text-gray-900 placeholder-gray-500 border-gray-300 focus:border-orange-500'
-            }`}
-            placeholder="Enter address or transaction hash"
-            value={address}
-            onChange={(e) => setAddress(e.target.value)}
-          />
-          <button
-            type="submit"
-            className="px-6 py-1.5 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-medium rounded-lg shadow-md hover:shadow-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 min-w-[80px] justify-center"
-            disabled={isLoading}
-          >
-            {isLoading ? (
-              <LoadingIndicator isLoading={true} size="sm" message="" />
-            ) : (
-              'Trace'
-            )}
-          </button>
-        </form>
-        
-        <div className="flex items-center gap-2">
-          <HelpSystem />
-        </div>
-      </div>
-
-      <div className="flex-1 relative">
-        <Toolbar
-          onZoomIn={() => graphRef.current?.zoomIn()}
-          onZoomOut={() => graphRef.current?.zoomOut()}
-          onReset={() => graphRef.current?.resetView()}
-          onAddNode={() => handleAddNode()}
-          onColorPicker={() => {
-            setDrawingToolbarVisible(!drawingToolbarVisible);
-          }}
-          utxoCollapseMode={utxoCollapseMode}
-          onToggleUtxoMode={() => setUtxoCollapseMode(prev => prev === "aggregated" ? "individual" : "aggregated")}
-        />
-
-        {/* Drawing Toolbar */}
-        <DrawingToolbar
-          isVisible={drawingToolbarVisible}
-          onToggleVisibility={() => setDrawingToolbarVisible(!drawingToolbarVisible)}
-          activeTool={activeDrawingTool}
-          onToolChange={setActiveDrawingTool}
-          activeColor={activeColor}
-          onColorChange={setActiveColor}
-          onUndo={handleUndo}
-          onRedo={handleRedo}
-          onDelete={handleDelete}
-          onAddNode={handleAddNode}
-          canUndo={historyIndex > 0}
-          canRedo={historyIndex < drawingHistory.length - 1}
-          hasSelection={hasSelection}
-        />
-
-        <DebugPanel
-          nodes={nodes}
-          connections={connections}
-          onClearData={handleClearData}
-          onImportData={handleImportData}
-        />
-
-        <div className="absolute top-12 left-0 right-0 bottom-0">
-          <NetworkGraph
-            ref={graphRef}
-            nodes={nodes}
-            connections={connections}
-            onNodeClick={(node) => {
-              // Node click selects the node and fetches its data for the left panel
-              setCurrentAddress(node.id);
-              fetchAndSetLeftPanelData(node.id);
-            }}
-            onNodeDoubleClick={(node) => {
-              // Allow renaming only for custom/empty nodes (no entityId/type or type === 'custom')
-              const isCustom = node.type === 'custom' || (!node.entityId && !node.entityType);
-              if (!isCustom) return;
-              const current = node.label || node.id;
-              const next = window.prompt('Rename node label:', current);
-              if (next && next.trim().length) {
-                setNodes(prev => prev.map(n => n.id === node.id ? { ...n, label: next.trim() } : n));
-              }
-            }}
-            onNodeAdd={(node) => {
-              setCurrentAddress(node.id);
-              setNodeTxPickerOpen(true);
-            }}
-            onNodeDrag={(nodeId, x, y) => {
-              setNodes(prev => prev.map(n => n.id === nodeId ? { ...n, x, y } : n));
-            }}
-            onEdgeClick={() => {
-              // Handle edge click
-            }}
-            onNodeRemove={(nodeId) => {
-              setNodes(prev => prev.filter(n => n.id !== nodeId));
-              setConnections(prev => prev.filter(c => c.from !== nodeId && c.to !== nodeId));
-            }}
-            utxoCollapseMode={utxoCollapseMode}
-            activeTool={activeDrawingTool}
-            activeColor={activeColor}
-            onDrawingAction={handleDrawingAction}
-            drawingHistory={drawingHistory.slice(0, historyIndex + 1)}
-            onConnectionColorChange={handleConnectionColorChange}
-            onConnectionColorReset={handleConnectionColorReset}
-          />
-
-          {/* Left Panel - positioned absolutely */}
-          <div className="absolute top-0 left-0 h-full z-20">
-            <LeftPanel
-              address={currentAddress || centerNodeId || undefined}
-              network={leftPanelData?.network}
-              balance={leftPanelData?.balance}
-              usdValue={leftPanelData?.usdValue}
-              txCount={leftPanelData?.txCount}
-              riskScore={leftPanelData?.riskScore}
-              selectedEntity={leftPanelData?.selectedEntity}
-              isExpanded={isExpanded}
-              onToggle={() => setIsExpanded(!isExpanded)}
+    <ViewWrapper
+      icon={<Network className="w-8 h-8 text-orange-500" />}
+      title={isEmptyState ? "FlowTrace" : ""}
+      fullWidth={true}
+    >
+      {/* Sticky Search Bar */}
+      <div className={`sticky top-[0] z-20 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 px-4 ${isEmptyState ? 'pt-2 py-4 mb-2' : 'py-4'}`}>
+        <div className="flex justify-between items-center gap-4">
+          <div className="flex-1 max-w-2xl">
+            <AddressSearchInput
+              placeholder="Enter Bitcoin address to trace (e.g., bc1qxy2...)"
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
+              onSearch={handleTrace}
+              loading={isLoading}
+              disabled={isLoading}
+              showValidation={true}
             />
+          </div>
+          <div className="flex items-center gap-2">
+            <HelpSystem />
           </div>
         </div>
       </div>
+
+      {/* Main Content */}
+      {isEmptyState ? (
+        <FlowTraceEmptyState />
+      ) : (
+        <div className="relative mt-4">
+          {/* Main Toolbar - positioned on the right to avoid left panel */}
+          <div className="absolute top-0 right-0 z-20">
+            <Toolbar
+              onZoomIn={() => graphRef.current?.zoomIn()}
+              onZoomOut={() => graphRef.current?.zoomOut()}
+              onReset={() => graphRef.current?.resetView()}
+              onAddNode={() => handleAddNode()}
+              onColorPicker={() => {
+                setDrawingToolbarVisible(!drawingToolbarVisible);
+              }}
+              utxoCollapseMode={utxoCollapseMode}
+              onToggleUtxoMode={() => setUtxoCollapseMode(prev => prev === "aggregated" ? "individual" : "aggregated")}
+            />
+          </div>
+
+          {/* Drawing Toolbar - positioned vertically on the right side */}
+          <DrawingToolbar
+            isVisible={drawingToolbarVisible}
+            onToggleVisibility={() => setDrawingToolbarVisible(!drawingToolbarVisible)}
+            activeTool={activeDrawingTool}
+            onToolChange={setActiveDrawingTool}
+            activeColor={activeColor}
+            onColorChange={setActiveColor}
+            onUndo={handleUndo}
+            onRedo={handleRedo}
+            onDelete={handleDelete}
+            onAddNode={handleAddNode}
+            canUndo={historyIndex > 0}
+            canRedo={historyIndex < drawingHistory.length - 1}
+            hasSelection={hasSelection}
+          />
+
+          <DebugPanel
+            nodes={nodes}
+            connections={connections}
+            onClearData={handleClearData}
+            onImportData={handleImportData}
+          />
+
+          {/* Network Graph and Left Panel */}
+          <div className="relative" style={{ height: 'calc(100vh - 280px)' }}>
+            <NetworkGraph
+              ref={graphRef}
+              nodes={nodes}
+              connections={connections}
+              onNodeClick={(node) => {
+                // Node click selects the node and fetches its data for the left panel
+                setCurrentAddress(node.id);
+                fetchAndSetLeftPanelData(node.id);
+              }}
+              onNodeDoubleClick={(node) => {
+                // Allow renaming only for custom/empty nodes (no entityId/type or type === 'custom')
+                const isCustom = node.type === 'custom' || (!node.entityId && !node.entityType);
+                if (!isCustom) return;
+                const current = node.label || node.id;
+                const next = window.prompt('Rename node label:', current);
+                if (next && next.trim().length) {
+                  setNodes(prev => prev.map(n => n.id === node.id ? { ...n, label: next.trim() } : n));
+                }
+              }}
+              onNodeAdd={(node) => {
+                setCurrentAddress(node.id);
+                setNodeTxPickerOpen(true);
+              }}
+              onNodeDrag={(nodeId, x, y) => {
+                setNodes(prev => prev.map(n => n.id === nodeId ? { ...n, x, y } : n));
+              }}
+              onEdgeClick={() => {
+                // Handle edge click
+              }}
+              onNodeRemove={(nodeId) => {
+                setNodes(prev => prev.filter(n => n.id !== nodeId));
+                setConnections(prev => prev.filter(c => c.from !== nodeId && c.to !== nodeId));
+              }}
+              utxoCollapseMode={utxoCollapseMode}
+              activeTool={activeDrawingTool}
+              activeColor={activeColor}
+              onDrawingAction={handleDrawingAction}
+              drawingHistory={drawingHistory.slice(0, historyIndex + 1)}
+              onConnectionColorChange={handleConnectionColorChange}
+              onConnectionColorReset={handleConnectionColorReset}
+              centerNodeId={centerNodeId}
+            />
+
+            {/* Left Panel */}
+            <div className="absolute top-0 left-0 h-full z-20">
+              <LeftPanel
+                address={currentAddress || centerNodeId || undefined}
+                network={leftPanelData?.network}
+                balance={leftPanelData?.balance}
+                usdValue={leftPanelData?.usdValue}
+                txCount={leftPanelData?.txCount}
+                riskScore={leftPanelData?.riskScore}
+                selectedEntity={leftPanelData?.selectedEntity}
+                isExpanded={isExpanded}
+                onToggle={() => setIsExpanded(!isExpanded)}
+              />
+            </div>
+          </div>
+        </div>
+      )}
 
       <LoadingOverlay isLoading={isLoading} message="Tracing address..." />
 
@@ -617,7 +621,7 @@ const FlowTracePage: React.FC = () => {
         nodeLabel={nodes.find(n => n.id === currentAddress)?.label}
         onAdd={onAdd}
       />
-    </div>
+    </ViewWrapper>
   );
 };
 

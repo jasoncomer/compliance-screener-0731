@@ -1,5 +1,6 @@
-import React, { useCallback, useEffect, useRef, useState, forwardRef, useImperativeHandle } from 'react';
+import React, { useCallback, useEffect, useRef, useState, forwardRef, useImperativeHandle, useMemo } from 'react';
 import { EdgeColorPicker } from './EdgeColorPicker';
+import { useLogo } from '../../../hooks/useLogo';
 
 export type FTNode = {
   id: string;
@@ -62,6 +63,7 @@ interface NetworkGraphProps {
   drawingHistory?: any[]
   onConnectionColorChange?: (txHash: string, color: string) => void
   onConnectionColorReset?: (txHash: string) => void
+  centerNodeId?: string | null
 }
 
 export type NetworkGraphHandle = {
@@ -69,6 +71,7 @@ export type NetworkGraphHandle = {
   zoomOut: () => void
   resetView: () => void
   forceRender: () => void
+  centerOnNode: (nodeId: string) => void
 }
 
 export const NetworkGraph = forwardRef<NetworkGraphHandle, NetworkGraphProps>(({ 
@@ -86,7 +89,8 @@ export const NetworkGraph = forwardRef<NetworkGraphHandle, NetworkGraphProps>(({
   onDrawingAction,
   drawingHistory = [],
   onConnectionColorChange,
-  onConnectionColorReset
+  onConnectionColorReset,
+  centerNodeId
 }, ref) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [pan, setPan] = useState({ x: 0, y: 0 });
@@ -96,6 +100,7 @@ export const NetworkGraph = forwardRef<NetworkGraphHandle, NetworkGraphProps>(({
   const [draggedNodeId, setDraggedNodeId] = useState<string | null>(null);
   const [hoverNodeId, setHoverNodeId] = useState<string | null>(null);
   const [renderTick, setRenderTick] = useState(0);
+  const [centeredNodeId, setCenteredNodeId] = useState<string | null>(null);
   
   // Drawing state
   const [isDrawing, setIsDrawing] = useState(false);
@@ -107,58 +112,46 @@ export const NetworkGraph = forwardRef<NetworkGraphHandle, NetworkGraphProps>(({
   const [edgeColorPickerOpen, setEdgeColorPickerOpen] = useState(false);
   const [selectedConnection, setSelectedConnection] = useState<FTConnection | null>(null);
   
-  // Logo state
-  const [nodeLogos, setNodeLogos] = useState<Map<string, string>>(new Map());
-  const [logoLoading, setLogoLoading] = useState<Set<string>>(new Set());
+  // Create a mapping from node ID to logo URL using the same logic as useLogo hook
+  const nodeLogoMap = useMemo(() => {
+    console.log('🔍 Creating logo map for nodes:', nodes.map(n => ({
+      id: n.id,
+      logoUrl: n.logoUrl,
+      entityId: n.entityId,
+      entityType: n.entityType
+    })));
+    
+    const map: Record<string, string | null> = {};
+    nodes.forEach(node => {
+      // Priority 1: Use logoUrl from SOT data (this should be set by prefetchProfilesAndLogos)
+      if (node.logoUrl) {
+        console.log('🎯 Using logoUrl from node data for', node.id, ':', node.logoUrl);
+        map[node.id] = node.logoUrl;
+      } else if (node.entityId || node.entityType) {
+        // Priority 2: Use the API proxy endpoint to avoid CORS issues
+        const entityId = node.entityId || node.entityType;
+        if (entityId) {
+          console.log('🔍 Using API proxy for', node.id, 'entityId:', entityId);
+          // Use the API proxy endpoint that handles CORS
+          const proxyUrl = `/api/v1/sot/logo/${entityId}`;
+          map[node.id] = proxyUrl;
+        } else {
+          map[node.id] = null;
+        }
+      } else {
+        console.log('❌ No logo data available for node:', node.id);
+        map[node.id] = null;
+      }
+    });
+    return map;
+  }, [nodes]);
 
   const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(max, v));
 
-  // Load logo for a node
-  const loadNodeLogo = useCallback(async (node: FTNode) => {
-    console.log('loadNodeLogo called for node:', node.id, 'entityId:', node.entityId, 'entityType:', node.entityType);
-    
-    if (nodeLogos.has(node.id) || logoLoading.has(node.id)) {
-      console.log('Logo already loaded or loading for node:', node.id);
-      return; // Already loaded or loading
-    }
-
-    setLogoLoading(prev => new Set(prev).add(node.id));
-
-    try {
-      // The logo URL should already be in the node data from SOT
-      const logoUrl = node.logoUrl;
-      console.log('Logo URL from node data for', node.id, ':', logoUrl);
-      if (logoUrl) {
-        setNodeLogos(prev => new Map(prev).set(node.id, logoUrl));
-        console.log('Logo set for node:', node.id, 'URL:', logoUrl);
-      }
-    } catch (error) {
-      console.warn(`Failed to load logo for node ${node.id}:`, error);
-    } finally {
-      setLogoLoading(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(node.id);
-        return newSet;
-      });
-    }
-  }, [nodeLogos, logoLoading]);
-
-  // Load logos for all nodes
-  const loadAllNodeLogos = useCallback(async () => {
-    const nodesToLoad = nodes.filter(node => 
-      !nodeLogos.has(node.id) && 
-      !logoLoading.has(node.id) && 
-      (node.entityId || node.entityType)
-    );
-
-    if (nodesToLoad.length === 0) return;
-
-    console.log('Loading logos for nodes:', nodesToLoad.map(n => ({ id: n.id, entityId: n.entityId, entityType: n.entityType })));
-    
-    await Promise.allSettled(
-      nodesToLoad.map(node => loadNodeLogo(node))
-    );
-  }, [nodes, nodeLogos, logoLoading, loadNodeLogo]);
+  // Helper function to get logo URL for a node
+  const getNodeLogoUrl = useCallback((node: FTNode): string | null => {
+    return nodeLogoMap[node.id] || null;
+  }, [nodeLogoMap]);
 
   const dpi = typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1;
   const imageCacheRef = useRef<Map<string, HTMLImageElement>>(new Map());
@@ -171,8 +164,32 @@ export const NetworkGraph = forwardRef<NetworkGraphHandle, NetworkGraphProps>(({
       setPan({ x: 0, y: 0 });
       setZoom(1);
     },
-    forceRender: () => setRenderTick(prev => prev + 1)
-  }), []);
+    forceRender: () => setRenderTick(prev => prev + 1),
+    centerOnNode: (nodeId: string) => {
+      if (!canvasRef.current) return;
+      
+      const targetNode = nodes.find(node => node.id === nodeId);
+      if (!targetNode) return;
+      
+      // Get canvas dimensions
+      const canvas = canvasRef.current;
+      const rect = canvas.getBoundingClientRect();
+      const canvasWidth = rect.width;
+      const canvasHeight = rect.height;
+      
+      // Calculate the right center position (75% from left, 50% from top)
+      const targetX = canvasWidth * 0.75;
+      const targetY = canvasHeight * 0.5;
+      
+      // Calculate the pan offset needed to center the node at the target position
+      const panX = targetX - (targetNode.x * zoom);
+      const panY = targetY - (targetNode.y * zoom);
+      
+      console.log('🎯 Programmatically centering node', nodeId, 'to right center of view');
+      setPan({ x: panX, y: panY });
+      setCenteredNodeId(nodeId); // Mark this node as centered
+    }
+  }), [nodes, zoom]);
 
   const drawArrow = useCallback((ctx: CanvasRenderingContext2D, x1: number, y1: number, x2: number, y2: number, label?: string) => {
     ctx.beginPath();
@@ -570,80 +587,106 @@ export const NetworkGraph = forwardRef<NetworkGraphHandle, NetworkGraphProps>(({
       const radius = 20;
       const active = hoverNodeId === n.id;
       
-      // Get logo URL from our logo service
-      const logoUrl = nodeLogos.get(n.id);
-      
-      ctx.beginPath();
-      ctx.arc(n.x, n.y, radius, 0, Math.PI * 2);
+      // Get logo URL using the helper function
+      const logoUrl = getNodeLogoUrl(n);
       
       // Use logo if available, otherwise use default color
-      console.log('🎨 Rendering node', n.id, 'with logoUrl:', logoUrl);
+      console.log('🎨 Rendering node', n.id, 'with logoUrl:', logoUrl, 'entityId:', n.entityId, 'entityType:', n.entityType);
       if (logoUrl) {
         const cache = imageCacheRef.current;
         let img = cache.get(logoUrl);
         if (!img) {
           img = new Image();
-          img.crossOrigin = 'anonymous';
+          // Don't set crossOrigin for test images to avoid CORS issues
           img.onload = () => {
             console.log('✅ Logo loaded successfully:', logoUrl);
             setRenderTick((t) => t + 1);
           };
           img.onerror = () => {
-            console.log('❌ Logo failed to load due to CORS, trying PNG fallback:', logoUrl);
-            // Try PNG fallback if JPG fails
-            if (logoUrl.endsWith('.jpg')) {
-              const pngUrl = logoUrl.replace('.jpg', '.png');
-              console.log('🔄 Trying PNG fallback:', pngUrl);
-              
-              // Create new image for PNG
-              const pngImg = new Image();
-              pngImg.crossOrigin = 'anonymous';
-              pngImg.onload = () => {
-                console.log('✅ PNG logo loaded successfully:', pngUrl);
-                cache.set(logoUrl, pngImg); // Cache under original URL
-                setRenderTick((t) => t + 1);
-              };
-              pngImg.onerror = () => {
-                console.log('❌ PNG logo also failed due to CORS:', pngUrl);
-                // Remove from cache so it doesn't keep trying
-                cache.delete(logoUrl);
-              };
-              pngImg.src = pngUrl;
-            } else {
-              // Remove from cache so it doesn't keep trying
-              cache.delete(logoUrl);
-            }
+            console.log('❌ Logo failed to load:', logoUrl);
+            // Remove from cache so it doesn't keep trying
+            cache.delete(logoUrl);
           };
           img.src = logoUrl;
           cache.set(logoUrl, img);
         }
         if (img && img.complete && img.naturalWidth > 0) {
-          const size = radius * 2;
-          console.log('🎨 Drawing logo for node', n.id, 'at position', n.x, n.y);
+          console.log('🎨 Drawing logo as circular node', n.id, 'at position', n.x, n.y);
           try {
+            // Create circular clipping path for the logo
             ctx.save();
             ctx.beginPath();
             ctx.arc(n.x, n.y, radius, 0, Math.PI * 2);
             ctx.closePath();
             ctx.clip();
-            ctx.drawImage(img, n.x - size / 2, n.y - size / 2, size, size);
+            
+            // Draw the logo to fill the entire clipped circle
+            const logoSize = radius * 2; // Use the standard node size
+            ctx.drawImage(img, n.x - logoSize / 2, n.y - logoSize / 2, logoSize, logoSize);
             ctx.restore();
           } catch (error) {
             console.log('❌ Error drawing logo for node', n.id, ':', error);
-            // Fallback to default color if drawing fails
-            ctx.fillStyle = '#111827';
+            // Fallback if drawing fails - show circle with border and background
+            // Draw circle with background and border
+            ctx.beginPath();
+            ctx.arc(n.x, n.y, radius, 0, Math.PI * 2);
+            ctx.fillStyle = '#f3f4f6'; // Light gray background
             ctx.fill();
+            ctx.strokeStyle = '#d1d5db'; // Light gray border
+            ctx.lineWidth = 2 / zoom;
+            ctx.stroke();
+            
+            const displayText = (n.label && n.label !== n.id) ? n.label.charAt(0).toUpperCase() : 
+                               n.entityId ? n.entityId.charAt(0).toUpperCase() :
+                               n.entityType ? n.entityType.charAt(0).toUpperCase() : '?';
+            ctx.fillStyle = '#374151'; // Dark gray text
+            ctx.font = `bold ${14 / zoom}px Inter, system-ui, sans-serif`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(displayText, n.x, n.y);
           }
         } else {
-          // Fallback to default color while logo is loading or if image is broken
-          console.log('🎨 Using default color for node', n.id, '- logo not ready or broken');
-          ctx.fillStyle = '#111827';
+          // Fallback while logo is loading or if image is broken - show circle with border and background
+          console.log('🎨 Using styled background for node', n.id, '- logo not ready or broken');
+          
+          // Draw circle with background and border
+          ctx.beginPath();
+          ctx.arc(n.x, n.y, radius, 0, Math.PI * 2);
+          ctx.fillStyle = '#f3f4f6'; // Light gray background
           ctx.fill();
+          ctx.strokeStyle = '#d1d5db'; // Light gray border
+          ctx.lineWidth = 2 / zoom;
+          ctx.stroke();
+          
+          // Add text indicator with first letter of entity name or type
+          const displayText = (n.label && n.label !== n.id) ? n.label.charAt(0).toUpperCase() : 
+                             n.entityId ? n.entityId.charAt(0).toUpperCase() :
+                             n.entityType ? n.entityType.charAt(0).toUpperCase() : '?';
+          ctx.fillStyle = '#374151'; // Dark gray text
+          ctx.font = `bold ${14 / zoom}px Inter, system-ui, sans-serif`;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(displayText, n.x, n.y);
         }
       } else {
-        // No logo available, use default color
-        ctx.fillStyle = '#111827';
+        // No logo available - show circle with border and background
+        // Draw circle with background and border
+        ctx.beginPath();
+        ctx.arc(n.x, n.y, radius, 0, Math.PI * 2);
+        ctx.fillStyle = '#f3f4f6'; // Light gray background
         ctx.fill();
+        ctx.strokeStyle = '#d1d5db'; // Light gray border
+        ctx.lineWidth = 2 / zoom;
+        ctx.stroke();
+        
+        const displayText = (n.label && n.label !== n.id) ? n.label.charAt(0).toUpperCase() : 
+                           n.entityId ? n.entityId.charAt(0).toUpperCase() :
+                           n.entityType ? n.entityType.charAt(0).toUpperCase() : '?';
+        ctx.fillStyle = '#374151'; // Dark gray text
+        ctx.font = `bold ${14 / zoom}px Inter, system-ui, sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(displayText, n.x, n.y);
       }
       
       ctx.lineWidth = 2 / zoom;
@@ -832,32 +875,46 @@ export const NetworkGraph = forwardRef<NetworkGraphHandle, NetworkGraphProps>(({
     }
 
     ctx.restore();
-  }, [dpi, drawArrow, nodes, connections, pan.x, pan.y, zoom, hoverNodeId, renderTick, utxoCollapseMode, activeTool, activeColor, drawingLine, drawingShape, textInput, drawingHistory]);
+  }, [dpi, drawArrow, nodes, connections, pan.x, pan.y, zoom, hoverNodeId, renderTick, utxoCollapseMode, activeTool, activeColor, drawingLine, drawingShape, textInput, drawingHistory, getNodeLogoUrl]);
 
   useEffect(() => {
     drawConnections();
   }, [drawConnections]);
 
-  // Effect to load logos when nodes change
-  useEffect(() => {
-    const nodesWithEntityData = nodes.filter(node => node.entityId || node.entityType);
-    if (nodesWithEntityData.length > 0) {
-      console.log('Nodes with entity data:', nodesWithEntityData.map(n => ({ id: n.id, entityId: n.entityId, entityType: n.entityType })));
-      loadAllNodeLogos();
-    }
-  }, [nodes]); // Only depend on nodes, not loadAllNodeLogos
 
-  // Center on a node by id when requested
-  useEffect(() => {
-    if (!canvasRef.current) return;
-    if (!nodes.length) return;
-    // Center logic can be added here if needed
-  }, []);
 
+  // Center on a node by id when requested (only once per node)
   useEffect(() => {
-    if (!canvasRef.current || !nodes.length) return;
-    // centerNodeId prop
-  }, [nodes.length]);
+    if (!canvasRef.current || !centerNodeId || !nodes.length) return;
+    
+    // Only center if we haven't centered on this node before
+    if (centeredNodeId === centerNodeId) return;
+    
+    const targetNode = nodes.find(node => node.id === centerNodeId);
+    if (!targetNode) return;
+    
+    // Get canvas dimensions
+    const canvas = canvasRef.current;
+    const rect = canvas.getBoundingClientRect();
+    const canvasWidth = rect.width;
+    const canvasHeight = rect.height;
+    
+    // Calculate the right center position (75% from left, 50% from top)
+    const targetX = canvasWidth * 0.75;
+    const targetY = canvasHeight * 0.5;
+    
+    // Calculate the pan offset needed to center the node at the target position
+    const panX = targetX - (targetNode.x * zoom);
+    const panY = targetY - (targetNode.y * zoom);
+    
+    console.log('🎯 Centering node', centerNodeId, 'to right center of view (first time)');
+    console.log('Node position:', targetNode.x, targetNode.y);
+    console.log('Target view position:', targetX, targetY);
+    console.log('New pan position:', panX, panY);
+    
+    setPan({ x: panX, y: panY });
+    setCenteredNodeId(centerNodeId); // Mark this node as centered
+  }, [centerNodeId, nodes, zoom, centeredNodeId]);
 
   // helpers to convert screen to world coords
   const toWorld = (sx: number, sy: number) => {
