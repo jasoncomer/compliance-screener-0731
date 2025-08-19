@@ -5,6 +5,10 @@ import { getBlockchainType } from '../../utils/addressValidation';
 import { NetworkGraph, FTConnection, FTNode, NetworkGraphHandle } from './components/NetworkGraph';
 import { Toolbar } from './components/Toolbar';
 import { DrawingToolbar, DrawingTool } from './components/DrawingToolbar';
+
+import { LoadingIndicator, LoadingOverlay } from './components/LoadingIndicator';
+import { DebugPanel } from './components/DebugPanel';
+import { HelpSystem } from './components/HelpSystem';
 import LeftPanel from './components/LeftPanel';
 import NodeTxPicker from './components/NodeTxPicker';
 
@@ -29,6 +33,7 @@ const FlowTracePage: React.FC = () => {
   const [drawingHistory, setDrawingHistory] = useState<any[]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
   const [hasSelection] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const graphRef = React.useRef<NetworkGraphHandle | null>(null);
 
   // Function to fetch and set left panel data for an address
@@ -122,6 +127,72 @@ const FlowTracePage: React.FC = () => {
       type: 'custom'
     };
     setNodes(prev => [...prev, newNode]);
+  };
+
+  const handleConnectionColorChange = (txHash: string, color: string) => {
+    setConnections(prev => prev.map(conn => 
+      conn.txHash === txHash ? { ...conn, customColor: color } : conn
+    ));
+  };
+
+  const handleConnectionColorReset = (txHash: string) => {
+    setConnections(prev => prev.map(conn => 
+      conn.txHash === txHash ? { ...conn, customColor: undefined } : conn
+    ));
+  };
+
+  const handleClearData = () => {
+    if (window.confirm('Are you sure you want to clear all data? This action cannot be undone.')) {
+      setNodes([]);
+      setConnections([]);
+      setDrawingHistory([]);
+      setHistoryIndex(-1);
+      setCurrentAddress('');
+      setCenterNodeId('');
+    }
+  };
+
+  const handleImportData = (data: any) => {
+    try {
+      if (data.nodes) setNodes(data.nodes);
+      if (data.connections) setConnections(data.connections);
+      console.log('Data imported successfully');
+    } catch (error) {
+      console.error('Failed to import data:', error);
+    }
+  };
+
+  const handleTrace = async () => {
+    if (!address) return;
+    setIsLoading(true);
+    try {
+      // Only add the node, don't open picker
+      setCenterNodeId(address);
+      // Fetch background data and hydrate once available
+      await fetchAndSetLeftPanelData(address);
+
+      // Add node to graph
+      const newNode: FTNode = {
+        id: address,
+        label: address, // Will be updated by prefetchProfilesAndLogos
+        x: 300,
+        y: 240,
+        type: 'wallet', // Will be updated by prefetchProfilesAndLogos
+      };
+
+      setNodes(prev => {
+        const exists = prev.find(n => n.id === address);
+        if (exists) return prev;
+        return [...prev, newNode];
+      });
+
+      // Fetch entity profile and logo for the new node
+      prefetchProfilesAndLogos([address]);
+    } catch (error) {
+      console.error('Error:', error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // Prefetch attribution profile and logos for a list of addresses
@@ -323,7 +394,13 @@ const FlowTracePage: React.FC = () => {
   return (
     <div className="h-full w-full flex flex-col">
       <div className="p-3 border-b border-gray-200 dark:border-gray-800 flex items-center gap-2 justify-between">
-        <div className="flex items-center gap-2">
+        <form 
+          className="flex items-center gap-2"
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleTrace();
+          }}
+        >
           <input
             className={`text-sm px-3 py-2 rounded border w-96 transition-colors ${
               theme === 'dark'
@@ -335,39 +412,20 @@ const FlowTracePage: React.FC = () => {
             onChange={(e) => setAddress(e.target.value)}
           />
           <button
-            className="px-3 py-2 bg-orange-600 text-white rounded"
-            onClick={async () => {
-              if (!address) return;
-              try {
-                // Only add the node, don't open picker
-                setCenterNodeId(address);
-                // Fetch background data and hydrate once available
-                await fetchAndSetLeftPanelData(address);
-
-                // Add node to graph
-                const newNode: FTNode = {
-                  id: address,
-                  label: address, // Will be updated by prefetchProfilesAndLogos
-                  x: 300,
-                  y: 240,
-                  type: 'wallet', // Will be updated by prefetchProfilesAndLogos
-                };
-
-                setNodes(prev => {
-                  const exists = prev.find(n => n.id === address);
-                  if (exists) return prev;
-                  return [...prev, newNode];
-                });
-
-                // Fetch entity profile and logo for the new node
-                prefetchProfilesAndLogos([address]);
-              } catch (error) {
-                console.error('Error:', error);
-              }
-            }}
+            type="submit"
+            className="px-6 py-1.5 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-medium rounded-lg shadow-md hover:shadow-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 min-w-[80px] justify-center"
+            disabled={isLoading}
           >
-            Trace
+            {isLoading ? (
+              <LoadingIndicator isLoading={true} size="sm" message="" />
+            ) : (
+              'Trace'
+            )}
           </button>
+        </form>
+        
+        <div className="flex items-center gap-2">
+          <HelpSystem />
         </div>
       </div>
 
@@ -399,6 +457,13 @@ const FlowTracePage: React.FC = () => {
           canUndo={historyIndex > 0}
           canRedo={historyIndex < drawingHistory.length - 1}
           hasSelection={hasSelection}
+        />
+
+        <DebugPanel
+          nodes={nodes}
+          connections={connections}
+          onClearData={handleClearData}
+          onImportData={handleImportData}
         />
 
         <div className="absolute top-12 left-0 right-0 bottom-0">
@@ -440,6 +505,8 @@ const FlowTracePage: React.FC = () => {
             activeColor={activeColor}
             onDrawingAction={handleDrawingAction}
             drawingHistory={drawingHistory.slice(0, historyIndex + 1)}
+            onConnectionColorChange={handleConnectionColorChange}
+            onConnectionColorReset={handleConnectionColorReset}
           />
 
           {/* Left Panel - positioned absolutely */}
@@ -458,6 +525,8 @@ const FlowTracePage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      <LoadingOverlay isLoading={isLoading} message="Tracing address..." />
 
       <NodeTxPicker
         open={nodeTxPickerOpen}

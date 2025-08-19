@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState, forwardRef, useImperativeHandle } from 'react';
+import { EdgeColorPicker } from './EdgeColorPicker';
 
 export type FTNode = {
   id: string;
@@ -59,6 +60,8 @@ interface NetworkGraphProps {
   activeColor?: string
   onDrawingAction?: (action: { type: string; data: any }) => void
   drawingHistory?: any[]
+  onConnectionColorChange?: (txHash: string, color: string) => void
+  onConnectionColorReset?: (txHash: string) => void
 }
 
 export type NetworkGraphHandle = {
@@ -81,7 +84,9 @@ export const NetworkGraph = forwardRef<NetworkGraphHandle, NetworkGraphProps>(({
   activeTool = 'select',
   activeColor = '#ff6b35',
   onDrawingAction,
-  drawingHistory = []
+  drawingHistory = [],
+  onConnectionColorChange,
+  onConnectionColorReset
 }, ref) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [pan, setPan] = useState({ x: 0, y: 0 });
@@ -97,6 +102,10 @@ export const NetworkGraph = forwardRef<NetworkGraphHandle, NetworkGraphProps>(({
   const [drawingLine, setDrawingLine] = useState<{ start: { x: number; y: number }; end: { x: number; y: number } } | null>(null);
   const [drawingShape, setDrawingShape] = useState<{ start: { x: number; y: number }; end: { x: number; y: number } } | null>(null);
   const [textInput, setTextInput] = useState<{ x: number; y: number; text: string } | null>(null);
+  
+  // Edge color picker state
+  const [edgeColorPickerOpen, setEdgeColorPickerOpen] = useState(false);
+  const [selectedConnection, setSelectedConnection] = useState<FTConnection | null>(null);
 
   const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(max, v));
 
@@ -873,7 +882,11 @@ export const NetworkGraph = forwardRef<NetworkGraphHandle, NetworkGraphProps>(({
       const threshold = 8 / zoom; // world units threshold adjusted by zoom
       if (bestIdx >= 0 && bestDist <= threshold) {
         const conn = connections[bestIdx];
-        if (conn && onEdgeClick) onEdgeClick(conn);
+        if (conn) {
+          setSelectedConnection(conn);
+          setEdgeColorPickerOpen(true);
+          if (onEdgeClick) onEdgeClick(conn);
+        }
         // do not start panning on edge click
         return;
       }
@@ -985,15 +998,38 @@ export const NetworkGraph = forwardRef<NetworkGraphHandle, NetworkGraphProps>(({
     }
   };
 
+  const handleColorChange = (color: string) => {
+    if (selectedConnection && onConnectionColorChange) {
+      onConnectionColorChange(selectedConnection.txHash, color);
+    }
+  };
+
+  const handleColorReset = () => {
+    if (selectedConnection && onConnectionColorReset) {
+      onConnectionColorReset(selectedConnection.txHash);
+    }
+  };
+
   return (
-    <canvas
-      ref={canvasRef}
-      className="w-full h-full bg-white dark:bg-black"
-      onPointerDown={onPointerDown}
-      onPointerMove={(e) => { onPointerMove(e); onPointerMoveHover(e); }}
-      onPointerUp={onPointerUp}
-      onDoubleClick={onDoubleClick}
-    />
+    <>
+      <canvas
+        ref={canvasRef}
+        className="w-full h-full bg-white dark:bg-black"
+        onPointerDown={onPointerDown}
+        onPointerMove={(e) => { onPointerMove(e); onPointerMoveHover(e); }}
+        onPointerUp={onPointerUp}
+        onDoubleClick={onDoubleClick}
+      />
+      
+      <EdgeColorPicker
+        open={edgeColorPickerOpen}
+        onOpenChange={setEdgeColorPickerOpen}
+        txHash={selectedConnection?.txHash || ''}
+        currentColor={selectedConnection?.customColor}
+        onColorChange={handleColorChange}
+        onReset={handleColorReset}
+      />
+    </>
   );
 });
 
