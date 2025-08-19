@@ -4,6 +4,9 @@ import { Copy, Pencil, ChevronLeft, ChevronRight, ArrowUpRight, ArrowDownRight }
 import { useAddressTransactions } from '../../../hooks/useAddressTransactions';
 import { transformBtcTransactions } from '../../../utils/transactionTransformers';
 import { useCryptoPrices } from '../../../hooks/useCryptoPrices';
+import AddressNotes from './AddressNotes';
+import { useAppSelector } from '../../../store/hooks';
+import { selectActiveOrganization } from '../../../store/slices/organizationsSlice';
 
 const formatCompact = (value: number | string | undefined) => {
   if (value === undefined || value === null || value === '') return '—';
@@ -94,6 +97,8 @@ const CustomTransactionHistory: React.FC<{ address: string }> = ({ address }) =>
       </div>
     );
   }
+
+  // Removed org selector here; org is resolved in parent component scope
 
   return (
     <div className="h-full flex flex-col">
@@ -207,6 +212,8 @@ const LeftPanel: React.FC<Props> = ({
   isExpanded = true,
   onToggle 
 }) => {
+  const activeOrg = useAppSelector(selectActiveOrganization as any) as any;
+  const orgId = activeOrg?._id as string | undefined;
   const [copied, setCopied] = useState(false);
   const onCopy = async () => {
     try {
@@ -417,12 +424,7 @@ const LeftPanel: React.FC<Props> = ({
                 <div className="h-2 w-2 rounded-full bg-green-500"></div>
                 <h3 className="font-semibold text-gray-900 dark:text-gray-100">Notes</h3>
               </div>
-              <div className="text-sm text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-800 rounded-lg p-3 border border-gray-200 dark:border-gray-700">
-                <div className="flex items-center gap-2 text-gray-400">
-                  <Pencil className="h-4 w-4" />
-                  <span>No notes yet. Click to add notes.</span>
-                </div>
-              </div>
+              <AddressNotes address={address || null} organizationId={orgId} />
             </div>
 
             {/* Transaction History */}

@@ -6,6 +6,7 @@ import { NetworkGraph, FTConnection, FTNode } from './components/NetworkGraph';
 import { Toolbar } from './components/Toolbar';
 import LeftPanel from './components/LeftPanel';
 import NodeTxPicker from './components/NodeTxPicker';
+
 import { LogoService } from '../../services/logoService';
 
 const FlowTracePage: React.FC = () => {
@@ -19,6 +20,7 @@ const FlowTracePage: React.FC = () => {
   const [currentAddress, setCurrentAddress] = useState<string>('');
   const [isExpanded, setIsExpanded] = useState(true);
   const [utxoCollapseMode, setUtxoCollapseMode] = useState<"aggregated" | "individual">("aggregated");
+
 
   // Prefetch attribution profile and logos for a list of addresses
   const prefetchProfilesAndLogos = async (addresses: string[]) => {
@@ -366,7 +368,7 @@ const FlowTracePage: React.FC = () => {
           {/* Left Panel - positioned absolutely */}
           <div className="absolute top-0 left-0 h-full z-20">
             <LeftPanel
-              address={centerNodeId || undefined}
+              address={currentAddress || centerNodeId || undefined}
               network={leftPanelData?.network}
               balance={leftPanelData?.balance}
               usdValue={leftPanelData?.usdValue}

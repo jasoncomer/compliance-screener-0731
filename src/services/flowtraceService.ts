@@ -1,4 +1,4 @@
-import { axiosInstance } from '../api/api';
+import { axiosInstance, api } from '../api/api';
 
 export interface AddressDataResponse {
   address: string;
@@ -196,6 +196,31 @@ export const flowtraceService = {
     ]);
     const totalTxs = (txs as any)?.pagination?.totalTxs ?? (txs as any)?.total ?? 0;
     return { totalTxs };
+  },
+
+  // Note-related methods
+  async fetchAddressNotes(address: string, organizationId?: string) {
+    const orgId = organizationId ?? localStorage.getItem('organizationId') ?? '';
+    return api.notes.getAddressNotes(orgId, address);
+  },
+
+  async createAddressNote(address: string, content: string, organizationId?: string) {
+    const orgId = organizationId ?? localStorage.getItem('organizationId') ?? '';
+    return api.notes.create(orgId, {
+      address,
+      content,
+      type: 'address'
+    });
+  },
+
+  async updateNote(noteId: string, content: string, organizationId?: string) {
+    const orgId = organizationId ?? localStorage.getItem('organizationId') ?? '';
+    return api.notes.update(orgId, noteId, { content });
+  },
+
+  async deleteNote(noteId: string, organizationId?: string) {
+    const orgId = organizationId ?? localStorage.getItem('organizationId') ?? '';
+    return api.notes.delete(orgId, noteId);
   },
 };
 
