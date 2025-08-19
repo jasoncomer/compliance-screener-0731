@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState, forwardRef, useImperativeHandle, useMemo } from 'react';
 import { EdgeColorPicker } from './EdgeColorPicker';
-import { useLogo } from '../../../hooks/useLogo';
 
 export type FTNode = {
   id: string;

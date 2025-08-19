@@ -65,16 +65,16 @@ const SideNav: React.FC<SideNavProps> = ({ theme, collapsed, onCollapse }) => {
   };
 
   const navigationItems = [
-    {
-      key: 'compliance-screener',
-      icon: <Search />,
-      label: 'Compliance Screener',
-    },
-    {
-      key: 'compliance-dashboard',
-      icon: <BarChart3 />,
-      label: 'Compliance Dashboard',
-    },
+    // {
+    //   key: 'compliance-screener',
+    //   icon: <Search />,
+    //   label: 'Compliance Screener',
+    // },
+    // {
+    //   key: 'compliance-dashboard',
+    //   icon: <BarChart3 />,
+    //   label: 'Compliance Dashboard',
+    // },
     {
       key: 'block-explorer',
       icon: <Globe />,

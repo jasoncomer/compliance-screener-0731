@@ -1,5 +1,4 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { useTheme } from '../../context/ThemeContext';
 import { flowtraceService } from '../../services/flowtraceService';
 import { Network } from 'lucide-react';
 
@@ -18,7 +17,6 @@ import AddressSearchInput from '../../components/common/AddressSearchInput';
 import ViewWrapper from '../../components/ViewWrapper';
 
 const FlowTracePage: React.FC = () => {
-  const { theme } = useTheme();
   const [address, setAddress] = useState('');
   const [nodes, setNodes] = useState<FTNode[]>([]);
   const [connections, setConnections] = useState<FTConnection[]>([]);

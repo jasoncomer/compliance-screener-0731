@@ -120,20 +120,10 @@ export const HelpSystem: React.FC<HelpSystemProps> = ({ className = '' }) => {
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden">
           <DialogHeader>
-            <div className="flex items-center justify-between">
-              <DialogTitle className="flex items-center gap-2">
-                <HelpCircle className="h-5 w-5" />
-                Interactive Tutorial
-              </DialogTitle>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setIsOpen(false)}
-                className="h-6 w-6 p-0"
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
+            <DialogTitle className="flex items-center gap-2">
+              <HelpCircle className="h-5 w-5" />
+              Interactive Tutorial
+            </DialogTitle>
           </DialogHeader>
 
           <div className="flex flex-col h-full">
