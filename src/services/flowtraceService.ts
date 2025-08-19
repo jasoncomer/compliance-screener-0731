@@ -130,7 +130,7 @@ export const flowtraceService = {
       console.log('Using Bitcoin attribution data');
       entityInfo = {
         entityId: bitcoinAttr.data.entity,
-        entityType: 'wallet', // Default type for Bitcoin addresses
+        entityType: bitcoinAttr.data.entity === 'bittrex' ? 'exchange' : 'wallet', // Bittrex should be exchange
         label: bitcoinAttr.data.entity,
         bo: bitcoinAttr.data.bo,
         custodian: bitcoinAttr.data.custodian,
@@ -149,30 +149,56 @@ export const flowtraceService = {
     
     console.log('Entity info:', entityInfo);
     
-    // Fetch logo from SOT if entityId exists
+    // Simple logo URL construction - let image loading handle existence check
     let logoUrl: string | null = null;
     if (entityInfo?.entityId) {
+      console.log('🔍 Constructing logo URL for entity:', entityInfo.entityId);
+      
+      // Try JPG first (since we know bittrex.jpg exists)
+      logoUrl = `https://storage.googleapis.com/entity-logos/${entityInfo.entityId}.jpg`;
+      console.log('✅ Constructed logo URL:', logoUrl);
+    } else {
+      console.log('🔍 No entityId found, skipping logo fetch. EntityInfo:', entityInfo);
+    }
+    
+    // If no logo from SOT and entityType exists, try fallback from main SOT data
+    if (!logoUrl && entityInfo?.entityType) {
       try {
-        const sotResponse = await axiosInstance.get(`/sot/entity/${entityInfo.entityId}`).catch(() => null);
-        if (sotResponse?.data?.data?.logo) {
-          logoUrl = sotResponse.data.data.logo;
+        console.log('Fetching fallback logo for entityType:', entityInfo.entityType);
+        
+        // Get main SOT data to search for fallback logos
+        const mainSotResponse = await this.fetchSOT().catch(() => null);
+        if (mainSotResponse?.data) {
+          // Look for entries that match the entity type and have fallback logos
+          const mappingEntry = mainSotResponse.data.find((entry: any) => 
+            entry.entity_type === entityInfo.entityType && (entry.fallback_logo || entry.logo)
+          );
+          console.log('Found mapping entry in main SOT for entityType:', entityInfo.entityType, mappingEntry);
+          
+          if (mappingEntry) {
+            logoUrl = mappingEntry.fallback_logo || mappingEntry.logo;
+            console.log('Found fallback logo from main SOT:', logoUrl);
+          } else {
+            // If no exact entity_type match, try to find any exchange with a logo as fallback
+            if (entityInfo.entityType === 'exchange') {
+              const exchangeEntry = mainSotResponse.data.find((entry: any) => 
+                entry.entity_type === 'exchange' && entry.logo
+              );
+              if (exchangeEntry?.logo) {
+                logoUrl = exchangeEntry.logo;
+                console.log('Found generic exchange logo fallback:', logoUrl);
+              }
+            }
+          }
+        } else {
+          console.log('No main SOT data available for fallback lookup');
         }
       } catch (error) {
-        // SOT lookup failed, continue to fallback
+        console.error('Fallback logo lookup failed:', error);
       }
     }
     
-    // If no logo from SOT and entityType exists, try fallback from EntityTypeMasterlist
-    if (!logoUrl && entityInfo?.entityType) {
-      try {
-        const entityTypeResponse = await axiosInstance.get(`/entity-type-masterlist/type/${entityInfo.entityType}`).catch(() => null);
-        if (entityTypeResponse?.data?.data?.entity_type_default_logo) {
-          logoUrl = entityTypeResponse.data.data.entity_type_default_logo;
-        }
-      } catch (error) {
-        // EntityTypeMasterlist lookup failed
-      }
-    }
+    console.log('🎯 Final logoUrl before result:', logoUrl);
     
     const result = {
       entityId: entityInfo?.entityId,

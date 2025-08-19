@@ -106,8 +106,59 @@ export const NetworkGraph = forwardRef<NetworkGraphHandle, NetworkGraphProps>(({
   // Edge color picker state
   const [edgeColorPickerOpen, setEdgeColorPickerOpen] = useState(false);
   const [selectedConnection, setSelectedConnection] = useState<FTConnection | null>(null);
+  
+  // Logo state
+  const [nodeLogos, setNodeLogos] = useState<Map<string, string>>(new Map());
+  const [logoLoading, setLogoLoading] = useState<Set<string>>(new Set());
 
   const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(max, v));
+
+  // Load logo for a node
+  const loadNodeLogo = useCallback(async (node: FTNode) => {
+    console.log('loadNodeLogo called for node:', node.id, 'entityId:', node.entityId, 'entityType:', node.entityType);
+    
+    if (nodeLogos.has(node.id) || logoLoading.has(node.id)) {
+      console.log('Logo already loaded or loading for node:', node.id);
+      return; // Already loaded or loading
+    }
+
+    setLogoLoading(prev => new Set(prev).add(node.id));
+
+    try {
+      // The logo URL should already be in the node data from SOT
+      const logoUrl = node.logoUrl;
+      console.log('Logo URL from node data for', node.id, ':', logoUrl);
+      if (logoUrl) {
+        setNodeLogos(prev => new Map(prev).set(node.id, logoUrl));
+        console.log('Logo set for node:', node.id, 'URL:', logoUrl);
+      }
+    } catch (error) {
+      console.warn(`Failed to load logo for node ${node.id}:`, error);
+    } finally {
+      setLogoLoading(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(node.id);
+        return newSet;
+      });
+    }
+  }, [nodeLogos, logoLoading]);
+
+  // Load logos for all nodes
+  const loadAllNodeLogos = useCallback(async () => {
+    const nodesToLoad = nodes.filter(node => 
+      !nodeLogos.has(node.id) && 
+      !logoLoading.has(node.id) && 
+      (node.entityId || node.entityType)
+    );
+
+    if (nodesToLoad.length === 0) return;
+
+    console.log('Loading logos for nodes:', nodesToLoad.map(n => ({ id: n.id, entityId: n.entityId, entityType: n.entityType })));
+    
+    await Promise.allSettled(
+      nodesToLoad.map(node => loadNodeLogo(node))
+    );
+  }, [nodes, nodeLogos, logoLoading, loadNodeLogo]);
 
   const dpi = typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1;
   const imageCacheRef = useRef<Map<string, HTMLImageElement>>(new Map());
@@ -518,36 +569,86 @@ export const NetworkGraph = forwardRef<NetworkGraphHandle, NetworkGraphProps>(({
     nodes.forEach((n) => {
       const radius = 20;
       const active = hoverNodeId === n.id;
+      
+      // Get logo URL from our logo service
+      const logoUrl = nodeLogos.get(n.id);
+      
       ctx.beginPath();
       ctx.arc(n.x, n.y, radius, 0, Math.PI * 2);
-      ctx.fillStyle = '#111827';
-      ctx.fill();
-      ctx.lineWidth = 2 / zoom;
-      ctx.strokeStyle = active ? '#f97316' : '#374151';
-      ctx.stroke();
-
-      // draw logo if available
-      if (n.logoUrl) {
+      
+      // Use logo if available, otherwise use default color
+      console.log('🎨 Rendering node', n.id, 'with logoUrl:', logoUrl);
+      if (logoUrl) {
         const cache = imageCacheRef.current;
-        let img = cache.get(n.logoUrl);
+        let img = cache.get(logoUrl);
         if (!img) {
           img = new Image();
           img.crossOrigin = 'anonymous';
-          img.onload = () => setRenderTick((t) => t + 1);
-          img.src = n.logoUrl;
-          cache.set(n.logoUrl, img);
+          img.onload = () => {
+            console.log('✅ Logo loaded successfully:', logoUrl);
+            setRenderTick((t) => t + 1);
+          };
+          img.onerror = () => {
+            console.log('❌ Logo failed to load due to CORS, trying PNG fallback:', logoUrl);
+            // Try PNG fallback if JPG fails
+            if (logoUrl.endsWith('.jpg')) {
+              const pngUrl = logoUrl.replace('.jpg', '.png');
+              console.log('🔄 Trying PNG fallback:', pngUrl);
+              
+              // Create new image for PNG
+              const pngImg = new Image();
+              pngImg.crossOrigin = 'anonymous';
+              pngImg.onload = () => {
+                console.log('✅ PNG logo loaded successfully:', pngUrl);
+                cache.set(logoUrl, pngImg); // Cache under original URL
+                setRenderTick((t) => t + 1);
+              };
+              pngImg.onerror = () => {
+                console.log('❌ PNG logo also failed due to CORS:', pngUrl);
+                // Remove from cache so it doesn't keep trying
+                cache.delete(logoUrl);
+              };
+              pngImg.src = pngUrl;
+            } else {
+              // Remove from cache so it doesn't keep trying
+              cache.delete(logoUrl);
+            }
+          };
+          img.src = logoUrl;
+          cache.set(logoUrl, img);
         }
-        if (img && img.complete) {
-          const size = (radius - 4) * 2;
-          ctx.save();
-          ctx.beginPath();
-          ctx.arc(n.x, n.y, radius - 4, 0, Math.PI * 2);
-          ctx.closePath();
-          ctx.clip();
-          ctx.drawImage(img, n.x - size / 2, n.y - size / 2, size, size);
-          ctx.restore();
+        if (img && img.complete && img.naturalWidth > 0) {
+          const size = radius * 2;
+          console.log('🎨 Drawing logo for node', n.id, 'at position', n.x, n.y);
+          try {
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(n.x, n.y, radius, 0, Math.PI * 2);
+            ctx.closePath();
+            ctx.clip();
+            ctx.drawImage(img, n.x - size / 2, n.y - size / 2, size, size);
+            ctx.restore();
+          } catch (error) {
+            console.log('❌ Error drawing logo for node', n.id, ':', error);
+            // Fallback to default color if drawing fails
+            ctx.fillStyle = '#111827';
+            ctx.fill();
+          }
+        } else {
+          // Fallback to default color while logo is loading or if image is broken
+          console.log('🎨 Using default color for node', n.id, '- logo not ready or broken');
+          ctx.fillStyle = '#111827';
+          ctx.fill();
         }
+      } else {
+        // No logo available, use default color
+        ctx.fillStyle = '#111827';
+        ctx.fill();
       }
+      
+      ctx.lineWidth = 2 / zoom;
+      ctx.strokeStyle = active ? '#f97316' : '#374151';
+      ctx.stroke();
 
       // risk ring
       if (typeof n.risk === 'number') {
@@ -736,6 +837,15 @@ export const NetworkGraph = forwardRef<NetworkGraphHandle, NetworkGraphProps>(({
   useEffect(() => {
     drawConnections();
   }, [drawConnections]);
+
+  // Effect to load logos when nodes change
+  useEffect(() => {
+    const nodesWithEntityData = nodes.filter(node => node.entityId || node.entityType);
+    if (nodesWithEntityData.length > 0) {
+      console.log('Nodes with entity data:', nodesWithEntityData.map(n => ({ id: n.id, entityId: n.entityId, entityType: n.entityType })));
+      loadAllNodeLogos();
+    }
+  }, [nodes]); // Only depend on nodes, not loadAllNodeLogos
 
   // Center on a node by id when requested
   useEffect(() => {
