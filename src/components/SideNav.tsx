@@ -5,7 +5,6 @@ import {
   Settings, 
   Users,
   Menu,
-  Search,
   BarChart3,
   Globe,
   Database,

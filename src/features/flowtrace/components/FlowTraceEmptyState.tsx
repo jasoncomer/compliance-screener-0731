@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowLeftRight, Network, GitBranch, Search, Zap, Shield, TrendingUp } from 'lucide-react';
+import { ArrowLeftRight, Network, GitBranch, Zap, Shield, TrendingUp } from 'lucide-react';
 import EmptyState from '../../../components/common/EmptyState';
 
 const FlowTraceEmptyState: React.FC = () => (
