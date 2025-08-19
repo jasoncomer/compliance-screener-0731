@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState, forwardRef, useImperativeHandle } from 'react';
 
 export type FTNode = {
   id: string;
@@ -49,21 +49,40 @@ interface NetworkGraphProps {
   nodes: FTNode[]
   connections: FTConnection[]
   onNodeClick: (node: FTNode) => void
+  onNodeDoubleClick?: (node: FTNode) => void
   onNodeDrag: (nodeId: string, x: number, y: number) => void
   onEdgeClick: (connection: FTConnection) => void
   onNodeRemove: (nodeId: string) => void
+  onNodeAdd: (node: FTNode) => void
   utxoCollapseMode: "aggregated" | "individual"
+  activeTool?: 'select' | 'draw' | 'rectangle' | 'circle' | 'text'
+  activeColor?: string
+  onDrawingAction?: (action: { type: string; data: any }) => void
+  drawingHistory?: any[]
 }
 
-export const NetworkGraph: React.FC<NetworkGraphProps> = ({
+export type NetworkGraphHandle = {
+  zoomIn: () => void
+  zoomOut: () => void
+  resetView: () => void
+  forceRender: () => void
+}
+
+export const NetworkGraph = forwardRef<NetworkGraphHandle, NetworkGraphProps>(({ 
   nodes,
   connections,
   onNodeClick,
+  onNodeDoubleClick,
   onNodeDrag,
   onEdgeClick,
   onNodeRemove,
-  utxoCollapseMode
-}) => {
+  onNodeAdd,
+  utxoCollapseMode,
+  activeTool = 'select',
+  activeColor = '#ff6b35',
+  onDrawingAction,
+  drawingHistory = []
+}, ref) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
@@ -72,11 +91,28 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
   const [draggedNodeId, setDraggedNodeId] = useState<string | null>(null);
   const [hoverNodeId, setHoverNodeId] = useState<string | null>(null);
   const [renderTick, setRenderTick] = useState(0);
+  
+  // Drawing state
+  const [isDrawing, setIsDrawing] = useState(false);
+  const [drawingLine, setDrawingLine] = useState<{ start: { x: number; y: number }; end: { x: number; y: number } } | null>(null);
+  const [drawingShape, setDrawingShape] = useState<{ start: { x: number; y: number }; end: { x: number; y: number } } | null>(null);
+  const [textInput, setTextInput] = useState<{ x: number; y: number; text: string } | null>(null);
 
   const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(max, v));
 
   const dpi = typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1;
   const imageCacheRef = useRef<Map<string, HTMLImageElement>>(new Map());
+
+  // Expose imperative API for toolbar controls
+  useImperativeHandle(ref, () => ({
+    zoomIn: () => setZoom((z) => Math.min(z * 1.1, 4)),
+    zoomOut: () => setZoom((z) => Math.max(z * 0.9, 0.25)),
+    resetView: () => {
+      setPan({ x: 0, y: 0 });
+      setZoom(1);
+    },
+    forceRender: () => setRenderTick(prev => prev + 1)
+  }), []);
 
   const drawArrow = useCallback((ctx: CanvasRenderingContext2D, x1: number, y1: number, x2: number, y2: number, label?: string) => {
     ctx.beginPath();
@@ -519,21 +555,24 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
       let yOffset = radius + 14;
       
       // Entity name (primary label)
-      if (n.label && n.label !== n.id) {
-        ctx.fillStyle = '#ffffff';
+      if (n.label && (n.label !== n.id || n.type === 'custom')) {
+        const labelColor = n.type === 'custom' ? '#9ca3af' : '#ffffff';
+        ctx.fillStyle = labelColor;
         ctx.font = `bold ${12 / zoom}px Inter, system-ui, sans-serif`;
         ctx.textAlign = 'center';
         ctx.fillText(n.label, n.x, n.y + yOffset);
         yOffset += 16 / zoom;
       }
       
-      // Address (truncated)
-      const addressText = n.id.length > 12 ? `${n.id.slice(0, 6)}...${n.id.slice(-6)}` : n.id;
-      ctx.fillStyle = '#9ca3af';
-      ctx.font = `${10 / zoom}px Inter, system-ui, sans-serif`;
-      ctx.textAlign = 'center';
-      ctx.fillText(addressText, n.x, n.y + yOffset);
-      yOffset += 14 / zoom;
+      // Address (truncated) - only show for non-custom nodes
+      if (n.type !== 'custom') {
+        const addressText = n.id.length > 12 ? `${n.id.slice(0, 6)}...${n.id.slice(-6)}` : n.id;
+        ctx.fillStyle = '#9ca3af';
+        ctx.font = `${10 / zoom}px Inter, system-ui, sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.fillText(addressText, n.x, n.y + yOffset);
+        yOffset += 14 / zoom;
+      }
       
       // Risk score
       if (typeof n.risk === 'number') {
@@ -565,8 +604,30 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
         ctx.fillText(usdText, n.x, n.y + yOffset);
       }
 
+      // add (+) button at top-left of node
+      const addR = 5; // icon radius
+      const addCx = n.x - radius - 6; // a bit offset from circle edge on left side
+      const addCy = n.y - radius - 6;
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(addCx, addCy, addR, 0, Math.PI * 2);
+      ctx.fillStyle = '#10b981'; // green color
+      ctx.fill();
+      // draw +
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 1.8 / zoom;
+      ctx.beginPath();
+      // horizontal line
+      ctx.moveTo(addCx - addR / 2, addCy);
+      ctx.lineTo(addCx + addR / 2, addCy);
+      // vertical line
+      ctx.moveTo(addCx, addCy - addR / 2);
+      ctx.lineTo(addCx, addCy + addR / 2);
+      ctx.stroke();
+      ctx.restore();
+
       // delete (X) button at top-right of node
-      const delR = 8; // icon radius
+      const delR = 5; // icon radius (reduced from 8)
       const delCx = n.x + radius + 6; // a bit offset from circle edge
       const delCy = n.y - radius - 6;
       ctx.save();
@@ -574,9 +635,6 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
       ctx.arc(delCx, delCy, delR, 0, Math.PI * 2);
       ctx.fillStyle = '#ef4444';
       ctx.fill();
-      ctx.lineWidth = 1.5 / zoom;
-      ctx.strokeStyle = '#7f1d1d';
-      ctx.stroke();
       // draw X
       ctx.strokeStyle = '#ffffff';
       ctx.lineWidth = 1.8 / zoom;
@@ -589,8 +647,82 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
       ctx.restore();
     });
 
+    // Draw saved drawing elements from history
+    if (drawingHistory.length > 0) {
+      ctx.save();
+      drawingHistory.forEach((action) => {
+        if (action.type === 'addLine') {
+          ctx.strokeStyle = action.data.color;
+          ctx.lineWidth = 2 / zoom;
+          ctx.beginPath();
+          ctx.moveTo(action.data.line.start.x, action.data.line.start.y);
+          ctx.lineTo(action.data.line.end.x, action.data.line.end.y);
+          ctx.stroke();
+        } else if (action.type === 'addRectangle') {
+          ctx.strokeStyle = action.data.color;
+          ctx.lineWidth = 2 / zoom;
+          const { start, end } = action.data.shape;
+          ctx.strokeRect(start.x, start.y, end.x - start.x, end.y - start.y);
+        } else if (action.type === 'addCircle') {
+          ctx.strokeStyle = action.data.color;
+          ctx.lineWidth = 2 / zoom;
+          const { start, end } = action.data.shape;
+          const radius = Math.sqrt(Math.pow(end.x - start.x, 2) + Math.pow(end.y - start.y, 2));
+          ctx.beginPath();
+          ctx.arc(start.x, start.y, radius, 0, Math.PI * 2);
+          ctx.stroke();
+        } else if (action.type === 'addText') {
+          ctx.fillStyle = action.data.color;
+          ctx.font = `16px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif`;
+          ctx.textAlign = 'left';
+          ctx.textBaseline = 'top';
+          ctx.fillText(action.data.text, action.data.x, action.data.y);
+        }
+      });
+      ctx.restore();
+    }
+
+    // Draw current drawing elements (preview)
+    if (activeTool !== 'select') {
+      ctx.save();
+      ctx.strokeStyle = activeColor;
+      ctx.fillStyle = activeColor;
+      ctx.lineWidth = 2 / zoom;
+
+      // Draw line
+      if (drawingLine) {
+        ctx.beginPath();
+        ctx.moveTo(drawingLine.start.x, drawingLine.start.y);
+        ctx.lineTo(drawingLine.end.x, drawingLine.end.y);
+        ctx.stroke();
+      }
+
+      // Draw shapes
+      if (drawingShape) {
+        const { start, end } = drawingShape;
+        if (activeTool === 'rectangle') {
+          ctx.strokeRect(start.x, start.y, end.x - start.x, end.y - start.y);
+        } else if (activeTool === 'circle') {
+          const radius = Math.sqrt(Math.pow(end.x - start.x, 2) + Math.pow(end.y - start.y, 2));
+          ctx.beginPath();
+          ctx.arc(start.x, start.y, radius, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+      }
+
+      // Draw text input
+      if (textInput) {
+        ctx.font = `16px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif`;
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'top';
+        ctx.fillText(textInput.text, textInput.x, textInput.y);
+      }
+
+      ctx.restore();
+    }
+
     ctx.restore();
-  }, [dpi, drawArrow, nodes, connections, pan.x, pan.y, zoom, hoverNodeId, renderTick, utxoCollapseMode]);
+  }, [dpi, drawArrow, nodes, connections, pan.x, pan.y, zoom, hoverNodeId, renderTick, utxoCollapseMode, activeTool, activeColor, drawingLine, drawingShape, textInput, drawingHistory]);
 
   useEffect(() => {
     drawConnections();
@@ -666,11 +798,50 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
     const mx = e.clientX - rect.left;
     const my = e.clientY - rect.top;
     const w = toWorld(mx, my);
-    // 1) Check delete-X hit BEFORE node hit radius so clicks just outside the node circle are captured
+
+    // Handle drawing tools
+    if (activeTool !== 'select') {
+      if (activeTool === 'draw') {
+        setIsDrawing(true);
+        setDrawingLine({ start: { x: w.x, y: w.y }, end: { x: w.x, y: w.y } });
+        return;
+      } else if (activeTool === 'rectangle' || activeTool === 'circle') {
+        setDrawingShape({ start: { x: w.x, y: w.y }, end: { x: w.x, y: w.y } });
+        return;
+      } else if (activeTool === 'text') {
+        setTextInput({ x: w.x, y: w.y, text: '' });
+        const text = prompt('Enter text:');
+        if (text !== null) {
+          setTextInput({ x: w.x, y: w.y, text });
+          if (onDrawingAction) {
+            onDrawingAction({ type: 'addText', data: { x: w.x, y: w.y, text, color: activeColor } });
+          }
+        }
+        setTextInput(null);
+        return;
+      }
+    }
+
+    // 1) Check add button hit BEFORE node hit radius so clicks just outside the node circle are captured
     for (let i = nodes.length - 1; i >= 0; i--) {
       const n = nodes[i];
       const radius = 20;
-      const delR = 8;
+      const addR = 5;
+      const addCx = n.x - radius - 6;
+      const addCy = n.y - radius - 6;
+      const dx = w.x - addCx;
+      const dy = w.y - addCy;
+      if (dx * dx + dy * dy <= (addR + 5) * (addR + 5)) {
+        onNodeAdd(n);
+        return;
+      }
+    }
+
+    // 2) Check delete-X hit BEFORE node hit radius so clicks just outside the node circle are captured
+    for (let i = nodes.length - 1; i >= 0; i--) {
+      const n = nodes[i];
+      const radius = 20;
+      const delR = 5;
       const delCx = n.x + radius + 6;
       const delCy = n.y - radius - 6;
       const dx = w.x - delCx;
@@ -713,12 +884,25 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
   };
 
   const onPointerMove: React.PointerEventHandler<HTMLCanvasElement> = (e) => {
-    if (!isDragging && !draggedNodeId) return;
     const rect = (e.target as HTMLCanvasElement).getBoundingClientRect();
     const mx = e.clientX - rect.left;
     const my = e.clientY - rect.top;
+    const w = toWorld(mx, my);
+
+    // Handle drawing
+    if (isDrawing && activeTool === 'draw') {
+      setDrawingLine(prev => prev ? { ...prev, end: { x: w.x, y: w.y } } : null);
+      return;
+    }
+
+    if (drawingShape && (activeTool === 'rectangle' || activeTool === 'circle')) {
+      setDrawingShape(prev => prev ? { ...prev, end: { x: w.x, y: w.y } } : null);
+      return;
+    }
+
+    if (!isDragging && !draggedNodeId) return;
+    
     if (draggedNodeId) {
-      const w = { x: mx / zoom, y: my / zoom };
       setDragStart({ x: w.x, y: w.y });
       onNodeDrag(draggedNodeId, w.x, w.y);
       return;
@@ -750,6 +934,29 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
   const onPointerUp: React.PointerEventHandler<HTMLCanvasElement> = () => {
     const wasDragging = isDragging;
     setIsDragging(false);
+    
+    // Finalize drawing
+    if (isDrawing && activeTool === 'draw' && drawingLine) {
+      if (onDrawingAction) {
+        onDrawingAction({ 
+          type: 'addLine', 
+          data: { line: drawingLine, color: activeColor } 
+        });
+      }
+      setIsDrawing(false);
+      setDrawingLine(null);
+    }
+
+    if (drawingShape && (activeTool === 'rectangle' || activeTool === 'circle')) {
+      if (onDrawingAction) {
+        onDrawingAction({ 
+          type: activeTool === 'rectangle' ? 'addRectangle' : 'addCircle', 
+          data: { shape: drawingShape, color: activeColor } 
+        });
+      }
+      setDrawingShape(null);
+    }
+
     if (draggedNodeId) {
       const node = nodes.find((n) => n.id === draggedNodeId);
       if (node) {
@@ -765,6 +972,19 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
     setDragStart({ x: 0, y: 0 }); // Reset dragStart on pointer up
   };
 
+  const onDoubleClick: React.MouseEventHandler<HTMLCanvasElement> = (e) => {
+    if (!onNodeDoubleClick) return;
+    const rect = (e.target as HTMLCanvasElement).getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
+    const w = toWorld(mx, my);
+    const id = hitNode(w.x, w.y);
+    if (id) {
+      const node = nodes.find((n) => n.id === id);
+      if (node) onNodeDoubleClick(node);
+    }
+  };
+
   return (
     <canvas
       ref={canvasRef}
@@ -772,8 +992,9 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
       onPointerDown={onPointerDown}
       onPointerMove={(e) => { onPointerMove(e); onPointerMoveHover(e); }}
       onPointerUp={onPointerUp}
+      onDoubleClick={onDoubleClick}
     />
   );
-};
+});
 
 

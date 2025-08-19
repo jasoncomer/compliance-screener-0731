@@ -2,8 +2,9 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { useTheme } from '../../context/ThemeContext';
 import { flowtraceService } from '../../services/flowtraceService';
 import { getBlockchainType } from '../../utils/addressValidation';
-import { NetworkGraph, FTConnection, FTNode } from './components/NetworkGraph';
+import { NetworkGraph, FTConnection, FTNode, NetworkGraphHandle } from './components/NetworkGraph';
 import { Toolbar } from './components/Toolbar';
+import { DrawingToolbar, DrawingTool } from './components/DrawingToolbar';
 import LeftPanel from './components/LeftPanel';
 import NodeTxPicker from './components/NodeTxPicker';
 
@@ -20,7 +21,108 @@ const FlowTracePage: React.FC = () => {
   const [currentAddress, setCurrentAddress] = useState<string>('');
   const [isExpanded, setIsExpanded] = useState(true);
   const [utxoCollapseMode, setUtxoCollapseMode] = useState<"aggregated" | "individual">("aggregated");
+  
+  // Drawing toolbar state
+  const [drawingToolbarVisible, setDrawingToolbarVisible] = useState(false);
+  const [activeDrawingTool, setActiveDrawingTool] = useState<DrawingTool>('select');
+  const [activeColor, setActiveColor] = useState('#ff6b35');
+  const [drawingHistory, setDrawingHistory] = useState<any[]>([]);
+  const [historyIndex, setHistoryIndex] = useState(-1);
+  const [hasSelection] = useState(false);
+  const graphRef = React.useRef<NetworkGraphHandle | null>(null);
 
+  // Function to fetch and set left panel data for an address
+  const fetchAndSetLeftPanelData = async (address: string) => {
+    try {
+      const [data, summary, txs, profile] = await Promise.all([
+        flowtraceService.fetchAddress(address).catch((error) => {
+          console.error('fetchAddress error:', error);
+          return {} as any;
+        }),
+        flowtraceService.fetchAddressSummary(address).catch((error) => {
+          console.error('fetchAddressSummary error:', error);
+          return {} as any;
+        }),
+        flowtraceService.fetchTransactions(address, 1, 50).catch((error) => {
+          console.error('fetchTransactions error:', error);
+          return { txs: [] } as any;
+        }),
+        flowtraceService.fetchEntityProfile(address).catch((error) => {
+          console.error('fetchEntityProfile error:', error);
+          return {} as any;
+        }),
+      ]);
+      
+      console.log('API Debug:', {
+        address,
+        data,
+        summary,
+        txs,
+        profile
+      });
+
+      // Update left panel data
+      setLeftPanelData({
+        address,
+        network: getBlockchainType(address) === 'bitcoin' ? 'Bitcoin' : 'Ethereum',
+        balance: summary.balance,
+        txCount: summary.txCount || 0,
+        riskScore: profile.riskScore,
+        usdValue: summary.usdValue,
+        selectedEntity: {
+          label: profile.label || address,
+          address,
+          logoUrl: profile.logoUrl,
+          type: profile.type || 'wallet',
+          riskScore: profile.riskScore,
+          bo: profile.bo,
+          custodian: profile.custodian
+        }
+      });
+    } catch (error) {
+      console.error('Error fetching left panel data:', error);
+    }
+  };
+
+  // Drawing action handlers
+  const handleDrawingAction = (action: { type: string; data: any }) => {
+    const newHistory = [...drawingHistory.slice(0, historyIndex + 1), action];
+    setDrawingHistory(newHistory);
+    setHistoryIndex(newHistory.length - 1);
+  };
+
+  const handleUndo = () => {
+    if (historyIndex > 0) {
+      setHistoryIndex(historyIndex - 1);
+    }
+  };
+
+  const handleRedo = () => {
+    if (historyIndex < drawingHistory.length - 1) {
+      setHistoryIndex(historyIndex + 1);
+    }
+  };
+
+  const handleDelete = () => {
+    // Remove the last drawing action
+    if (historyIndex >= 0) {
+      const newHistory = drawingHistory.filter((_, index) => index !== historyIndex);
+      setDrawingHistory(newHistory);
+      setHistoryIndex(Math.max(0, historyIndex - 1));
+    }
+  };
+
+  const handleAddNode = () => {
+    // Add a custom node at a default position
+    const newNode: FTNode = {
+      id: `custom-${Date.now()}`,
+      label: 'Custom Node',
+      x: 300,
+      y: 240,
+      type: 'custom'
+    };
+    setNodes(prev => [...prev, newNode]);
+  };
 
   // Prefetch attribution profile and logos for a list of addresses
   const prefetchProfilesAndLogos = async (addresses: string[]) => {
@@ -240,79 +342,25 @@ const FlowTracePage: React.FC = () => {
                 // Only add the node, don't open picker
                 setCenterNodeId(address);
                 // Fetch background data and hydrate once available
-                (async () => {
-                  try {
-                    const [data, summary, txs, profile] = await Promise.all([
-                      flowtraceService.fetchAddress(address).catch((error) => {
-                        console.error('fetchAddress error:', error);
-                        return {} as any;
-                      }),
-                      flowtraceService.fetchAddressSummary(address).catch((error) => {
-                        console.error('fetchAddressSummary error:', error);
-                        return {} as any;
-                      }),
-                      flowtraceService.fetchTransactions(address, 1, 50).catch((error) => {
-                        console.error('fetchTransactions error:', error);
-                        return { txs: [] } as any;
-                      }),
-                      flowtraceService.fetchEntityProfile(address).catch((error) => {
-                        console.error('fetchEntityProfile error:', error);
-                        return {} as any;
-                      }),
-                    ]);
-                    
-                    console.log('API Debug:', {
-                      address,
-                      data,
-                      summary,
-                      txs,
-                      profile
-                    });
+                await fetchAndSetLeftPanelData(address);
 
-                    // Update left panel data
-                    setLeftPanelData({
-                      address,
-                      network: getBlockchainType(address) === 'bitcoin' ? 'Bitcoin' : 'Ethereum',
-                      balance: summary.balance,
-                      txCount: summary.txCount || 0,
-                      riskScore: profile.riskScore,
-                      usdValue: summary.usdValue,
-                      selectedEntity: {
-                        label: profile.label || address,
-                        address,
-                        logoUrl: profile.logoUrl,
-                        type: profile.type || 'wallet',
-                        riskScore: profile.riskScore,
-                        bo: profile.bo,
-                        custodian: profile.custodian
-                      }
-                    });
+                // Add node to graph
+                const newNode: FTNode = {
+                  id: address,
+                  label: address, // Will be updated by prefetchProfilesAndLogos
+                  x: 300,
+                  y: 240,
+                  type: 'wallet', // Will be updated by prefetchProfilesAndLogos
+                };
 
-                    // Add node to graph
-                    const newNode: FTNode = {
-                      id: address,
-                      label: profile.label || address,
-                      x: 300,
-                      y: 240,
-                      type: profile.type || 'wallet',
-                      logoUrl: profile.logoUrl,
-                      risk: profile.riskScore,
-                      balance: summary.balance,
-                      usdValue: summary.usdValue,
-                      bo: profile.bo,
-                      custodian: profile.custodian
-                    };
+                setNodes(prev => {
+                  const exists = prev.find(n => n.id === address);
+                  if (exists) return prev;
+                  return [...prev, newNode];
+                });
 
-                    setNodes(prev => {
-                      const exists = prev.find(n => n.id === address);
-                      if (exists) return prev;
-                      return [...prev, newNode];
-                    });
-
-                  } catch (error) {
-                    console.error('Error fetching data:', error);
-                  }
-                })();
+                // Fetch entity profile and logo for the new node
+                prefetchProfilesAndLogos([address]);
               } catch (error) {
                 console.error('Error:', error);
               }
@@ -325,30 +373,55 @@ const FlowTracePage: React.FC = () => {
 
       <div className="flex-1 relative">
         <Toolbar
-          onZoomIn={() => {
-            // Zoom in functionality
-          }}
-          onZoomOut={() => {
-            // Zoom out functionality
-          }}
-          onReset={() => {
-            // Reset functionality
-          }}
-          onAddNode={() => {
-            // Add node functionality
-          }}
+          onZoomIn={() => graphRef.current?.zoomIn()}
+          onZoomOut={() => graphRef.current?.zoomOut()}
+          onReset={() => graphRef.current?.resetView()}
+          onAddNode={() => handleAddNode()}
           onColorPicker={() => {
-            // Color picker functionality
+            setDrawingToolbarVisible(!drawingToolbarVisible);
           }}
           utxoCollapseMode={utxoCollapseMode}
           onToggleUtxoMode={() => setUtxoCollapseMode(prev => prev === "aggregated" ? "individual" : "aggregated")}
         />
 
+        {/* Drawing Toolbar */}
+        <DrawingToolbar
+          isVisible={drawingToolbarVisible}
+          onToggleVisibility={() => setDrawingToolbarVisible(!drawingToolbarVisible)}
+          activeTool={activeDrawingTool}
+          onToolChange={setActiveDrawingTool}
+          activeColor={activeColor}
+          onColorChange={setActiveColor}
+          onUndo={handleUndo}
+          onRedo={handleRedo}
+          onDelete={handleDelete}
+          onAddNode={handleAddNode}
+          canUndo={historyIndex > 0}
+          canRedo={historyIndex < drawingHistory.length - 1}
+          hasSelection={hasSelection}
+        />
+
         <div className="absolute top-12 left-0 right-0 bottom-0">
           <NetworkGraph
+            ref={graphRef}
             nodes={nodes}
             connections={connections}
             onNodeClick={(node) => {
+              // Node click selects the node and fetches its data for the left panel
+              setCurrentAddress(node.id);
+              fetchAndSetLeftPanelData(node.id);
+            }}
+            onNodeDoubleClick={(node) => {
+              // Allow renaming only for custom/empty nodes (no entityId/type or type === 'custom')
+              const isCustom = node.type === 'custom' || (!node.entityId && !node.entityType);
+              if (!isCustom) return;
+              const current = node.label || node.id;
+              const next = window.prompt('Rename node label:', current);
+              if (next && next.trim().length) {
+                setNodes(prev => prev.map(n => n.id === node.id ? { ...n, label: next.trim() } : n));
+              }
+            }}
+            onNodeAdd={(node) => {
               setCurrentAddress(node.id);
               setNodeTxPickerOpen(true);
             }}
@@ -363,6 +436,10 @@ const FlowTracePage: React.FC = () => {
               setConnections(prev => prev.filter(c => c.from !== nodeId && c.to !== nodeId));
             }}
             utxoCollapseMode={utxoCollapseMode}
+            activeTool={activeDrawingTool}
+            activeColor={activeColor}
+            onDrawingAction={handleDrawingAction}
+            drawingHistory={drawingHistory.slice(0, historyIndex + 1)}
           />
 
           {/* Left Panel - positioned absolutely */}

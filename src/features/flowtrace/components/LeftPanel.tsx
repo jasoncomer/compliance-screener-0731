@@ -25,17 +25,7 @@ const formatBitcoin = (value: number | string | undefined) => {
   return btcValue.toFixed(8);
 };
 
-const formatCurrency = (value: number | string | undefined) => {
-  if (value === undefined || value === null || value === '') return '—';
-  const num = Number(value);
-  if (Number.isNaN(num)) return String(value);
-  return new Intl.NumberFormat('en-US', { 
-    style: 'currency', 
-    currency: 'USD',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 2 
-  }).format(num);
-};
+
 
 // Custom Transaction History Component with Tabs
 const CustomTransactionHistory: React.FC<{ address: string }> = ({ address }) => {
@@ -205,7 +195,7 @@ const LeftPanel: React.FC<Props> = ({
   address, 
   network, 
   balance, 
-  usdValue, 
+ 
   txCount, 
   riskScore, 
   selectedEntity,
@@ -236,7 +226,7 @@ const LeftPanel: React.FC<Props> = ({
   };
 
   return (
-    <div className={`relative h-full border-r border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 flex flex-col transition-all duration-300 ease-in-out ${isExpanded ? 'w-80' : 'w-12'}`}>
+    <div className={`relative h-full border-r border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 flex flex-col transition-all duration-300 ease-in-out ${isExpanded ? 'w-96' : 'w-12'}`}>
       {/* Toggle Button */}
       <button
         onClick={onToggle}
@@ -312,7 +302,7 @@ const LeftPanel: React.FC<Props> = ({
                         </h3>
                         <Pencil className="h-3.5 w-3.5 text-gray-400 flex-shrink-0" />
                       </div>
-                      <div className="text-xs text-gray-500 font-mono">{formatAddress(selectedEntity.address || '')}</div>
+                      <div className="text-xs text-gray-500 font-mono break-all">{formatAddress(selectedEntity.address || '')}</div>
                     </div>
                   </div>
                   <button 
@@ -343,15 +333,19 @@ const LeftPanel: React.FC<Props> = ({
                 {(selectedEntity.bo || selectedEntity.custodian) && (
                   <div className="space-y-2 pt-3 border-t border-gray-200 dark:border-gray-700">
                     {selectedEntity.bo && (
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-gray-600 dark:text-gray-400 font-medium">Beneficial Owner:</span>
-                        <span className="text-gray-900 dark:text-gray-100 font-mono">{selectedEntity.bo}</span>
+                      <div className="space-y-1">
+                        <span className="text-sm text-gray-600 dark:text-gray-400 font-medium">Beneficial Owner:</span>
+                        <div className="text-sm text-gray-900 dark:text-gray-100 font-mono break-all">
+                          {selectedEntity.bo}
+                        </div>
                       </div>
                     )}
                     {selectedEntity.custodian && (
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-gray-600 dark:text-gray-400 font-medium">Custodian:</span>
-                        <span className="text-gray-900 dark:text-gray-100 font-mono">{selectedEntity.custodian}</span>
+                      <div className="space-y-1">
+                        <span className="text-sm text-gray-600 dark:text-gray-400 font-medium">Custodian:</span>
+                        <div className="text-sm text-gray-900 dark:text-gray-100 font-mono break-all">
+                          {selectedEntity.custodian}
+                        </div>
                       </div>
                     )}
                   </div>
@@ -371,27 +365,8 @@ const LeftPanel: React.FC<Props> = ({
                   <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{network || '—'}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600 dark:text-gray-400">Address</span>
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-mono text-gray-900 dark:text-gray-100 max-w-32 truncate">
-                      {formatAddress(address || '')}
-                    </span>
-                    <button 
-                      onClick={onCopy} 
-                      className="p-1.5 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors flex-shrink-0"
-                      title="Copy address"
-                    >
-                      <Copy className={`h-3.5 w-3.5 ${copied ? 'text-green-500' : 'text-gray-400'}`} />
-                    </button>
-                  </div>
-                </div>
-                <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-600 dark:text-gray-400">Balance</span>
                   <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{formatBitcoin(balance)}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600 dark:text-gray-400">USD Value</span>
-                  <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{formatCurrency(usdValue)}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-600 dark:text-gray-400">Transactions</span>
