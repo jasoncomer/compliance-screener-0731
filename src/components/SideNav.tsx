@@ -5,10 +5,10 @@ import {
   Settings, 
   Users,
   Menu,
-  Search,
   BarChart3,
   Globe,
-  Database
+  Database,
+  GitBranch
 } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { cn } from '../lib/utils';
@@ -64,16 +64,16 @@ const SideNav: React.FC<SideNavProps> = ({ theme, collapsed, onCollapse }) => {
   };
 
   const navigationItems = [
-    {
-      key: 'compliance-screener',
-      icon: <Search />,
-      label: 'Compliance Screener',
-    },
-    {
-      key: 'compliance-dashboard',
-      icon: <BarChart3 />,
-      label: 'Compliance Dashboard',
-    },
+    // {
+    //   key: 'compliance-screener',
+    //   icon: <Search />,
+    //   label: 'Compliance Screener',
+    // },
+    // {
+    //   key: 'compliance-dashboard',
+    //   icon: <BarChart3 />,
+    //   label: 'Compliance Dashboard',
+    // },
     {
       key: 'block-explorer',
       icon: <Globe />,
@@ -83,6 +83,11 @@ const SideNav: React.FC<SideNavProps> = ({ theme, collapsed, onCollapse }) => {
       key: 'risk-dashboard',
       icon: <BarChart3 />,
       label: 'Risk Dashboard',
+    },
+    {
+      key: 'flow-trace',
+      icon: <GitBranch />,
+      label: 'FlowTrace',
     },
     {
       key: 'blockham',

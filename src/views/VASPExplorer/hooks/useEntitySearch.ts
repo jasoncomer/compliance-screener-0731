@@ -92,6 +92,15 @@ export const useEntitySearch = ({ sot, allowCSAM, debouncedSearchValue }: UseEnt
           }
         }
 
+        if (!entityId) {
+          console.warn('⚠️ VASP Search: Found entity without entity_id:', {
+            _id: sotItem._id,
+            proper_name: sotItem.proper_name,
+            entity_type: sotItem.entity_type
+          });
+          continue;
+        }
+
         if (consolidatedEntities[entityId]) {
           consolidatedEntities[entityId].matchedFields.push(fieldName);
           if (result.score > consolidatedEntities[entityId].searchScore) {
@@ -111,6 +120,31 @@ export const useEntitySearch = ({ sot, allowCSAM, debouncedSearchValue }: UseEnt
 
       const sortedEntities = Object.values(consolidatedEntities)
         .sort((a, b) => b.searchScore - a.searchScore);
+
+      // Debug: Log search results to see if entity_id is missing
+      if (sortedEntities.length > 0) {
+        console.log('🔍 VASP Search Results:', sortedEntities.slice(0, 3).map(entity => ({
+          entity_id: entity.entity_id,
+          proper_name: entity.proper_name,
+          entity_type: entity.entity_type,
+          hasLogo: !!entity.logo
+        })));
+        
+        // Special debugging for Coinbase results
+        const coinbaseResults = sortedEntities.filter(entity => 
+          entity.proper_name?.toLowerCase().includes('coinbase') || 
+          entity.entity_id?.toLowerCase().includes('coinbase')
+        );
+        if (coinbaseResults.length > 0) {
+          console.log('🔍 Coinbase search results:', coinbaseResults.map(entity => ({
+            entity_id: entity.entity_id,
+            proper_name: entity.proper_name,
+            entity_type: entity.entity_type,
+            logo: entity.logo,
+            expectedLogoUrl: `https://storage.googleapis.com/entity-logos/${entity.entity_id}.jpg`
+          })));
+        }
+      }
 
       setSearchResults(sortedEntities);
     } catch (error) {

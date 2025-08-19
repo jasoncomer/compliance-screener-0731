@@ -33,12 +33,18 @@ const EntityOption: React.FC<EntityOptionProps> = React.memo(({
   >
     <div className="flex items-center gap-2">
       <div className="flex-shrink-0">
-        <SimpleLogo
-          entityId={entity.entity_id}
-          entityType={entity.entity_type}
-          size={32}
-          fallbackIcon={<User className="w-4 h-4 text-gray-500 dark:text-gray-400" />}
-        />
+        {entity.entity_id ? (
+          <SimpleLogo
+            entityId={entity.entity_id}
+            entityType={entity.entity_type}
+            size={32}
+            fallbackIcon={<User className="w-4 h-4 text-gray-500 dark:text-gray-400" />}
+          />
+        ) : (
+          <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+            <User className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+          </div>
+        )}
       </div>
       <div className="flex-1">
         <div className="flex items-center gap-2">

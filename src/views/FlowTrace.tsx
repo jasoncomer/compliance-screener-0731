@@ -86,8 +86,11 @@
 //   );
 // };
 
-const FlowTrace = () => {
-  return <div>Flow Trace</div>;
+import React from 'react';
+import FlowTracePage from '../features/flowtrace/FlowTracePage';
+
+const FlowTrace: React.FC = () => {
+  return <FlowTracePage />;
 };
 
-export default FlowTrace; 
+export default FlowTrace;
