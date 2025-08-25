@@ -26,7 +26,7 @@ interface ContainerProps {
 }
 
 const Container: React.FC<ContainerProps> = ({ children, className }) => (
-  <div className={cn("w-full flex flex-row gap-6 mt-12", className)}>
+  <div className={cn("w-full flex flex-row gap-6 mt-4", className)}>
     {children}
   </div>
 );

@@ -42,6 +42,8 @@ const sotSlice = createSlice({
           acc[item.entity_id] = item;
           return acc;
         }, {} as Record<string, SOT>);
+        
+
       })
       .addCase(fetchSOT.rejected, (state, action) => {
         state.loading = false;
