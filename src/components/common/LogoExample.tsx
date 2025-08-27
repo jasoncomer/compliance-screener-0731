@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { Card, Space, Button, Upload, message, Divider, Typography } from 'antd';
-import { UploadOutlined, UserOutlined, BankOutlined } from '@ant-design/icons';
-import { SimpleLogo, EditableLogo } from './Logo';
+import { Card, Space, Button, Divider, Typography } from 'antd';
+import { UserOutlined, BankOutlined } from '@ant-design/icons';
+import { SimpleLogo } from './Logo';
 import { useLogo } from '../../hooks/useLogo';
 import { LogoService } from '../../services/logoService';
 
@@ -16,7 +16,6 @@ export const LogoExample: React.FC = () => {
     logoUrl,
     isLoading,
     error,
-    uploadLogo,
     refetch,
   } = useLogo({
     entityId: selectedEntityId,
@@ -24,104 +23,66 @@ export const LogoExample: React.FC = () => {
     enableFallback: true,
   });
 
-  const handleFileUpload = async (file: File) => {
-    const success = await uploadLogo(file);
-    if (success) {
-      message.success('Logo uploaded successfully!');
-    } else {
-      message.error('Failed to upload logo');
-    }
-  };
-
-  const handleUploadViaService = async (file: File) => {
-    try {
-      const result = await LogoService.uploadLogo(file, selectedEntityId, selectedEntityType);
-      if (result.success) {
-        message.success('Logo uploaded via service!');
-        refetch(); // Refresh the hook
-      } else {
-        message.error(result.error || 'Upload failed');
-      }
-    } catch (err) {
-      message.error('Upload failed');
-    }
-  };
-
   const handleGetLogoUrl = async () => {
     try {
       const url = await LogoService.getLogoUrlWithFallback(selectedEntityId, selectedEntityType);
       if (url) {
-        message.success(`Logo URL: ${url}`);
+        console.log('Logo URL:', url);
       } else {
-        message.info('No logo found');
+        console.log('No logo found');
       }
     } catch (err) {
-      message.error('Failed to get logo URL');
+      console.error('Failed to get logo URL:', err);
     }
   };
 
   return (
     <div style={{ padding: '24px', maxWidth: '1200px', margin: '0 auto' }}>
-      <Title level={2}>Logo System Examples</Title>
+      <Title level={2}>Logo Component Examples</Title>
       
-      <Space direction="vertical" size="large" style={{ width: '100%' }}>
-        
-        {/* Basic Logo Display */}
-        <Card title="1. Basic Logo Display" size="small">
-          <Space direction="vertical">
-            <Text>Simple logo display with different sizes:</Text>
-            <Space wrap>
-              <div>
-                <Text strong>Small:</Text>
-                <SimpleLogo 
-                  entityId={selectedEntityId} 
-                  entityType={selectedEntityType} 
-                  size="small" 
-                />
-              </div>
-              <div>
-                <Text strong>Default:</Text>
-                <SimpleLogo 
-                  entityId={selectedEntityId} 
-                  entityType={selectedEntityType} 
-                  size="default" 
-                />
-              </div>
-              <div>
-                <Text strong>Large:</Text>
-                <SimpleLogo 
-                  entityId={selectedEntityId} 
-                  entityType={selectedEntityType} 
-                  size="large" 
-                />
-              </div>
-              <div>
-                <Text strong>Custom (64px):</Text>
-                <SimpleLogo 
-                  entityId={selectedEntityId} 
-                  entityType={selectedEntityType} 
-                  size={64} 
-                />
-              </div>
-            </Space>
-          </Space>
-        </Card>
+      {/* Entity Selection */}
+      <Card title="Entity Selection" size="small" style={{ marginBottom: '16px' }}>
+        <Space direction="vertical">
+          <div>
+            <Text strong>Entity ID:</Text>
+            <input
+              value={selectedEntityId}
+              onChange={(e) => setSelectedEntityId(e.target.value)}
+              style={{ marginLeft: '8px', padding: '4px 8px' }}
+            />
+          </div>
+          <div>
+            <Text strong>Entity Type:</Text>
+            <select
+              value={selectedEntityType}
+              onChange={(e) => setSelectedEntityType(e.target.value)}
+              style={{ marginLeft: '8px', padding: '4px 8px' }}
+            >
+              <option value="exchange">Exchange</option>
+              <option value="wallet">Wallet</option>
+              <option value="mixer">Mixer</option>
+              <option value="defi">DeFi</option>
+              <option value="gambling">Gambling</option>
+            </select>
+          </div>
+        </Space>
+      </Card>
 
-        {/* Editable Logo */}
-        <Card title="2. Editable Logo with Upload" size="small">
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '16px' }}>
+        {/* Simple Logo */}
+        <Card title="1. Simple Logo Display" size="small">
           <Space direction="vertical">
-            <Text>Click the logo to upload a new one:</Text>
-            <EditableLogo 
+            <Text>Basic logo display:</Text>
+            <SimpleLogo 
               entityId={selectedEntityId} 
               entityType={selectedEntityType} 
               size="large"
-              onLogoChange={(url) => message.success(`Logo updated: ${url}`)}
             />
           </Space>
         </Card>
 
         {/* Hook Usage */}
-        <Card title="3. Using the useLogo Hook" size="small">
+        <Card title="2. Using the useLogo Hook" size="small">
           <Space direction="vertical">
             <Text>Current state from hook:</Text>
             <Space>
@@ -149,35 +110,8 @@ export const LogoExample: React.FC = () => {
           </Space>
         </Card>
 
-        {/* File Upload Examples */}
-        <Card title="4. File Upload Examples" size="small">
-          <Space direction="vertical">
-            <Text>Upload via hook:</Text>
-            <Upload
-              beforeUpload={(file) => {
-                handleFileUpload(file);
-                return false; // Prevent default upload
-              }}
-              showUploadList={false}
-            >
-              <Button icon={<UploadOutlined />}>Upload via Hook</Button>
-            </Upload>
-
-            <Text>Upload via service:</Text>
-            <Upload
-              beforeUpload={(file) => {
-                handleUploadViaService(file);
-                return false; // Prevent default upload
-              }}
-              showUploadList={false}
-            >
-              <Button icon={<UploadOutlined />}>Upload via Service</Button>
-            </Upload>
-          </Space>
-        </Card>
-
         {/* Different Entity Types */}
-        <Card title="5. Different Entity Types" size="small">
+        <Card title="3. Different Entity Types" size="small">
           <Space direction="vertical">
             <Text>Examples with different entity types:</Text>
             <Space wrap>
@@ -208,8 +142,76 @@ export const LogoExample: React.FC = () => {
               <div>
                 <Text strong>No Type:</Text>
                 <SimpleLogo 
-                  entityId="generic-entity" 
+                  entityId="unknown-entity" 
                   size="default" 
+                />
+              </div>
+            </Space>
+          </Space>
+        </Card>
+
+        {/* Different Sizes */}
+        <Card title="4. Different Sizes" size="small">
+          <Space direction="vertical">
+            <Text>Logo in different sizes:</Text>
+            <Space wrap>
+              <div>
+                <Text strong>Small:</Text>
+                <SimpleLogo 
+                  entityId={selectedEntityId} 
+                  entityType={selectedEntityType} 
+                  size="small" 
+                />
+              </div>
+              <div>
+                <Text strong>Default:</Text>
+                <SimpleLogo 
+                  entityId={selectedEntityId} 
+                  entityType={selectedEntityType} 
+                  size="default" 
+                />
+              </div>
+              <div>
+                <Text strong>Large:</Text>
+                <SimpleLogo 
+                  entityId={selectedEntityId} 
+                  entityType={selectedEntityType} 
+                  size="large" 
+                />
+              </div>
+              <div>
+                <Text strong>Custom (60px):</Text>
+                <SimpleLogo 
+                  entityId={selectedEntityId} 
+                  entityType={selectedEntityType} 
+                  size={60} 
+                />
+              </div>
+            </Space>
+          </Space>
+        </Card>
+
+        {/* Different Shapes */}
+        <Card title="5. Different Shapes" size="small">
+          <Space direction="vertical">
+            <Text>Logo in different shapes:</Text>
+            <Space wrap>
+              <div>
+                <Text strong>Circle:</Text>
+                <SimpleLogo 
+                  entityId={selectedEntityId} 
+                  entityType={selectedEntityType} 
+                  size="default" 
+                  shape="circle"
+                />
+              </div>
+              <div>
+                <Text strong>Square:</Text>
+                <SimpleLogo 
+                  entityId={selectedEntityId} 
+                  entityType={selectedEntityType} 
+                  size="default" 
+                  shape="square"
                 />
               </div>
             </Space>
@@ -224,94 +226,36 @@ export const LogoExample: React.FC = () => {
               <div>
                 <Text strong>User Icon:</Text>
                 <SimpleLogo 
-                  entityId="user-entity" 
-                  entityType="user" 
-                  size="default"
+                  entityId="non-existent-entity" 
+                  size="default" 
                   fallbackIcon={<UserOutlined />}
                 />
               </div>
               <div>
                 <Text strong>Bank Icon:</Text>
                 <SimpleLogo 
-                  entityId="bank-entity" 
-                  entityType="bank" 
-                  size="default"
+                  entityId="another-non-existent" 
+                  size="default" 
                   fallbackIcon={<BankOutlined />}
                 />
               </div>
             </Space>
           </Space>
         </Card>
+      </div>
 
-        {/* Entity Selector */}
-        <Card title="7. Entity Selector" size="small">
-          <Space direction="vertical">
-            <Text>Change the entity to see different logos:</Text>
-            <Space>
-              <Button 
-                onClick={() => setSelectedEntityId('entity-1')}
-                type={selectedEntityId === 'entity-1' ? 'primary' : 'default'}
-              >
-                Entity 1
-              </Button>
-              <Button 
-                onClick={() => setSelectedEntityId('entity-2')}
-                type={selectedEntityId === 'entity-2' ? 'primary' : 'default'}
-              >
-                Entity 2
-              </Button>
-              <Button 
-                onClick={() => setSelectedEntityId('entity-3')}
-                type={selectedEntityId === 'entity-3' ? 'primary' : 'default'}
-              >
-                Entity 3
-              </Button>
-            </Space>
-            
-            <Space>
-              <Button 
-                onClick={() => setSelectedEntityType('exchange')}
-                type={selectedEntityType === 'exchange' ? 'primary' : 'default'}
-              >
-                Exchange
-              </Button>
-              <Button 
-                onClick={() => setSelectedEntityType('wallet')}
-                type={selectedEntityType === 'wallet' ? 'primary' : 'default'}
-              >
-                Wallet
-              </Button>
-              <Button 
-                onClick={() => setSelectedEntityType('mixer')}
-                type={selectedEntityType === 'mixer' ? 'primary' : 'default'}
-              >
-                Mixer
-              </Button>
-            </Space>
-            
-            <Text>Current: {selectedEntityId} ({selectedEntityType})</Text>
+      <Divider />
+
+      <Card title="Logo Service Examples" size="small">
+        <Space direction="vertical">
+          <Text>Direct service usage:</Text>
+          <Space>
+            <Button onClick={handleGetLogoUrl}>
+              Get Logo URL via Service
+            </Button>
           </Space>
-        </Card>
-
-        <Divider />
-
-        <Card title="API Endpoints" size="small">
-          <Space direction="vertical">
-            <Text strong>Public Endpoints:</Text>
-            <Text code>GET /api/logos/entity/:entityId/:entityType?</Text>
-            <Text code>GET /api/logos/default/:entityType</Text>
-            
-            <Text strong>Protected Endpoints:</Text>
-            <Text code>POST /api/logos/upload</Text>
-            <Text code>POST /api/logos/upload-default</Text>
-            <Text code>GET /api/logos/list/:entityId</Text>
-            <Text code>DELETE /api/logos/:filename</Text>
-            
-            <Text strong>Admin Endpoints:</Text>
-            <Text code>POST /api/logos/initialize-bucket</Text>
-          </Space>
-        </Card>
-      </Space>
+        </Space>
+      </Card>
     </div>
   );
 }; 

@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Card, Form, Button, Space, Typography, message, Modal, Row, Col, Tag, Switch } from 'antd';
 import { UserOutlined, GlobalOutlined, TwitterOutlined, SendOutlined, GithubOutlined, LinkedinOutlined, FacebookOutlined, InstagramOutlined, YoutubeOutlined, RedditOutlined, MediumOutlined, WarningOutlined } from '@ant-design/icons';
-import { EditableLogo } from './common/Logo';
+import { SimpleLogo } from './common/Logo';
 import { SOT } from '../typings/interfaces';
 import { api } from '../api/api';
 import { getEntityTypeLabel } from '../utils/display-labels';
@@ -370,13 +370,10 @@ const SOTEditor: React.FC<SOTEditorProps> = ({ sot, onSelectAssociatedSot }) => 
               </Form.Item>
 
               <Form.Item label="Logo">
-                <EditableLogo
+                <SimpleLogo
                   entityId={sot.entity_id}
                   entityType={sot.entity_type}
                   size="large"
-                  onLogoChange={(url) => {
-                    form.setFieldsValue({ logo: url });
-                  }}
                 />
               </Form.Item>
 
@@ -415,17 +412,11 @@ const SOTEditor: React.FC<SOTEditorProps> = ({ sot, onSelectAssociatedSot }) => 
     return (
       <>
         <HeaderSection>
-          <EditableLogo
+          <SimpleLogo
             entityId={sot.entity_id}
             entityType={sot.entity_type}
             size="large"
             fallbackIcon={<UserOutlined />}
-            onLogoChange={(url) => {
-              // Update the form if it exists
-              if (form) {
-                form.setFieldsValue({ logo: url });
-              }
-            }}
           />
           <HeaderInfo>
             <Title level={4} style={{ margin: 0 }}>{sot.proper_name || sot.entity_id}</Title>

@@ -62,7 +62,7 @@ const Login = () => {
         });
         
         // Navigate to the saved location or default route
-        const from = (location.state as any)?.from?.pathname || '/home/cases';
+        const from = (location.state as any)?.from?.pathname || '/home/block-explorer';
         nav(from, { replace: true });
       }
     } catch (err) {
