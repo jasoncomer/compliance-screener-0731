@@ -117,9 +117,9 @@ function App() {
       {contextHolder}
       <Toaster />
         <Routes>
-          <Route path="/" element={<Navigate to="/home/compliance-screener" replace />} />
+          <Route path="/" element={<Navigate to="/home/block-explorer" replace />} />
           <Route path="/login" element={<Login />} />
-          <Route path="/register" element={user ? <Navigate to="/home/compliance-screener" replace /> : <Register />} />
+          <Route path="/register" element={user ? <Navigate to="/home/block-explorer" replace /> : <Register />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/auth/callback" element={<OAuthCallback />} />
           <Route path="/welcome" element={
@@ -132,7 +132,7 @@ function App() {
               <Home />
             </ProtectedRoute>
           }>
-            <Route index element={<ComplianceScreener />} />
+            <Route index element={<BlockExplorer />} />
             <Route path="compliance-screener" element={<ComplianceScreener />} />
             <Route path="compliance-dashboard" element={<ComplianceDashboard />} />
             <Route path="admin" element={<Admin />} />

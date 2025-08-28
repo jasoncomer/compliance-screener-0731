@@ -19,7 +19,7 @@ import { useEntitySearch, useSearchDropdown } from './hooks';
 
 const VASPExplorer: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
-  const { items: sot, itemsMap: sotMap, loading: sotLoading } = useSelector((state: RootState) => state.sot);
+  const { items: sot, itemsMap: sotMap, loading: sotLoading} = useSelector((state: RootState) => state.sot);
   const organization = useSelector(selectCurrentOrganization);
   const [searchParams] = useSearchParams();
 
@@ -39,7 +39,7 @@ const VASPExplorer: React.FC = () => {
 
   // Selection handler for dropdown
   const handleSelectOption = useCallback((entity: any) => {
-    setSelectedSot(sotMap[entity._id]);
+    setSelectedSot(sotMap[entity.entity_id]);
     setSearchValue('');
   }, [sotMap]);
 
@@ -90,16 +90,39 @@ const VASPExplorer: React.FC = () => {
     const searchParam = searchParams.get('search');
     const entityParam = searchParams.get('entity');
     
-    if (entityParam && sot.length > 0) {
-      const entity = Object.values(sot).find(sotItem => sotItem.entity_id === entityParam);
-      if (entity) {
-        setSelectedSot(entity);
-      }
-    } else if (searchParam && sot.length > 0) {
-      setSearchValue(searchParam);
-      performSearch(searchParam);
+    // Only process URL parameters if SOT data is loaded and not loading
+    if (sotLoading || Object.keys(sotMap).length === 0) {
+      return;
     }
-  }, [searchParams, sot, performSearch]);
+    
+    // Add a small delay to ensure SOT data is fully processed
+    const timeoutId = setTimeout(() => {
+      if (entityParam) {
+        const entity = sotMap[entityParam];
+        if (entity) {
+          setSelectedSot(entity);
+        } else {
+          // Try to find by searching in the items array as fallback
+          const fallbackEntity = sot.find(sotItem => 
+            sotItem.entity_id === entityParam || 
+            sotItem.proper_name?.toLowerCase().includes(entityParam.toLowerCase())
+          );
+          if (fallbackEntity) {
+            setSelectedSot(fallbackEntity);
+          } else {
+            // Try to find by searching if entity is not found in map
+            setSearchValue(entityParam);
+            performSearch(entityParam);
+          }
+        }
+      } else if (searchParam) {
+        setSearchValue(searchParam);
+        performSearch(searchParam);
+      }
+    }, 100); // Small delay to ensure SOT data is ready
+    
+    return () => clearTimeout(timeoutId);
+  }, [searchParams, sotMap, sotLoading, sot.length, performSearch]);
 
   // Re-trigger search when organization settings change
   useEffect(() => {
@@ -107,6 +130,17 @@ const VASPExplorer: React.FC = () => {
       performSearch(searchValue);
     }
   }, [organization?.settings?.allowCSAM, performSearch, searchValue]);
+
+  // Retry URL parameter processing when SOT data becomes available
+  useEffect(() => {
+    const entityParam = searchParams.get('entity');
+    if (entityParam && !sotLoading && Object.keys(sotMap).length > 0 && !selectedSot) {
+      const entity = sotMap[entityParam];
+      if (entity) {
+        setSelectedSot(entity);
+      }
+    }
+  }, [sotMap, sotLoading, searchParams, selectedSot]);
 
   const isEmptyState = !selectedSot;
 
@@ -116,6 +150,7 @@ const VASPExplorer: React.FC = () => {
       title={isEmptyState ? "Entity Explorer" : ""}
       fullWidth={true}
     >
+
       {/* Sticky Search Bar */}
       <div className={`sticky top-[0] z-20 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 px-4 ${isEmptyState ? 'pt-2 py-4 mb-2' : 'py-4'}`}>
         <div className="flex justify-between items-center gap-4">
@@ -155,7 +190,7 @@ const VASPExplorer: React.FC = () => {
           description="Search and explore VASP entities, their relationships, and detailed information. Use the search bar above to find entities by name, address, or type."
         />
       ) : (
-        <div className="flex-1 flex flex-col gap-6 w-full mt-5">
+        <div className="flex-1 flex flex-col gap-6 w-full mt-2">
           <SOTEditor sot={selectedSot} onSelectAssociatedSot={handleSelectAssociatedSot} />
         </div>
       )}

@@ -1,11 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
-import { LogoService } from '../services/logoService';
 
 interface UseLogoOptions {
   entityId?: string;
   entityType?: string;
   enableFallback?: boolean;
-  cacheTime?: number; // in milliseconds
+  cacheTime?: number;
 }
 
 interface UseLogoReturn {
@@ -13,7 +12,6 @@ interface UseLogoReturn {
   isLoading: boolean;
   error: string | null;
   refetch: () => Promise<void>;
-  uploadLogo: (file: File) => Promise<boolean>;
 }
 
 // Simple in-memory cache
@@ -80,13 +78,13 @@ export const useLogo = (options: UseLogoOptions = {}): UseLogoReturn => {
       testImg.onerror = () => {
         console.log('❌ useLogo: JPG failed, trying PNG:', pngUrl);
         
-        // Try PNG fallback
-        const pngTestImg = new Image();
-        pngTestImg.onload = () => {
+        // Try PNG if JPG fails
+        const testPngImg = new Image();
+        testPngImg.onload = () => {
           console.log('✅ useLogo: PNG loaded successfully:', pngUrl);
           setLogoUrl(pngUrl);
           
-          // Cache the successful PNG result
+          // Cache the successful result
           if (cacheKey) {
             logoCache.set(cacheKey, {
               url: pngUrl,
@@ -95,126 +93,90 @@ export const useLogo = (options: UseLogoOptions = {}): UseLogoReturn => {
           }
         };
         
-        pngTestImg.onerror = () => {
-          console.log('❌ useLogo: Both entity-specific formats failed for:', entityId);
+        testPngImg.onerror = () => {
+          console.log('❌ useLogo: Both JPG and PNG failed for entity:', entityId);
           
-          // Third fallback: Try entity-type logo from logo_mappings
-          if (entityType) {
-            console.log('🔍 useLogo: Trying entity-type fallback for:', entityType);
-            const entityTypeJpgUrl = `https://storage.googleapis.com/entity-type-logos/${entityType}.jpg`;
-            const entityTypePngUrl = `https://storage.googleapis.com/entity-type-logos/${entityType}.png`;
+          // Try entity-type fallback if enabled
+          if (enableFallback && entityType) {
+            console.log('🔄 useLogo: Trying entity-type fallback for:', entityType);
             
-            console.log('🔍 useLogo: Trying entity-type JPG:', entityTypeJpgUrl);
+            const typeJpgUrl = `https://storage.googleapis.com/entity-type-logos/${entityType}.jpg`;
+            const typePngUrl = `https://storage.googleapis.com/entity-type-logos/${entityType}.png`;
             
-            const entityTypeTestImg = new Image();
-            entityTypeTestImg.onload = () => {
-              console.log('✅ useLogo: Entity-type JPG loaded successfully:', entityTypeJpgUrl);
-              setLogoUrl(entityTypeJpgUrl);
+            const testTypeImg = new Image();
+            testTypeImg.onload = () => {
+              console.log('✅ useLogo: Entity-type JPG fallback loaded:', typeJpgUrl);
+              setLogoUrl(typeJpgUrl);
               
-              // Cache the successful entity-type result
+              // Cache the successful result
               if (cacheKey) {
                 logoCache.set(cacheKey, {
-                  url: entityTypeJpgUrl,
+                  url: typeJpgUrl,
                   timestamp: Date.now(),
                 });
               }
             };
             
-            entityTypeTestImg.onerror = () => {
-              console.log('❌ useLogo: Entity-type JPG failed, trying PNG:', entityTypePngUrl);
-              
-              const entityTypePngTestImg = new Image();
-              entityTypePngTestImg.onload = () => {
-                console.log('✅ useLogo: Entity-type PNG loaded successfully:', entityTypePngUrl);
-                setLogoUrl(entityTypePngUrl);
+            testTypeImg.onerror = () => {
+              const testTypePngImg = new Image();
+              testTypePngImg.onload = () => {
+                console.log('✅ useLogo: Entity-type PNG fallback loaded:', typePngUrl);
+                setLogoUrl(typePngUrl);
                 
-                // Cache the successful entity-type PNG result
+                // Cache the successful result
                 if (cacheKey) {
                   logoCache.set(cacheKey, {
-                    url: entityTypePngUrl,
+                    url: typePngUrl,
                     timestamp: Date.now(),
                   });
                 }
               };
               
-              entityTypePngTestImg.onerror = () => {
-                console.log('❌ useLogo: All logo attempts failed for:', entityId, 'entityType:', entityType);
+              testTypePngImg.onerror = () => {
+                console.log('❌ useLogo: All fallbacks failed for entity:', entityId);
                 setLogoUrl(null);
-                setError(`No logo found for ${entityId} (tried entity-specific JPG/PNG and entity-type JPG/PNG)`);
+                setError('No logo found');
+                
+                // Cache the null result
+                if (cacheKey) {
+                  logoCache.set(cacheKey, {
+                    url: null,
+                    timestamp: Date.now(),
+                  });
+                }
               };
               
-              entityTypePngTestImg.src = entityTypePngUrl;
+              testTypePngImg.src = typePngUrl;
             };
             
-            entityTypeTestImg.src = entityTypeJpgUrl;
+            testTypeImg.src = typeJpgUrl;
           } else {
-            console.log('❌ useLogo: No entityType provided, cannot try entity-type fallback');
+            console.log('❌ useLogo: No fallback enabled or no entity type for entity:', entityId);
             setLogoUrl(null);
-            setError(`No logo found for ${entityId} (tried both JPG and PNG, no entityType for fallback)`);
+            setError('No logo found');
+            
+            // Cache the null result
+            if (cacheKey) {
+              logoCache.set(cacheKey, {
+                url: null,
+                timestamp: Date.now(),
+              });
+            }
           }
         };
         
-        pngTestImg.src = pngUrl;
+        testPngImg.src = pngUrl;
       };
       
-      // Start the test by setting JPG source
       testImg.src = jpgUrl;
-      
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to construct logo URL';
-      setError(errorMessage);
-      console.error('❌ useLogo error:', errorMessage);
+      console.error('Error fetching logo:', err);
+      setError('Failed to fetch logo');
+      setLogoUrl(null);
     } finally {
       setIsLoading(false);
     }
   }, [entityId, entityType, enableFallback, cacheKey]);
-
-  const uploadLogo = useCallback(async (file: File): Promise<boolean> => {
-    if (!entityId) {
-      setError('Entity ID is required for logo upload');
-      return false;
-    }
-
-    // Validate file
-    const validation = LogoService.validateFile(file);
-    if (!validation.isValid) {
-      setError(validation.error || 'Invalid file');
-      return false;
-    }
-
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const result = await LogoService.uploadLogo(file, entityId, entityType);
-      
-      if (result.success && result.url) {
-        setLogoUrl(result.url);
-        
-        // Update cache
-        if (cacheKey) {
-          logoCache.set(cacheKey, {
-            url: result.url,
-            timestamp: Date.now(),
-          });
-        }
-        
-        return true;
-      } else {
-        setError(result.error || 'Failed to upload logo');
-        return false;
-      }
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to upload logo';
-      setError(errorMessage);
-      console.error('Error uploading logo:', err);
-      return false;
-    } finally {
-      setIsLoading(false);
-    }
-  }, [entityId, entityType, cacheKey]);
-
-
 
   const refetch = useCallback(async () => {
     // Clear cache to force fresh fetch
@@ -252,7 +214,6 @@ export const useLogo = (options: UseLogoOptions = {}): UseLogoReturn => {
     isLoading,
     error,
     refetch,
-    uploadLogo,
   };
 };
 
@@ -294,73 +255,64 @@ export const useLogos = (entityIds: string[], entityType?: string) => {
           testImg.onerror = () => {
             console.log('❌ useLogos: JPG failed for', entityId, ', trying PNG:', pngUrl);
             
-            const pngTestImg = new Image();
-            pngTestImg.onload = () => {
+            const testPngImg = new Image();
+            testPngImg.onload = () => {
               console.log('✅ useLogos: PNG loaded for', entityId, ':', pngUrl);
               logoMap[entityId] = pngUrl;
               resolve();
             };
             
-            pngTestImg.onerror = () => {
-              console.log('❌ useLogos: Both entity-specific formats failed for', entityId);
+            testPngImg.onerror = () => {
+              console.log('❌ useLogos: Both formats failed for', entityId);
               
-              // Third fallback: Try entity-type logo from logo_mappings
+              // Try entity-type fallback
               if (entityType) {
-                console.log('🔍 useLogos: Trying entity-type fallback for', entityId, ':', entityType);
+                const typeJpgUrl = `https://storage.googleapis.com/entity-type-logos/${entityType}.jpg`;
+                const typePngUrl = `https://storage.googleapis.com/entity-type-logos/${entityType}.png`;
                 
-                const entityTypeJpgUrl = `https://storage.googleapis.com/entity-type-logos/${entityType}.jpg`;
-                const entityTypePngUrl = `https://storage.googleapis.com/entity-type-logos/${entityType}.png`;
-                
-                console.log('🔍 useLogos: Trying entity-type JPG for', entityId, ':', entityTypeJpgUrl);
-                
-                const entityTypeTestImg = new Image();
-                entityTypeTestImg.onload = () => {
-                  console.log('✅ useLogos: Entity-type JPG loaded for', entityId, ':', entityTypeJpgUrl);
-                  logoMap[entityId] = entityTypeJpgUrl;
+                const testTypeImg = new Image();
+                testTypeImg.onload = () => {
+                  console.log('✅ useLogos: Entity-type JPG fallback for', entityId, ':', typeJpgUrl);
+                  logoMap[entityId] = typeJpgUrl;
                   resolve();
                 };
                 
-                entityTypeTestImg.onerror = () => {
-                  console.log('❌ useLogos: Entity-type JPG failed for', entityId, ', trying PNG:', entityTypePngUrl);
-                  
-                  const entityTypePngTestImg = new Image();
-                  entityTypePngTestImg.onload = () => {
-                    console.log('✅ useLogos: Entity-type PNG loaded for', entityId, ':', entityTypePngUrl);
-                    logoMap[entityId] = entityTypePngUrl;
+                testTypeImg.onerror = () => {
+                  const testTypePngImg = new Image();
+                  testTypePngImg.onload = () => {
+                    console.log('✅ useLogos: Entity-type PNG fallback for', entityId, ':', typePngUrl);
+                    logoMap[entityId] = typePngUrl;
                     resolve();
                   };
                   
-                  entityTypePngTestImg.onerror = () => {
-                    console.log('❌ useLogos: All logo attempts failed for', entityId, 'entityType:', entityType);
+                  testTypePngImg.onerror = () => {
+                    console.log('❌ useLogos: All fallbacks failed for', entityId);
                     logoMap[entityId] = null;
                     resolve();
                   };
                   
-                  entityTypePngTestImg.src = entityTypePngUrl;
+                  testTypePngImg.src = typePngUrl;
                 };
                 
-                entityTypeTestImg.src = entityTypeJpgUrl;
+                testTypeImg.src = typeJpgUrl;
               } else {
-                console.log('❌ useLogos: No entityType provided for', entityId, ', cannot try entity-type fallback');
                 logoMap[entityId] = null;
                 resolve();
               }
             };
             
-            pngTestImg.src = pngUrl;
+            testPngImg.src = pngUrl;
           };
           
           testImg.src = jpgUrl;
         });
       });
-      
-      // Wait for all logo tests to complete
+
       await Promise.all(logoPromises);
       setLogos(logoMap);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to construct logo URLs';
-      setError(errorMessage);
-      console.error('❌ useLogos error:', err);
+      console.error('Error fetching logos:', err);
+      setError('Failed to fetch logos');
     } finally {
       setIsLoading(false);
     }

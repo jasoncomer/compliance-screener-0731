@@ -41,7 +41,7 @@ const Welcome: React.FC = () => {
         // API call will be implemented later
         // const result = await api.organization.acceptInvite(inviteToken);
         message.success(`Welcome to ${orgName || 'the organization'}!`);
-        navigate('/home/compliance-screener');
+        navigate('/home/block-explorer');
       } catch (err: any) {
         setError(err.message || 'Invalid or expired invitation link');
         setLoading(false);

@@ -41,7 +41,7 @@ const SideNav: React.FC<SideNavProps> = ({ theme, collapsed, onCollapse }) => {
     if (parts.length >= 3 && parts[2]) {
       return parts[2];
     }
-    return 'compliance-screener';
+    return 'block-explorer';
   };
 
   const handleMenuClick = ({ key }: { key: string }) => {
