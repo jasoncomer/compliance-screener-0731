@@ -11,10 +11,10 @@ import { socialMedia } from './socialMedia';
 import { notesApi } from './notes';
 import { storage } from '../utils/storage';
 
-const BASE_URL = process.env.NODE_ENV === 'production' ? 'https://api.blockscout.ai/api/v1' : 'http://localhost:8004/api/v1';
+export const BASE_API_URL = process.env.NODE_ENV === 'production' ? 'https://api.blockscout.ai/api/v1' : 'http://localhost:8004/api/v1';
 
 export const axiosInstance: AxiosInstance = axios.create({
-  baseURL: BASE_URL,
+  baseURL: BASE_API_URL,
   timeout: 60000,
 });
 

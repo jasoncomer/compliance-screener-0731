@@ -1,7 +1,7 @@
 import React from 'react';
 import { Button } from 'antd';
 import { GoogleOutlined } from '@ant-design/icons';
-import { config } from '../config/config';
+import { BASE_API_URL } from '@/api/api';
 
 interface GoogleLoginButtonProps {
   loading?: boolean;
@@ -17,8 +17,7 @@ export const GoogleLoginButton: React.FC<GoogleLoginButtonProps> = ({
   const handleGoogleLogin = () => {
     try {
       // Redirect to backend Google OAuth endpoint
-      const backendUrl = config.API_URL || 'http://localhost:8004';
-      window.location.href = `${backendUrl}/api/v1/auth/google`;
+      window.location.href = `${BASE_API_URL}/auth/google`;
     } catch (error) {
       console.error('Error initiating Google OAuth:', error);
       if (onError) {
