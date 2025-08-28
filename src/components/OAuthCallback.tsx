@@ -47,20 +47,20 @@ const OAuthCallback: React.FC = () => {
             setUser(userData);
             
             // Navigate to dashboard
-            navigate('/home/cases');
+            navigate('/home/block-explorer');
             
             message.success('Successfully signed in with Google!');
           } catch (parseError) {
             console.error('Error parsing user data:', parseError);
             // Fallback: just store the token and redirect
             storage.auth.setTokens(token, refreshToken);
-            navigate('/home/cases');
+            navigate('/home/block-explorer');
             message.success('Successfully signed in with Google!');
           }
         } else {
           // Fallback: just store the token and redirect
           storage.auth.setTokens(token, refreshToken);
-          navigate('/home/cases');
+          navigate('/home/block-explorer');
           message.success('Successfully signed in with Google!');
         }
       } catch (error) {

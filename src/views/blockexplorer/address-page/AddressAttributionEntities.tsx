@@ -66,8 +66,8 @@ const AddressAttributionEntities: React.FC<AddressAttributionEntitiesProps> = ({
 
   // Handle view full profile
   const handleViewFullProfile = (sot: any) => {
-    // Navigate to VASP Explorer with the entity
-    window.open(`/home/blockham?entity=${sot.entity_id}`, '_blank');
+    // Navigate to VASP Explorer with the entity in the same tab
+    window.location.href = `/home/blockham?entity=${sot.entity_id}`;
   };
 
   // Handle quick view click

@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Avatar, Spin, Tooltip } from 'antd';
-import { UserOutlined, PictureOutlined } from '@ant-design/icons';
+import { UserOutlined } from '@ant-design/icons';
 import { useLogo } from '../../hooks/useLogo';
 
 interface LogoProps {
@@ -9,8 +9,6 @@ interface LogoProps {
   size?: number | 'small' | 'default' | 'large';
   shape?: 'circle' | 'square';
   fallbackIcon?: React.ReactNode;
-  showUploadButton?: boolean;
-  onLogoChange?: (url: string) => void;
   className?: string;
   style?: React.CSSProperties;
   alt?: string;
@@ -24,22 +22,16 @@ export const Logo: React.FC<LogoProps> = ({
   size = 'default',
   shape = 'circle',
   fallbackIcon = <UserOutlined />,
-  showUploadButton = false,
-  onLogoChange,
   className,
   style,
   alt,
   enableFallback = true,
   cacheTime,
 }) => {
-  const [isUploading, setIsUploading] = useState(false);
-  const fileInputRef = React.useRef<HTMLInputElement>(null);
-
   const {
     logoUrl,
     isLoading,
     error,
-    uploadLogo,
   } = useLogo({
     entityId,
     entityType,
@@ -47,33 +39,8 @@ export const Logo: React.FC<LogoProps> = ({
     cacheTime,
   });
 
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file || !entityId) return;
-
-    setIsUploading(true);
-    try {
-      const success = await uploadLogo(file);
-      if (success && onLogoChange && logoUrl) {
-        onLogoChange(logoUrl);
-      }
-    } catch (err) {
-      console.error('Error uploading logo:', err);
-    } finally {
-      setIsUploading(false);
-      // Reset file input
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
-    }
-  };
-
-  const handleUploadClick = () => {
-    fileInputRef.current?.click();
-  };
-
   const renderContent = () => {
-    if (isLoading || isUploading) {
+    if (isLoading) {
       return <Spin size="small" />;
     }
 
@@ -125,7 +92,7 @@ export const Logo: React.FC<LogoProps> = ({
     return fallbackIcon;
   };
 
-  const avatarSize = typeof size === 'number' ? size : 
+  const avatarSize = 
     size === 'small' ? 32 : 
     size === 'large' ? 56 : 40;
 
@@ -138,7 +105,6 @@ export const Logo: React.FC<LogoProps> = ({
           className={className}
           style={{
             ...style,
-            cursor: showUploadButton ? 'pointer' : 'default',
             border: error ? '1px solid #ff4d4f' : undefined,
             overflow: 'hidden',
             display: 'flex',
@@ -147,43 +113,10 @@ export const Logo: React.FC<LogoProps> = ({
             padding: 0,
             backgroundColor: 'transparent',
           }}
-          onClick={showUploadButton ? handleUploadClick : undefined}
         >
           {renderContent()}
         </Avatar>
       </Tooltip>
-
-      {showUploadButton && (
-        <Tooltip title="Upload new logo">
-          <div
-            style={{
-              position: 'absolute',
-              bottom: -2,
-              right: -2,
-              width: 16,
-              height: 16,
-              backgroundColor: '#1890ff',
-              borderRadius: '50%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
-              border: '2px solid white',
-            }}
-            onClick={handleUploadClick}
-          >
-            <PictureOutlined style={{ fontSize: 8, color: 'white' }} />
-          </div>
-        </Tooltip>
-      )}
-
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="image/*"
-        style={{ display: 'none' }}
-        onChange={handleFileUpload}
-      />
     </div>
   );
 };
@@ -199,20 +132,5 @@ export const SimpleLogo: React.FC<{
   style?: React.CSSProperties;
   alt?: string;
 }> = (props) => {
-  return <Logo {...props} showUploadButton={false} />;
-};
-
-// Export a version with upload capability
-export const EditableLogo: React.FC<{
-  entityId?: string;
-  entityType?: string;
-  size?: number | 'small' | 'default' | 'large';
-  shape?: 'circle' | 'square';
-  fallbackIcon?: React.ReactNode;
-  onLogoChange?: (url: string) => void;
-  className?: string;
-  style?: React.CSSProperties;
-  alt?: string;
-}> = (props) => {
-  return <Logo {...props} showUploadButton={true} />;
+  return <Logo {...props} />;
 }; 
