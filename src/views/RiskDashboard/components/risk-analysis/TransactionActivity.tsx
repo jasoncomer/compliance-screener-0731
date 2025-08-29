@@ -146,35 +146,23 @@ const TransactionActivity: React.FC<TransactionActivityProps> = ({
     return targetDate;
   };
 
-  // Function to get transactions for a specific date
-  const getTransactionsForDate = (date: Date) => {
-    if (!transactions.length) return [];
-    
-    const startOfDay = new Date(date);
-    startOfDay.setHours(0, 0, 0, 0);
-    
-    const endOfDay = new Date(date);
-    endOfDay.setHours(23, 59, 59, 999);
-    
-    return transactions.filter(tx => {
-      const txDate = new Date(tx.timestamp * 1000);
-      return txDate >= startOfDay && txDate <= endOfDay;
-    });
-  };
 
-  // Function to handle day click - redirect to block explorer
+
+  // Function to handle day click - redirect to block explorer with date filter
   const handleDayClick = (week: number, day: number) => {
     const date = getDateFromWeekDay(week, day);
-    const dayTransactions = getTransactionsForDate(date);
     
-    if (dayTransactions.length > 0) {
-      // If there are transactions for this day, redirect to the first transaction
-      const firstTx = dayTransactions[0];
-      const explorerUrl = `/home/block-explorer/transaction/${firstTx.txid}`;
-      window.open(explorerUrl, '_blank', 'noopener,noreferrer');
-    } else if (address) {
-      // If no transactions for this day but we have an address, redirect to address view
-      const explorerUrl = `/home/block-explorer/address/${address}`;
+    if (address) {
+      // Format date as YYYY-MM-DD in local timezone for URL parameter
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const dayOfMonth = String(date.getDate()).padStart(2, '0');
+      const dateString = `${year}-${month}-${dayOfMonth}`;
+      
+
+      
+      // Navigate to address view with date filter
+      const explorerUrl = `/home/block-explorer/address/${address}?date=${dateString}`;
       window.open(explorerUrl, '_blank', 'noopener,noreferrer');
     }
   };

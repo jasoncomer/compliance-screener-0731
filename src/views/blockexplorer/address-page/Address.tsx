@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useSearchParams } from 'react-router-dom';
 import { api } from '../../../api/api';
+import { flowtraceService } from '../../../services/flowtraceService';
 import { BsBlock } from '../../../styles/Table';
 import { IBtcAddress } from '../../../typings/BtcAddress';
 import BtcTransactionTable from '../transaction/BtcTransactionTable';
@@ -19,6 +20,7 @@ import { fetchSOT } from '../../../store/slices/sotSlice';
 
 const Address: React.FC = () => {
   const { address } = useParams();
+  const [searchParams] = useSearchParams();
   const dispatch = useAppDispatch();
   const { toast } = useToast();
   const [addrData, setAddrData] = React.useState<IBtcAddress>();
@@ -29,6 +31,9 @@ const Address: React.FC = () => {
   const [copySuccess, setCopySuccess] = React.useState<boolean>(false);
   const [riskScore, setRiskScore] = React.useState<RiskScoringResponse | null>(null);
   const [isLoadingRiskScore, setIsLoadingRiskScore] = React.useState<boolean>(false);
+  
+  // Get date filter from URL parameters
+  const dateFilter = searchParams.get('date');
 
   const itemsPerPage = 20;
   const { fetchAttributions, attributions } = useAttribution();
@@ -79,16 +84,55 @@ const Address: React.FC = () => {
         if (!address) return;
         setIsLoading(true);
         await getAddressStats();
-        const [{ data }, { txs, pagination }] = await Promise.all([
-          api.blockchain.getAddress(address),
-          api.blockchain.getAddressTransactions(address, {
+        
+        let txs: BtcTransaction[] = [];
+        let pagination: { totalTxs: number; totalPages: number; currentPage: number; limit: number };
+        
+        if (dateFilter) {
+          // If date filter is applied, fetch all transactions to find all for that date
+          const allTransactionsResponse = await flowtraceService.fetchAllTransactions(address, 1000);
+          txs = allTransactionsResponse.txs || [];
+          pagination = {
+            totalTxs: allTransactionsResponse.total || txs.length,
+            totalPages: 1,
+            currentPage: 1,
+            limit: txs.length
+          };
+        } else {
+          // Normal pagination for regular view
+          const response = await api.blockchain.getAddressTransactions(address, {
             page: currentPage,
             limit: itemsPerPage
-          }),
-        ]);
+          });
+          txs = response.txs;
+          pagination = response.pagination;
+        }
+        
+        const { data } = await api.blockchain.getAddress(address);
         setAddrData(data);
-        setTxs(txs);
-        setTotalTxs(pagination.totalTxs);
+        
+        // Filter transactions by date if date filter is provided
+        let filteredTxs = txs;
+        let filteredTotalTxs = pagination.totalTxs;
+        
+        if (dateFilter) {
+          // Parse the date filter in local timezone to avoid timezone shift
+          const [year, month, day] = dateFilter.split('-').map(Number);
+          const filterDate = new Date(year, month - 1, day); // month is 0-indexed
+          
+          filteredTxs = txs.filter(tx => {
+            const txDate = new Date(tx.timestamp * 1000);
+            const txDateLocal = new Date(txDate.getFullYear(), txDate.getMonth(), txDate.getDate());
+            
+            const isInRange = txDateLocal.getTime() === filterDate.getTime();
+            
+            return isInRange;
+          });
+          filteredTotalTxs = filteredTxs.length;
+        }
+        
+        setTxs(filteredTxs);
+        setTotalTxs(filteredTotalTxs);
         const uniqueAddresses = new Set([
           address,
           ...txs.flatMap(tx => tx.inputs.map(i => i.addr)),
@@ -111,7 +155,7 @@ const Address: React.FC = () => {
     };
 
     fetchAddress();
-  }, [address, currentPage, fetchAttributions]);
+  }, [address, currentPage, fetchAttributions, dateFilter]);
 
   useEffect(() => {
     const fetchRiskScore = async () => {
@@ -197,9 +241,53 @@ const Address: React.FC = () => {
         itemsMap={itemsMap}
       />
 
+      {/* Date Filter Indicator */}
+      {dateFilter && (
+        <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <span className="text-sm font-medium text-blue-700 dark:text-blue-300">
+                📅 Filtered by date:
+              </span>
+              <span className="text-sm text-blue-600 dark:text-blue-400">
+                {(() => {
+                  const [year, month, day] = dateFilter.split('-').map(Number);
+                  const filterDate = new Date(year, month - 1, day);
+                  return filterDate.toLocaleDateString('en-US', {
+                    weekday: 'long',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                  });
+                })()}
+              </span>
+            </div>
+            <button
+              onClick={() => {
+                const url = new URL(window.location.href);
+                url.searchParams.delete('date');
+                window.history.replaceState({}, '', url.toString());
+                window.location.reload();
+              }}
+              className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200 underline"
+            >
+              Clear filter
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="w-full">
         <BsBlock>
-          <h3>Transactions ({totalTxs.toLocaleString()})</h3>
+
+          <h3>
+            Transactions ({totalTxs.toLocaleString()})
+            {dateFilter && (
+              <span className="text-sm font-normal text-gray-500 dark:text-gray-400 ml-2">
+                (filtered)
+              </span>
+            )}
+          </h3>
           <hr />
           {isLoading ? (
             <div style={{ textAlign: 'center', padding: '2rem' }}>Loading...</div>
