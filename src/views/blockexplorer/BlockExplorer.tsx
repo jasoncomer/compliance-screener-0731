@@ -1,7 +1,6 @@
 import { Route, Routes, useNavigate, useLocation } from 'react-router-dom';
 import React, { useState, useEffect } from 'react';
 import { Globe, MessageSquare, Box, ArrowLeftRight, Wallet, Building, Users } from 'lucide-react';
-import { Badge } from 'antd';
 import { cn } from '../../lib/utils';
 import ViewWrapper from '../../components/ViewWrapper';
 import SearchInput from '../../components/common/SearchInput';
