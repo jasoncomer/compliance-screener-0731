@@ -16,6 +16,14 @@ interface ThemeProps {
   themeMode: string;
 }
 
+// Storage key for tracking last viewed timestamps
+const getLastViewedKey = (userId: string, type: string, id: string) => 
+  `notes_last_viewed_${userId}_${type}_${id}`;
+
+// Storage key for tracking unseen notes count
+const getUnseenCountKey = (userId: string, type: string, id: string) => 
+  `notes_unseen_count_${userId}_${type}_${id}`;
+
 // Base styles for note bubbles
 const NoteItemBase = styled.div<ThemeProps>`
   padding: 12px 16px;
@@ -180,6 +188,7 @@ interface NotesModalProps {
   transactionId?: string;
   address?: string;
   type?: 'general' | 'transaction' | 'address';
+  onNewNotesCountChange?: (count: number) => void;
 }
 
 // Custom message utility that respects theme context
@@ -222,7 +231,8 @@ const NotesModal: React.FC<NotesModalProps> = ({
   onClose, 
   transactionId,
   address, 
-  type = 'general' 
+  type = 'general',
+  onNewNotesCountChange
 }) => {
   const { theme } = useTheme();
   const { user: currentUser } = useAppContext();
@@ -233,6 +243,7 @@ const NotesModal: React.FC<NotesModalProps> = ({
   const [submitting, setSubmitting] = useState(false);
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
   const [editContent, setEditContent] = useState('');
+  const [unseenNotesCount, setUnseenNotesCount] = useState(0);
   const currentOrganization = useSelector(selectCurrentOrganization);
   const notesContainerRef = useRef<HTMLDivElement>(null);
 
@@ -244,6 +255,81 @@ const NotesModal: React.FC<NotesModalProps> = ({
       }, 100);
     }
   }, [notes, visible]);
+
+  // Mark notes as viewed when modal opens
+  useEffect(() => {
+    if (visible && currentUser && currentUser._id && (transactionId || address)) {
+      const id = transactionId || address;
+      if (id) {
+        const lastViewedKey = getLastViewedKey(currentUser._id, type, id);
+        const now = new Date().toISOString();
+        localStorage.setItem(lastViewedKey, now);
+        
+        // Reset unseen count when user views the notes
+        setUnseenNotesCount(0);
+        const unseenCountKey = getUnseenCountKey(currentUser._id, type, id);
+        localStorage.setItem(unseenCountKey, '0');
+      }
+    }
+  }, [visible, currentUser, transactionId, address, type]);
+
+  // Calculate unseen count when component mounts or context changes
+  useEffect(() => {
+    const calculateUnseenCount = async () => {
+      if (!currentUser || !currentUser._id || !currentOrganization || !(transactionId || address)) {
+        return;
+      }
+
+      const id = transactionId || address;
+      if (!id) return;
+
+      try {
+        // Fetch notes to calculate unseen count
+        let response;
+        if (type === 'transaction' && transactionId) {
+          response = await notesApi.getTransactionNotes(currentOrganization._id, transactionId);
+        } else if (type === 'address' && address) {
+          response = await notesApi.getAddressNotes(currentOrganization._id, address);
+        } else {
+          response = await notesApi.list(currentOrganization._id);
+        }
+
+        const notes = response.data || [];
+        
+        // Check for unseen notes
+        const lastViewedKey = getLastViewedKey(currentUser._id, type, id);
+        const lastViewed = localStorage.getItem(lastViewedKey);
+        
+        if (lastViewed) {
+          const lastViewedTime = new Date(lastViewed).getTime();
+          const unseenNotes = notes.filter(note => 
+            new Date(note.createdAt).getTime() > lastViewedTime && !isCurrentUserNote(note)
+          );
+          
+          setUnseenNotesCount(unseenNotes.length);
+          const unseenCountKey = getUnseenCountKey(currentUser._id, type, id);
+          localStorage.setItem(unseenCountKey, unseenNotes.length.toString());
+        } else {
+          // If user has never viewed notes, all notes from others are unseen
+          const unseenNotes = notes.filter(note => !isCurrentUserNote(note));
+          setUnseenNotesCount(unseenNotes.length);
+          const unseenCountKey = getUnseenCountKey(currentUser._id, type, id);
+          localStorage.setItem(unseenCountKey, unseenNotes.length.toString());
+        }
+      } catch (error) {
+        if (process.env.NODE_ENV === 'development') console.error('Failed to calculate unseen count:', error);
+      }
+    };
+
+    calculateUnseenCount();
+  }, [currentUser, currentOrganization, transactionId, address, type]);
+
+  // Notify parent component when unseen notes count changes
+  useEffect(() => {
+    if (onNewNotesCountChange) {
+      onNewNotesCountChange(unseenNotesCount);
+    }
+  }, [unseenNotesCount, onNewNotesCountChange]);
 
   // Load notes when modal opens
   useEffect(() => {
@@ -290,7 +376,27 @@ const NotesModal: React.FC<NotesModalProps> = ({
 
       await notesApi.create(currentOrganization._id, noteData);
       setNewNote('');
-      fetchNotes();
+      
+      // Refresh notes and recalculate unseen count
+      await fetchNotes();
+      
+      // Recalculate unseen count after adding note
+      if (currentUser && currentUser._id && (transactionId || address)) {
+        const id = transactionId || address;
+        if (id) {
+          const lastViewedKey = getLastViewedKey(currentUser._id, type, id);
+          const lastViewed = localStorage.getItem(lastViewedKey);
+          
+          if (lastViewed) {
+            const lastViewedTime = new Date(lastViewed).getTime();
+            const unseenNotes = notes.filter(note => 
+              new Date(note.createdAt).getTime() > lastViewedTime && !isCurrentUserNote(note)
+            );
+            setUnseenNotesCount(unseenNotes.length);
+          }
+        }
+      }
+      
       message.success('Note added successfully');
     } catch (error) {
       if (process.env.NODE_ENV === 'development') console.error('Failed to add note:', error);
@@ -335,6 +441,12 @@ const NotesModal: React.FC<NotesModalProps> = ({
       if (!groups[date]) groups[date] = [];
       groups[date].push(note);
     });
+    
+    // Sort notes within each date group by creation time (oldest to newest)
+    Object.keys(groups).forEach(date => {
+      groups[date].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+    });
+    
     return groups;
   };
 
@@ -415,7 +527,9 @@ const NotesModal: React.FC<NotesModalProps> = ({
                 <Text type="secondary">No notes yet. Be the first to add a note!</Text>
               ) : (
                 <>
-                  {Object.entries(groupNotesByDate()).map(([date, dateNotes]) => (
+                  {Object.entries(groupNotesByDate())
+                    .sort(([dateA], [dateB]) => new Date(dateA).getTime() - new Date(dateB).getTime())
+                    .map(([date, dateNotes]) => (
                     <React.Fragment key={date}>
                       <ChatDate theme={{ theme }}><span>{formatDateHeader(date)}</span></ChatDate>
                       {dateNotes.map(note => (
