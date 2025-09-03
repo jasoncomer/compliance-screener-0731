@@ -21,6 +21,16 @@ export interface ICreateNote {
   type?: 'general' | 'transaction' | 'address';
 }
 
+export interface IMarkNotesViewed {
+  contextType: 'general' | 'transaction' | 'address';
+  contextId: string;
+}
+
+export interface IUnseenCountResponse {
+  count: number;
+  lastViewedAt?: string;
+}
+
 export const notesApi = {
   // Get all notes for the organization
   list: async (organizationId: string): Promise<IBSApiResponse<INote[]>> => {
@@ -59,6 +69,19 @@ export const notesApi = {
   // Delete a note
   delete: async (organizationId: string, noteId: string): Promise<IBSApiResponse<null>> => {
     const response = await axiosInstance.delete(`/organizations/${organizationId}/notes/${noteId}`);
+    return response.data;
+  },
+
+  // Mark notes as viewed for a specific user and context
+  markAsViewed: async (organizationId: string, data: IMarkNotesViewed): Promise<IBSApiResponse<{ success: boolean }>> => {
+    const response = await axiosInstance.post(`/organizations/${organizationId}/notes/mark-viewed`, data);
+    return response.data;
+  },
+
+  // Get unseen notes count for a specific user and context
+  getUnseenCount: async (organizationId: string, contextType: string, contextId: string): Promise<IBSApiResponse<IUnseenCountResponse>> => {
+    const encodedContextId = encodeURIComponent(contextId);
+    const response = await axiosInstance.get(`/organizations/${organizationId}/notes/unseen-count/${contextType}/${encodedContextId}`);
     return response.data;
   }
 }; 

@@ -16,16 +16,15 @@ interface ThemeProps {
   themeMode: string;
 }
 
-// Storage key for tracking last viewed timestamps
-const getLastViewedKey = (userId: string, type: string, id: string) => 
-  `notes_last_viewed_${userId}_${type}_${id}`;
-
-// Storage key for tracking unseen notes count
-const getUnseenCountKey = (userId: string, type: string, id: string) => 
-  `notes_unseen_count_${userId}_${type}_${id}`;
+// Helper function to get context ID
+const getContextId = (transactionId?: string, address?: string) => {
+  return transactionId || address;
+};
 
 // Base styles for note bubbles
-const NoteItemBase = styled.div<ThemeProps>`
+const NoteItemBase = styled.div.withConfig({
+  shouldForwardProp: (prop) => prop !== 'themeMode'
+})<ThemeProps>`
   padding: 12px 16px;
   margin-bottom: 10px;
   border-radius: 12px;
@@ -34,7 +33,9 @@ const NoteItemBase = styled.div<ThemeProps>`
 `;
 
 // Note from current user (right-aligned)
-const CurrentUserNote = styled(NoteItemBase)`
+const CurrentUserNote = styled(NoteItemBase).withConfig({
+  shouldForwardProp: (prop) => prop !== 'themeMode'
+})`
   margin-left: auto;
   background-color: ${({ themeMode }) => themeMode === 'dark' ? '#A53D10' : '#E7C0AE'};
   border-bottom-right-radius: 4px;
@@ -55,7 +56,9 @@ const CurrentUserNote = styled(NoteItemBase)`
 `;
 
 // Note from other users (left-aligned)
-const OtherUserNote = styled(NoteItemBase)`
+const OtherUserNote = styled(NoteItemBase).withConfig({
+  shouldForwardProp: (prop) => prop !== 'themeMode'
+})`
   margin-right: auto;
   background-color: ${({ themeMode }) => themeMode === 'dark' ? '#2a2a2a' : '#f5f5f5'};
   border-bottom-left-radius: 4px;
@@ -75,7 +78,9 @@ const OtherUserNote = styled(NoteItemBase)`
 `;
 
 // Action icons container
-const ActionIcons = styled.div<ThemeProps>`
+const ActionIcons = styled.div.withConfig({
+  shouldForwardProp: (prop) => prop !== 'themeMode'
+})<ThemeProps>`
   position: absolute;
   top: 8px;
   right: 8px;
@@ -89,7 +94,9 @@ const ActionIcons = styled.div<ThemeProps>`
   }
 `;
 
-const ActionIcon = styled.div<ThemeProps>`
+const ActionIcon = styled.div.withConfig({
+  shouldForwardProp: (prop) => prop !== 'themeMode'
+})<ThemeProps>`
   display: flex;
   align-items: center;
   justify-content: center;
@@ -111,7 +118,9 @@ const NoteContent = styled.div`
   padding-right: 65px;
 `;
 
-const NoteFooter = styled.div<ThemeProps>`
+const NoteFooter = styled.div.withConfig({
+  shouldForwardProp: (prop) => prop !== 'themeMode'
+})<ThemeProps>`
   display: flex;
   justify-content: space-between;
   font-size: 11px;
@@ -155,7 +164,9 @@ const ChatDate = styled.div`
   }
 `;
 
-const InputContainer = styled.div<ThemeProps>`
+const InputContainer = styled.div.withConfig({
+  shouldForwardProp: (prop) => prop !== 'themeMode'
+})<ThemeProps>`
   display: flex;
   align-items: center;
   gap: 8px;
@@ -258,20 +269,27 @@ const NotesModal: React.FC<NotesModalProps> = ({
 
   // Mark notes as viewed when modal opens
   useEffect(() => {
-    if (visible && currentUser && currentUser._id && (transactionId || address)) {
-      const id = transactionId || address;
-      if (id) {
-        const lastViewedKey = getLastViewedKey(currentUser._id, type, id);
-        const now = new Date().toISOString();
-        localStorage.setItem(lastViewedKey, now);
-        
-        // Reset unseen count when user views the notes
-        setUnseenNotesCount(0);
-        const unseenCountKey = getUnseenCountKey(currentUser._id, type, id);
-        localStorage.setItem(unseenCountKey, '0');
+    const markNotesAsViewed = async () => {
+      if (visible && currentUser && currentUser._id && currentOrganization && (transactionId || address)) {
+        const contextId = getContextId(transactionId, address);
+        if (contextId) {
+          try {
+            await notesApi.markAsViewed(currentOrganization._id, {
+              contextType: type,
+              contextId
+            });
+            
+            // Reset unseen count when user views the notes
+            setUnseenNotesCount(0);
+          } catch (error) {
+            if (process.env.NODE_ENV === 'development') console.error('Failed to mark notes as viewed:', error);
+          }
+        }
       }
-    }
-  }, [visible, currentUser, transactionId, address, type]);
+    };
+
+    markNotesAsViewed();
+  }, [visible, currentUser, currentOrganization, transactionId, address, type]);
 
   // Calculate unseen count when component mounts or context changes
   useEffect(() => {
@@ -280,44 +298,22 @@ const NotesModal: React.FC<NotesModalProps> = ({
         return;
       }
 
-      const id = transactionId || address;
-      if (!id) return;
+      const contextId = getContextId(transactionId, address);
+      if (!contextId) return;
 
       try {
-        // Fetch notes to calculate unseen count
-        let response;
-        if (type === 'transaction' && transactionId) {
-          response = await notesApi.getTransactionNotes(currentOrganization._id, transactionId);
-        } else if (type === 'address' && address) {
-          response = await notesApi.getAddressNotes(currentOrganization._id, address);
-        } else {
-          response = await notesApi.list(currentOrganization._id);
-        }
-
-        const notes = response.data || [];
+        // Get unseen count from API
+        const response = await notesApi.getUnseenCount(
+          currentOrganization._id,
+          type,
+          contextId
+        );
         
-        // Check for unseen notes
-        const lastViewedKey = getLastViewedKey(currentUser._id, type, id);
-        const lastViewed = localStorage.getItem(lastViewedKey);
-        
-        if (lastViewed) {
-          const lastViewedTime = new Date(lastViewed).getTime();
-          const unseenNotes = notes.filter(note => 
-            new Date(note.createdAt).getTime() > lastViewedTime && !isCurrentUserNote(note)
-          );
-          
-          setUnseenNotesCount(unseenNotes.length);
-          const unseenCountKey = getUnseenCountKey(currentUser._id, type, id);
-          localStorage.setItem(unseenCountKey, unseenNotes.length.toString());
-        } else {
-          // If user has never viewed notes, all notes from others are unseen
-          const unseenNotes = notes.filter(note => !isCurrentUserNote(note));
-          setUnseenNotesCount(unseenNotes.length);
-          const unseenCountKey = getUnseenCountKey(currentUser._id, type, id);
-          localStorage.setItem(unseenCountKey, unseenNotes.length.toString());
-        }
+        setUnseenNotesCount(response.data.count);
       } catch (error) {
         if (process.env.NODE_ENV === 'development') console.error('Failed to calculate unseen count:', error);
+        // Fallback: set count to 0 if API fails
+        setUnseenNotesCount(0);
       }
     };
 
@@ -344,9 +340,9 @@ const NotesModal: React.FC<NotesModalProps> = ({
       setLoading(true);
       let response;
 
-      if (type === 'transaction' && transactionId) {
+      if ((type as string) === 'transaction' && transactionId) {
         response = await notesApi.getTransactionNotes(currentOrganization._id, transactionId);
-      } else if (type === 'address' && address) {
+      } else if ((type as string) === 'address' && address) {
         response = await notesApi.getAddressNotes(currentOrganization._id, address);
       } else {
         response = await notesApi.list(currentOrganization._id);
@@ -370,29 +366,29 @@ const NotesModal: React.FC<NotesModalProps> = ({
       const noteData: ICreateNote = { 
         content: newNote.trim(),
         type,
-        ...(type === 'transaction' && transactionId ? { transactionId } : {}),
-        ...(type === 'address' && address ? { address } : {})
+        ...((type as string) === 'transaction' && transactionId ? { transactionId } : {}),
+        ...((type as string) === 'address' && address ? { address } : {})
       };
 
       await notesApi.create(currentOrganization._id, noteData);
       setNewNote('');
       
-      // Refresh notes and recalculate unseen count
+      // Refresh notes
       await fetchNotes();
       
       // Recalculate unseen count after adding note
-      if (currentUser && currentUser._id && (transactionId || address)) {
-        const id = transactionId || address;
-        if (id) {
-          const lastViewedKey = getLastViewedKey(currentUser._id, type, id);
-          const lastViewed = localStorage.getItem(lastViewedKey);
-          
-          if (lastViewed) {
-            const lastViewedTime = new Date(lastViewed).getTime();
-            const unseenNotes = notes.filter(note => 
-              new Date(note.createdAt).getTime() > lastViewedTime && !isCurrentUserNote(note)
+      if (currentUser && currentUser._id && currentOrganization && (transactionId || address)) {
+        const contextId = getContextId(transactionId, address);
+        if (contextId) {
+          try {
+            const response = await notesApi.getUnseenCount(
+              currentOrganization._id,
+              type,
+              contextId
             );
-            setUnseenNotesCount(unseenNotes.length);
+            setUnseenNotesCount(response.data.count);
+          } catch (error) {
+            if (process.env.NODE_ENV === 'development') console.error('Failed to recalculate unseen count:', error);
           }
         }
       }
@@ -428,8 +424,8 @@ const NotesModal: React.FC<NotesModalProps> = ({
     currentUser && (note.createdBy === currentUser._id || ('id' in currentUser && note.createdBy === currentUser.id));
   
   const getModalTitle = () => {
-    if (type === 'transaction' && transactionId) return `Transaction Notes - ${truncateAddress(transactionId)}`;
-    if (type === 'address' && address) return `Address Notes - ${truncateAddress(address)}`;
+    if ((type as string) === 'transaction' && transactionId) return `Transaction Notes - ${truncateAddress(transactionId)}`;
+    if ((type as string) === 'address' && address) return `Address Notes - ${truncateAddress(address)}`;
     return 'Organization Notes';
   };
 
