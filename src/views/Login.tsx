@@ -73,13 +73,6 @@ const Logo = styled.img`
   }
 `;
 
-const BrandName = styled.h1<{ $theme: string }>`
-  font-size: 24px;
-  font-weight: 700;
-  color: ${({ $theme }) => $theme === 'dark' ? '#ffffff' : '#1a202c'};
-  margin: 0 0 8px 0;
-  letter-spacing: -0.025em;
-`;
 
 const Tagline = styled.p<{ $theme: string }>`
   font-size: 14px;
