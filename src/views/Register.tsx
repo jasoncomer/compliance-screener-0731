@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Button, notification, Form } from 'antd';
+import { Button, notification } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../api/api';
 import Input from '../components/common/Input';
@@ -14,27 +14,27 @@ import type { NotificationArgsProps } from 'antd';
 type NotificationPlacement = NotificationArgsProps['placement'];
 
 // Styled components for modern design - matching Login view
-const RegisterContainer = styled.div<{ theme: string }>`
+const RegisterContainer = styled.div<{ $theme: string }>`
   min-height: 100vh;
   width: 100vw;
-  background: ${({ theme }) => theme === 'dark' ? 'linear-gradient(135deg, #0f0f23 0%, #1a1a2e 100%)' : 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)'};
+  background: ${({ $theme }) => $theme === 'dark' ? 'linear-gradient(135deg, #0f0f23 0%, #1a1a2e 100%)' : 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)'};
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 20px;
 `;
 
-const RegisterCard = styled.div<{ theme: string }>`
-  background: ${({ theme }) => theme === 'dark' ? 'rgba(30, 30, 30, 0.95)' : 'rgba(255, 255, 255, 0.95)'};
+const RegisterCard = styled.div<{ $theme: string }>`
+  background: ${({ $theme }) => $theme === 'dark' ? 'rgba(30, 30, 30, 0.95)' : 'rgba(255, 255, 255, 0.95)'};
   backdrop-filter: blur(20px);
   border-radius: 24px;
   padding: 48px;
   width: 100%;
   max-width: 480px;
-  box-shadow: ${({ theme }) => theme === 'dark' 
+  box-shadow: ${({ $theme }) => $theme === 'dark' 
     ? '0 25px 50px -12px rgba(0, 0, 0, 0.8)' 
     : '0 25px 50px -12px rgba(0, 0, 0, 0.1)'};
-  border: ${({ theme }) => theme === 'dark' 
+  border: ${({ $theme }) => $theme === 'dark' 
     ? '1px solid rgba(255, 255, 255, 0.1)' 
     : '1px solid rgba(0, 0, 0, 0.05)'};
 `;
@@ -48,7 +48,7 @@ const LogoSection = styled.div`
   justify-content: center;
 `;
 
-const LogoContainer = styled.div<{ theme: string }>`
+const LogoContainer = styled.div<{ $theme: string }>`
   display: flex;
   align-items: center;
   justify-content: center;
@@ -57,11 +57,11 @@ const LogoContainer = styled.div<{ theme: string }>`
   margin-bottom: 20px;
 `;
 
-const Logo = styled.img`
+const Logo = styled.img<{ $theme: string }>`
   width: 130px;
   height: 110px;
   border-radius: 16px;
-  filter: ${({ theme }) => theme === 'dark' ? 'brightness(0.9) contrast(1.1)' : 'brightness(1) contrast(1)'};
+  filter: ${({ $theme }) => $theme === 'dark' ? 'brightness(0.9) contrast(1.1)' : 'brightness(1) contrast(1)'};
   opacity: 0.9;
   transition: all 0.3s ease;
   
@@ -71,25 +71,25 @@ const Logo = styled.img`
   }
 `;
 
-const BrandName = styled.h1<{ theme: string }>`
+const BrandName = styled.h1<{ $theme: string }>`
   font-size: 24px;
   font-weight: 700;
-  color: ${({ theme }) => theme === 'dark' ? '#ffffff' : '#1a202c'};
+  color: ${({ $theme }) => $theme === 'dark' ? '#ffffff' : '#1a202c'};
   margin: 0 0 8px 0;
   letter-spacing: -0.025em;
 `;
 
-const Tagline = styled.p<{ theme: string }>`
+const Tagline = styled.p<{ $theme: string }>`
   font-size: 14px;
-  color: ${({ theme }) => theme === 'dark' ? '#a0aec0' : '#718096'};
+  color: ${({ $theme }) => $theme === 'dark' ? '#a0aec0' : '#718096'};
   margin: 0;
   font-weight: 400;
 `;
 
-const RegisterTitle = styled.h2<{ theme: string }>`
+const RegisterTitle = styled.h2<{ $theme: string }>`
   font-size: 28px;
   font-weight: 600;
-  color: ${({ theme }) => theme === 'dark' ? '#ffffff' : '#1a202c'};
+  color: ${({ $theme }) => $theme === 'dark' ? '#ffffff' : '#1a202c'};
   margin: 0 0 32px 0;
   text-align: center;
   letter-spacing: -0.025em;
@@ -122,28 +122,28 @@ const ActionButtons = styled.div`
   margin-top: 8px;
 `;
 
-const StyledButton = styled(Button)<{ variant: 'primary' | 'secondary' }>`
+const StyledButton = styled(Button)<{ variant: 'primary' | 'secondary'; $theme?: string }>`
   flex: 1;
   height: 48px;
   border-radius: 12px;
   font-weight: 600;
   font-size: 14px;
-  border: ${({ variant, theme }) => variant === 'secondary' 
-    ? `2px solid ${theme === 'dark' ? '#4a5568' : '#e2e8f0'}` 
+  border: ${({ variant, $theme }) => variant === 'secondary' 
+    ? `2px solid ${$theme === 'dark' ? '#4a5568' : '#e2e8f0'}` 
     : 'none'};
-  background: ${({ variant, theme }) => variant === 'primary' 
+  background: ${({ variant }) => variant === 'primary' 
     ? colors.primary 
     : 'transparent'};
-  color: ${({ variant, theme }) => variant === 'primary' 
+  color: ${({ variant, $theme }) => variant === 'primary' 
     ? '#ffffff' 
-    : theme === 'dark' ? '#ffffff' : '#1a202c'};
+    : $theme === 'dark' ? '#ffffff' : '#1a202c'};
   
   &:hover {
-    background: ${({ variant, theme }) => variant === 'primary' 
+    background: ${({ variant, $theme }) => variant === 'primary' 
       ? colors.primaryDark 
-      : theme === 'dark' ? '#4a5568' : '#f7fafc'};
-    border-color: ${({ variant, theme }) => variant === 'secondary' 
-      ? theme === 'dark' ? '#718096' : '#cbd5e0' 
+      : $theme === 'dark' ? '#4a5568' : '#f7fafc'};
+    border-color: ${({ variant, $theme }) => variant === 'secondary' 
+      ? $theme === 'dark' ? '#718096' : '#cbd5e0' 
       : 'transparent'};
   }
   
@@ -227,6 +227,7 @@ const Register = () => {
             <Logo 
               src='https://framerusercontent.com/images/3djlle6W5wE61QQGlOQuLh5QvQ.jpg' 
               alt="Blockscout Research Logo"
+              $theme={theme}
             />
           </LogoContainer>
           <BrandName $theme={theme}>BLOCKSCOUT RESEARCH</BrandName>
@@ -270,7 +271,7 @@ const Register = () => {
             <StyledButton 
               type='default' 
               variant="secondary"
-              theme={theme}
+              $theme={theme}
               onClick={navLogin}
             >
               Back to login
@@ -278,7 +279,7 @@ const Register = () => {
             <StyledButton 
               type="primary" 
               variant="primary"
-              theme={theme}
+              $theme={theme}
               htmlType="submit" 
               loading={loading}
             >
