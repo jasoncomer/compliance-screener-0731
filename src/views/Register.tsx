@@ -52,14 +52,14 @@ const LogoContainer = styled.div<{ $theme: string }>`
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 120px;
-  height: 120px;
+  width: 280px;
+  height: 130px;
   margin-bottom: 20px;
 `;
 
 const Logo = styled.img<{ $theme: string }>`
-  width: 130px;
-  height: 110px;
+  width: 280px;
+  height: 130px;
   border-radius: 16px;
   filter: ${({ $theme }) => $theme === 'dark' ? 'brightness(0.9) contrast(1.1)' : 'brightness(1) contrast(1)'};
   opacity: 0.9;
@@ -225,12 +225,11 @@ const Register = () => {
         <LogoSection>
           <LogoContainer $theme={theme}>
             <Logo 
-              src='https://framerusercontent.com/images/3djlle6W5wE61QQGlOQuLh5QvQ.jpg' 
+              src='/aws_blockscout_banner_logo-removebg-preview.png' 
               alt="Blockscout Research Logo"
               $theme={theme}
             />
           </LogoContainer>
-          <BrandName $theme={theme}>BLOCKSCOUT RESEARCH</BrandName>
           <Tagline $theme={theme}>Advanced blockchain analytics and compliance</Tagline>
         </LogoSection>
         

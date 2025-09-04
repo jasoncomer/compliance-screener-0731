@@ -55,14 +55,14 @@ const LogoContainer = styled.div<{ $theme: string }>`
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 120px;
-  height: 120px;
+  width: 280px;
+  height: 130px;
   margin-bottom: 20px;
 `;
 
 const Logo = styled.img`
-  width: 130px;
-  height: 110px;
+  width: 300px;
+  height: 130px;
   border-radius: 16px;
   opacity: 0.9;
   transition: all 0.3s ease;
@@ -257,11 +257,10 @@ const Login = () => {
         <LogoSection>
                   <LogoContainer $theme={theme}>
           <Logo 
-            src='https://framerusercontent.com/images/3djlle6W5wE61QQGlOQuLh5QvQ.jpg' 
+            src='/aws_blockscout_banner_logo-removebg-preview.png' 
             alt="Blockscout Research Logo"
           />
         </LogoContainer>
-        <BrandName $theme={theme}>BLOCKSCOUT RESEARCH</BrandName>
         <Tagline $theme={theme}>Advanced blockchain analytics and compliance</Tagline>
         </LogoSection>
         {/* Google OAuth Button */}
