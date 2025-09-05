@@ -227,7 +227,7 @@ const LeftPanel: React.FC<Props> = ({
   };
 
   return (
-    <div className={`relative h-full border-r border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 flex flex-col transition-all duration-300 ease-in-out ${isExpanded ? 'w-96' : 'w-12'}`}>
+    <div className={`relative h-full border-r border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 flex flex-col transition-all duration-300 ease-in-out ${isExpanded ? 'w-[28rem]' : 'w-12'}`}>
       {/* Toggle Button */}
       <button
         onClick={onToggle}
@@ -307,11 +307,11 @@ const LeftPanel: React.FC<Props> = ({
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <h3 className="font-semibold text-gray-900 dark:text-gray-100 truncate">
+                      <div className="flex items-start gap-2 mb-1">
+                        <h3 className="font-semibold text-gray-900 dark:text-gray-100 leading-tight break-words">
                           {selectedEntity.label || 'Unknown Entity'}
                         </h3>
-                        <Pencil className="h-3.5 w-3.5 text-gray-400 flex-shrink-0" />
+                        <Pencil className="h-3.5 w-3.5 text-gray-400 flex-shrink-0 mt-0.5" />
                       </div>
                       <div className="text-xs text-gray-500 font-mono break-all">{formatAddress(selectedEntity.address || '')}</div>
                     </div>

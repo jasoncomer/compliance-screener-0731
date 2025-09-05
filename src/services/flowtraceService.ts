@@ -161,6 +161,40 @@ export const flowtraceService = {
       console.log('🔍 No entityId found, skipping logo fetch. EntityInfo:', entityInfo);
     }
     
+    // Fetch SOT data to get proper_name and fallback logo
+    let properName: string | null = null;
+    if (entityInfo?.entityId) {
+      try {
+        console.log('Fetching SOT data for entityId:', entityInfo.entityId);
+        
+        // Get main SOT data to search for proper_name and fallback logos
+        const mainSotResponse = await this.fetchSOT().catch(() => null);
+        if (mainSotResponse) {
+          // Look for the specific entity by entityId
+          const sotEntry = mainSotResponse.find((entry: any) => 
+            entry.entity_id === entityInfo.entityId
+          );
+          
+          if (sotEntry) {
+            properName = sotEntry.proper_name;
+            console.log('Found proper_name from SOT:', properName);
+            
+            // Also get logo from SOT if not already found
+            if (!logoUrl && sotEntry.logo) {
+              logoUrl = sotEntry.logo;
+              console.log('Found logo from SOT:', logoUrl);
+            }
+          } else {
+            console.log('No SOT entry found for entityId:', entityInfo.entityId);
+          }
+        } else {
+          console.log('No main SOT data available');
+        }
+      } catch (error) {
+        console.error('SOT data lookup failed:', error);
+      }
+    }
+    
     // If no logo from SOT and entityType exists, try fallback from main SOT data
     if (!logoUrl && entityInfo?.entityType) {
       try {
@@ -168,9 +202,9 @@ export const flowtraceService = {
         
         // Get main SOT data to search for fallback logos
         const mainSotResponse = await this.fetchSOT().catch(() => null);
-        if (mainSotResponse?.data) {
+        if (mainSotResponse) {
           // Look for entries that match the entity type and have fallback logos
-          const mappingEntry = mainSotResponse.data.find((entry: any) => 
+          const mappingEntry = mainSotResponse.find((entry: any) => 
             entry.entity_type === entityInfo.entityType && (entry.fallback_logo || entry.logo)
           );
           console.log('Found mapping entry in main SOT for entityType:', entityInfo.entityType, mappingEntry);
@@ -181,7 +215,7 @@ export const flowtraceService = {
           } else {
             // If no exact entity_type match, try to find any exchange with a logo as fallback
             if (entityInfo.entityType === 'exchange') {
-              const exchangeEntry = mainSotResponse.data.find((entry: any) => 
+              const exchangeEntry = mainSotResponse.find((entry: any) => 
                 entry.entity_type === 'exchange' && entry.logo
               );
               if (exchangeEntry?.logo) {
@@ -204,6 +238,7 @@ export const flowtraceService = {
       entityId: entityInfo?.entityId,
       entityType: entityInfo?.entityType,
       label: entityInfo?.label,
+      properName: properName,
       bo: entityInfo?.bo,
       custodian: entityInfo?.custodian,
       riskScore: (risk as any)?.data?.overallRisk ? Math.round((risk as any).data.overallRisk * 100) : undefined,

@@ -78,7 +78,7 @@ const FlowTracePage: React.FC = () => {
         riskScore: profile.riskScore,
         usdValue: summary.usdValue,
         selectedEntity: {
-          label: profile.label || address,
+          label: profile.properName || profile.label || address,
           address,
           logoUrl: profile.logoUrl,
           type: profile.type || 'wallet',
