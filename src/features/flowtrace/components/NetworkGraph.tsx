@@ -316,14 +316,14 @@ export const NetworkGraph = forwardRef<NetworkGraphHandle, NetworkGraphProps>(({
     ctx.scale(dpi, dpi);
     ctx.clearRect(0, 0, canvas.clientWidth, canvas.clientHeight);
 
+    // Clear canvas with theme-aware background (before transformations)
+    const isDark = document.documentElement.classList.contains('dark')
+    ctx.fillStyle = isDark ? "#0f172a" : "#ffffff"
+    ctx.fillRect(0, 0, canvas.clientWidth, canvas.clientHeight)
+
     // apply pan/zoom
     ctx.translate(pan.x, pan.y);
     ctx.scale(zoom, zoom);
-
-    // Clear canvas with theme-aware background
-    const isDark = document.documentElement.classList.contains('dark')
-    ctx.fillStyle = isDark ? "#0f172a" : "#ffffff"
-    ctx.fillRect(-pan.x, -pan.y, canvas.offsetWidth, canvas.offsetHeight)
 
     // Draw connections based on UTXO collapse mode
     if (utxoCollapseMode === "aggregated") {
