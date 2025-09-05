@@ -189,18 +189,19 @@ type Props = {
   };
   isExpanded?: boolean;
   onToggle?: () => void;
+  isLoading?: boolean;
 };
 
 const LeftPanel: React.FC<Props> = ({ 
   address, 
   network, 
   balance, 
- 
   txCount, 
   riskScore, 
   selectedEntity,
   isExpanded = true,
-  onToggle 
+  onToggle,
+  isLoading = false
 }) => {
   const activeOrg = useAppSelector(selectActiveOrganization as any) as any;
   const orgId = activeOrg?._id as string | undefined;
@@ -277,6 +278,16 @@ const LeftPanel: React.FC<Props> = ({
               <div className="text-xs text-gray-500">BlockScout Research</div>
             </div>
           </div>
+
+          {/* Loading Indicator */}
+          {isLoading && (
+            <div className="p-4 border-b border-gray-200 dark:border-gray-800">
+              <div className="flex items-center justify-center space-x-2">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-purple-500"></div>
+                <span className="text-sm text-gray-600 dark:text-gray-400">Loading entity data...</span>
+              </div>
+            </div>
+          )}
 
           {/* Content */}
           <div className="flex-1 overflow-y-auto p-4 space-y-4">

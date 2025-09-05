@@ -35,10 +35,12 @@ const FlowTracePage: React.FC = () => {
   const [historyIndex, setHistoryIndex] = useState(-1);
   const [hasSelection] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isLeftPanelLoading, setIsLeftPanelLoading] = useState(false);
   const graphRef = React.useRef<NetworkGraphHandle | null>(null);
 
   // Function to fetch and set left panel data for an address
   const fetchAndSetLeftPanelData = async (address: string) => {
+    setIsLeftPanelLoading(true);
     try {
       const [data, summary, txs, profile] = await Promise.all([
         flowtraceService.fetchAddress(address).catch((error) => {
@@ -87,8 +89,22 @@ const FlowTracePage: React.FC = () => {
       });
     } catch (error) {
       console.error('Error fetching left panel data:', error);
+    } finally {
+      setIsLeftPanelLoading(false);
     }
   };
+
+  // Function to handle node selection and update left panel
+  const handleNodeSelection = useCallback(async (node: FTNode) => {
+    // Immediately update the current address
+    setCurrentAddress(node.id);
+    
+    // Clear old left panel data to prevent showing stale information
+    setLeftPanelData(null);
+    
+    // Fetch new data for the selected node
+    await fetchAndSetLeftPanelData(node.id);
+  }, []);
 
   // Drawing action handlers
   const handleDrawingAction = (action: { type: string; data: any }) => {
@@ -150,6 +166,7 @@ const FlowTracePage: React.FC = () => {
       setHistoryIndex(-1);
       setCurrentAddress('');
       setCenterNodeId('');
+      setLeftPanelData(null);
     }
   };
 
@@ -167,8 +184,13 @@ const FlowTracePage: React.FC = () => {
     if (!address) return;
     setIsLoading(true);
     try {
-      // Only add the node, don't open picker
+      // Set both center node and current address to ensure left panel shows correct data
       setCenterNodeId(address);
+      setCurrentAddress(address);
+      
+      // Clear any existing left panel data to prevent showing stale information
+      setLeftPanelData(null);
+      
       // Fetch background data and hydrate once available
       await fetchAndSetLeftPanelData(address);
 
@@ -555,8 +577,7 @@ const FlowTracePage: React.FC = () => {
               connections={connections}
               onNodeClick={(node) => {
                 // Node click selects the node and fetches its data for the left panel
-                setCurrentAddress(node.id);
-                fetchAndSetLeftPanelData(node.id);
+                handleNodeSelection(node);
               }}
               onNodeDoubleClick={(node) => {
                 // Allow renaming only for custom/empty nodes (no entityId/type or type === 'custom')
@@ -604,6 +625,7 @@ const FlowTracePage: React.FC = () => {
                 selectedEntity={leftPanelData?.selectedEntity}
                 isExpanded={isExpanded}
                 onToggle={() => setIsExpanded(!isExpanded)}
+                isLoading={isLeftPanelLoading}
               />
             </div>
           </div>
