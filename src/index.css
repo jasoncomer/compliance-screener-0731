@@ -346,6 +346,163 @@ pre {
   color: #999 !important;
 }
 
+/* Ensure search input components have proper dark mode styling */
+.dark input[type="text"] {
+  background-color: #1f2937 !important; /* gray-800 */
+  color: #ffffff !important;
+  border-color: #374151 !important; /* gray-700 */
+}
+
+.dark input[type="text"]::placeholder {
+  color: #9ca3af !important; /* gray-400 */
+}
+
+.dark input[type="text"]:focus {
+  background-color: #1f2937 !important; /* gray-800 */
+  border-color: #f97316 !important; /* orange-500 */
+  box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.2) !important;
+}
+
+/* Additional specificity for search input containers */
+.dark .sticky input[type="text"] {
+  background-color: #1f2937 !important; /* gray-800 */
+  color: #ffffff !important;
+  border-color: #374151 !important; /* gray-700 */
+}
+
+.dark .sticky input[type="text"]::placeholder {
+  color: #9ca3af !important; /* gray-400 */
+}
+
+.dark .sticky input[type="text"]:focus {
+  background-color: #1f2937 !important; /* gray-800 */
+  border-color: #f97316 !important; /* orange-500 */
+  box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.2) !important;
+}
+
+/* Even more specific selectors for search inputs */
+.dark .sticky.top-\[0\] input[type="text"],
+.dark .sticky.top-0 input[type="text"],
+.dark .z-20 input[type="text"] {
+  background-color: #1f2937 !important; /* gray-800 */
+  color: #ffffff !important;
+  border-color: #374151 !important; /* gray-700 */
+}
+
+.dark .sticky.top-\[0\] input[type="text"]::placeholder,
+.dark .sticky.top-0 input[type="text"]::placeholder,
+.dark .z-20 input[type="text"]::placeholder {
+  color: #9ca3af !important; /* gray-400 */
+}
+
+.dark .sticky.top-\[0\] input[type="text"]:focus,
+.dark .sticky.top-0 input[type="text"]:focus,
+.dark .z-20 input[type="text"]:focus {
+  background-color: #1f2937 !important; /* gray-800 */
+  border-color: #f97316 !important; /* orange-500 */
+  box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.2) !important;
+}
+
+/* Target the specific search input class */
+.dark .search-input-dark-mode {
+  background-color: #1f2937 !important; /* gray-800 */
+  color: #ffffff !important;
+  border-color: #374151 !important; /* gray-700 */
+}
+
+.dark .search-input-dark-mode::placeholder {
+  color: #9ca3af !important; /* gray-400 */
+}
+
+.dark .search-input-dark-mode:focus {
+  background-color: #1f2937 !important; /* gray-800 */
+  border-color: #f97316 !important; /* orange-500 */
+  box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.2) !important;
+}
+
+/* Ultra-specific selectors for VASP Explorer and other search bars */
+.dark .sticky.top-\[0\].z-20.bg-white.dark\:bg-gray-900 input[type="text"],
+.dark .sticky.top-0.z-20.bg-white.dark\:bg-gray-900 input[type="text"],
+.dark .sticky.z-20.bg-white.dark\:bg-gray-900 input[type="text"] {
+  background-color: #1f2937 !important; /* gray-800 */
+  color: #ffffff !important;
+  border-color: #374151 !important; /* gray-700 */
+}
+
+.dark .sticky.top-\[0\].z-20.bg-white.dark\:bg-gray-900 input[type="text"]::placeholder,
+.dark .sticky.top-0.z-20.bg-white.dark\:bg-gray-900 input[type="text"]::placeholder,
+.dark .sticky.z-20.bg-white.dark\:bg-gray-900 input[type="text"]::placeholder {
+  color: #9ca3af !important; /* gray-400 */
+}
+
+.dark .sticky.top-\[0\].z-20.bg-white.dark\:bg-gray-900 input[type="text"]:focus,
+.dark .sticky.top-0.z-20.bg-white.dark\:bg-gray-900 input[type="text"]:focus,
+.dark .sticky.z-20.bg-white.dark\:bg-gray-900 input[type="text"]:focus {
+  background-color: #1f2937 !important; /* gray-800 */
+  border-color: #f97316 !important; /* orange-500 */
+  box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.2) !important;
+}
+
+/* Nuclear option - target all inputs in dark mode with maximum specificity */
+html.dark input[type="text"],
+html.dark input[type="search"],
+html.dark input[type="email"],
+html.dark input[type="password"] {
+  background-color: #1f2937 !important; /* gray-800 */
+  color: #ffffff !important;
+  border-color: #374151 !important; /* gray-700 */
+}
+
+html.dark input[type="text"]::placeholder,
+html.dark input[type="search"]::placeholder,
+html.dark input[type="email"]::placeholder,
+html.dark input[type="password"]::placeholder {
+  color: #9ca3af !important; /* gray-400 */
+}
+
+html.dark input[type="text"]:focus,
+html.dark input[type="search"]:focus,
+html.dark input[type="email"]:focus,
+html.dark input[type="password"]:focus {
+  background-color: #1f2937 !important; /* gray-800 */
+  border-color: #f97316 !important; /* orange-500 */
+  box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.2) !important;
+}
+
+/* Final override - this should be the last rule */
+html.dark input {
+  background-color: #1f2937 !important; /* gray-800 */
+  color: #ffffff !important;
+  border-color: #374151 !important; /* gray-700 */
+}
+
+html.dark input::placeholder {
+  color: #9ca3af !important; /* gray-400 */
+}
+
+html.dark input:focus {
+  background-color: #1f2937 !important; /* gray-800 */
+  border-color: #f97316 !important; /* orange-500 */
+  box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.2) !important;
+}
+
+/* Force dark mode class - highest priority */
+.force-dark-mode {
+  background-color: #1f2937 !important; /* gray-800 */
+  color: #ffffff !important;
+  border-color: #374151 !important; /* gray-700 */
+}
+
+.force-dark-mode::placeholder {
+  color: #9ca3af !important; /* gray-400 */
+}
+
+.force-dark-mode:focus {
+  background-color: #1f2937 !important; /* gray-800 */
+  border-color: #f97316 !important; /* orange-500 */
+  box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.2) !important;
+}
+
 .custom-modal-dark .ant-modal-confirm-btns .ant-btn-primary[disabled] {
   background-color: #555 !important;
   border-color: #555 !important;
