@@ -585,7 +585,6 @@ export const NetworkGraph = forwardRef<NetworkGraphHandle, NetworkGraphProps>(({
       const logoUrl = getNodeLogoUrl(n);
       
       // Use logo if available, otherwise use default color
-      console.log('🎨 Rendering node', n.id, 'with logoUrl:', logoUrl, 'entityId:', n.entityId, 'entityType:', n.entityType);
       if (logoUrl) {
         const cache = imageCacheRef.current;
         let img = cache.get(logoUrl);
@@ -593,23 +592,18 @@ export const NetworkGraph = forwardRef<NetworkGraphHandle, NetworkGraphProps>(({
           img = new Image();
           // Don't set crossOrigin for test images to avoid CORS issues
           img.onload = () => {
-            console.log('✅ Logo loaded successfully:', logoUrl);
             setRenderTick((t) => t + 1);
           };
           img.onerror = () => {
-            console.log('❌ Logo failed to load:', logoUrl);
             // Try PNG fallback if JPG failed
             if (logoUrl.endsWith('.jpg')) {
               const pngUrl = logoUrl.replace('.jpg', '.png');
-              console.log('🔄 Trying PNG fallback:', pngUrl);
               const pngImg = new Image();
               pngImg.onload = () => {
-                console.log('✅ PNG fallback loaded successfully:', pngUrl);
                 cache.set(logoUrl, pngImg); // Cache the PNG under the original JPG key
                 setRenderTick((t) => t + 1);
               };
               pngImg.onerror = () => {
-                console.log('❌ PNG fallback also failed:', pngUrl);
                 cache.delete(logoUrl);
               };
               pngImg.src = pngUrl;
@@ -622,7 +616,6 @@ export const NetworkGraph = forwardRef<NetworkGraphHandle, NetworkGraphProps>(({
           cache.set(logoUrl, img);
         }
         if (img && img.complete && img.naturalWidth > 0) {
-          console.log('🎨 Drawing logo as circular node', n.id, 'at position', n.x, n.y);
           try {
             // Create circular clipping path for the logo
             ctx.save();
@@ -636,7 +629,6 @@ export const NetworkGraph = forwardRef<NetworkGraphHandle, NetworkGraphProps>(({
             ctx.drawImage(img, n.x - logoSize / 2, n.y - logoSize / 2, logoSize, logoSize);
             ctx.restore();
           } catch (error) {
-            console.log('❌ Error drawing logo for node', n.id, ':', error);
             // Fallback if drawing fails - show circle with border and background
             // Draw circle with background and border
             ctx.beginPath();
@@ -658,7 +650,6 @@ export const NetworkGraph = forwardRef<NetworkGraphHandle, NetworkGraphProps>(({
           }
         } else {
           // Fallback while logo is loading or if image is broken - show circle with border and background
-          console.log('🎨 Using styled background for node', n.id, '- logo not ready or broken');
           
           // Draw circle with background and border
           ctx.beginPath();

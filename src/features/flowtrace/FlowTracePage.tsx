@@ -40,7 +40,6 @@ const FlowTracePage: React.FC = () => {
 
   // Function to fetch and set left panel data for an address
   const fetchAndSetLeftPanelData = async (address: string) => {
-    console.log('🔍 fetchAndSetLeftPanelData called for address:', address);
     setIsLeftPanelLoading(true);
     try {
       const [data, summary, txs, profile] = await Promise.all([
@@ -92,8 +91,6 @@ const FlowTracePage: React.FC = () => {
         }
       };
       
-      console.log('🔍 Setting leftPanelData:', leftPanelData);
-      console.log('🔍 selectedEntity.logoUrl:', leftPanelData.selectedEntity.logoUrl);
       setLeftPanelData(leftPanelData);
     } catch (error) {
       console.error('Error fetching left panel data:', error);
@@ -104,7 +101,6 @@ const FlowTracePage: React.FC = () => {
 
   // Function to handle node selection and update left panel
   const handleNodeSelection = useCallback(async (node: FTNode) => {
-    console.log('🔍 handleNodeSelection called for node:', node.id);
     // Immediately update the current address
     setCurrentAddress(node.id);
     
@@ -112,7 +108,6 @@ const FlowTracePage: React.FC = () => {
     setLeftPanelData(null);
     
     // Fetch new data for the selected node
-    console.log('🔍 Calling fetchAndSetLeftPanelData for:', node.id);
     await fetchAndSetLeftPanelData(node.id);
   }, []);
 
@@ -236,15 +231,11 @@ const FlowTracePage: React.FC = () => {
     await Promise.allSettled(
       unique.map(async (addr) => {
         try {
-          console.log('Fetching profile for address:', addr);
           const profile = await flowtraceService.fetchEntityProfile(addr).catch(() => ({} as any));
-          console.log('Profile result for', addr, ':', profile);
           
           // The logo URL should come directly from the SOT data in the profile
           const logoUrl = (profile as any)?.logoUrl || null;
-          console.log('Logo URL from SOT for', addr, ':', logoUrl);
           
-          console.log('Updating node for', addr, 'with entityId:', (profile as any)?.entityId, 'entityType:', (profile as any)?.entityType, 'logoUrl:', logoUrl);
           setNodes((prev) => prev.map((n) => (n.id === addr ? {
             ...n,
             label: (profile as any)?.label ?? n.label,
@@ -258,7 +249,6 @@ const FlowTracePage: React.FC = () => {
           
           // If this is the currently selected address, also update the left panel data
           if (addr === currentAddress || addr === centerNodeId) {
-            console.log('🔍 Updating leftPanelData for currently selected address:', addr);
             setLeftPanelData((prev: any) => prev ? {
               ...prev,
               selectedEntity: {
@@ -281,80 +271,6 @@ const FlowTracePage: React.FC = () => {
 
   useEffect(() => {
     // initial mount: empty graph
-    console.log('FlowTracePage mounted');
-    
-    // Test the specific address
-    const testAddress = '19D8PHBjZH29uS1uPZ4m3sVyqqfF8UFG9o';
-    console.log('Testing address:', testAddress);
-    
-    // Test entity profile fetching
-    flowtraceService.fetchEntityProfile(testAddress).then(profile => {
-      console.log('Entity profile for', testAddress, ':', profile);
-      
-      // Check SOT logo data
-      console.log('Profile entityId:', profile?.entityId);
-      console.log('Profile entityType:', profile?.entityType);
-      console.log('Profile logoUrl (from SOT):', profile?.logoUrl);
-      
-      if (profile?.logoUrl) {
-        console.log('✅ Logo URL found in SOT data:', profile.logoUrl);
-      } else {
-        console.log('❌ No logo URL found in SOT data for', testAddress);
-        
-        // Logo URL should be constructed directly from entityId
-        if (profile?.entityId) {
-          const expectedLogoUrl = `https://storage.googleapis.com/entity-logos/${profile.entityId}.jpg`;
-          console.log('Expected logo URL:', expectedLogoUrl);
-        }
-      }
-      
-      // Test the main SOT endpoint to see what data is available
-      console.log('Testing main SOT endpoint...');
-      flowtraceService.fetchSOT()
-        .then(sotData => {
-          console.log('Full SOT data:', sotData);
-          // Look for bittrex in the SOT data
-          if (sotData?.data) {
-            const bittrexEntry = sotData.data.find((entry: any) => 
-              entry.entity_id === 'bittrex' || entry.entityId === 'bittrex'
-            );
-            console.log('Bittrex entry in SOT:', bittrexEntry);
-          }
-        })
-        .catch(error => {
-          console.log('SOT endpoint error:', error);
-        });
-      
-      // If we have entityId, test the SOT endpoint directly
-      if (profile?.entityId) {
-        console.log('Testing SOT endpoint directly for entityId:', profile.entityId);
-        fetch(`/api/sot/entity/${profile.entityId}`)
-          .then(response => response.json())
-          .then(data => {
-            console.log('Direct SOT response:', data);
-            console.log('SOT logo URL:', data?.data?.logo);
-          })
-          .catch(error => {
-            console.log('SOT endpoint error:', error);
-          });
-      }
-      
-      // Test logo_mappings endpoint for fallback logos
-      if (profile?.entityType) {
-        console.log('Testing logo_mappings endpoint for entityType:', profile.entityType);
-        fetch(`/api/sot/logo-mapping/${profile.entityType}`)
-          .then(response => response.json())
-          .then(data => {
-            console.log('Logo mapping response:', data);
-            console.log('Fallback logo URL:', data?.data?.fallback_logo);
-          })
-          .catch(error => {
-            console.log('Logo mapping endpoint error:', error);
-          });
-      }
-    }).catch(error => {
-      console.error('Error fetching profile for', testAddress, ':', error);
-    });
   }, []);
 
   const handleAddConnections = useCallback((newConnections: FTConnection[]) => {
@@ -650,14 +566,7 @@ const FlowTracePage: React.FC = () => {
                 txCount={leftPanelData?.txCount}
                 riskScore={leftPanelData?.riskScore}
                 selectedEntity={leftPanelData?.selectedEntity}
-                nodeData={(() => {
-                  const currentNode = nodes.find(n => n.id === (currentAddress || centerNodeId));
-                  console.log('🔍 FlowTracePage - currentAddress:', currentAddress);
-                  console.log('🔍 FlowTracePage - centerNodeId:', centerNodeId);
-                  console.log('🔍 FlowTracePage - nodes:', nodes);
-                  console.log('🔍 FlowTracePage - currentNode:', currentNode);
-                  return currentNode;
-                })()}
+                nodeData={nodes.find(n => n.id === (currentAddress || centerNodeId))}
                 isExpanded={isExpanded}
                 onToggle={() => setIsExpanded(!isExpanded)}
                 isLoading={isLeftPanelLoading}
