@@ -94,21 +94,48 @@ interface NotesButtonProps {
   title: string;
   children: React.ReactNode;
   className?: string;
+  newNotesCount?: number;
 }
 
-const NotesButton: React.FC<NotesButtonProps> = ({ onClick, title, children, className }) => (
-  <button
-    type="button"
-    onClick={onClick}
-    title={title}
-    className={cn(
-      "h-9 px-4 rounded-lg bg-orange-500 text-white font-medium text-sm hover:bg-orange-600 transition-colors flex items-center gap-2",
-      className
-    )}
-  >
-    <MessageSquare className="w-4 h-4" />
-    {children}
-  </button>
+const NotesButton: React.FC<NotesButtonProps> = ({ onClick, title, children, className, newNotesCount = 0 }) => (
+  <div className="relative inline-block">
+    <button
+      type="button"
+      onClick={onClick}
+      title={title}
+      className={cn(
+        "relative h-9 px-4 rounded-lg bg-orange-500 text-white font-medium text-sm hover:bg-orange-600 transition-colors flex items-center gap-2",
+        className
+      )}
+    >
+      <MessageSquare className="w-4 h-4" />
+      {children}
+      {newNotesCount > 0 && (
+        <div 
+          style={{ 
+            position: 'absolute',
+            top: '-8px',
+            right: '-8px',
+            backgroundColor: '#A53D10',
+            color: 'white',
+            fontSize: '11px',
+            fontWeight: 'bold',
+            border: '2px solid white',
+            borderRadius: '10px',
+            minWidth: '18px',
+            height: '18px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 10,
+            boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+          }}
+        >
+          {newNotesCount}
+        </div>
+      )}
+    </button>
+  </div>
 );
 
 const BlockExplorer: React.FC = () => {
@@ -116,6 +143,7 @@ const BlockExplorer: React.FC = () => {
   const location = useLocation();
   const [searchValue, setSearchValue] = React.useState('');
   const [notesModalVisible, setNotesModalVisible] = useState(false);
+  const [newNotesCount, setNewNotesCount] = useState(0);
   const [currentContext, setCurrentContext] = useState<{
     type: 'general' | 'transaction' | 'address';
     id?: string;
@@ -160,6 +188,10 @@ const BlockExplorer: React.FC = () => {
     setNotesModalVisible(false);
   };
 
+  const handleNewNotesCountChange = (count: number) => {
+    setNewNotesCount(count);
+  };
+
   const searchPlaceholder = 'Search by block number, tx hash or address';
 
   const isEmptyState = !location.pathname.includes('/transaction/') &&
@@ -186,6 +218,7 @@ const BlockExplorer: React.FC = () => {
             <NotesButton
               onClick={showNotesModal}
               title="View Notes"
+              newNotesCount={newNotesCount}
             >
               Notes
             </NotesButton>
@@ -214,6 +247,7 @@ const BlockExplorer: React.FC = () => {
             type={currentContext.type}
             transactionId={currentContext.type === 'transaction' ? currentContext.id : undefined}
             address={currentContext.type === 'address' ? currentContext.id : undefined}
+            onNewNotesCountChange={handleNewNotesCountChange}
           />
         )
       }
