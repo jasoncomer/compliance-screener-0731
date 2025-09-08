@@ -84,7 +84,9 @@ const SearchInput = forwardRef<HTMLInputElement, SearchInputProps>(({
     <div className="relative flex items-center">
       <input
         ref={(node) => {
-          inputRef.current = node;
+          if (inputRef) {
+            (inputRef as React.MutableRefObject<HTMLInputElement | null>).current = node;
+          }
           if (typeof ref === 'function') {
             ref(node);
           } else if (ref) {

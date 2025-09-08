@@ -513,7 +513,7 @@ const FlowTracePage: React.FC = () => {
           />
 
           {/* Network Graph and Left Panel */}
-          <div className="relative" style={{ height: 'calc(100vh - 280px)' }}>
+          <div className="relative" style={{ height: 'calc(100vh - 160px)' }}>
             <NetworkGraph
               ref={graphRef}
               nodes={nodes}
