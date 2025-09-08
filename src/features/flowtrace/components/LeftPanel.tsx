@@ -187,6 +187,12 @@ type Props = {
     bo?: string;
     custodian?: string;
   };
+  // Add node data to get logo directly from the same source as NetworkGraph
+  nodeData?: {
+    logoUrl?: string;
+    entityId?: string;
+    entityType?: string;
+  };
   isExpanded?: boolean;
   onToggle?: () => void;
   isLoading?: boolean;
@@ -199,6 +205,7 @@ const LeftPanel: React.FC<Props> = ({
   txCount, 
   riskScore, 
   selectedEntity,
+  nodeData,
   isExpanded = true,
   onToggle,
   isLoading = false
@@ -210,6 +217,60 @@ const LeftPanel: React.FC<Props> = ({
   // Use the actual transaction data as a fallback for transaction count
   const { data: transactionData } = useAddressTransactions(address || '', 1, 1);
   const actualTxCount = transactionData?.pagination?.totalTxs || transactionData?.txs?.length || txCount || 0;
+  
+  // Get logo URL from the same source as NetworkGraph (nodeData) with fallback to selectedEntity
+  const logoUrl = nodeData?.logoUrl || selectedEntity?.logoUrl;
+  
+  // State to track the actual logo URL (with PNG fallback)
+  const [actualLogoUrl, setActualLogoUrl] = useState<string | null>(null);
+  
+  // Implement PNG fallback logic (same as NetworkGraph)
+  React.useEffect(() => {
+    if (!logoUrl) {
+      setActualLogoUrl(null);
+      return;
+    }
+    
+    // If it's already a PNG, use it directly
+    if (logoUrl.endsWith('.png')) {
+      setActualLogoUrl(logoUrl);
+      return;
+    }
+    
+    // If it's a JPG, test it first, then try PNG fallback
+    if (logoUrl.endsWith('.jpg')) {
+      const testImg = new Image();
+      testImg.onload = () => {
+        console.log('✅ LeftPanel JPG loaded successfully:', logoUrl);
+        setActualLogoUrl(logoUrl);
+      };
+      testImg.onerror = () => {
+        console.log('❌ LeftPanel JPG failed, trying PNG fallback:', logoUrl);
+        const pngUrl = logoUrl.replace('.jpg', '.png');
+        const pngTestImg = new Image();
+        pngTestImg.onload = () => {
+          console.log('✅ LeftPanel PNG fallback loaded successfully:', pngUrl);
+          setActualLogoUrl(pngUrl);
+        };
+        pngTestImg.onerror = () => {
+          console.log('❌ LeftPanel PNG fallback also failed:', pngUrl);
+          setActualLogoUrl(null);
+        };
+        pngTestImg.src = pngUrl;
+      };
+      testImg.src = logoUrl;
+    } else {
+      // For other formats, use directly
+      setActualLogoUrl(logoUrl);
+    }
+  }, [logoUrl]);
+  
+  // Debug logo URL
+  console.log('🔍 LeftPanel render - nodeData:', nodeData);
+  console.log('🔍 LeftPanel render - nodeData.logoUrl:', nodeData?.logoUrl);
+  console.log('🔍 LeftPanel render - selectedEntity.logoUrl:', selectedEntity?.logoUrl);
+  console.log('🔍 LeftPanel render - final logoUrl:', logoUrl);
+  console.log('🔍 LeftPanel render - actualLogoUrl:', actualLogoUrl);
   const onCopy = async () => {
     try {
       await navigator.clipboard.writeText(selectedEntity?.address || address || '');
@@ -301,12 +362,16 @@ const LeftPanel: React.FC<Props> = ({
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center gap-3">
                     <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 overflow-hidden flex items-center justify-center shadow-lg">
-                      {selectedEntity.logoUrl ? (
+                      {actualLogoUrl ? (
                         // eslint-disable-next-line @next/next/no-img-element
-                        <img src={selectedEntity.logoUrl} alt="logo" className="h-full w-full object-cover" />
+                        <img 
+                          src={actualLogoUrl} 
+                          alt="logo" 
+                          className="h-full w-full object-cover"
+                        />
                       ) : (
                         <div className="text-white font-semibold text-lg">
-                          {selectedEntity.label?.charAt(0)?.toUpperCase() || 'E'}
+                          {selectedEntity?.label?.charAt(0)?.toUpperCase() || 'E'}
                         </div>
                       )}
                     </div>

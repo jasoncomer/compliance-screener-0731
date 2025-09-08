@@ -40,6 +40,7 @@ const FlowTracePage: React.FC = () => {
 
   // Function to fetch and set left panel data for an address
   const fetchAndSetLeftPanelData = async (address: string) => {
+    console.log('🔍 fetchAndSetLeftPanelData called for address:', address);
     setIsLeftPanelLoading(true);
     try {
       const [data, summary, txs, profile] = await Promise.all([
@@ -73,7 +74,7 @@ const FlowTracePage: React.FC = () => {
       const actualTxCount = txs?.pagination?.totalTxs || txs?.txs?.length || 0;
 
       // Update left panel data
-      setLeftPanelData({
+      const leftPanelData = {
         address,
         network: getBlockchainType(address) === 'bitcoin' ? 'Bitcoin' : 'Ethereum',
         balance: summary.balance,
@@ -89,7 +90,11 @@ const FlowTracePage: React.FC = () => {
           bo: profile.bo,
           custodian: profile.custodian
         }
-      });
+      };
+      
+      console.log('🔍 Setting leftPanelData:', leftPanelData);
+      console.log('🔍 selectedEntity.logoUrl:', leftPanelData.selectedEntity.logoUrl);
+      setLeftPanelData(leftPanelData);
     } catch (error) {
       console.error('Error fetching left panel data:', error);
     } finally {
@@ -99,6 +104,7 @@ const FlowTracePage: React.FC = () => {
 
   // Function to handle node selection and update left panel
   const handleNodeSelection = useCallback(async (node: FTNode) => {
+    console.log('🔍 handleNodeSelection called for node:', node.id);
     // Immediately update the current address
     setCurrentAddress(node.id);
     
@@ -106,6 +112,7 @@ const FlowTracePage: React.FC = () => {
     setLeftPanelData(null);
     
     // Fetch new data for the selected node
+    console.log('🔍 Calling fetchAndSetLeftPanelData for:', node.id);
     await fetchAndSetLeftPanelData(node.id);
   }, []);
 
@@ -237,7 +244,7 @@ const FlowTracePage: React.FC = () => {
           const logoUrl = (profile as any)?.logoUrl || null;
           console.log('Logo URL from SOT for', addr, ':', logoUrl);
           
-          console.log('Updating node for', addr, 'with entityId:', (profile as any)?.entityId, 'entityType:', (profile as any)?.entityType);
+          console.log('Updating node for', addr, 'with entityId:', (profile as any)?.entityId, 'entityType:', (profile as any)?.entityType, 'logoUrl:', logoUrl);
           setNodes((prev) => prev.map((n) => (n.id === addr ? {
             ...n,
             label: (profile as any)?.label ?? n.label,
@@ -248,6 +255,23 @@ const FlowTracePage: React.FC = () => {
             bo: (profile as any)?.bo ?? n.bo,
             custodian: (profile as any)?.custodian ?? n.custodian,
           } : n)));
+          
+          // If this is the currently selected address, also update the left panel data
+          if (addr === currentAddress || addr === centerNodeId) {
+            console.log('🔍 Updating leftPanelData for currently selected address:', addr);
+            setLeftPanelData((prev: any) => prev ? {
+              ...prev,
+              selectedEntity: {
+                ...prev.selectedEntity,
+                label: (profile as any)?.properName || (profile as any)?.label || prev.selectedEntity?.label,
+                logoUrl: logoUrl ?? prev.selectedEntity?.logoUrl,
+                type: (profile as any)?.entityType || prev.selectedEntity?.type,
+                riskScore: (profile as any)?.riskScore ?? prev.selectedEntity?.riskScore,
+                bo: (profile as any)?.bo ?? prev.selectedEntity?.bo,
+                custodian: (profile as any)?.custodian ?? prev.selectedEntity?.custodian,
+              }
+            } : null);
+          }
         } catch (error) {
           console.error('Error in prefetchProfilesAndLogos for', addr, ':', error);
         }
@@ -626,6 +650,14 @@ const FlowTracePage: React.FC = () => {
                 txCount={leftPanelData?.txCount}
                 riskScore={leftPanelData?.riskScore}
                 selectedEntity={leftPanelData?.selectedEntity}
+                nodeData={(() => {
+                  const currentNode = nodes.find(n => n.id === (currentAddress || centerNodeId));
+                  console.log('🔍 FlowTracePage - currentAddress:', currentAddress);
+                  console.log('🔍 FlowTracePage - centerNodeId:', centerNodeId);
+                  console.log('🔍 FlowTracePage - nodes:', nodes);
+                  console.log('🔍 FlowTracePage - currentNode:', currentNode);
+                  return currentNode;
+                })()}
                 isExpanded={isExpanded}
                 onToggle={() => setIsExpanded(!isExpanded)}
                 isLoading={isLeftPanelLoading}
