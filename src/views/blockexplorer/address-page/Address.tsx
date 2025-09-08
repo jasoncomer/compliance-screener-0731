@@ -223,6 +223,49 @@ const Address: React.FC = () => {
       });
   };
 
+  const formatDateFilter = (dateString: string): string => {
+    const [year, month, day] = dateString.split('-').map(Number);
+    const filterDate = new Date(year, month - 1, day);
+    return filterDate.toLocaleDateString('en-US', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  };
+
+  const clearDateFilter = () => {
+    const url = new URL(window.location.href);
+    url.searchParams.delete('date');
+    window.history.replaceState({}, '', url.toString());
+    window.location.reload();
+  };
+
+  const renderDateFilterIndicator = () => {
+    if (!dateFilter) return null;
+
+    return (
+      <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-2">
+            <span className="text-sm font-medium text-blue-700 dark:text-blue-300">
+              📅 Filtered by date:
+            </span>
+            <span className="text-sm text-blue-600 dark:text-blue-400">
+              {formatDateFilter(dateFilter)}
+            </span>
+          </div>
+          <button
+            onClick={clearDateFilter}
+            className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200 underline"
+          >
+            Clear filter
+          </button>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="flex flex-col w-full">
       <AddressSummary
@@ -242,40 +285,7 @@ const Address: React.FC = () => {
       />
 
       {/* Date Filter Indicator */}
-      {dateFilter && (
-        <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <span className="text-sm font-medium text-blue-700 dark:text-blue-300">
-                📅 Filtered by date:
-              </span>
-              <span className="text-sm text-blue-600 dark:text-blue-400">
-                {(() => {
-                  const [year, month, day] = dateFilter.split('-').map(Number);
-                  const filterDate = new Date(year, month - 1, day);
-                  return filterDate.toLocaleDateString('en-US', {
-                    weekday: 'long',
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric'
-                  });
-                })()}
-              </span>
-            </div>
-            <button
-              onClick={() => {
-                const url = new URL(window.location.href);
-                url.searchParams.delete('date');
-                window.history.replaceState({}, '', url.toString());
-                window.location.reload();
-              }}
-              className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200 underline"
-            >
-              Clear filter
-            </button>
-          </div>
-        </div>
-      )}
+      {renderDateFilterIndicator()}
 
       <div className="w-full">
         <BsBlock>
