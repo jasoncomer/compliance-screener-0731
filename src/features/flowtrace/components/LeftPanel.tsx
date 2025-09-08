@@ -206,6 +206,10 @@ const LeftPanel: React.FC<Props> = ({
   const activeOrg = useAppSelector(selectActiveOrganization as any) as any;
   const orgId = activeOrg?._id as string | undefined;
   const [copied, setCopied] = useState(false);
+  
+  // Use the actual transaction data as a fallback for transaction count
+  const { data: transactionData } = useAddressTransactions(address || '', 1, 1);
+  const actualTxCount = transactionData?.pagination?.totalTxs || transactionData?.txs?.length || txCount || 0;
   const onCopy = async () => {
     try {
       await navigator.clipboard.writeText(selectedEntity?.address || address || '');
@@ -381,7 +385,7 @@ const LeftPanel: React.FC<Props> = ({
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-600 dark:text-gray-400">Transactions</span>
-                  <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{formatCompact(txCount)}</span>
+                  <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{formatCompact(actualTxCount)}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-600 dark:text-gray-400">Risk Score</span>

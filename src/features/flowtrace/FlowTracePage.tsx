@@ -69,12 +69,15 @@ const FlowTracePage: React.FC = () => {
         profile
       });
 
+      // Use actual transaction count from the transactions API instead of summary
+      const actualTxCount = txs?.pagination?.totalTxs || txs?.txs?.length || 0;
+
       // Update left panel data
       setLeftPanelData({
         address,
         network: getBlockchainType(address) === 'bitcoin' ? 'Bitcoin' : 'Ethereum',
         balance: summary.balance,
-        txCount: summary.txCount || 0,
+        txCount: actualTxCount, // Use actual transaction count
         riskScore: profile.riskScore,
         usdValue: summary.usdValue,
         selectedEntity: {
