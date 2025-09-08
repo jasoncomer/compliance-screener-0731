@@ -12,9 +12,46 @@ import { DebugPanel } from './components/DebugPanel';
 import { HelpSystem } from './components/HelpSystem';
 import LeftPanel from './components/LeftPanel';
 import NodeTxPicker from './components/NodeTxPicker';
+import EdgeDialog from './components/EdgeDialog';
 import FlowTraceEmptyState from './components/FlowTraceEmptyState';
 import AddressSearchInput from '../../components/common/AddressSearchInput';
 import ViewWrapper from '../../components/ViewWrapper';
+import SaveWorkspaceButton from '@/components/workspace/SaveWorkspaceButton'
+import GitHubWorkspaceManager from '@/components/workspace/GitHubWorkspaceManager'
+import { loadVersion, type Workspace } from '@/lib/workspace-utils'
+import { GitBranch } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import CustomNodeDialog from './components/CustomNodeDialog'
+import CustomNodeExpandDialog from './components/CustomNodeExpandDialog'
+import { WalletClusterPanel } from './components/WalletClusterPanel'
+import { Wallet } from 'lucide-react'
+
+// helper to merge duplicate edges (same from,to,currency,type)
+const mergeEdges = (existing: FTConnection[], incoming: FTConnection[]) => {
+  const map = new Map<string, FTConnection>()
+
+  const edgeKey = (e: FTConnection) => `${e.from}|${e.to}|${e.currency}|${e.type || 'out'}`
+
+  const addEdge = (edge: FTConnection) => {
+    const k = edgeKey(edge)
+    if (map.has(k)) {
+      const cur = map.get(k)!
+      // sum amounts numerically if possible
+      const total = (parseFloat(cur.amount) || 0) + (parseFloat(edge.amount) || 0)
+      cur.amount = String(total)
+      // concat txHash
+      cur.txHash = `${cur.txHash},${edge.txHash}`
+      cur.date = `${cur.date},${edge.date}`
+    } else {
+      map.set(k, { ...edge })
+    }
+  }
+
+  existing.forEach(addEdge)
+  incoming.forEach(addEdge)
+
+  return Array.from(map.values())
+}
 
 const FlowTracePage: React.FC = () => {
   const [address, setAddress] = useState('');
@@ -25,7 +62,12 @@ const FlowTracePage: React.FC = () => {
   const [nodeTxPickerOpen, setNodeTxPickerOpen] = useState(false);
   const [currentAddress, setCurrentAddress] = useState<string>('');
   const [isExpanded, setIsExpanded] = useState(true);
-  const [utxoCollapseMode, setUtxoCollapseMode] = useState<"aggregated" | "individual">("aggregated");
+  const [utxoCollapseMode, setUtxoCollapseMode] = useState<"aggregated" | "individual">("individual");
+  const [walletPanelOpen, setWalletPanelOpen] = useState(false)
+  const [consolidatedEntities, setConsolidatedEntities] = useState<string[]>([])
+  // Store originals so we can undo aggregation
+  const aggregationMap = React.useRef<Record<string, { nodes: FTNode[]; connections: FTConnection[]; addresses: string[] }>>({})
+  const [customDialogOpen, setCustomDialogOpen] = useState(false);
   
   // Drawing toolbar state
   const [drawingToolbarVisible, setDrawingToolbarVisible] = useState(false);
@@ -35,7 +77,29 @@ const FlowTracePage: React.FC = () => {
   const [historyIndex, setHistoryIndex] = useState(-1);
   const [hasSelection] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  
+  // Edge dialog state
+  const [edgeDialogOpen, setEdgeDialogOpen] = useState(false);
+  const [selectedEdge, setSelectedEdge] = useState<FTConnection | null>(null);
+  const [customExpandOpen, setCustomExpandOpen] = useState(false);
+  const [expandSourceNode, setExpandSourceNode] = useState<FTNode | null>(null);
+
   const graphRef = React.useRef<NetworkGraphHandle | null>(null);
+
+  const [workspaceMgrOpen, setWorkspaceMgrOpen] = useState(false);
+  const [workspaceId, setWorkspaceId] = useState<string | null>(null);
+  const [currentVersionId, setCurrentVersionId] = useState<string>('master');
+
+  // Handles loading a workspace/version chosen in the manager
+  const handleLoadWorkspaceFromManager = useCallback(async (ws: Workspace, versionId?: string) => {
+    const version = await loadVersion(ws.id, versionId || 'master');
+    if (version) {
+      setNodes(version.graphState.nodes as any);
+      setConnections(version.graphState.edges as any);
+      setWorkspaceId(ws.id);
+      setCurrentVersionId(version.id);
+    }
+  }, [setNodes, setConnections]);
 
   // Function to fetch and set left panel data for an address
   const fetchAndSetLeftPanelData = async (address: string) => {
@@ -97,6 +161,15 @@ const FlowTracePage: React.FC = () => {
     setHistoryIndex(newHistory.length - 1);
   };
 
+  // Edge click handler
+  const handleEdgeClick = (connection: FTConnection) => {
+    const fromNode = nodes.find(n => n.id === connection.from);
+    const toNode = nodes.find(n => n.id === connection.to);
+    const note = fromNode?.notes?.[0]?.content || toNode?.notes?.[0]?.content;
+    setSelectedEdge({ ...connection, note });
+    setEdgeDialogOpen(true);
+  };
+
   const handleUndo = () => {
     if (historyIndex > 0) {
       setHistoryIndex(historyIndex - 1);
@@ -120,14 +193,7 @@ const FlowTracePage: React.FC = () => {
 
   const handleAddNode = () => {
     // Add a custom node at a default position
-    const newNode: FTNode = {
-      id: `custom-${Date.now()}`,
-      label: 'Custom Node',
-      x: 300,
-      y: 240,
-      type: 'custom'
-    };
-    setNodes(prev => [...prev, newNode]);
+    setCustomDialogOpen(true);
   };
 
   const handleConnectionColorChange = (txHash: string, color: string) => {
@@ -136,11 +202,7 @@ const FlowTracePage: React.FC = () => {
     ));
   };
 
-  const handleConnectionColorReset = (txHash: string) => {
-    setConnections(prev => prev.map(conn => 
-      conn.txHash === txHash ? { ...conn, customColor: undefined } : conn
-    ));
-  };
+
 
   const handleClearData = () => {
     if (window.confirm('Are you sure you want to clear all data? This action cannot be undone.')) {
@@ -318,7 +380,7 @@ const FlowTracePage: React.FC = () => {
           conn.from === newConnection.from && conn.to === newConnection.to && !conn.isAggregated
         )
         
-        if (existingConnections.length > 0) {
+        if (utxoCollapseMode === 'aggregated' && existingConnections.length > 0) {
           // There are existing individual connections, create or update an aggregated connection
           const allConnections = [...existingConnections, newConnection]
           
@@ -348,98 +410,107 @@ const FlowTracePage: React.FC = () => {
             !(conn.from === newConnection.from && conn.to === newConnection.to)
           ).concat([aggregatedConnection])
         } else {
-          // No existing connections, just add the new one
+          // If in individual mode or no existing, just add
           updatedConnections.push(newConnection)
         }
       })
       
-      return updatedConnections
-    })
-  }, [])
+      return updatedConnections;
+    });
+  }, [utxoCollapseMode]);
 
   const onAdd = useCallback((payload: { address: string; selectedTxs: any[] }) => {
     const { selectedTxs, address } = payload
     const newConnections: FTConnection[] = []
     const addressesToPrefetch = new Set<string>()
+    const addressEntityData = new Map<string, { entityName?: string; entityId?: string; entityType?: string; logoUrl?: string }>()
 
+    // Group transactions by counterparty address to consolidate nodes
+    const addressConnections = new Map<string, FTConnection[]>()
+    
     selectedTxs.forEach((tx: any) => {
-      // Check if address is in inputs (spending) or outputs (receiving)
-      const isInInputs = (tx.inputs || []).some((i: any) => i.addr === address)
-      const isInOutputs = (tx.outputs || []).some((o: any) => o.addr === address)
-      
-      if (isInInputs) {
-        // Address is spending - create connection from address to output addresses
-        const input = (tx.inputs || []).find((i: any) => i.addr === address)
-        const amountInSatoshis = input?.amt || 0
-        const amountInBTC = (parseFloat(amountInSatoshis.toString()) / 100000000).toFixed(8)
+      // Each tx is an EnhancedTransaction representing a single UTXO
+      // The direction tells us if this is an input or output UTXO
+      if (tx.direction === 'in') {
+        // This is an input UTXO - the address is receiving money
+        // The connection goes from the input address to the current address
+        const inputAddress = tx.inputs?.[0]?.addr
+        if (!inputAddress) return
         
-        // Create connections to all output addresses
-        ;(tx.outputs || []).forEach((output: any) => {
-          const outputAddress = output.addr
-          if (!outputAddress) return
-          
-          const utxoKey = `${tx.txid}::${outputAddress}::out`
-          
-          const connection: FTConnection = {
-            from: address,
-            to: outputAddress,
-            amount: amountInBTC,
-            currency: getBlockchainType(address) === 'bitcoin' ? 'BTC' : 'ETH',
-            date: tx.time || new Date().toISOString(),
-            txHash: tx.txid,
-            utxoKey,
-            type: 'out',
-            usdValue: undefined,
-          }
-          
-          console.log(`Creating spending connection:`, {
-            from: address,
-            to: outputAddress,
-            amount: amountInBTC,
-            txHash: tx.txid,
-            utxoKey
+        // Store entity data for the input address
+        if (tx.entityName || tx.entityId || tx.entityType || tx.logo) {
+          addressEntityData.set(inputAddress, {
+            entityName: tx.entityName,
+            entityId: tx.entityId,
+            entityType: tx.entityType,
+            logoUrl: tx.logo
           })
-          
-          newConnections.push(connection)
-          addressesToPrefetch.add(outputAddress)
-        })
-      } else if (isInOutputs) {
-        // Address is receiving - create connection from input addresses to address
-        const output = (tx.outputs || []).find((o: any) => o.addr === address)
-        const amountInSatoshis = output?.amt || 0
-        const amountInBTC = (parseFloat(amountInSatoshis.toString()) / 100000000).toFixed(8)
+        }
         
-        // Create connections from all input addresses
-        ;(tx.inputs || []).forEach((input: any) => {
-          const inputAddress = input.addr
-          if (!inputAddress) return
-          
-          const utxoKey = `${tx.txid}::${address}::in`
-          
-          const connection: FTConnection = {
-            from: inputAddress,
-            to: address,
-            amount: amountInBTC,
-            currency: getBlockchainType(address) === 'bitcoin' ? 'BTC' : 'ETH',
-            date: tx.time || new Date().toISOString(),
-            txHash: tx.txid,
-            utxoKey,
-            type: 'in',
-            usdValue: undefined,
-          }
-          
-          console.log(`Creating receiving connection:`, {
-            from: inputAddress,
-            to: address,
-            amount: amountInBTC,
-            txHash: tx.txid,
-            utxoKey
+        const utxoKey = `${tx.originalTxHash || tx.txid}::${address}::in`
+        
+        const connection: FTConnection = {
+          from: inputAddress,
+          to: address,
+          amount: tx.amount || '0',
+          currency: tx.currency || 'BTC',
+          date: tx.time ? new Date(tx.time * 1000).toISOString() : new Date().toISOString(),
+          txHash: tx.originalTxHash || tx.txid,
+          utxoKey,
+          type: 'in',
+          usdValue: tx.usdValue,
+        }
+        
+        // Group connections by counterparty address
+        if (!addressConnections.has(inputAddress)) {
+          addressConnections.set(inputAddress, [])
+        }
+        addressConnections.get(inputAddress)!.push(connection)
+        
+        addressesToPrefetch.add(inputAddress)
+      } else if (tx.direction === 'out') {
+        // This is an output UTXO - the address is spending money
+        // The connection goes from the current address to the output address
+        const outputAddress = tx.outputs?.[0]?.addr
+        if (!outputAddress) return
+        
+        // Store entity data for the output address
+        if (tx.entityName || tx.entityId || tx.entityType || tx.logo) {
+          addressEntityData.set(outputAddress, {
+            entityName: tx.entityName,
+            entityId: tx.entityId,
+            entityType: tx.entityType,
+            logoUrl: tx.logo
           })
-          
-          newConnections.push(connection)
-          addressesToPrefetch.add(inputAddress)
-        })
+        }
+        
+        const utxoKey = `${tx.originalTxHash || tx.txid}::${outputAddress}::out`
+        
+        const connection: FTConnection = {
+          from: address,
+          to: outputAddress,
+          amount: tx.amount || '0',
+          currency: tx.currency || 'BTC',
+          date: tx.time ? new Date(tx.time * 1000).toISOString() : new Date().toISOString(),
+          txHash: tx.originalTxHash || tx.txid,
+          utxoKey,
+          type: 'out',
+          usdValue: tx.usdValue,
+        }
+        
+        // Group connections by counterparty address
+        if (!addressConnections.has(outputAddress)) {
+          addressConnections.set(outputAddress, [])
+        }
+        addressConnections.get(outputAddress)!.push(connection)
+        
+        addressesToPrefetch.add(outputAddress)
       }
+    })
+    
+    // Flatten all connections into the newConnections array
+    addressConnections.forEach((connections) => {
+      newConnections.push(...connections)
     })
 
     // Ensure nodes exist for all counterparties and position them relative to current node
@@ -448,19 +519,61 @@ const FlowTracePage: React.FC = () => {
       const base = prev.find(n => n.id === address)
       const baseX = base?.x ?? 300
       const baseY = base?.y ?? 240
-      const allAddresses = Array.from(addressesToPrefetch)
+
+      // Get unique addresses from the addressConnections map
+      const uniqueAddresses = Array.from(addressConnections.keys())
+      
+      // Separate addresses by direction relative to the base node
+      const inputAddresses: string[] = []
+      const outputAddresses: string[] = []
+      
+      uniqueAddresses.forEach(addr => {
+        const connections = addressConnections.get(addr) || []
+        const hasIncoming = connections.some(conn => conn.to === address)
+        const hasOutgoing = connections.some(conn => conn.from === address)
+        
+        if (hasIncoming && !inputAddresses.includes(addr)) {
+          inputAddresses.push(addr)
+        }
+        if (hasOutgoing && !outputAddresses.includes(addr)) {
+          outputAddresses.push(addr)
+        }
+      })
 
       const newNodes: FTNode[] = []
-      const count = allAddresses.length
-      allAddresses.forEach((addr, i) => {
+      
+      // Position input nodes (incoming) on the left
+      inputAddresses.forEach((addr, i) => {
         if (!existingIds.has(addr)) {
-          const y = baseY + (i - (count - 1) / 2) * 80
+          const y = baseY + (i - (inputAddresses.length - 1) / 2) * 80
+          const entityData = addressEntityData.get(addr)
           newNodes.push({
             id: addr,
-            label: addr,
-            x: baseX - 220,
+            label: entityData?.entityName || addr,
+            x: baseX - 220, // Left side for inputs
             y,
-            type: 'wallet'
+            type: 'wallet',
+            entityId: entityData?.entityId,
+            entityType: entityData?.entityType,
+            logoUrl: entityData?.logoUrl
+          })
+        }
+      })
+      
+      // Position output nodes (outgoing) on the right
+      outputAddresses.forEach((addr, i) => {
+        if (!existingIds.has(addr)) {
+          const y = baseY + (i - (outputAddresses.length - 1) / 2) * 80
+          const entityData = addressEntityData.get(addr)
+          newNodes.push({
+            id: addr,
+            label: entityData?.entityName || addr,
+            x: baseX + 220, // Right side for outputs
+            y,
+            type: 'wallet',
+            entityId: entityData?.entityId,
+            entityType: entityData?.entityType,
+            logoUrl: entityData?.logoUrl
           })
         }
       })
@@ -499,6 +612,17 @@ const FlowTracePage: React.FC = () => {
           </div>
           <div className="flex items-center gap-2">
             <HelpSystem />
+            <Button variant="outline" size="sm" className="flex gap-1 items-center" onClick={() => setWalletPanelOpen(true)}>
+              <Wallet className="h-4 w-4" />
+              Wallet Clusters
+            </Button>
+            <SaveWorkspaceButton
+              workspaceId={workspaceId}
+              graphState={{ nodes, edges: connections, zoom: 1, pan: { x: 0, y: 0 }, hidePassThrough: false }}
+            />
+            <Button variant="ghost" size="icon" aria-label="Manage workspaces" onClick={() => setWorkspaceMgrOpen(true)}>
+              <GitBranch className="h-4 w-4" />
+            </Button>
           </div>
         </div>
       </div>
@@ -514,7 +638,7 @@ const FlowTracePage: React.FC = () => {
               onZoomIn={() => graphRef.current?.zoomIn()}
               onZoomOut={() => graphRef.current?.zoomOut()}
               onReset={() => graphRef.current?.resetView()}
-              onAddNode={() => handleAddNode()}
+              onAddNode={handleAddNode}
               onColorPicker={() => {
                 setDrawingToolbarVisible(!drawingToolbarVisible);
               }}
@@ -569,15 +693,18 @@ const FlowTracePage: React.FC = () => {
                 }
               }}
               onNodeAdd={(node) => {
-                setCurrentAddress(node.id);
-                setNodeTxPickerOpen(true);
+                if (node.type === 'custom') {
+                  setExpandSourceNode(node);
+                  setCustomExpandOpen(true);
+                } else {
+                  setCurrentAddress(node.id);
+                  setNodeTxPickerOpen(true);
+                }
               }}
               onNodeDrag={(nodeId, x, y) => {
                 setNodes(prev => prev.map(n => n.id === nodeId ? { ...n, x, y } : n));
               }}
-              onEdgeClick={() => {
-                // Handle edge click
-              }}
+              onEdgeClick={handleEdgeClick}
               onNodeRemove={(nodeId) => {
                 setNodes(prev => prev.filter(n => n.id !== nodeId));
                 setConnections(prev => prev.filter(c => c.from !== nodeId && c.to !== nodeId));
@@ -587,8 +714,7 @@ const FlowTracePage: React.FC = () => {
               activeColor={activeColor}
               onDrawingAction={handleDrawingAction}
               drawingHistory={drawingHistory.slice(0, historyIndex + 1)}
-              onConnectionColorChange={handleConnectionColorChange}
-              onConnectionColorReset={handleConnectionColorReset}
+
               centerNodeId={centerNodeId}
             />
 
@@ -618,11 +744,178 @@ const FlowTracePage: React.FC = () => {
         address={currentAddress || ''}
         nodeLabel={nodes.find(n => n.id === currentAddress)?.label}
         onAdd={onAdd}
+        existingConnections={connections}
+      />
+
+      <EdgeDialog
+        open={edgeDialogOpen}
+        onOpenChange={setEdgeDialogOpen}
+        data={selectedEdge ? {
+          from: selectedEdge.from,
+          to: selectedEdge.to,
+          amount: selectedEdge.amount,
+          currency: selectedEdge.currency,
+          txHash: selectedEdge.txHash,
+          date: selectedEdge.date,
+          usdValue: selectedEdge.usdValue,
+          note: selectedEdge.note
+        } : undefined}
+        onSetColor={(color) => {
+          if (selectedEdge) {
+            handleConnectionColorChange(selectedEdge.txHash, color);
+          }
+        }}
+      />
+
+      <GitHubWorkspaceManager
+        open={workspaceMgrOpen}
+        onOpenChange={setWorkspaceMgrOpen}
+        currentState={{ nodes, edges: connections, zoom: 1, pan: { x: 0, y: 0 }, hidePassThrough: false }}
+        onLoadWorkspace={handleLoadWorkspaceFromManager}
+        currentWorkspaceId={workspaceId || undefined}
+        currentVersionId={currentVersionId}
+        onWorkspaceCreated={setWorkspaceId}
+      />
+
+      {/* Custom Node Dialog */}
+      <CustomNodeDialog
+        open={customDialogOpen}
+        onOpenChange={setCustomDialogOpen}
+        existingNodes={nodes}
+        onCreate={({ label, currencyCode, logo, notes, edges }) => {
+          const nodeId = `custom-${Date.now()}`;
+          const newNode: FTNode = {
+            id: nodeId,
+            label,
+            x: 300,
+            y: 240,
+            type: 'custom',
+            logoUrl: logo, // This should be the currency logo path
+            notes: notes ? [{ id: `note-${Date.now()}`, userId: 'current_user', userName: 'Current User', content: notes, timestamp: new Date().toISOString() }] : undefined,
+          };
+          console.log('🎯 Creating custom node with logoUrl:', logo, 'for node:', nodeId);
+          setNodes(prev => [...prev, newNode]);
+          if (edges && edges.length) {
+            const newEdges: FTConnection[] = edges.map((e, idx) => ({
+              from: e.direction === 'out' ? nodeId : e.targetId,
+              to: e.direction === 'out' ? e.targetId : nodeId,
+              amount: e.amount,
+              currency: e.currency,
+              date: e.date,
+              txHash: `cn-${Date.now()}-${idx}`,
+              type: e.direction,
+            } as FTConnection));
+            console.log('🔗 Creating edges for custom node:', { nodeId, edges: newEdges });
+            setConnections(prev => {
+              const merged = mergeEdges(prev, newEdges);
+              console.log('🔗 Merged connections:', { before: prev.length, after: merged.length, newEdges: newEdges.length });
+              return merged;
+            });
+          }
+        }}
+      />
+
+      {/* Custom Node Expand Dialog */}
+      {expandSourceNode && (
+        <CustomNodeExpandDialog
+          open={customExpandOpen}
+          onOpenChange={setCustomExpandOpen}
+          sourceNode={expandSourceNode}
+          existingNodes={nodes}
+          onCreateEdges={(edges) => {
+            const newEdges: FTConnection[] = edges.map((e, idx) => ({
+              from: e.direction === 'out' ? expandSourceNode.id : e.targetId,
+              to: e.direction === 'out' ? e.targetId : expandSourceNode.id,
+              amount: e.amount,
+              currency: e.currency,
+              date: e.date,
+              txHash: `ce-${Date.now()}-${idx}`,
+              type: e.direction,
+            } as FTConnection));
+            setConnections(prev => mergeEdges(prev, newEdges));
+          }}
+          existingConnections={connections.filter(c => c.from===expandSourceNode.id || c.to===expandSourceNode.id)}
+          onEditEdges={(edges)=>{
+            setConnections(prev => {
+              const targetsKept = new Set(edges.map(e=>e.targetId))
+              // Remove edges between custom node and nodes that are now unchecked
+              const filtered = prev.filter(c => {
+                const isCustomEdge = c.from===expandSourceNode.id || c.to===expandSourceNode.id
+                if (!isCustomEdge) return true
+                const otherId = c.from===expandSourceNode.id ? c.to : c.from
+                return targetsKept.has(otherId)
+              })
+
+              const updated = [...filtered]
+              edges.forEach((e, idx) => {
+                const from = e.direction==='out'? expandSourceNode.id : e.targetId
+                const to = e.direction==='out'? e.targetId : expandSourceNode.id
+                updated.push({
+                  from,
+                  to,
+                  amount: e.amount,
+                  currency: e.currency,
+                  date: e.date,
+                  txHash: `edit-${Date.now()}-${idx}`,
+                  type: e.direction,
+                } as FTConnection)
+              })
+              return updated
+            })
+          }}
+        />
+      )}
+
+      <WalletClusterPanel
+        open={walletPanelOpen}
+        onOpenChange={setWalletPanelOpen}
+        nodes={nodes}
+        connections={connections}
+        consolidatedEntities={consolidatedEntities}
+        onConfirmSelection={async (entityKey, utxos) => {
+          const memberIdsArr = nodes.filter(n => n.entityId === entityKey).map(n => n.id)
+          if (!memberIdsArr.length) return
+
+          const { aggregateEntity } = await import('./utils/aggregateEntity')
+          const { newState, undo } = aggregateEntity(
+            { nodes, edges: connections },
+            entityKey,
+            memberIdsArr,
+          )
+
+          setNodes(newState.nodes as any)
+          setConnections(newState.edges as any)
+
+          aggregationMap.current[entityKey] = { nodes: undo.nodes as any, connections: undo.edges as any, addresses: memberIdsArr }
+
+          if (!consolidatedEntities.includes(entityKey))
+            setConsolidatedEntities([...consolidatedEntities, entityKey])
+        }}
+        onUndoAggregation={(entityKey) => {
+          const saved = aggregationMap.current[entityKey]
+          if (!saved) return
+
+          setNodes((prev) => {
+            // Remove aggregate node and restore originals
+            const aggId = `agg:${entityKey.replace(/\s+/g, '_')}`;
+            // Filter out aggregate node and add back original member nodes
+            const withoutAgg = prev.filter(n => n.id !== aggId)
+            return [...withoutAgg, ...saved.nodes]
+          })
+
+          setConnections(prev => {
+            // Remove edges touching aggregate node and restore originals
+            const aggId = `agg:${entityKey.replace(/\s+/g, '_')}`;
+            const withoutAggEdges = prev.filter(c => c.from !== aggId && c.to !== aggId)
+            return [...withoutAggEdges, ...saved.connections]
+          })
+
+          // Update consolidated list
+          setConsolidatedEntities(prev => prev.filter(e => e !== entityKey))
+        }}
       />
     </ViewWrapper>
   );
 };
 
 export default FlowTracePage;
-
-

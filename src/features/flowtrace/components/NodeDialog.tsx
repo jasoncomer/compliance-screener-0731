@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../../../components/ui/dialog';
+import { Button } from '../../../components/ui/button';
 import { flowtraceService } from '../../../services/flowtraceService';
+import { MessageSquarePlus } from 'lucide-react';
 
 type TxRow = {
   txid: string;
@@ -26,6 +28,8 @@ const NodeDialog: React.FC<Props> = ({ open, address, onOpenChange, riskScore, e
   const [usdValue, setUsdValue] = useState<string | number | undefined>();
   const [txCount, setTxCount] = useState<number | undefined>();
   const [txs, setTxs] = useState<TxRow[]>([]);
+  const [showNoteInput, setShowNoteInput] = useState<string | null>(null);
+  const [noteText, setNoteText] = useState('');
 
   useEffect(() => {
     const run = async () => {
@@ -49,6 +53,23 @@ const NodeDialog: React.FC<Props> = ({ open, address, onOpenChange, riskScore, e
 
   const title = useMemo(() => (address ? address : 'Address'), [address]);
 
+  const handleAddNote = (field: string) => {
+    if (showNoteInput === field) {
+      // Save note logic here - you can integrate with your notes API
+      console.log(`Adding note for ${field}:`, noteText);
+      setShowNoteInput(null);
+      setNoteText('');
+    } else {
+      setShowNoteInput(field);
+      setNoteText('');
+    }
+  };
+
+  const handleCancelNote = () => {
+    setShowNoteInput(null);
+    setNoteText('');
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl">
@@ -61,20 +82,116 @@ const NodeDialog: React.FC<Props> = ({ open, address, onOpenChange, riskScore, e
         <div className="space-y-3">
           <div className="grid grid-cols-2 gap-3 text-sm">
             <div className="rounded border border-gray-200 dark:border-gray-800 p-3">
-              <div className="text-xs text-gray-500">Balance</div>
+              <div className="flex items-center justify-between">
+                <div className="text-xs text-gray-500">Balance</div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleAddNote('balance')}
+                  className="h-6 w-6 p-0"
+                >
+                  <MessageSquarePlus className="h-3 w-3" />
+                </Button>
+              </div>
               <div className="font-medium">{balance ?? '—'}</div>
+              {showNoteInput === 'balance' && (
+                <div className="mt-2">
+                  <input
+                    type="text"
+                    value={noteText}
+                    onChange={(e) => setNoteText(e.target.value)}
+                    placeholder="Add a note..."
+                    className="w-full text-xs px-2 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                    onKeyPress={(e) => e.key === 'Enter' && handleAddNote('balance')}
+                    onKeyDown={(e) => e.key === 'Escape' && handleCancelNote()}
+                    autoFocus
+                  />
+                </div>
+              )}
             </div>
             <div className="rounded border border-gray-200 dark:border-gray-800 p-3">
-              <div className="text-xs text-gray-500">USD Value</div>
+              <div className="flex items-center justify-between">
+                <div className="text-xs text-gray-500">USD Value</div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleAddNote('usdValue')}
+                  className="h-6 w-6 p-0"
+                >
+                  <MessageSquarePlus className="h-3 w-3" />
+                </Button>
+              </div>
               <div className="font-medium">{usdValue ?? '—'}</div>
+              {showNoteInput === 'usdValue' && (
+                <div className="mt-2">
+                  <input
+                    type="text"
+                    value={noteText}
+                    onChange={(e) => setNoteText(e.target.value)}
+                    placeholder="Add a note..."
+                    className="w-full text-xs px-2 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                    onKeyPress={(e) => e.key === 'Enter' && handleAddNote('usdValue')}
+                    onKeyDown={(e) => e.key === 'Escape' && handleCancelNote()}
+                    autoFocus
+                  />
+                </div>
+              )}
             </div>
             <div className="rounded border border-gray-200 dark:border-gray-800 p-3">
-              <div className="text-xs text-gray-500">Transactions</div>
+              <div className="flex items-center justify-between">
+                <div className="text-xs text-gray-500">Transactions</div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleAddNote('transactions')}
+                  className="h-6 w-6 p-0"
+                >
+                  <MessageSquarePlus className="h-3 w-3" />
+                </Button>
+              </div>
               <div className="font-medium">{txCount ?? '—'}</div>
+              {showNoteInput === 'transactions' && (
+                <div className="mt-2">
+                  <input
+                    type="text"
+                    value={noteText}
+                    onChange={(e) => setNoteText(e.target.value)}
+                    placeholder="Add a note..."
+                    className="w-full text-xs px-2 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                    onKeyPress={(e) => e.key === 'Enter' && handleAddNote('transactions')}
+                    onKeyDown={(e) => e.key === 'Escape' && handleCancelNote()}
+                    autoFocus
+                  />
+                </div>
+              )}
             </div>
             <div className="rounded border border-gray-200 dark:border-gray-800 p-3">
-              <div className="text-xs text-gray-500">Risk Score</div>
+              <div className="flex items-center justify-between">
+                <div className="text-xs text-gray-500">Risk Score</div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleAddNote('riskScore')}
+                  className="h-6 w-6 p-0"
+                >
+                  <MessageSquarePlus className="h-3 w-3" />
+                </Button>
+              </div>
               <div className="font-medium">{riskScore ?? '—'}</div>
+              {showNoteInput === 'riskScore' && (
+                <div className="mt-2">
+                  <input
+                    type="text"
+                    value={noteText}
+                    onChange={(e) => setNoteText(e.target.value)}
+                    placeholder="Add a note..."
+                    className="w-full text-xs px-2 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                    onKeyPress={(e) => e.key === 'Enter' && handleAddNote('riskScore')}
+                    onKeyDown={(e) => e.key === 'Escape' && handleCancelNote()}
+                    autoFocus
+                  />
+                </div>
+              )}
             </div>
           </div>
           <div className="rounded border border-gray-200 dark:border-gray-800 p-3">

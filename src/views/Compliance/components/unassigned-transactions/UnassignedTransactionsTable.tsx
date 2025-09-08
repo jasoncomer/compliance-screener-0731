@@ -10,6 +10,8 @@ import { getBlockchainLabel } from '../../../../utils/display-labels';
 import { useCryptoPrices } from '../../../../hooks/useCryptoPrices';
 import { Badge } from '@/components/ui/badge';
 import { UnassignedTransactionModal } from './UnassignedTransactionModal';
+import { getTransactionGroupClassWithHover } from '../../../../utils/transactionGrouping';
+import '../../../../styles/transactionGrouping.css';
 
 interface TransactionsTableProps {
   transactions: IComplianceTransaction[];
@@ -208,6 +210,7 @@ const UnassignedTransactionsTable: React.FC<TransactionsTableProps> = ({
         }}
         loading={loading}
         onChange={onTableChange}
+        rowClassName={(record) => getTransactionGroupClassWithHover(record.txId)}
         onRow={(record) => ({
           onClick: (event) => {
             const target = event.target as HTMLElement;

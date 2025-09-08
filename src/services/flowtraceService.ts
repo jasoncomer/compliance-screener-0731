@@ -127,10 +127,50 @@ export const flowtraceService = {
     // Use Bitcoin attribution if available, otherwise fall back to general attribution
     let entityInfo = null;
     if (bitcoinAttr && bitcoinAttr.data) {
-      console.log('Using Bitcoin attribution data');
+      console.log('Using Bitcoin attribution data for entity:', bitcoinAttr.data.entity);
+      
+      // Get SOT data to determine proper entity type
+      let entityType = 'wallet'; // default fallback
+      try {
+        const sotResponse = await this.fetchSOT();
+        console.log('SOT Response received:', sotResponse?.data?.length, 'entries');
+        if (sotResponse?.data) {
+          console.log('Looking for entity:', bitcoinAttr.data.entity);
+          console.log('Sample SOT entries:', sotResponse.data.slice(0, 3).map(e => ({ entity_id: e.entity_id, entity_type: e.entity_type })));
+          
+          const sotEntry = sotResponse.data.find((entry: any) => 
+            entry.entity_id?.toLowerCase() === bitcoinAttr.data.entity?.toLowerCase() || 
+            entry.url?.toLowerCase() === bitcoinAttr.data.entity?.toLowerCase()
+          );
+          
+          if (sotEntry?.entity_type) {
+            entityType = sotEntry.entity_type;
+            console.log('✅ Found SOT entity_type:', entityType, 'for entity:', bitcoinAttr.data.entity);
+          } else {
+            console.log('❌ No SOT entry found for entity:', bitcoinAttr.data.entity);
+            console.log('Available entity_ids:', sotResponse.data.map(e => e.entity_id).filter(Boolean).slice(0, 10));
+          
+          // Check specifically for wrapped bitcoin variations
+          const wrappedBitcoinEntries = sotResponse.data.filter(e => 
+            e.entity_id?.toLowerCase().includes('wrapped') || 
+            e.entity_id?.toLowerCase().includes('bitcoin') ||
+            e.proper_name?.toLowerCase().includes('wrapped') ||
+            e.proper_name?.toLowerCase().includes('bitcoin')
+          );
+          console.log('Wrapped Bitcoin related entries:', wrappedBitcoinEntries.map(e => ({ 
+            entity_id: e.entity_id, 
+            proper_name: e.proper_name, 
+            entity_type: e.entity_type 
+          })));
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching SOT data:', error);
+      }
+      
       entityInfo = {
         entityId: bitcoinAttr.data.entity,
-        entityType: bitcoinAttr.data.entity === 'bittrex' ? 'exchange' : 'wallet', // Bittrex should be exchange
+        entityType: entityType,
         label: bitcoinAttr.data.entity,
         bo: bitcoinAttr.data.bo,
         custodian: bitcoinAttr.data.custodian,
@@ -139,9 +179,57 @@ export const flowtraceService = {
       console.log('Bitcoin attribution not found, trying general attribution');
       const entry = Array.isArray((attr as any)?.data) ? (attr as any).data.find((a: any) => a.address === address) : undefined;
       if (entry) {
+        // Get SOT data to determine proper entity type for general attribution
+        let entityType = entry?.entityType || entry?.entity_type || 'wallet';
+        console.log('General attribution - initial entityType:', entityType, 'from entry:', { 
+          entityType: entry?.entityType, 
+          entity_type: entry?.entity_type,
+          entityId: entry?.entityId,
+          entity_id: entry?.entity_id,
+          fullEntry: entry
+        });
+        try {
+          const sotResponse = await this.fetchSOT();
+          console.log('General attribution - SOT Response received:', sotResponse?.data?.length, 'entries');
+          if (sotResponse?.data && (entry?.entityId || entry?.entity_id)) {
+            const entityId = entry?.entityId || entry?.entity_id;
+            console.log('General attribution - Looking for entity:', entityId);
+            
+            const sotEntry = sotResponse.data.find((sot: any) => 
+              sot.entity_id?.toLowerCase() === entityId?.toLowerCase() || 
+              sot.url?.toLowerCase() === entityId?.toLowerCase()
+            );
+            
+            if (sotEntry?.entity_type) {
+              entityType = sotEntry.entity_type;
+              console.log('✅ General attribution - Found SOT entity_type:', entityType, 'for entity:', entityId);
+            } else {
+              console.log('❌ General attribution - No SOT entry found for entity:', entityId);
+              console.log('Available entity_ids:', sotResponse.data.map(e => e.entity_id).filter(Boolean).slice(0, 10));
+              
+              // Check specifically for wrapped bitcoin variations
+              const wrappedBitcoinEntries = sotResponse.data.filter(e => 
+                e.entity_id?.toLowerCase().includes('wrapped') || 
+                e.entity_id?.toLowerCase().includes('bitcoin') ||
+                e.proper_name?.toLowerCase().includes('wrapped') ||
+                e.proper_name?.toLowerCase().includes('bitcoin')
+              );
+              console.log('Wrapped Bitcoin related entries:', wrappedBitcoinEntries.map(e => ({ 
+                entity_id: e.entity_id, 
+                proper_name: e.proper_name, 
+                entity_type: e.entity_type 
+              })));
+            }
+          } else {
+            console.log('General attribution - No entityId found in entry or no SOT data');
+          }
+        } catch (error) {
+          console.error('Error fetching SOT data for general attribution:', error);
+        }
+        
         entityInfo = {
           entityId: entry?.entityId || entry?.entity_id,
-          entityType: entry?.entityType || entry?.entity_type,
+          entityType: entityType,
           label: entry?.label || entry?.name,
         };
       }

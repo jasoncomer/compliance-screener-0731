@@ -1,0 +1,14 @@
+{
+	"folders": [
+		{
+			"path": "../../../../API"
+		},
+		{
+			"path": "../../.."
+		},
+		{
+			"path": "../../../../../jc_flowtrace_0812/jason-flowtrace"
+		}
+	],
+  "settings": {}
+}

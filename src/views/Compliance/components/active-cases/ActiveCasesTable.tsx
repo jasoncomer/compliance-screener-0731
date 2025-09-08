@@ -10,6 +10,8 @@ import { truncateAddress } from '../../../../utils/crypto';
 import { useAppSelector } from '../../../../store/hooks';
 import { IUser } from '../../../../typings/interfaces';
 import { useCryptoPrices } from '../../../../hooks/useCryptoPrices';
+import { getTransactionGroupClassWithHover } from '../../../../utils/transactionGrouping';
+import '../../../../styles/transactionGrouping.css';
 
 interface ActiveCasesTableProps {
   transactions: IComplianceTransaction[];
@@ -320,6 +322,7 @@ const ActiveCasesTable: React.FC<ActiveCasesTableProps> = React.memo(({
           dataSource={validTransactions}
           columns={columns}
           rowKey="_id"
+          rowClassName={(record) => getTransactionGroupClassWithHover(record.txId)}
           sticky={{
             offsetHeader: 0,
             offsetScroll: 0,

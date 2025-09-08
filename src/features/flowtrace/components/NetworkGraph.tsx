@@ -1,5 +1,4 @@
 import React, { useCallback, useEffect, useRef, useState, forwardRef, useImperativeHandle, useMemo } from 'react';
-import { EdgeColorPicker } from './EdgeColorPicker';
 
 export type FTNode = {
   id: string;
@@ -16,6 +15,7 @@ export type FTNode = {
   entityType?: string;
   bo?: string;
   custodian?: string;
+  notes?: Array<{ id: string; userId: string; userName: string; content: string; timestamp: string }>;
 };
 
 export interface FTConnection {
@@ -60,8 +60,7 @@ interface NetworkGraphProps {
   activeColor?: string
   onDrawingAction?: (action: { type: string; data: any }) => void
   drawingHistory?: any[]
-  onConnectionColorChange?: (txHash: string, color: string) => void
-  onConnectionColorReset?: (txHash: string) => void
+
   centerNodeId?: string | null
 }
 
@@ -87,8 +86,7 @@ export const NetworkGraph = forwardRef<NetworkGraphHandle, NetworkGraphProps>(({
   activeColor = '#ff6b35',
   onDrawingAction,
   drawingHistory = [],
-  onConnectionColorChange,
-  onConnectionColorReset,
+
   centerNodeId
 }, ref) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -108,22 +106,26 @@ export const NetworkGraph = forwardRef<NetworkGraphHandle, NetworkGraphProps>(({
   const [textInput, setTextInput] = useState<{ x: number; y: number; text: string } | null>(null);
   
   // Edge color picker state
-  const [edgeColorPickerOpen, setEdgeColorPickerOpen] = useState(false);
-  const [selectedConnection, setSelectedConnection] = useState<FTConnection | null>(null);
+
   
   // Create a mapping from node ID to logo URL using the same logic as useLogo hook
   const nodeLogoMap = useMemo(() => {
     console.log('🔍 Creating logo map for nodes:', nodes.map(n => ({
       id: n.id,
       logoUrl: n.logoUrl,
+      type: n.type,
       entityId: n.entityId,
       entityType: n.entityType
     })));
     
     const map: Record<string, string | null> = {};
     nodes.forEach(node => {
-      // Priority 1: Use logoUrl from SOT data (this should be set by prefetchProfilesAndLogos)
-      if (node.logoUrl) {
+      // For custom nodes, always use the logoUrl directly (currency logo)
+      if (node.type === 'custom' && node.logoUrl) {
+        console.log('🎯 Using currency logo for custom node', node.id, ':', node.logoUrl);
+        map[node.id] = node.logoUrl;
+      } else if (node.logoUrl) {
+        // For other nodes, use logoUrl from SOT data (this should be set by prefetchProfilesAndLogos)
         console.log('🎯 Using logoUrl from node data for', node.id, ':', node.logoUrl);
         map[node.id] = node.logoUrl;
       } else if (node.entityId || node.entityType) {
@@ -190,20 +192,53 @@ export const NetworkGraph = forwardRef<NetworkGraphHandle, NetworkGraphProps>(({
     }
   }), [nodes, zoom]);
 
-  const drawArrow = useCallback((ctx: CanvasRenderingContext2D, x1: number, y1: number, x2: number, y2: number, label?: string) => {
+  const drawArrow = useCallback((ctx: CanvasRenderingContext2D, x1: number, y1: number, x2: number, y2: number, label?: string, fillColor?: string) => {
+    // Calculate the direction vector
+    const dx = x2 - x1;
+    const dy = y2 - y1;
+    const length = Math.sqrt(dx * dx + dy * dy);
+    
+    // Check if we have a valid direction
+    if (length === 0) {
+      console.log('⚠️ Cannot draw arrow: zero length vector');
+      return;
+    }
+    
+    // Normalize the direction vector (commented out as not currently used)
+    // const unitX = dx / length;
+    // const unitY = dy / length;
+    
+    // Position arrow halfway between source and destination (between text and destination)
+    const arrowX = x1 + (x2 - x1) * 0.75; // 75% of the way from source to destination
+    const arrowY = y1 + (y2 - y1) * 0.75; // 75% of the way from source to destination
+    
+    // Draw arrow head - make it proportional to the spacing
+    const angle = Math.atan2(dy, dx);
+    const size = 10; // Reduced size for cleaner look
+    
+    // Save current fill style and set the arrow color
+    ctx.save();
+    if (fillColor) {
+      ctx.fillStyle = fillColor;
+    } else {
+      // Fallback color if none provided
+      ctx.fillStyle = '#666666'; // Gray fallback
+    }
+    
+    // Draw a clean arrow
+    ctx.lineWidth = 1;
     ctx.beginPath();
-    ctx.moveTo(x1, y1);
-    ctx.lineTo(x2, y2);
-    ctx.stroke();
-    // arrow head
-    const angle = Math.atan2(y2 - y1, x2 - x1);
-    const size = 8;
-    ctx.beginPath();
-    ctx.moveTo(x2, y2);
-    ctx.lineTo(x2 - size * Math.cos(angle - Math.PI / 6), y2 - size * Math.sin(angle - Math.PI / 6));
-    ctx.lineTo(x2 - size * Math.cos(angle + Math.PI / 6), y2 - size * Math.sin(angle + Math.PI / 6));
+    ctx.moveTo(arrowX, arrowY);
+    ctx.lineTo(arrowX - size * Math.cos(angle - Math.PI / 6), arrowY - size * Math.sin(angle - Math.PI / 6));
+    ctx.lineTo(arrowX - size * Math.cos(angle + Math.PI / 6), arrowY - size * Math.sin(angle + Math.PI / 6));
     ctx.closePath();
     ctx.fill();
+    
+    // Restore fill style
+    ctx.restore();
+    
+
+    
     if (label) {
       const mx = (x1 + x2) / 2;
       const my = (y1 + y2) / 2;
@@ -255,6 +290,7 @@ export const NetworkGraph = forwardRef<NetworkGraphHandle, NetworkGraphProps>(({
     toY: number,
     curveOffset: number,
     arrowSize: number = 6,
+    fillColor?: string,
   ) => {
     const midX = (fromX + toX) / 2
     const midY = (fromY + toY) / 2
@@ -289,12 +325,19 @@ export const NetworkGraph = forwardRef<NetworkGraphHandle, NetworkGraphProps>(({
     const perpY = unitTangentX
     
     // Draw arrow
+    ctx.save();
+    if (fillColor) {
+      ctx.fillStyle = fillColor;
+    }
+    
     ctx.beginPath()
     ctx.moveTo(arrowX, arrowY)
     ctx.lineTo(arrowX - unitTangentX * arrowSize + perpX * arrowSize * 0.5, arrowY - unitTangentY * arrowSize + perpY * arrowSize * 0.5)
     ctx.lineTo(arrowX - unitTangentX * arrowSize - perpX * arrowSize * 0.5, arrowY - unitTangentY * arrowSize - perpY * arrowSize * 0.5)
     ctx.closePath()
     ctx.fill()
+    
+    ctx.restore();
 
     return { midX: controlX, midY: controlY }
   }
@@ -326,7 +369,10 @@ export const NetworkGraph = forwardRef<NetworkGraphHandle, NetworkGraphProps>(({
     ctx.fillRect(-pan.x, -pan.y, canvas.offsetWidth, canvas.offsetHeight)
 
     // Draw connections based on UTXO collapse mode
+    console.log('🎨 Drawing connections:', { mode: utxoCollapseMode, totalConnections: connections.length, connections: connections.map(c => ({ from: c.from, to: c.to, amount: c.amount, currency: c.currency })) });
+    
     if (utxoCollapseMode === "aggregated") {
+      console.log('🔀 Using AGGREGATED mode');
       // Draw connections based on displayConnections (which handles collapsed vs individual)
       // Group connections by from-to pairs using JSON keys to avoid '-' split issues
       const connectionGroups = new Map<string, FTConnection[]>()
@@ -343,6 +389,15 @@ export const NetworkGraph = forwardRef<NetworkGraphHandle, NetworkGraphProps>(({
         }
         connectionGroups.get(key)!.push(connection)
       })
+      
+      console.log('🔗 Processing connections:', {
+        total: drawableConnections.length,
+        groups: connectionGroups.size,
+        connections: Array.from(connectionGroups.entries()).map(([key, conns]) => ({
+          key: JSON.parse(key),
+          count: conns.length
+        }))
+      });
 
       connectionGroups.forEach((connections, key) => {
         const { from: fromId, to: toId } = JSON.parse(key)
@@ -352,121 +407,70 @@ export const NetworkGraph = forwardRef<NetworkGraphHandle, NetworkGraphProps>(({
           return
         }
 
-        if (connections.length === 1) {
-          // Single connection - draw straight line
-          const connection = connections[0]
-          const edgeColor = connection.customColor || (isDark ? "#6b7280" : "#9ca3af")
-          
-          ctx.strokeStyle = edgeColor
-          ctx.lineWidth = connection.isAggregated ? 2 : 1.5
-          ctx.setLineDash([])
-          
-          ctx.beginPath()
-          ctx.moveTo(fromNode.x, fromNode.y)
-          ctx.lineTo(toNode.x, toNode.y)
-          ctx.stroke()
+        // Consolidate all connections between the same pair of nodes into a single aggregated edge
+        const edgeColor = connections[0]?.customColor || (isDark ? "#6b7280" : "#9ca3af")
 
-          ctx.fillStyle = edgeColor
-          drawArrow(ctx, fromNode.x, fromNode.y, toNode.x, toNode.y)
+        // Calculate aggregated values (total amount and UTXO count)
+        const totalAmount = connections.reduce((sum, conn) => sum + parseFloat(conn.amount || "0"), 0).toFixed(8)
+        const totalFormatted = formatAmount(String(totalAmount))
+        const utxoCount = connections.length
+        const currency = connections[0]?.currency || "BTC"
 
-          // Draw text on edge
-          const midX = (fromNode.x + toNode.x) / 2
-          const midY = (fromNode.y + toNode.y) / 2
+        // In aggregated mode, we don't need offset calculations since edges are always centered
 
-          ctx.fillStyle = isDark ? "#e5e7eb" : "#374151"
-          ctx.font = connection.isAggregated ? "12px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" : "11px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
-          ctx.textAlign = "center"
-          
-          let amountText: string
-          if (connection.isAggregated && connection._aggregatedText) {
-            amountText = `${connection._aggregatedText.amount} ${connection._aggregatedText.currency} (${connection._aggregatedText.count} UTXOs)`
-          } else {
-            const valueToShow = connection.receivedAmount || connection.amount
-            amountText = valueToShow ? `${valueToShow} ${connection.currency}` : connection.currency
-          }
-          
-          const dx = toNode.x - fromNode.x
-          const dy = toNode.y - fromNode.y
-          let angle = Math.atan2(dy, dx)
-          
-          if (angle > Math.PI / 2 || angle < -Math.PI / 2) {
-            angle += Math.PI
-          }
-          
-          ctx.save()
-          ctx.translate(midX, midY)
-          ctx.rotate(angle)
-          ctx.fillText(amountText, 0, 0)
-          ctx.restore()
-        } else {
-          // Multiple connections - draw curved lines with offsets
-          connections.forEach((connection, index) => {
-            const edgeColor = connection.customColor || (isDark ? "#6b7280" : "#9ca3af")
-            
-            ctx.strokeStyle = edgeColor
-            ctx.lineWidth = connection.isAggregated ? 2 : 1.5
-            ctx.setLineDash([])
-            
-            // Calculate curve offset to prevent stacking
-            const curveOffset = (index - (connections.length - 1) / 2) * 50
-            const midX = (fromNode.x + toNode.x) / 2
-            const midY = (fromNode.y + toNode.y) / 2
-            
-            // Calculate curve control point
-            const dx = toNode.x - fromNode.x
-            const dy = toNode.y - fromNode.y
-            const length = Math.sqrt(dx * dx + dy * dy)
-            const unitX = -dy / length
-            const unitY = dx / length
-            
-            const controlX = midX + unitX * curveOffset
-            const controlY = midY + unitY * curveOffset
-            
-            // Draw curved connection
-            drawCurvedConnection(ctx, fromNode.x, fromNode.y, toNode.x, toNode.y, curveOffset)
-            
-            // Draw curved arrow
-            drawCurvedArrow(ctx, fromNode.x, fromNode.y, toNode.x, toNode.y, curveOffset, 8)
-            
-            // Draw text on the curve at the same offset as the edge
-            ctx.fillStyle = isDark ? "#e5e7eb" : "#374151"
-            ctx.font = connection.isAggregated ? "12px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" : "11px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
-            ctx.textAlign = "center"
-            
-            let amountText: string
-            if (connection.isAggregated && connection._aggregatedText) {
-              amountText = `${connection._aggregatedText.amount} ${connection._aggregatedText.currency} (${connection._aggregatedText.count} UTXOs)`
-            } else {
-              const valueToShow = connection.receivedAmount || connection.amount
-              amountText = valueToShow ? `${valueToShow} ${connection.currency}` : connection.currency
-            }
-            
-            const textX = controlX
-            const textY = controlY
-            
-            const textDx = toNode.x - fromNode.x
-            const textDy = toNode.y - fromNode.y
-            let angle = Math.atan2(textDy, textDx)
-            
-            if (angle > Math.PI / 2 || angle < -Math.PI / 2) {
-              angle += Math.PI
-            }
-            
-            ctx.save()
-            ctx.translate(textX, textY)
-            ctx.rotate(angle)
-            ctx.fillText(amountText, 0, 0)
-            ctx.restore()
-          })
+        // In aggregated mode, always center edges on nodes regardless of multiple connections
+        // This is the key difference from individual mode - consolidated edges should be centered
+        const midX = (fromNode.x + toNode.x) / 2
+        const midY = (fromNode.y + toNode.y) / 2
+
+        // Draw the line first - always centered
+        ctx.strokeStyle = edgeColor
+        ctx.lineWidth = 2
+        ctx.beginPath()
+        ctx.moveTo(fromNode.x, fromNode.y)
+        ctx.lineTo(toNode.x, toNode.y)
+        ctx.stroke()
+
+        // Draw arrow - always centered
+        const dx = toNode.x - fromNode.x;
+        const dy = toNode.y - fromNode.y;
+        drawArrow(ctx, fromNode.x, fromNode.y, toNode.x, toNode.y, undefined, edgeColor)
+
+        // Create amount text for aggregated connection
+        // For custom nodes, don't show UTXO count
+        // For regular nodes, only show UTXO count if more than 1
+        const isCustomNode = fromNode.type === 'custom' || toNode.type === 'custom'
+        const amountText = isCustomNode 
+          ? `${totalFormatted} ${currency}`
+          : utxoCount > 1 
+            ? `${totalFormatted} ${currency} (${utxoCount} UTXOs)`
+            : `${totalFormatted} ${currency}`
+
+        const textAngle = Math.atan2(dy, dx);
+        let finalAngle = textAngle;
+        if (textAngle > Math.PI / 2 || textAngle < -Math.PI / 2) {
+          finalAngle += Math.PI;
         }
+
+        ctx.fillStyle = isDark ? "#e5e7eb" : "#374151";
+        ctx.font = "12px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
+        ctx.textAlign = "center";
+
+        ctx.save();
+        ctx.translate(midX, midY);
+        ctx.rotate(finalAngle);
+        ctx.fillText(amountText, 0, 0);
+        ctx.restore();
       })
     } else {
+      console.log('🔀 Using INDIVIDUAL mode');
       // Individual mode - draw all connections as-is with curved offsets for multiple edges
       const connectionGroups = new Map<string, FTConnection[]>()
 
       // Filter out self-loops (from === to) in individual mode as well
       const drawable = connections.filter((c) => c.from !== c.to)
 
+      const OFFSET_STEP = 80;
       drawable.forEach((connection) => {
         const key = JSON.stringify({ from: connection.from, to: connection.to, type: connection.type || "out" })
         if (!connectionGroups.has(key)) {
@@ -481,6 +485,8 @@ export const NetworkGraph = forwardRef<NetworkGraphHandle, NetworkGraphProps>(({
         const toNode = nodes.find((n) => n.id === toId)
         if (!fromNode || !toNode) return
 
+        console.log('🔗 Individual mode processing:', { fromId, toId, connectionsCount: connections.length, fromNode: { x: fromNode.x, y: fromNode.y }, toNode: { x: toNode.x, y: toNode.y } });
+
         if (connections.length === 1) {
           // Single connection - draw straight line
           const connection = connections[0]
@@ -490,33 +496,33 @@ export const NetworkGraph = forwardRef<NetworkGraphHandle, NetworkGraphProps>(({
           ctx.lineWidth = 1.5
           ctx.setLineDash([])
           
+          // Draw line all the way to the destination node
           ctx.beginPath()
           ctx.moveTo(fromNode.x, fromNode.y)
           ctx.lineTo(toNode.x, toNode.y)
           ctx.stroke()
 
-          ctx.fillStyle = edgeColor
-          drawArrow(ctx, fromNode.x, fromNode.y, toNode.x, toNode.y, "8")
+          drawArrow(ctx, fromNode.x, fromNode.y, toNode.x, toNode.y, undefined, edgeColor)
 
-          // Draw text on edge
+          // Draw text on edge - no offset for single connections
           const midX = (fromNode.x + toNode.x) / 2
           const midY = (fromNode.y + toNode.y) / 2
+
+          const dx = toNode.x - fromNode.x
+          const dy = toNode.y - fromNode.y
 
           ctx.fillStyle = isDark ? "#e5e7eb" : "#374151"
           ctx.font = "11px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
           ctx.textAlign = "center"
-          
+
           const valueToShow = connection.receivedAmount || connection.amount
-          const amountText = valueToShow ? `${valueToShow} ${connection.currency}` : connection.currency
-          
-          const textDx = toNode.x - fromNode.x
-          const textDy = toNode.y - fromNode.y
-          let angle = Math.atan2(textDy, textDx)
-          
+          const amountText = valueToShow ? `${formatAmount(String(valueToShow))} ${connection.currency}` : connection.currency
+
+          let angle = Math.atan2(dy, dx)
           if (angle > Math.PI / 2 || angle < -Math.PI / 2) {
             angle += Math.PI
           }
-          
+
           ctx.save()
           ctx.translate(midX, midY)
           ctx.rotate(angle)
@@ -532,16 +538,16 @@ export const NetworkGraph = forwardRef<NetworkGraphHandle, NetworkGraphProps>(({
             ctx.setLineDash([])
             
             // Calculate curve offset to prevent stacking
-            const curveOffset = (index - (connections.length - 1) / 2) * 50
+            const curveOffset = (index - (connections.length - 1) / 2) * OFFSET_STEP
             const midX = (fromNode.x + toNode.x) / 2
             const midY = (fromNode.y + toNode.y) / 2
             
             // Calculate curve control point
             const dx = toNode.x - fromNode.x
             const dy = toNode.y - fromNode.y
-            const length = Math.sqrt(dx * dx + dy * dy)
-            const unitX = -dy / length
-            const unitY = dx / length
+            const length = Math.sqrt(dx*dx+dy*dy)||1;
+            const unitX = -dy/length;
+            const unitY = dx/length;
             
             const controlX = midX + unitX * curveOffset
             const controlY = midY + unitY * curveOffset
@@ -550,7 +556,7 @@ export const NetworkGraph = forwardRef<NetworkGraphHandle, NetworkGraphProps>(({
             drawCurvedConnection(ctx, fromNode.x, fromNode.y, toNode.x, toNode.y, curveOffset)
             
             // Draw curved arrow
-            drawCurvedArrow(ctx, fromNode.x, fromNode.y, toNode.x, toNode.y, curveOffset, 8)
+            drawCurvedArrow(ctx, fromNode.x, fromNode.y, toNode.x, toNode.y, curveOffset, 8, edgeColor)
             
             // Draw text on the curve at the same offset as the edge
             ctx.fillStyle = isDark ? "#e5e7eb" : "#374151"
@@ -558,10 +564,11 @@ export const NetworkGraph = forwardRef<NetworkGraphHandle, NetworkGraphProps>(({
             ctx.textAlign = "center"
             
             const valueToShow = connection.receivedAmount || connection.amount
-            const amountText = valueToShow ? `${valueToShow} ${connection.currency}` : connection.currency
+            const amountText = valueToShow ? `${formatAmount(String(valueToShow))} ${connection.currency}` : connection.currency
             
-            const textX = controlX
-            const textY = controlY
+            // Reduce label offset by 50% compared to curve control point
+            const textX = midX + unitX * (curveOffset * 0.5)
+            const textY = midY + unitY * (curveOffset * 0.5)
             
             const textDx = toNode.x - fromNode.x
             const textDy = toNode.y - fromNode.y
@@ -610,7 +617,7 @@ export const NetworkGraph = forwardRef<NetworkGraphHandle, NetworkGraphProps>(({
           cache.set(logoUrl, img);
         }
         if (img && img.complete && img.naturalWidth > 0) {
-          console.log('🎨 Drawing logo as circular node', n.id, 'at position', n.x, n.y);
+          console.log('🎨 Drawing logo as circular node', n.id, 'at position', n.x, n.y, 'logoUrl:', logoUrl);
           try {
             // Create circular clipping path for the logo
             ctx.save();
@@ -624,7 +631,7 @@ export const NetworkGraph = forwardRef<NetworkGraphHandle, NetworkGraphProps>(({
             ctx.drawImage(img, n.x - logoSize / 2, n.y - logoSize / 2, logoSize, logoSize);
             ctx.restore();
           } catch (error) {
-            console.log('❌ Error drawing logo for node', n.id, ':', error);
+            console.log('❌ Error drawing logo for node', n.id, ':', error, 'logoUrl:', logoUrl);
             // Fallback if drawing fails - show circle with border and background
             // Draw circle with background and border
             ctx.beginPath();
@@ -706,18 +713,22 @@ export const NetworkGraph = forwardRef<NetworkGraphHandle, NetworkGraphProps>(({
       // label and additional info
       let yOffset = radius + 14;
       
-      // Entity name (primary label)
-      if (n.label && (n.label !== n.id || n.type === 'custom')) {
+      // Entity name (primary label) - show proper entity name if available
+      const displayName = n.label && n.label !== n.id ? n.label : 
+                         n.entityId ? n.entityId : 
+                         n.entityType ? n.entityType : null;
+      
+      if (displayName) {
         const labelColor = n.type === 'custom' ? '#9ca3af' : '#ffffff';
         ctx.fillStyle = labelColor;
         ctx.font = `bold ${12 / zoom}px Inter, system-ui, sans-serif`;
         ctx.textAlign = 'center';
-        ctx.fillText(n.label, n.x, n.y + yOffset);
+        ctx.fillText(displayName, n.x, n.y + yOffset);
         yOffset += 16 / zoom;
       }
       
-      // Address (truncated) - only show for non-custom nodes
-      if (n.type !== 'custom') {
+      // Address (truncated) - only show for non-custom nodes and when we have a proper entity name
+      if (n.type !== 'custom' && displayName) {
         const addressText = n.id.length > 12 ? `${n.id.slice(0, 6)}...${n.id.slice(-6)}` : n.id;
         ctx.fillStyle = '#9ca3af';
         ctx.font = `${10 / zoom}px Inter, system-ui, sans-serif`;
@@ -947,6 +958,12 @@ export const NetworkGraph = forwardRef<NetworkGraphHandle, NetworkGraphProps>(({
     return Math.hypot(px - bx, py - by);
   };
 
+  // helper
+  const formatAmount = (valStr:string)=>{
+    const num=parseFloat(valStr||"0");
+    return Number.isFinite(num)?Number(num).toLocaleString(undefined,{minimumFractionDigits:0,maximumFractionDigits:8}):valStr
+  }
+
   // Non-passive wheel listener to allow preventDefault (avoids console warnings)
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -1035,11 +1052,44 @@ export const NetworkGraph = forwardRef<NetworkGraphHandle, NetworkGraphProps>(({
       // try edge hit-test first
       let bestIdx = -1;
       let bestDist = Infinity;
+      const sampleBezier = (x0:number,y0:number,x1:number,y1:number,x2:number,y2:number,px:number,py:number)=>{
+        // approximate min distance by sampling points along t
+        let min=Infinity;
+        for(let t=0;t<=1.0;t+=0.1){
+          const xt=(1-t)*(1-t)*x0+2*(1-t)*t*x1+t*t*x2;
+          const yt=(1-t)*(1-t)*y0+2*(1-t)*t*y1+t*t*y2;
+          const dx=px-xt;const dy=py-yt;const dist=Math.sqrt(dx*dx+dy*dy);
+          if(dist<min)min=dist;
+        }
+        return min;
+      };
+
       connections.forEach((c, idx) => {
         const a = nodes.find((n) => n.id === c.from);
         const b = nodes.find((n) => n.id === c.to);
         if (!a || !b) return;
-        const d = distToSegment(w.x, w.y, a.x, a.y, b.x, b.y);
+
+        let d;
+        // Determine if multiple connections between the pair exist to use curved offset logic
+        const pairKey = JSON.stringify({ from: c.from, to: c.to, type: c.type || "out" });
+        const siblings = connections.filter(conn => JSON.stringify({ from: conn.from, to: conn.to, type: conn.type || "out" })===pairKey);
+        if(siblings.length>1){
+          const indexPos = siblings.indexOf(c);
+          const OFFSET_STEP = 80;
+          const curveOffset = (indexPos - (siblings.length - 1) / 2) * OFFSET_STEP;
+          const midX = (a.x + b.x) / 2;
+          const midY = (a.y + b.y) / 2;
+          const dx = b.x - a.x;
+          const dy = b.y - a.y;
+          const length = Math.sqrt(dx*dx+dy*dy)||1;
+          const unitX = -dy/length;
+          const unitY = dx/length;
+          const controlX = midX + unitX * curveOffset;
+          const controlY = midY + unitY * curveOffset;
+          d = sampleBezier(a.x,a.y,controlX,controlY,b.x,b.y,w.x,w.y);
+        }else{
+          d = distToSegment(w.x, w.y, a.x, a.y, b.x, b.y);
+        }
         if (d < bestDist) {
           bestDist = d;
           bestIdx = idx;
@@ -1048,10 +1098,37 @@ export const NetworkGraph = forwardRef<NetworkGraphHandle, NetworkGraphProps>(({
       const threshold = 8 / zoom; // world units threshold adjusted by zoom
       if (bestIdx >= 0 && bestDist <= threshold) {
         const conn = connections[bestIdx];
-        if (conn) {
-          setSelectedConnection(conn);
-          setEdgeColorPickerOpen(true);
-          if (onEdgeClick) onEdgeClick(conn);
+        if (conn && onEdgeClick) {
+          if (utxoCollapseMode === "aggregated") {
+            // Collect all connections between the same pair (and same type) to build a summary
+            const sameGroup = connections.filter(c =>
+              c.from === conn.from &&
+              c.to === conn.to &&
+              (c.type || "out") === (conn.type || "out")
+            );
+
+            if (sameGroup.length > 1) {
+              const totalAmount = sameGroup.reduce((sum, c) => sum + parseFloat(c.amount || "0"), 0).toFixed(8);
+              const aggregated: FTConnection = {
+                ...conn,
+                amount: totalAmount,
+                isAggregated: true,
+                utxoCount: sameGroup.length,
+                txHash: sameGroup.map(c => c.txHash).join(","),
+                date: sameGroup.map(c => c.date).join(","),
+                _aggregatedText: {
+                  amount: totalAmount,
+                  count: sameGroup.length,
+                  currency: conn.currency
+                }
+              };
+              onEdgeClick(aggregated);
+            } else {
+              onEdgeClick(conn);
+            }
+          } else {
+            onEdgeClick(conn);
+          }
         }
         // do not start panning on edge click
         return;
@@ -1164,17 +1241,7 @@ export const NetworkGraph = forwardRef<NetworkGraphHandle, NetworkGraphProps>(({
     }
   };
 
-  const handleColorChange = (color: string) => {
-    if (selectedConnection && onConnectionColorChange) {
-      onConnectionColorChange(selectedConnection.txHash, color);
-    }
-  };
 
-  const handleColorReset = () => {
-    if (selectedConnection && onConnectionColorReset) {
-      onConnectionColorReset(selectedConnection.txHash);
-    }
-  };
 
   return (
     <>
@@ -1187,14 +1254,7 @@ export const NetworkGraph = forwardRef<NetworkGraphHandle, NetworkGraphProps>(({
         onDoubleClick={onDoubleClick}
       />
       
-      <EdgeColorPicker
-        open={edgeColorPickerOpen}
-        onOpenChange={setEdgeColorPickerOpen}
-        txHash={selectedConnection?.txHash || ''}
-        currentColor={selectedConnection?.customColor}
-        onColorChange={handleColorChange}
-        onReset={handleColorReset}
-      />
+
     </>
   );
 });
