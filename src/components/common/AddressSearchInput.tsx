@@ -1,7 +1,8 @@
-import React, { forwardRef, useState, useEffect } from 'react';
+import React, { forwardRef, useState, useEffect, useRef } from 'react';
 import { Search, Loader2, AlertCircle, CheckCircle } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { isValidBlockchainAddress, getBlockchainType } from '../../utils/addressValidation';
+import { useTheme } from '../../context/ThemeContext';
 
 interface AddressSearchInputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'type'> {
   variant?: 'default' | 'compact' | 'with-action';
@@ -28,8 +29,34 @@ const AddressSearchInput = forwardRef<HTMLInputElement, AddressSearchInputProps>
   onValidationChange,
   ...props
 }, ref) => {
+  const { theme } = useTheme();
+  const inputRef = useRef<HTMLInputElement>(null);
   const [isValid, setIsValid] = useState<boolean | null>(null);
   const [validationMessage, setValidationMessage] = useState<string>('');
+
+  // Force dark mode styling via direct DOM manipulation
+  useEffect(() => {
+    const input = inputRef.current;
+    if (input && theme === 'dark') {
+      // Force the background color directly
+      input.style.setProperty('background-color', '#1f2937', 'important');
+      input.style.setProperty('color', '#ffffff', 'important');
+      input.style.setProperty('border-color', '#374151', 'important');
+      
+      // Also set placeholder color
+      const style = document.createElement('style');
+      style.textContent = `
+        input[data-address-search-input="${input.id || 'address-search'}"]::placeholder {
+          color: #9ca3af !important;
+        }
+      `;
+      document.head.appendChild(style);
+      
+      return () => {
+        document.head.removeChild(style);
+      };
+    }
+  }, [theme]);
 
   // Validate address whenever value changes
   useEffect(() => {
@@ -96,71 +123,88 @@ const AddressSearchInput = forwardRef<HTMLInputElement, AddressSearchInputProps>
   };
 
   return (
-    <div className="relative flex items-center">
-      <input
-        ref={ref}
-        type="text"
-        value={value}
-        onChange={onChange}
-        onKeyPress={handleKeyPress}
-        disabled={disabled || loading}
-        className={cn(
-          'w-full rounded-lg border transition-colors outline-none',
-          'bg-white dark:bg-gray-800',
-          'text-gray-900 dark:text-white',
-          'placeholder-gray-500 dark:placeholder-gray-400',
-          'focus:ring-2 focus:ring-orange-500/20',
-          sizeClasses[variant],
-          error || (isValid === false && value)
-            ? 'border-red-500 focus:border-red-500'
-            : isValid === true
-            ? 'border-green-500 focus:border-green-500'
-            : 'border-gray-300 dark:border-gray-700 focus:border-orange-500',
-          (disabled || loading) && 'cursor-not-allowed opacity-50',
-          variant === 'with-action' && 'rounded-r-none',
-          className
-        )}
-        {...props}
-      />
-      
-      {variant !== 'with-action' && (
-        <div className={cn(
-          'absolute right-3 top-1/2 -translate-y-1/2',
-          'text-gray-400 dark:text-gray-500',
-          'flex items-center space-x-1'
-        )}>
-          {loading ? (
-            <Loader2 className={cn(iconSizeClasses[variant], 'animate-spin')} />
-          ) : showValidation && isValid !== null ? (
-            <div className="flex items-center space-x-1" title={getValidationTooltip()}>
-              {getValidationIcon()}
-              {isValid && (
-                <Search 
-                  className={cn(iconSizeClasses[variant], 'text-gray-400 dark:text-gray-500 cursor-pointer')}
-                  onClick={handleSearch}
-                />
-              )}
-            </div>
-          ) : (
-            <Search className={iconSizeClasses[variant]} />
-          )}
-        </div>
-      )}
-
-      {variant === 'with-action' && actionButton}
-
-      {/* Validation message */}
+    <div className="relative flex flex-col">
+      {/* Validation message - moved to top */}
       {showValidation && isValid === false && value && (
-        <div className="absolute -bottom-6 left-0 text-xs text-red-500">
+        <div className="absolute -top-6 left-0 text-xs text-red-500">
           {validationMessage}
         </div>
       )}
       
       {showValidation && isValid === true && value && (
-        <div className="absolute -bottom-6 left-0 text-xs text-green-500">
+        <div className="absolute -top-6 left-0 text-xs text-green-500">
           {validationMessage}
         </div>
       )}
+
+      <div className="relative flex items-center">
+        <input
+          ref={(node) => {
+            inputRef.current = node;
+            if (typeof ref === 'function') {
+              ref(node);
+            } else if (ref) {
+              ref.current = node;
+            }
+          }}
+          type="text"
+          value={value}
+          onChange={onChange}
+          onKeyPress={handleKeyPress}
+          disabled={disabled || loading}
+          data-address-search-input="address-search"
+          className={cn(
+            'w-full rounded-lg border transition-colors outline-none',
+            'bg-white dark:bg-gray-800',
+            'text-gray-900 dark:text-white',
+            'placeholder-gray-500 dark:placeholder-gray-400',
+            'focus:ring-2 focus:ring-orange-500/20',
+            sizeClasses[variant],
+            error || (isValid === false && value)
+              ? 'border-red-500 focus:border-red-500'
+              : isValid === true
+              ? 'border-green-500 focus:border-green-500'
+              : 'border-gray-300 dark:border-gray-700 focus:border-orange-500',
+            (disabled || loading) && 'cursor-not-allowed opacity-50',
+            variant === 'with-action' && 'rounded-r-none',
+            'search-input-dark-mode', // Add a specific class for targeting
+            className
+          )}
+          style={{
+            ...props.style,
+            backgroundColor: theme === 'dark' ? '#1f2937' : undefined,
+            color: theme === 'dark' ? '#ffffff' : undefined,
+            borderColor: theme === 'dark' ? '#374151' : undefined,
+          }}
+          {...props}
+        />
+        
+        {variant !== 'with-action' && (
+          <div className={cn(
+            'absolute right-3 top-1/2 -translate-y-1/2',
+            'text-gray-400 dark:text-gray-500',
+            'flex items-center space-x-1'
+          )}>
+            {loading ? (
+              <Loader2 className={cn(iconSizeClasses[variant], 'animate-spin')} />
+            ) : showValidation && isValid !== null ? (
+              <div className="flex items-center space-x-1" title={getValidationTooltip()}>
+                {getValidationIcon()}
+                {isValid && (
+                  <Search 
+                    className={cn(iconSizeClasses[variant], 'text-gray-400 dark:text-gray-500 cursor-pointer')}
+                    onClick={handleSearch}
+                  />
+                )}
+              </div>
+            ) : (
+              <Search className={iconSizeClasses[variant]} />
+            )}
+          </div>
+        )}
+
+        {variant === 'with-action' && actionButton}
+      </div>
     </div>
   );
 });
