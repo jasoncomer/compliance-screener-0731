@@ -1,5 +1,5 @@
 import { v4 as uuid } from 'uuid'
-import * as diff from 'json-diff'
+// import * as diff from 'json-diff' // Unused for now
 import { openDB, DBSchema, IDBPDatabase } from 'idb'
 
 // Database schema for IndexedDB
@@ -61,7 +61,7 @@ const initDB = async () => {
 
   db = await openDB<WorkspaceDB>('blockscout-workspaces', 1, {
     upgrade(db) {
-      const workspaceStore = db.createObjectStore('workspaces', { keyPath: 'id' })
+      db.createObjectStore('workspaces', { keyPath: 'id' })
       const versionStore = db.createObjectStore('versions', { keyPath: 'id' })
       versionStore.createIndex('by-workspace', 'workspaceId')
     },

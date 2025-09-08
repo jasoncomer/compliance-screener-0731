@@ -18,10 +18,6 @@ import {
   createWorkspace,
   deleteWorkspace,
   renameWorkspace,
-  promoteVersion,
-  deleteVersion,
-  renameVersion,
-  updateAutoSaveInterval,
   type Workspace,
   type WorkspaceVersion,
 } from '@/lib/workspace-utils'
@@ -36,7 +32,6 @@ import {
   Plus,
   Search,
   MoreVertical,
-  Eye,
   ChevronDown,
 } from 'lucide-react'
 import {
@@ -58,7 +53,6 @@ interface GitHubWorkspaceManagerProps {
   onWorkspaceCreated?: (workspaceId: string) => void
   onStartNewInvestigation?: (workspaceId: string) => void
   refreshTrigger?: number
-  autoSaveManager?: { hasUnsavedWork: () => boolean }
 }
 
 export default function GitHubWorkspaceManager(props: GitHubWorkspaceManagerProps) {
@@ -72,7 +66,6 @@ export default function GitHubWorkspaceManager(props: GitHubWorkspaceManagerProp
     onWorkspaceCreated,
     onStartNewInvestigation,
     refreshTrigger,
-    autoSaveManager,
   } = props
 
   const [workspaces, setWorkspaces] = useState<Workspace[]>([])

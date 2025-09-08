@@ -549,8 +549,6 @@ export const NetworkGraph = forwardRef<NetworkGraphHandle, NetworkGraphProps>(({
             const unitX = -dy/length;
             const unitY = dx/length;
             
-            const controlX = midX + unitX * curveOffset
-            const controlY = midY + unitY * curveOffset
             
             // Draw curved connection
             drawCurvedConnection(ctx, fromNode.x, fromNode.y, toNode.x, toNode.y, curveOffset)

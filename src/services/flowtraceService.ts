@@ -136,7 +136,7 @@ export const flowtraceService = {
         console.log('SOT Response received:', sotResponse?.data?.length, 'entries');
         if (sotResponse?.data) {
           console.log('Looking for entity:', bitcoinAttr.data.entity);
-          console.log('Sample SOT entries:', sotResponse.data.slice(0, 3).map(e => ({ entity_id: e.entity_id, entity_type: e.entity_type })));
+          console.log('Sample SOT entries:', sotResponse.data.slice(0, 3).map((e: any) => ({ entity_id: e.entity_id, entity_type: e.entity_type })));
           
           const sotEntry = sotResponse.data.find((entry: any) => 
             entry.entity_id?.toLowerCase() === bitcoinAttr.data.entity?.toLowerCase() || 
@@ -148,16 +148,16 @@ export const flowtraceService = {
             console.log('✅ Found SOT entity_type:', entityType, 'for entity:', bitcoinAttr.data.entity);
           } else {
             console.log('❌ No SOT entry found for entity:', bitcoinAttr.data.entity);
-            console.log('Available entity_ids:', sotResponse.data.map(e => e.entity_id).filter(Boolean).slice(0, 10));
+            console.log('Available entity_ids:', sotResponse.data.map((e: any) => e.entity_id).filter(Boolean).slice(0, 10));
           
           // Check specifically for wrapped bitcoin variations
-          const wrappedBitcoinEntries = sotResponse.data.filter(e => 
+          const wrappedBitcoinEntries = sotResponse.data.filter((e: any) => 
             e.entity_id?.toLowerCase().includes('wrapped') || 
             e.entity_id?.toLowerCase().includes('bitcoin') ||
             e.proper_name?.toLowerCase().includes('wrapped') ||
             e.proper_name?.toLowerCase().includes('bitcoin')
           );
-          console.log('Wrapped Bitcoin related entries:', wrappedBitcoinEntries.map(e => ({ 
+          console.log('Wrapped Bitcoin related entries:', wrappedBitcoinEntries.map((e: any) => ({ 
             entity_id: e.entity_id, 
             proper_name: e.proper_name, 
             entity_type: e.entity_type 
@@ -205,16 +205,16 @@ export const flowtraceService = {
               console.log('✅ General attribution - Found SOT entity_type:', entityType, 'for entity:', entityId);
             } else {
               console.log('❌ General attribution - No SOT entry found for entity:', entityId);
-              console.log('Available entity_ids:', sotResponse.data.map(e => e.entity_id).filter(Boolean).slice(0, 10));
+              console.log('Available entity_ids:', sotResponse.data.map((e: any) => e.entity_id).filter(Boolean).slice(0, 10));
               
               // Check specifically for wrapped bitcoin variations
-              const wrappedBitcoinEntries = sotResponse.data.filter(e => 
+              const wrappedBitcoinEntries = sotResponse.data.filter((e: any) => 
                 e.entity_id?.toLowerCase().includes('wrapped') || 
                 e.entity_id?.toLowerCase().includes('bitcoin') ||
                 e.proper_name?.toLowerCase().includes('wrapped') ||
                 e.proper_name?.toLowerCase().includes('bitcoin')
               );
-              console.log('Wrapped Bitcoin related entries:', wrappedBitcoinEntries.map(e => ({ 
+              console.log('Wrapped Bitcoin related entries:', wrappedBitcoinEntries.map((e: any) => ({ 
                 entity_id: e.entity_id, 
                 proper_name: e.proper_name, 
                 entity_type: e.entity_type 

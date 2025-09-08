@@ -9,7 +9,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../../components/ui
 import { Checkbox } from '../../../components/ui/checkbox'
 
 import { UTXOClusteringService, WalletCluster, UTXO } from '../../../lib/utxo-clustering'
-import { GroupedTransactionView } from './GroupedTransactionView'
 import type { FTNode, FTConnection } from './NetworkGraph'
 import { flowtraceService } from '../../../services/flowtraceService'
 
@@ -32,9 +31,7 @@ export const WalletClusterPanel: React.FC<Props> = ({
   onOpenChange,
   nodes,
   connections,
-  consolidatedEntities = [],
   onConfirmSelection,
-  onUndoAggregation,
 }) => {
   const clusteringService = UTXOClusteringService.getInstance()
 
@@ -160,7 +157,6 @@ export const WalletClusterPanel: React.FC<Props> = ({
 
   // visible stats
   const visibleUtxoCount = entityGroups.reduce((sum, g) => sum + g.utxos.length, 0)
-  const visibleBalance = entityGroups.reduce((sum, g) => sum + (g.totalBalance || 0), 0)
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
 
   useEffect(() => {
@@ -268,7 +264,7 @@ export const WalletClusterPanel: React.FC<Props> = ({
                             {/* Per-entity select */}
                             <Button
                               variant="outline"
-                              size="xs"
+                              size="sm"
                               onClick={(e) => {
                                 e.stopPropagation()
                                 const allSelected = g.utxos.every((u) => selectedUtxoIds.has(u.id))

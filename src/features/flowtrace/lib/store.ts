@@ -58,9 +58,16 @@ interface GraphState {
   loadState: (state: { nodes: FTNode[]; connections: FTConnection[] }) => void
 }
 
+interface PersistedGraphState {
+  nodes: FTNode[]
+  connections: FTConnection[]
+  selectedNodeId: string | null
+  selectedEdgeId: string | null
+}
+
 export const useFlowTraceStore = create<GraphState>()(
-  persist<GraphState>(
-    (set: (fn: (state: GraphState) => Partial<GraphState> | GraphState) => void, get: () => GraphState) => ({
+  persist<GraphState, [], [], PersistedGraphState>(
+    (set: (fn: (state: GraphState) => Partial<GraphState> | GraphState) => void) => ({
       nodes: [],
       connections: [],
       selectedNodeId: null,
@@ -87,7 +94,7 @@ export const useFlowTraceStore = create<GraphState>()(
           ),
         })),
 
-      setSelectedNode: (id) => set({ selectedNodeId: id }),
+      setSelectedNode: (id) => set((state) => ({ ...state, selectedNodeId: id })),
 
       // Connection actions
       addConnection: (connection: Omit<FTConnection, 'id'>) =>
@@ -114,28 +121,32 @@ export const useFlowTraceStore = create<GraphState>()(
           connections: state.connections.filter((conn: FTConnection) => conn.txHash !== txHash),
         })),
 
-      setSelectedEdge: (id) => set({ selectedEdgeId: id }),
+      setSelectedEdge: (id) => set((state) => ({ ...state, selectedEdgeId: id })),
 
       // Batch actions
       clearAll: () =>
-        set({
+        set((state) => ({
+          ...state,
           nodes: [],
           connections: [],
           selectedNodeId: null,
           selectedEdgeId: null,
-        }),
+        })),
 
-      loadState: (state) =>
-        set({
-          nodes: state.nodes,
-          connections: state.connections,
-        }),
+      loadState: (newState) =>
+        set((state) => ({
+          ...state,
+          nodes: newState.nodes,
+          connections: newState.connections,
+        })),
     }),
     {
       name: 'flowtrace-graph-storage',
-      partialize: (state) => ({
+      partialize: (state): PersistedGraphState => ({
         nodes: state.nodes,
         connections: state.connections,
+        selectedNodeId: state.selectedNodeId,
+        selectedEdgeId: state.selectedEdgeId,
       }),
     }
   )

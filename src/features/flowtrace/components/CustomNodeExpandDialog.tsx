@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { getPopularCurrencies } from '../lib/currency-icons'
 import type { FTNode } from './NetworkGraph'
-import type { FTConnection } from '../lib/types'
+import type { FTConnection } from './NetworkGraph'
 import { Plus, Trash2, Edit3 } from 'lucide-react'
 
 interface EdgeConfig {
@@ -36,7 +36,7 @@ const CustomNodeExpandDialog: React.FC<Props> = ({ open, onOpenChange, sourceNod
     amount: c.amount,
     currency: c.currency,
     date: c.date?.split('T')[0] || new Date().toISOString().split('T')[0],
-    direction: c.from === sourceNode.id ? 'out' : 'in'
+    direction: (c.from === sourceNode.id ? 'out' : 'in') as 'in' | 'out'
   }))
 
   const [connectedEdges, setConnectedEdges] = useState<EdgeConfig[]>(() => buildPrefill())
@@ -52,7 +52,6 @@ const CustomNodeExpandDialog: React.FC<Props> = ({ open, onOpenChange, sourceNod
     }
   }, [open, existingConnections])
 
-  const getNodeLabel = (id: string) => otherNodes.find(n => n.id === id)?.label || id
 
   const addNewConnection = (nodeId: string) => {
     const newEdge: EdgeConfig = {

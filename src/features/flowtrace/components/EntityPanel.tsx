@@ -1,20 +1,8 @@
 import React, { useState, useEffect } from "react"
 import { flowtraceService } from "../../../services/flowtraceService"
 // UI primitives
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from "@/components/ui/dialog"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { Input } from "@/components/ui/input"
-
-// Utilities
-import { getCounterpartyName, getSOTData, getEntityInfoWithOverride } from "@/lib/counterparty-utils"
-import { wrapTextAtLimit } from "@/lib/utils"
-
-// Lucide icons
-import { Shield, AlertTriangle, Copy, ExternalLink, AlertCircle, Zap, Edit3, Save, X, Info, ArrowRight, RotateCcw } from "lucide-react"
 
 // Types and interfaces copied from original component for now
 interface EntityPanelProps {
@@ -62,24 +50,19 @@ interface EntityPanelProps {
   onRevertNodeLabel?: (nodeId: string) => void
 }
 
-type FilterType = "all" | "high" | "medium" | "low"
 
 export const EntityPanel: React.FC<EntityPanelProps> = ({ address, selectedNode }) => {
   const [riskData, setRiskData] = useState<any>(null)
-  const [isLoadingRiskData, setIsLoadingRiskData] = useState(false)
 
   useEffect(() => {
     if (!selectedNode?.address) return
 
     const fetchRiskData = async () => {
-      setIsLoadingRiskData(true)
       try {
-        const data = await flowtraceService.fetchRiskScore(selectedNode.address, "address")
+        const data = await flowtraceService.fetchRiskScore(selectedNode.address || '', "address")
         setRiskData(data)
       } catch (err) {
         console.error("Failed to fetch risk data", err)
-      } finally {
-        setIsLoadingRiskData(false)
       }
     }
 
