@@ -782,7 +782,7 @@ const FlowTracePage: React.FC = () => {
         open={customDialogOpen}
         onOpenChange={setCustomDialogOpen}
         existingNodes={nodes}
-        onCreate={({ label, currencyCode, logo, notes, edges }) => {
+        onCreate={({ label, currencyCode: _currencyCode, logo, notes, edges }) => {
           const nodeId = `custom-${Date.now()}`;
           const newNode: FTNode = {
             id: nodeId,
@@ -872,7 +872,7 @@ const FlowTracePage: React.FC = () => {
         nodes={nodes}
         connections={connections}
         consolidatedEntities={consolidatedEntities}
-        onConfirmSelection={async (entityKey, utxos) => {
+        onConfirmSelection={async (entityKey, _utxos) => {
           const memberIdsArr = nodes.filter(n => n.entityId === entityKey).map(n => n.id)
           if (!memberIdsArr.length) return
 

@@ -13,6 +13,7 @@ interface CustomNodeDialogProps {
     label: string
     currencyCode: string
     logo: string
+    notes: string
     edges: { targetId: string; amount: string; currency: string; direction: 'out' | 'in'; date: string }[]
   }) => void
 }
