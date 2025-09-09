@@ -138,6 +138,7 @@ const AddressAttributionEntities: React.FC<AddressAttributionEntitiesProps> = ({
             maxHeight: '120px'
           }}
           className="rounded-lg"
+          bodyStyle={{ padding: '0.75rem' }}
           bordered={false}
         >
           <div className="!bg-transparent dark:!bg-transparent !p-0 !mb-0">
