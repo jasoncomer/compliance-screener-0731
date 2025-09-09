@@ -38,6 +38,26 @@ const getSOT = async () => {
   return sot;
 };
 
+const getSOTByEntityId = async (entityId: string) => {
+  const res = await axiosInstance.get(`/sot/entity/${entityId}`, { timeout: 10000 });
+  
+  const sot = res.data;
+  if (sot && sot.logo) {
+    // Remove any whitespace
+    sot.logo = sot.logo.trim();
+    
+    // If the URL doesn't start with http:// or https://, add https://
+    if (!sot.logo.startsWith('http://') && !sot.logo.startsWith('https://')) {
+      sot.logo = 'https://' + sot.logo;
+    }
+    
+    // Remove any trailing slashes
+    sot.logo = sot.logo.replace(/\/+$/, '');
+  }
+  
+  return sot;
+};
+
 const updateSOT = async (id: string, data: Partial<SOT>): Promise<SOT> => {
   const response = await axiosInstance.put(`/sot/${id}`, {
     headers: {
@@ -63,6 +83,7 @@ export const sot = {
   updateMongoDb,
   loadLastUpdate,
   getSOT,
+  getSOTByEntityId,
   updateSOT,
   deleteSOT,
   getRelatedEntities,

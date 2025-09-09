@@ -1,0 +1,93 @@
+/* Transaction Grouping Styles - Alternating Row Colors by TXID */
+
+/* Base transaction group colors - subtle and professional */
+.tx-group-0 {
+  background-color: #ffffff;
+}
+
+.tx-group-1 {
+  background-color: #f8f9fa;
+}
+
+.tx-group-2 {
+  background-color: #f1f3f4;
+}
+
+.tx-group-3 {
+  background-color: #e8eaed;
+}
+
+/* Dark mode support */
+.dark .tx-group-0 {
+  background-color: #1a1a1a;
+}
+
+.dark .tx-group-1 {
+  background-color: #2d2d2d;
+}
+
+.dark .tx-group-2 {
+  background-color: #3a3a3a;
+}
+
+.dark .tx-group-3 {
+  background-color: #474747;
+}
+
+/* Hover effects for transaction groups */
+.tx-group-hover:hover {
+  background-color: #e3f2fd !important;
+  transition: background-color 0.2s ease;
+}
+
+.dark .tx-group-hover:hover {
+  background-color: #1e3a5f !important;
+}
+
+/* Ensure proper contrast for text in grouped rows */
+.tx-group-0,
+.tx-group-1,
+.tx-group-2,
+.tx-group-3 {
+  color: inherit;
+}
+
+/* Ant Design table row overrides */
+.ant-table-tbody > tr.tx-group-0 > td,
+.ant-table-tbody > tr.tx-group-1 > td,
+.ant-table-tbody > tr.tx-group-2 > td,
+.ant-table-tbody > tr.tx-group-3 > td {
+  background-color: inherit;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.dark .ant-table-tbody > tr.tx-group-0 > td,
+.dark .ant-table-tbody > tr.tx-group-1 > td,
+.dark .ant-table-tbody > tr.tx-group-2 > td,
+.dark .ant-table-tbody > tr.tx-group-3 > td {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* Hover state for table rows */
+.ant-table-tbody > tr.tx-group-hover:hover > td {
+  background-color: #e3f2fd !important;
+}
+
+.dark .ant-table-tbody > tr.tx-group-hover:hover > td {
+  background-color: #1e3a5f !important;
+}
+
+/* Selection state compatibility */
+.ant-table-tbody > tr.tx-group-0.ant-table-row-selected > td,
+.ant-table-tbody > tr.tx-group-1.ant-table-row-selected > td,
+.ant-table-tbody > tr.tx-group-2.ant-table-row-selected > td,
+.ant-table-tbody > tr.tx-group-3.ant-table-row-selected > td {
+  background-color: #e6f7ff !important;
+}
+
+.dark .ant-table-tbody > tr.tx-group-0.ant-table-row-selected > td,
+.dark .ant-table-tbody > tr.tx-group-1.ant-table-row-selected > td,
+.dark .ant-table-tbody > tr.tx-group-2.ant-table-row-selected > td,
+.dark .ant-table-tbody > tr.tx-group-3.ant-table-row-selected > td {
+  background-color: #111b26 !important;
+}
