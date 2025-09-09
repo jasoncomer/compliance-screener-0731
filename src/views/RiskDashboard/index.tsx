@@ -642,7 +642,7 @@ const RiskDashboard: React.FC = React.memo(() => {
       fullWidth={true}
     >
       {/* Sticky Search Bar */}
-      <div className={`sticky top-[0] z-20 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 px-4 ${isEmptyState ? 'pt-2 py-4 mb-2' : 'py-4'}`}>
+      <div className={`sticky top-[0] z-20 bg-white dark:bg-background border-b border-gray-200 dark:border-gray-700 px-4 ${isEmptyState ? 'pt-2 py-4 mb-2' : 'py-4'}`}>
         <div className="flex justify-between items-center gap-4">
           <div className="flex-1 max-w-2xl">
             <AddressSearchInput
@@ -669,7 +669,7 @@ const RiskDashboard: React.FC = React.memo(() => {
       ) : (
         <div className="space-y-6">
           {/* Address Header - Full Width */}
-          <div className="rounded-2xl border p-6 bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700">
+          <div className="rounded-2xl border p-6 bg-gray-50 dark:bg-background border-gray-200 dark:border-gray-700 mt-8">
             <AddressHeader 
               address={address}
               entityTags={entityTags}
@@ -730,7 +730,7 @@ const RiskDashboard: React.FC = React.memo(() => {
 
           {/* Top Counterparties and Transaction History - Two Columns */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="rounded-2xl border p-6 bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700">
+            <div className="rounded-2xl border p-6 bg-gray-50 dark:bg-background border-gray-200 dark:border-gray-700">
               <TopCounterparties 
                 incoming={counterpartyData.incoming} 
                 outgoing={counterpartyData.outgoing} 
@@ -739,7 +739,7 @@ const RiskDashboard: React.FC = React.memo(() => {
               />
             </div>
             
-            <div className="rounded-2xl border p-6 bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700">
+            <div className="rounded-2xl border p-6 bg-gray-50 dark:bg-background border-gray-200 dark:border-gray-700">
               <TransactionHistory 
                 address={address}
               />
@@ -750,7 +750,7 @@ const RiskDashboard: React.FC = React.memo(() => {
 
           {/* D3 Sankey Diagram - Full Width */}
           {address && (
-            <div className="rounded-2xl border p-6 bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700">
+            <div className="rounded-2xl border p-6 bg-gray-50 dark:bg-background border-gray-200 dark:border-gray-700">
               <SimpleSankeyTest 
                 address={address}
                 maxTransactions={20}
@@ -760,7 +760,7 @@ const RiskDashboard: React.FC = React.memo(() => {
 
           {/* Entity Details and Twitter Timeline - Two Columns */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-            <div ref={entityDetailsRef} className="rounded-2xl border p-6 bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700">
+            <div ref={entityDetailsRef} className="rounded-2xl border p-6 bg-gray-50 dark:bg-background border-gray-200 dark:border-gray-700">
               <EntityDetails 
                 name={primaryEntityId ? (items.find(item => item.entity_id === primaryEntityId)?.proper_name || primaryEntityId) : "Unknown Entity"}
                 type={primaryEntityId ? getEntityType(primaryEntityId) : "Unknown"}
@@ -794,7 +794,7 @@ const RiskDashboard: React.FC = React.memo(() => {
               />
             </div>
             
-            <div className="rounded-2xl border p-6 bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700" style={entityDetailsHeight ? { height: Math.max(entityDetailsHeight, 300) } : { minHeight: '300px' }}>
+            <div className="rounded-2xl border p-6 bg-gray-50 dark:bg-background border-gray-200 dark:border-gray-700" style={entityDetailsHeight ? { height: Math.max(entityDetailsHeight, 300) } : { minHeight: '300px' }}>
               <SocialMediaFeed 
                 address={address}
                 title="Social Media & News Feed"
@@ -807,7 +807,7 @@ const RiskDashboard: React.FC = React.memo(() => {
       {(loading || isLoadingAnyData) && (
         <div className="space-y-6">
           {/* Address Header Skeleton */}
-          <div className="rounded-2xl border p-6 bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700">
+          <div className="rounded-2xl border p-6 bg-gray-50 dark:bg-background border-gray-200 dark:border-gray-700">
             <div className="animate-pulse">
               <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-20 mb-2"></div>
               <div className="h-8 bg-gray-300 dark:bg-gray-600 rounded w-full"></div>
@@ -816,7 +816,7 @@ const RiskDashboard: React.FC = React.memo(() => {
 
           {/* Summary Stats and Risk Assessment Skeleton - Two Columns */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="rounded-2xl border p-6 bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700">
+            <div className="rounded-2xl border p-6 bg-gray-50 dark:bg-background border-gray-200 dark:border-gray-700">
               <div className="animate-pulse">
                 <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-24 mb-4"></div>
                 <div className="space-y-4">
@@ -840,7 +840,7 @@ const RiskDashboard: React.FC = React.memo(() => {
               </div>
             </div>
             
-            <div className="rounded-2xl border p-6 bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700">
+            <div className="rounded-2xl border p-6 bg-gray-50 dark:bg-background border-gray-200 dark:border-gray-700">
               <div className="animate-pulse">
                 <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-24 mb-4"></div>
                 <div className="h-8 bg-gray-300 dark:bg-gray-600 rounded w-full"></div>
@@ -849,7 +849,7 @@ const RiskDashboard: React.FC = React.memo(() => {
           </div>
 
           {/* Transaction Activity Skeleton */}
-          <div className="rounded-2xl border p-6 bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700">
+          <div className="rounded-2xl border p-6 bg-gray-50 dark:bg-background border-gray-200 dark:border-gray-700">
             <div className="animate-pulse">
               <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-40 mb-4"></div>
               <div className="h-48 bg-gray-300 dark:bg-gray-600 rounded w-full"></div>
@@ -858,14 +858,14 @@ const RiskDashboard: React.FC = React.memo(() => {
 
           {/* Top Counterparties and Transaction History Skeleton - Two Columns */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="rounded-2xl border p-6 bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700">
+            <div className="rounded-2xl border p-6 bg-gray-50 dark:bg-background border-gray-200 dark:border-gray-700">
               <div className="animate-pulse">
                 <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-36 mb-4"></div>
                 <div className="h-48 bg-gray-300 dark:bg-gray-600 rounded w-full"></div>
               </div>
             </div>
             
-            <div className="rounded-2xl border p-6 bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700">
+            <div className="rounded-2xl border p-6 bg-gray-50 dark:bg-background border-gray-200 dark:border-gray-700">
               <div className="animate-pulse">
                 <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-32 mb-4"></div>
                 <div className="h-48 bg-gray-300 dark:bg-gray-600 rounded w-full"></div>
@@ -874,7 +874,7 @@ const RiskDashboard: React.FC = React.memo(() => {
           </div>
 
           {/* Funds Flow Analysis Skeleton */}
-          <div className="rounded-2xl border p-6 bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700">
+          <div className="rounded-2xl border p-6 bg-gray-50 dark:bg-background border-gray-200 dark:border-gray-700">
             <div className="animate-pulse">
               <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-36 mb-4"></div>
               <div className="h-48 bg-gray-300 dark:bg-gray-600 rounded w-full"></div>
@@ -883,14 +883,14 @@ const RiskDashboard: React.FC = React.memo(() => {
 
           {/* Entity Details and Twitter Timeline Skeleton - Two Columns */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="rounded-2xl border p-6 bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700">
+            <div className="rounded-2xl border p-6 bg-gray-50 dark:bg-background border-gray-200 dark:border-gray-700">
               <div className="animate-pulse">
                 <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-24 mb-4"></div>
                 <div className="h-48 bg-gray-300 dark:bg-gray-600 rounded w-full"></div>
               </div>
             </div>
             
-            <div className="rounded-2xl border p-6 bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700">
+            <div className="rounded-2xl border p-6 bg-gray-50 dark:bg-background border-gray-200 dark:border-gray-700">
               <div className="animate-pulse">
                 <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-20 mb-4"></div>
                 <div className="h-48 bg-gray-300 dark:bg-gray-600 rounded w-full"></div>

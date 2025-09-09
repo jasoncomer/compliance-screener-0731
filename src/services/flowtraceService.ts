@@ -64,30 +64,21 @@ export const flowtraceService = {
   },
   // New method to fetch Bitcoin attribution data
   fetchBitcoinAttribution(address: string) {
-    console.log('fetchBitcoinAttribution called for address:', address);
     return axiosInstance
       .get<BitcoinAttribution>(`/blockchain/bitcoin/attribution/${address}`)
-      .then(r => {
-        console.log('Bitcoin attribution API response:', r.data);
-        return r.data;
-      })
+      .then(r => r.data)
       .catch((error) => {
         console.error('Bitcoin attribution API error:', error);
         // If it's a 404, the address might not have attribution data, which is normal
         if (error.response?.status === 404) {
-          console.log('Bitcoin attribution not found for address:', address);
           return null;
         }
         // For other errors, retry once after a short delay
-        console.log('Retrying Bitcoin attribution request...');
         return new Promise<BitcoinAttribution | null>(resolve => {
           setTimeout(() => {
             axiosInstance
               .get<BitcoinAttribution>(`/blockchain/bitcoin/attribution/${address}`)
-              .then(r => {
-                console.log('Bitcoin attribution retry successful:', r.data);
-                resolve(r.data);
-              })
+              .then(r => resolve(r.data))
               .catch((retryError) => {
                 console.error('Bitcoin attribution retry failed:', retryError);
                 resolve(null);
@@ -97,13 +88,8 @@ export const flowtraceService = {
       });
   },
   async fetchEntityProfile(address: string) {
-    console.log('fetchEntityProfile called for address:', address);
-    
     // First try to get Bitcoin attribution data
     const bitcoinAttr = await this.fetchBitcoinAttribution(address);
-    console.log('Bitcoin attribution result:', bitcoinAttr);
-    console.log('Bitcoin attribution type:', typeof bitcoinAttr);
-    console.log('Bitcoin attribution keys:', bitcoinAttr ? Object.keys(bitcoinAttr) : 'null/undefined');
     
     // Combine attribution + risk score for an address
     const [attr, risk] = await Promise.all([
@@ -116,13 +102,6 @@ export const flowtraceService = {
         return { score: undefined };
       }),
     ]);
-    
-    console.log('General attribution result:', attr);
-    console.log('Risk score result:', risk);
-    console.log('Risk score type:', typeof risk);
-    console.log('Risk score keys:', risk ? Object.keys(risk) : 'null/undefined');
-    console.log('Risk score value:', (risk as any)?.score);
-    console.log('Risk score data:', (risk as any)?.data);
     
     // Use Bitcoin attribution if available, otherwise fall back to general attribution
     let entityInfo = null;
@@ -176,7 +155,6 @@ export const flowtraceService = {
         custodian: bitcoinAttr.data.custodian,
       };
     } else {
-      console.log('Bitcoin attribution not found, trying general attribution');
       const entry = Array.isArray((attr as any)?.data) ? (attr as any).data.find((a: any) => a.address === address) : undefined;
       if (entry) {
         // Get SOT data to determine proper entity type for general attribution
@@ -235,70 +213,80 @@ export const flowtraceService = {
       }
     }
     
-    console.log('Entity info:', entityInfo);
-    
     // Simple logo URL construction - let image loading handle existence check
     let logoUrl: string | null = null;
     if (entityInfo?.entityId) {
-      console.log('🔍 Constructing logo URL for entity:', entityInfo.entityId);
-      
       // Try JPG first (since we know bittrex.jpg exists)
       logoUrl = `https://storage.googleapis.com/entity-logos/${entityInfo.entityId}.jpg`;
-      console.log('✅ Constructed logo URL:', logoUrl);
-    } else {
-      console.log('🔍 No entityId found, skipping logo fetch. EntityInfo:', entityInfo);
+    }
+    
+    // Fetch SOT data to get proper_name and fallback logo
+    let properName: string | null = null;
+    if (entityInfo?.entityId) {
+      try {
+        // Get main SOT data to search for proper_name and fallback logos
+        const mainSotResponse = await this.fetchSOT().catch(() => null);
+        if (mainSotResponse) {
+          // Look for the specific entity by entityId
+          const sotEntry = mainSotResponse.find((entry: any) => 
+            entry.entity_id === entityInfo.entityId
+          );
+          
+          if (sotEntry) {
+            properName = sotEntry.proper_name;
+            
+            // Also get logo from SOT if not already found
+            if (!logoUrl && sotEntry.logo) {
+              logoUrl = sotEntry.logo;
+            }
+          }
+        }
+      } catch (error) {
+        console.error('SOT data lookup failed:', error);
+      }
     }
     
     // If no logo from SOT and entityType exists, try fallback from main SOT data
     if (!logoUrl && entityInfo?.entityType) {
       try {
-        console.log('Fetching fallback logo for entityType:', entityInfo.entityType);
-        
         // Get main SOT data to search for fallback logos
         const mainSotResponse = await this.fetchSOT().catch(() => null);
-        if (mainSotResponse?.data) {
+        if (mainSotResponse) {
           // Look for entries that match the entity type and have fallback logos
-          const mappingEntry = mainSotResponse.data.find((entry: any) => 
+          const mappingEntry = mainSotResponse.find((entry: any) => 
             entry.entity_type === entityInfo.entityType && (entry.fallback_logo || entry.logo)
           );
-          console.log('Found mapping entry in main SOT for entityType:', entityInfo.entityType, mappingEntry);
           
           if (mappingEntry) {
             logoUrl = mappingEntry.fallback_logo || mappingEntry.logo;
-            console.log('Found fallback logo from main SOT:', logoUrl);
           } else {
             // If no exact entity_type match, try to find any exchange with a logo as fallback
             if (entityInfo.entityType === 'exchange') {
-              const exchangeEntry = mainSotResponse.data.find((entry: any) => 
+              const exchangeEntry = mainSotResponse.find((entry: any) => 
                 entry.entity_type === 'exchange' && entry.logo
               );
               if (exchangeEntry?.logo) {
                 logoUrl = exchangeEntry.logo;
-                console.log('Found generic exchange logo fallback:', logoUrl);
               }
             }
           }
-        } else {
-          console.log('No main SOT data available for fallback lookup');
         }
       } catch (error) {
         console.error('Fallback logo lookup failed:', error);
       }
     }
     
-    console.log('🎯 Final logoUrl before result:', logoUrl);
-    
     const result = {
       entityId: entityInfo?.entityId,
       entityType: entityInfo?.entityType,
       label: entityInfo?.label,
+      properName: properName,
       bo: entityInfo?.bo,
       custodian: entityInfo?.custodian,
       riskScore: (risk as any)?.data?.overallRisk ? Math.round((risk as any).data.overallRisk * 100) : undefined,
       logoUrl,
     };
     
-    console.log('fetchEntityProfile result:', result);
     return result;
   },
   fetchSOT() {

@@ -187,24 +187,80 @@ type Props = {
     bo?: string;
     custodian?: string;
   };
+  // Add node data to get logo directly from the same source as NetworkGraph
+  nodeData?: {
+    logoUrl?: string;
+    entityId?: string;
+    entityType?: string;
+  };
   isExpanded?: boolean;
   onToggle?: () => void;
+  isLoading?: boolean;
 };
 
 const LeftPanel: React.FC<Props> = ({ 
   address, 
   network, 
   balance, 
- 
   txCount, 
   riskScore, 
   selectedEntity,
+  nodeData,
   isExpanded = true,
-  onToggle 
+  onToggle,
+  isLoading = false
 }) => {
   const activeOrg = useAppSelector(selectActiveOrganization as any) as any;
   const orgId = activeOrg?._id as string | undefined;
   const [copied, setCopied] = useState(false);
+  
+  // Use the actual transaction data as a fallback for transaction count
+  const { data: transactionData } = useAddressTransactions(address || '', 1, 1);
+  const actualTxCount = transactionData?.pagination?.totalTxs || transactionData?.txs?.length || txCount || 0;
+  
+  // Get logo URL from the same source as NetworkGraph (nodeData) with fallback to selectedEntity
+  const logoUrl = nodeData?.logoUrl || selectedEntity?.logoUrl;
+  
+  // State to track the actual logo URL (with PNG fallback)
+  const [actualLogoUrl, setActualLogoUrl] = useState<string | null>(null);
+  
+  // Implement PNG fallback logic (same as NetworkGraph)
+  React.useEffect(() => {
+    if (!logoUrl) {
+      setActualLogoUrl(null);
+      return;
+    }
+    
+    // If it's already a PNG, use it directly
+    if (logoUrl.endsWith('.png')) {
+      setActualLogoUrl(logoUrl);
+      return;
+    }
+    
+    // If it's a JPG, test it first, then try PNG fallback
+    if (logoUrl.endsWith('.jpg')) {
+      const testImg = new Image();
+      testImg.onload = () => {
+        setActualLogoUrl(logoUrl);
+      };
+      testImg.onerror = () => {
+        const pngUrl = logoUrl.replace('.jpg', '.png');
+        const pngTestImg = new Image();
+        pngTestImg.onload = () => {
+          setActualLogoUrl(pngUrl);
+        };
+        pngTestImg.onerror = () => {
+          setActualLogoUrl(null);
+        };
+        pngTestImg.src = pngUrl;
+      };
+      testImg.src = logoUrl;
+    } else {
+      // For other formats, use directly
+      setActualLogoUrl(logoUrl);
+    }
+  }, [logoUrl]);
+  
   const onCopy = async () => {
     try {
       await navigator.clipboard.writeText(selectedEntity?.address || address || '');
@@ -226,7 +282,7 @@ const LeftPanel: React.FC<Props> = ({
   };
 
   return (
-    <div className={`relative h-full border-r border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 flex flex-col transition-all duration-300 ease-in-out ${isExpanded ? 'w-96' : 'w-12'}`}>
+    <div className={`relative h-full border-r border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 flex flex-col transition-all duration-300 ease-in-out ${isExpanded ? 'w-[28rem]' : 'w-12'}`}>
       {/* Toggle Button */}
       <button
         onClick={onToggle}
@@ -278,6 +334,16 @@ const LeftPanel: React.FC<Props> = ({
             </div>
           </div>
 
+          {/* Loading Indicator */}
+          {isLoading && (
+            <div className="p-4 border-b border-gray-200 dark:border-gray-800">
+              <div className="flex items-center justify-center space-x-2">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-purple-500"></div>
+                <span className="text-sm text-gray-600 dark:text-gray-400">Loading entity data...</span>
+              </div>
+            </div>
+          )}
+
           {/* Content */}
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
             {/* Selected entity card */}
@@ -286,21 +352,25 @@ const LeftPanel: React.FC<Props> = ({
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center gap-3">
                     <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 overflow-hidden flex items-center justify-center shadow-lg">
-                      {selectedEntity.logoUrl ? (
+                      {actualLogoUrl ? (
                         // eslint-disable-next-line @next/next/no-img-element
-                        <img src={selectedEntity.logoUrl} alt="logo" className="h-full w-full object-cover" />
+                        <img 
+                          src={actualLogoUrl} 
+                          alt="logo" 
+                          className="h-full w-full object-cover"
+                        />
                       ) : (
                         <div className="text-white font-semibold text-lg">
-                          {selectedEntity.label?.charAt(0)?.toUpperCase() || 'E'}
+                          {selectedEntity?.label?.charAt(0)?.toUpperCase() || 'E'}
                         </div>
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <h3 className="font-semibold text-gray-900 dark:text-gray-100 truncate">
+                      <div className="flex items-start gap-2 mb-1">
+                        <h3 className="font-semibold text-gray-900 dark:text-gray-100 leading-tight break-words">
                           {selectedEntity.label || 'Unknown Entity'}
                         </h3>
-                        <Pencil className="h-3.5 w-3.5 text-gray-400 flex-shrink-0" />
+                        <Pencil className="h-3.5 w-3.5 text-gray-400 flex-shrink-0 mt-0.5" />
                       </div>
                       <div className="text-xs text-gray-500 font-mono break-all">{formatAddress(selectedEntity.address || '')}</div>
                     </div>
@@ -370,7 +440,7 @@ const LeftPanel: React.FC<Props> = ({
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-600 dark:text-gray-400">Transactions</span>
-                  <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{formatCompact(txCount)}</span>
+                  <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{formatCompact(actualTxCount)}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-600 dark:text-gray-400">Risk Score</span>

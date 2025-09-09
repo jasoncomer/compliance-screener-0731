@@ -129,18 +129,19 @@ export const NetworkGraph = forwardRef<NetworkGraphHandle, NetworkGraphProps>(({
         console.log('🎯 Using logoUrl from node data for', node.id, ':', node.logoUrl);
         map[node.id] = node.logoUrl;
       } else if (node.entityId || node.entityType) {
-        // Priority 2: Use the API proxy endpoint to avoid CORS issues
+        // Priority 2: Construct logo URL directly from Google Storage
         const entityId = node.entityId || node.entityType;
         if (entityId) {
-          console.log('🔍 Using API proxy for', node.id, 'entityId:', entityId);
-          // Use the API proxy endpoint that handles CORS
-          const proxyUrl = `/api/v1/sot/logo/${entityId}`;
-          map[node.id] = proxyUrl;
+          console.log('🔍 Constructing direct logo URL for', node.id, 'entityId:', entityId);
+          // Use direct Google Storage URL (JPG first, PNG fallback handled by image loading)
+          const directUrl = `https://storage.googleapis.com/entity-logos/${entityId}.jpg`;
+          map[node.id] = directUrl;
         } else {
           map[node.id] = null;
         }
       } else {
-        console.log('❌ No logo data available for node:', node.id);
+        // Priority 3: For nodes without entityId yet, we'll wait for prefetchProfilesAndLogos to complete
+        // This happens when a node is first created but profile data hasn't been fetched yet
         map[node.id] = null;
       }
     });
@@ -359,14 +360,14 @@ export const NetworkGraph = forwardRef<NetworkGraphHandle, NetworkGraphProps>(({
     ctx.scale(dpi, dpi);
     ctx.clearRect(0, 0, canvas.clientWidth, canvas.clientHeight);
 
+    // Clear canvas with theme-aware background (before transformations)
+    const isDark = document.documentElement.classList.contains('dark')
+    ctx.fillStyle = isDark ? "#0f172a" : "#ffffff"
+    ctx.fillRect(0, 0, canvas.clientWidth, canvas.clientHeight)
+
     // apply pan/zoom
     ctx.translate(pan.x, pan.y);
     ctx.scale(zoom, zoom);
-
-    // Clear canvas with theme-aware background
-    const isDark = document.documentElement.classList.contains('dark')
-    ctx.fillStyle = isDark ? "#0f172a" : "#ffffff"
-    ctx.fillRect(-pan.x, -pan.y, canvas.offsetWidth, canvas.offsetHeight)
 
     // Draw connections based on UTXO collapse mode
     console.log('🎨 Drawing connections:', { mode: utxoCollapseMode, totalConnections: connections.length, connections: connections.map(c => ({ from: c.from, to: c.to, amount: c.amount, currency: c.currency })) });
@@ -595,7 +596,6 @@ export const NetworkGraph = forwardRef<NetworkGraphHandle, NetworkGraphProps>(({
       const logoUrl = getNodeLogoUrl(n);
       
       // Use logo if available, otherwise use default color
-      console.log('🎨 Rendering node', n.id, 'with logoUrl:', logoUrl, 'entityId:', n.entityId, 'entityType:', n.entityType);
       if (logoUrl) {
         const cache = imageCacheRef.current;
         let img = cache.get(logoUrl);
@@ -603,13 +603,25 @@ export const NetworkGraph = forwardRef<NetworkGraphHandle, NetworkGraphProps>(({
           img = new Image();
           // Don't set crossOrigin for test images to avoid CORS issues
           img.onload = () => {
-            console.log('✅ Logo loaded successfully:', logoUrl);
             setRenderTick((t) => t + 1);
           };
           img.onerror = () => {
-            console.log('❌ Logo failed to load:', logoUrl);
-            // Remove from cache so it doesn't keep trying
-            cache.delete(logoUrl);
+            // Try PNG fallback if JPG failed
+            if (logoUrl.endsWith('.jpg')) {
+              const pngUrl = logoUrl.replace('.jpg', '.png');
+              const pngImg = new Image();
+              pngImg.onload = () => {
+                cache.set(logoUrl, pngImg); // Cache the PNG under the original JPG key
+                setRenderTick((t) => t + 1);
+              };
+              pngImg.onerror = () => {
+                cache.delete(logoUrl);
+              };
+              pngImg.src = pngUrl;
+            } else {
+              // Remove from cache so it doesn't keep trying
+              cache.delete(logoUrl);
+            }
           };
           img.src = logoUrl;
           cache.set(logoUrl, img);
@@ -651,7 +663,6 @@ export const NetworkGraph = forwardRef<NetworkGraphHandle, NetworkGraphProps>(({
           }
         } else {
           // Fallback while logo is loading or if image is broken - show circle with border and background
-          console.log('🎨 Using styled background for node', n.id, '- logo not ready or broken');
           
           // Draw circle with background and border
           ctx.beginPath();

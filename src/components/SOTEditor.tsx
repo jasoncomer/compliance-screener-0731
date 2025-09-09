@@ -10,7 +10,7 @@ import Input from './common/Input';
 import { colors } from '../styles/variables';
 import { useSelector } from 'react-redux';
 import { RootState } from '../store/store';
-import EntitySidebar from './EntitySidebar';
+import EntitySidebar from './EntitySidebar/index';
 import EntityBalanceSheet from './EntityBalanceSheet';
 import { renderTextWithLinks } from '../utils/urls';
 

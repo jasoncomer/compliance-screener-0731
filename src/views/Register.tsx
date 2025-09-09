@@ -1,17 +1,156 @@
 import React, { useState } from 'react';
-import { BtnDiv, FormWrapper } from '../styles/Common';
 import { Button, notification } from 'antd';
+import { useNavigate } from 'react-router-dom';
 import { api } from '../api/api';
 import Input from '../components/common/Input';
 import { useTheme } from '../context/ThemeContext';
-import { colors, darkTokens, lightTokens } from '../styles/variables';
+import { colors } from '../styles/variables';
+import { useAnalytics } from '../hooks/useAnalytics';
+import PageTransition from '../components/PageTransition';
+import styled from 'styled-components';
 
 import type { NotificationArgsProps } from 'antd';
 
 type NotificationPlacement = NotificationArgsProps['placement'];
 
+// Styled components for modern design - matching Login view
+const RegisterContainer = styled.div<{ $theme: string }>`
+  min-height: 100vh;
+  width: 100vw;
+  background: ${({ $theme }) => $theme === 'dark' ? 'linear-gradient(135deg, #0f0f23 0%, #1a1a2e 100%)' : 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)'};
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+`;
+
+const RegisterCard = styled.div<{ $theme: string }>`
+  background: ${({ $theme }) => $theme === 'dark' ? 'rgba(30, 30, 30, 0.95)' : 'rgba(255, 255, 255, 0.95)'};
+  backdrop-filter: blur(20px);
+  border-radius: 24px;
+  padding: 48px;
+  width: 100%;
+  max-width: 480px;
+  box-shadow: ${({ $theme }) => $theme === 'dark' 
+    ? '0 25px 50px -12px rgba(0, 0, 0, 0.8)' 
+    : '0 25px 50px -12px rgba(0, 0, 0, 0.1)'};
+  border: ${({ $theme }) => $theme === 'dark' 
+    ? '1px solid rgba(255, 255, 255, 0.1)' 
+    : '1px solid rgba(0, 0, 0, 0.05)'};
+`;
+
+const LogoSection = styled.div`
+  text-align: center;
+  margin-bottom: 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+`;
+
+const LogoContainer = styled.div<{ $theme: string }>`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 280px;
+  height: 130px;
+  margin-bottom: 20px;
+`;
+
+const Logo = styled.img<{ $theme: string }>`
+  width: 280px;
+  height: 130px;
+  border-radius: 16px;
+  filter: ${({ $theme }) => $theme === 'dark' ? 'brightness(0.9) contrast(1.1)' : 'brightness(1) contrast(1)'};
+  opacity: 0.9;
+  transition: all 0.3s ease;
+  
+  &:hover {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+`;
+
+
+
+const Tagline = styled.p<{ $theme: string }>`
+  font-size: 14px;
+  color: ${({ $theme }) => $theme === 'dark' ? '#a0aec0' : '#718096'};
+  margin: 0;
+  font-weight: 400;
+`;
+
+const RegisterTitle = styled.h2<{ $theme: string }>`
+  font-size: 28px;
+  font-weight: 600;
+  color: ${({ $theme }) => $theme === 'dark' ? '#ffffff' : '#1a202c'};
+  margin: 0 0 32px 0;
+  text-align: center;
+  letter-spacing: -0.025em;
+`;
+
+const FormSection = styled.form`
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+`;
+
+const InputGroup = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+`;
+
+const NameRow = styled.div`
+  display: flex;
+  gap: 16px;
+  
+  @media (max-width: 480px) {
+    flex-direction: column;
+  }
+`;
+
+const ActionButtons = styled.div`
+  display: flex;
+  gap: 16px;
+  margin-top: 8px;
+`;
+
+const StyledButton = styled(Button)<{ variant: 'primary' | 'secondary'; $theme?: string }>`
+  flex: 1;
+  height: 48px;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 14px;
+  border: ${({ variant, $theme }) => variant === 'secondary' 
+    ? `2px solid ${$theme === 'dark' ? '#4a5568' : '#e2e8f0'}` 
+    : 'none'};
+  background: ${({ variant }) => variant === 'primary' 
+    ? colors.primary 
+    : 'transparent'};
+  color: ${({ variant, $theme }) => variant === 'primary' 
+    ? '#ffffff' 
+    : $theme === 'dark' ? '#ffffff' : '#1a202c'};
+  
+  &:hover {
+    background: ${({ variant, $theme }) => variant === 'primary' 
+      ? colors.primaryDark 
+      : $theme === 'dark' ? '#4a5568' : '#f7fafc'};
+    border-color: ${({ variant, $theme }) => variant === 'secondary' 
+      ? $theme === 'dark' ? '#718096' : '#cbd5e0' 
+      : 'transparent'};
+  }
+  
+  &:focus {
+    box-shadow: 0 0 0 2px ${colors.primary}40;
+  }
+`;
+
 const Register = () => {
+  const navigate = useNavigate();
   const [notifApi, contextHolder] = notification.useNotification();
+  const { trackEvent, trackError } = useAnalytics();
+  const { theme } = useTheme();
 
   const [name, setName] = useState('');
   const [surname, setSurname] = useState('');
@@ -19,10 +158,10 @@ const Register = () => {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const openNotification = (placement: NotificationPlacement) => {
-    notifApi.error({
-      message: `Registration failed`,
-      description: 'Error creating account. Please check your details and try again',
+  const openNotification = (placement: NotificationPlacement, message: string, description: string) => {
+    notifApi[message === 'Success' ? 'success' : 'error']({
+      message,
+      description,
       placement,
       duration: 4,
     });
@@ -30,63 +169,68 @@ const Register = () => {
 
   const handleSubmit = async (event: React.FormEvent) => {
     if (loading) return;
-    setLoading(true);
-
+    
     if (!name || !surname || !email || !password) {
-      alert('Please fill in all fields');
-      setLoading(false);
+      openNotification('topRight', 'Error', 'Please fill in all fields');
       return;
     }
 
     event.preventDefault();
-    console.log('Name:', name);
-    console.log('Email:', email);
-    console.log('Password:', password);
+    setLoading(true);
 
-    api.users.registerUser({ name, surname, email, password })
-      .then((res) => {
-        const { data } = res;
-        const { user } = data;
-        const { accessToken } = user;
-        console.log('Register response:', res);
-        // save to local storage
-        localStorage.setItem('accessToken', accessToken);
-        localStorage.setItem('user', JSON.stringify(user));
-        window.location.href = '/welcome';
-      })
-      .catch((err) => {
-        console.error(err);
-        openNotification('topRight');
-      })
-      .finally(() => {
-        setLoading(false);
-      });
+    try {
+      const response = await api.users.registerUser({ name, surname, email, password });
+      const { data } = response;
+      const { user } = data;
+      const { accessToken } = user;
+      
+      // Save to local storage
+      localStorage.setItem('accessToken', accessToken);
+      localStorage.setItem('user', JSON.stringify(user));
+      
+      trackEvent('registration_success', { method: 'email' });
+      openNotification('topRight', 'Success', 'Account created successfully!');
+      
+      // Redirect to welcome page
+      window.location.href = '/welcome';
+    } catch (error: any) {
+      console.error('Registration error:', error);
+      trackError(error, { context: 'user_registration' });
+      
+      const errorMessage = error.response?.data?.message || 'Error creating account. Please check your details and try again.';
+      openNotification('topRight', 'Registration Failed', errorMessage);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const navLogin = () => {
-    window.location.href = '/login';
-  }
-
-  const { theme } = useTheme();
+    // Add a small delay for smooth transition
+    setTimeout(() => {
+      navigate('/login');
+    }, 150);
+  };
 
   return (
-    <div
-      style={{
-        minHeight: '100vh',
-        width: '100vw',
-        background: theme === 'dark' ? darkTokens.backgroundColor : lightTokens.backgroundColor,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-      }}
-    >
-      {contextHolder}
-      <FormWrapper theme={{ theme }}>
-        <img src='https://framerusercontent.com/images/3djlle6W5wE61QQGlOQuLh5QvQ.jpg' style={{ width: '300px' }} />
-        <h2 style={{ color: colors.primary }}>Register</h2>
-        <form onSubmit={handleSubmit}>
-
-          <div style={{ display: 'flex', flexDirection: 'row', width: '100%', gap: '1em' }}>
+    <PageTransition>
+      <RegisterContainer $theme={theme}>
+        {contextHolder}
+        <RegisterCard $theme={theme}>
+        <LogoSection>
+          <LogoContainer $theme={theme}>
+            <Logo 
+              src='/aws_blockscout_banner_logo-removebg-preview.png' 
+              alt="Blockscout Research Logo"
+              $theme={theme}
+            />
+          </LogoContainer>
+          <Tagline $theme={theme}>Advanced blockchain analytics and compliance</Tagline>
+        </LogoSection>
+        
+        <RegisterTitle $theme={theme}>Create your account</RegisterTitle>
+        
+        <FormSection onSubmit={handleSubmit}>
+          <NameRow>
             <Input
               type="text"
               value={name}
@@ -99,49 +243,46 @@ const Register = () => {
               onChange={(e) => setSurname(e.target.value)}
               placeholder='Last Name'
             />
-          </div>
+          </NameRow>
 
-          <div style={{ display: 'flex', flexDirection: 'column', width: '100%', gap: '1em' }}>
+          <InputGroup>
             <Input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder='Email'
+              placeholder='Enter your email'
             />
             <Input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder='Password'
+              placeholder='Create a password'
             />
-          </div>
-
-          <BtnDiv>
-            <Button 
-              ghost 
+          </InputGroup>
+          
+          <ActionButtons>
+            <StyledButton 
               type='default' 
+              variant="secondary"
+              $theme={theme}
               onClick={navLogin}
-              style={{
-                borderColor: colors.primary,
-                color: colors.primary,
-                fontWeight: 500,
-              }}
-              onMouseOver={e => {
-                e.currentTarget.style.borderColor = colors.secondary;
-                e.currentTarget.style.color = colors.secondary;
-              }}
-              onMouseOut={e => {
-                e.currentTarget.style.borderColor = colors.primary;
-                e.currentTarget.style.color = colors.primary;
-              }}
             >
-              Login
-            </Button>
-            <Button disabled={loading} type="primary" onClick={handleSubmit}>Register</Button>
-          </BtnDiv>
-        </form>
-      </FormWrapper>
-    </div>
+              Back to login
+            </StyledButton>
+            <StyledButton 
+              type="primary" 
+              variant="primary"
+              $theme={theme}
+              htmlType="submit" 
+              loading={loading}
+            >
+              Create account
+            </StyledButton>
+          </ActionButtons>
+        </FormSection>
+      </RegisterCard>
+    </RegisterContainer>
+    </PageTransition>
   );
 };
 

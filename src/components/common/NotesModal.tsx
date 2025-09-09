@@ -16,8 +16,15 @@ interface ThemeProps {
   themeMode: string;
 }
 
+// Helper function to get context ID
+const getContextId = (transactionId?: string, address?: string) => {
+  return transactionId || address;
+};
+
 // Base styles for note bubbles
-const NoteItemBase = styled.div<ThemeProps>`
+const NoteItemBase = styled.div.withConfig({
+  shouldForwardProp: (prop) => prop !== 'themeMode'
+})<ThemeProps>`
   padding: 12px 16px;
   margin-bottom: 10px;
   border-radius: 12px;
@@ -26,7 +33,9 @@ const NoteItemBase = styled.div<ThemeProps>`
 `;
 
 // Note from current user (right-aligned)
-const CurrentUserNote = styled(NoteItemBase)`
+const CurrentUserNote = styled(NoteItemBase).withConfig({
+  shouldForwardProp: (prop) => prop !== 'themeMode'
+})`
   margin-left: auto;
   background-color: ${({ themeMode }) => themeMode === 'dark' ? '#A53D10' : '#E7C0AE'};
   border-bottom-right-radius: 4px;
@@ -47,7 +56,9 @@ const CurrentUserNote = styled(NoteItemBase)`
 `;
 
 // Note from other users (left-aligned)
-const OtherUserNote = styled(NoteItemBase)`
+const OtherUserNote = styled(NoteItemBase).withConfig({
+  shouldForwardProp: (prop) => prop !== 'themeMode'
+})`
   margin-right: auto;
   background-color: ${({ themeMode }) => themeMode === 'dark' ? '#2a2a2a' : '#f5f5f5'};
   border-bottom-left-radius: 4px;
@@ -67,7 +78,9 @@ const OtherUserNote = styled(NoteItemBase)`
 `;
 
 // Action icons container
-const ActionIcons = styled.div<ThemeProps>`
+const ActionIcons = styled.div.withConfig({
+  shouldForwardProp: (prop) => prop !== 'themeMode'
+})<ThemeProps>`
   position: absolute;
   top: 8px;
   right: 8px;
@@ -81,7 +94,9 @@ const ActionIcons = styled.div<ThemeProps>`
   }
 `;
 
-const ActionIcon = styled.div<ThemeProps>`
+const ActionIcon = styled.div.withConfig({
+  shouldForwardProp: (prop) => prop !== 'themeMode'
+})<ThemeProps>`
   display: flex;
   align-items: center;
   justify-content: center;
@@ -103,7 +118,9 @@ const NoteContent = styled.div`
   padding-right: 65px;
 `;
 
-const NoteFooter = styled.div<ThemeProps>`
+const NoteFooter = styled.div.withConfig({
+  shouldForwardProp: (prop) => prop !== 'themeMode'
+})<ThemeProps>`
   display: flex;
   justify-content: space-between;
   font-size: 11px;
@@ -147,7 +164,9 @@ const ChatDate = styled.div`
   }
 `;
 
-const InputContainer = styled.div<ThemeProps>`
+const InputContainer = styled.div.withConfig({
+  shouldForwardProp: (prop) => prop !== 'themeMode'
+})<ThemeProps>`
   display: flex;
   align-items: center;
   gap: 8px;
@@ -180,6 +199,7 @@ interface NotesModalProps {
   transactionId?: string;
   address?: string;
   type?: 'general' | 'transaction' | 'address';
+  onNewNotesCountChange?: (count: number) => void;
 }
 
 // Custom message utility that respects theme context
@@ -222,7 +242,8 @@ const NotesModal: React.FC<NotesModalProps> = ({
   onClose, 
   transactionId,
   address, 
-  type = 'general' 
+  type = 'general',
+  onNewNotesCountChange
 }) => {
   const { theme } = useTheme();
   const { user: currentUser } = useAppContext();
@@ -233,6 +254,7 @@ const NotesModal: React.FC<NotesModalProps> = ({
   const [submitting, setSubmitting] = useState(false);
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
   const [editContent, setEditContent] = useState('');
+  const [unseenNotesCount, setUnseenNotesCount] = useState(0);
   const currentOrganization = useSelector(selectCurrentOrganization);
   const notesContainerRef = useRef<HTMLDivElement>(null);
 
@@ -244,6 +266,66 @@ const NotesModal: React.FC<NotesModalProps> = ({
       }, 100);
     }
   }, [notes, visible]);
+
+  // Mark notes as viewed when modal opens
+  useEffect(() => {
+    const markNotesAsViewed = async () => {
+      if (visible && currentUser && currentUser._id && currentOrganization && (transactionId || address)) {
+        const contextId = getContextId(transactionId, address);
+        if (contextId) {
+          try {
+            await notesApi.markAsViewed(currentOrganization._id, {
+              contextType: type,
+              contextId
+            });
+            
+            // Reset unseen count when user views the notes
+            setUnseenNotesCount(0);
+          } catch (error) {
+            if (process.env.NODE_ENV === 'development') console.error('Failed to mark notes as viewed:', error);
+          }
+        }
+      }
+    };
+
+    markNotesAsViewed();
+  }, [visible, currentUser, currentOrganization, transactionId, address, type]);
+
+  // Calculate unseen count when component mounts or context changes
+  useEffect(() => {
+    const calculateUnseenCount = async () => {
+      if (!currentUser || !currentUser._id || !currentOrganization || !(transactionId || address)) {
+        return;
+      }
+
+      const contextId = getContextId(transactionId, address);
+      if (!contextId) return;
+
+      try {
+        // Get unseen count from API
+        const response = await notesApi.getUnseenCount(
+          currentOrganization._id,
+          type,
+          contextId
+        );
+        
+        setUnseenNotesCount(response.data.count);
+      } catch (error) {
+        if (process.env.NODE_ENV === 'development') console.error('Failed to calculate unseen count:', error);
+        // Fallback: set count to 0 if API fails
+        setUnseenNotesCount(0);
+      }
+    };
+
+    calculateUnseenCount();
+  }, [currentUser, currentOrganization, transactionId, address, type]);
+
+  // Notify parent component when unseen notes count changes
+  useEffect(() => {
+    if (onNewNotesCountChange) {
+      onNewNotesCountChange(unseenNotesCount);
+    }
+  }, [unseenNotesCount, onNewNotesCountChange]);
 
   // Load notes when modal opens
   useEffect(() => {
@@ -258,9 +340,9 @@ const NotesModal: React.FC<NotesModalProps> = ({
       setLoading(true);
       let response;
 
-      if (type === 'transaction' && transactionId) {
+      if ((type as string) === 'transaction' && transactionId) {
         response = await notesApi.getTransactionNotes(currentOrganization._id, transactionId);
-      } else if (type === 'address' && address) {
+      } else if ((type as string) === 'address' && address) {
         response = await notesApi.getAddressNotes(currentOrganization._id, address);
       } else {
         response = await notesApi.list(currentOrganization._id);
@@ -284,13 +366,33 @@ const NotesModal: React.FC<NotesModalProps> = ({
       const noteData: ICreateNote = { 
         content: newNote.trim(),
         type,
-        ...(type === 'transaction' && transactionId ? { transactionId } : {}),
-        ...(type === 'address' && address ? { address } : {})
+        ...((type as string) === 'transaction' && transactionId ? { transactionId } : {}),
+        ...((type as string) === 'address' && address ? { address } : {})
       };
 
       await notesApi.create(currentOrganization._id, noteData);
       setNewNote('');
-      fetchNotes();
+      
+      // Refresh notes
+      await fetchNotes();
+      
+      // Recalculate unseen count after adding note
+      if (currentUser && currentUser._id && currentOrganization && (transactionId || address)) {
+        const contextId = getContextId(transactionId, address);
+        if (contextId) {
+          try {
+            const response = await notesApi.getUnseenCount(
+              currentOrganization._id,
+              type,
+              contextId
+            );
+            setUnseenNotesCount(response.data.count);
+          } catch (error) {
+            if (process.env.NODE_ENV === 'development') console.error('Failed to recalculate unseen count:', error);
+          }
+        }
+      }
+      
       message.success('Note added successfully');
     } catch (error) {
       if (process.env.NODE_ENV === 'development') console.error('Failed to add note:', error);
@@ -322,8 +424,8 @@ const NotesModal: React.FC<NotesModalProps> = ({
     currentUser && (note.createdBy === currentUser._id || ('id' in currentUser && note.createdBy === currentUser.id));
   
   const getModalTitle = () => {
-    if (type === 'transaction' && transactionId) return `Transaction Notes - ${truncateAddress(transactionId)}`;
-    if (type === 'address' && address) return `Address Notes - ${truncateAddress(address)}`;
+    if ((type as string) === 'transaction' && transactionId) return `Transaction Notes - ${truncateAddress(transactionId)}`;
+    if ((type as string) === 'address' && address) return `Address Notes - ${truncateAddress(address)}`;
     return 'Organization Notes';
   };
 
@@ -335,6 +437,12 @@ const NotesModal: React.FC<NotesModalProps> = ({
       if (!groups[date]) groups[date] = [];
       groups[date].push(note);
     });
+    
+    // Sort notes within each date group by creation time (oldest to newest)
+    Object.keys(groups).forEach(date => {
+      groups[date].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+    });
+    
     return groups;
   };
 
@@ -415,7 +523,9 @@ const NotesModal: React.FC<NotesModalProps> = ({
                 <Text type="secondary">No notes yet. Be the first to add a note!</Text>
               ) : (
                 <>
-                  {Object.entries(groupNotesByDate()).map(([date, dateNotes]) => (
+                  {Object.entries(groupNotesByDate())
+                    .sort(([dateA], [dateB]) => new Date(dateA).getTime() - new Date(dateB).getTime())
+                    .map(([date, dateNotes]) => (
                     <React.Fragment key={date}>
                       <ChatDate theme={{ theme }}><span>{formatDateHeader(date)}</span></ChatDate>
                       {dateNotes.map(note => (
