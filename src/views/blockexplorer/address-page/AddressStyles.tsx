@@ -106,7 +106,7 @@ interface EntityRowProps {
 
 export const EntityRow: React.FC<EntityRowProps> = ({ children, className }) => (
   <div className={cn(
-    "flex items-center gap-4 p-3 bg-gray-100 dark:bg-gray-800 rounded mb-2 flex-1 min-w-0",
+    "flex items-center gap-4 p-3 bg-gray-100 dark:bg-background rounded mb-2 flex-1 min-w-0",
     className
   )}>
     {children}

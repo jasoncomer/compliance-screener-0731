@@ -98,7 +98,7 @@ const Wrapper = styled.div`
     left: 50%;
     transform: translate(-50%, -50%);
     background-color: ${colors.primary};
-    color: white;
+    color: #ffffff;
     padding: 15px 30px;
     border-radius: 6px;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
@@ -108,7 +108,7 @@ const Wrapper = styled.div`
   }
   .cospend-tooltip {
     background-color: #222;
-    color: white;
+    color: #ffffff;
     padding: 12px 20px;
     border-radius: 6px;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
@@ -208,6 +208,16 @@ const ToggleButton = styled.button`
   &:hover {
     background-color: #e0e0e0;
   }
+  
+  @media (prefers-color-scheme: dark) {
+    color: #ffffff;
+    background-color: hsl(222.2 84% 4.9%);
+    border: 1px solid #374151;
+    
+    &:hover {
+      background-color: hsl(222.2 84% 6%);
+    }
+  }
 `;
 
 interface BtcTxAddressProps {
@@ -298,7 +308,7 @@ const BtcInputsOutputs: React.FC<BtcInputsOutputsProps> = ({ data, type }) => {
   if (type === 'inputs' && data.length === 0) {
     return (
       <Wrapper>
-        <span style={{ color: 'white', fontFamily: 'monospace', fontSize: '1.1em', padding: '12px 0' }}> ⛏️ Mining Reward</span>
+        <span style={{ color: '#ffffff', fontFamily: 'monospace', fontSize: '1.1em', padding: '12px 0' }}> ⛏️ Mining Reward</span>
       </Wrapper>
     );
   }
