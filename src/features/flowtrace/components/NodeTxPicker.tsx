@@ -87,7 +87,7 @@ const NodeTxPicker: React.FC<Props> = ({ open, address, onOpenChange, onAdd, nod
 
   // Get SOT data from Redux store
   const itemsMap = useSelector((state: RootState) => state.sot.itemsMap);
-  const [localSotData, setLocalSotData] = useState<SOT[]>([]);
+  const [localSotData] = useState<SOT[]>([]);
 
   // Copy transaction hash to clipboard
   const copyTxHash = async (txHash: string) => {
@@ -236,25 +236,10 @@ const NodeTxPicker: React.FC<Props> = ({ open, address, onOpenChange, onAdd, nod
     }
   };
 
-  // Fetch SOT data when component mounts
+  // Skip SOT data fetching to avoid memory issues and timeouts
+  // SOT data is not essential for NodeTxPicker functionality
   useEffect(() => {
-    const fetchSOTData = async () => {
-      // If Redux doesn't have SOT data, fetch it directly
-      if (!itemsMap || Object.keys(itemsMap).length === 0) {
-        console.log('🔄 Fetching SOT data directly...');
-        try {
-          const sotResponse = await flowtraceService.fetchSOT();
-          if (sotResponse && Array.isArray(sotResponse)) {
-            setLocalSotData(sotResponse);
-            console.log('✅ Fetched SOT data directly:', sotResponse.length, 'entities');
-          }
-        } catch (error) {
-          console.error('❌ Failed to fetch SOT data directly:', error);
-        }
-      }
-    };
-
-    fetchSOTData();
+    console.log('⚠️ Skipping SOT data fetch in NodeTxPicker to avoid memory issues');
   }, [itemsMap]);
 
   // Calculate USD values asynchronously when transactions are loaded
@@ -353,8 +338,8 @@ const NodeTxPicker: React.FC<Props> = ({ open, address, onOpenChange, onAdd, nod
           });
         }
 
-        // Use fetchAllTransactions to get all transactions for the address
-        const resp = await flowtraceService.fetchAllTransactions(address, 100).catch(() => ({ txs: [], pagination: { totalTxs: 0 } } as any));
+        // Use fetchAllTransactions to get transactions for the address (limit to 50 for better performance)
+        const resp = await flowtraceService.fetchAllTransactions(address, 50).catch(() => ({ txs: [], pagination: { totalTxs: 0 } } as any));
 
         // Show both UTXOs (address in outputs) and spending transactions (address in inputs)
         const allTransactions = (resp as any)?.txs || [];
@@ -386,21 +371,9 @@ const NodeTxPicker: React.FC<Props> = ({ open, address, onOpenChange, onAdd, nod
             sotDataToUse = sotMap;
             console.log('✅ Using local SOT data:', localSotData.length, 'entities');
           } else {
-            console.log('⚠️ No local SOT data either, fetching now...');
-            try {
-              const sotResponse = await flowtraceService.fetchSOT();
-              if (sotResponse && Array.isArray(sotResponse)) {
-                const sotMap = sotResponse.reduce((acc, item) => {
-                  acc[item.entity_id] = item;
-                  return acc;
-                }, {} as Record<string, any>);
-                setLocalSotData(sotResponse);
-                sotDataToUse = sotMap;
-                console.log('✅ Fetched SOT data directly:', sotResponse.length, 'entities');
-              }
-            } catch (error) {
-              console.error('❌ Failed to fetch SOT data directly:', error);
-            }
+            console.log('⚠️ No local SOT data available, skipping to avoid memory issues');
+            // Skip SOT data fetching to avoid memory issues and timeouts
+            sotDataToUse = {};
           }
         }
 
@@ -452,28 +425,38 @@ const NodeTxPicker: React.FC<Props> = ({ open, address, onOpenChange, onAdd, nod
           }
         }
 
-        // STEP 2: Batch fetch risk scores for all addresses
+        // STEP 2: Batch fetch risk scores for all addresses (with timeout to prevent hanging)
         const addressRiskScores: Record<string, number> = {};
-        try {
-          const riskPromises = Array.from(allAddresses).map(async (addr) => {
-            try {
-              const riskResponse = await flowtraceService.fetchRiskScore(addr, 'address');
-              const score = riskResponse.data?.overallRisk ? Math.round(riskResponse.data.overallRisk * 100) : undefined;
-              return { address: addr, score };
-            } catch (error) {
-              console.log(`Could not fetch risk score for address: ${addr}`);
-              return { address: addr, score: undefined };
-            }
-          });
+        if (allAddresses.size > 0) {
+          console.log('🔍 Fetching risk scores for', allAddresses.size, 'addresses...');
+          try {
+            const riskPromises = Array.from(allAddresses).map(async (addr) => {
+              try {
+                // Add timeout to prevent hanging on slow risk score API
+                const riskPromise = flowtraceService.fetchRiskScore(addr, 'address');
+                const timeoutPromise = new Promise((_, reject) => 
+                  setTimeout(() => reject(new Error('Risk score timeout')), 5000)
+                );
+                
+                const riskResponse = await Promise.race([riskPromise, timeoutPromise]);
+                const score = (riskResponse as any)?.data?.overallRisk ? Math.round((riskResponse as any).data.overallRisk * 100) : undefined;
+                return { address: addr, score };
+              } catch (error) {
+                console.warn(`Risk score fetch failed for ${addr}:`, error);
+                return { address: addr, score: undefined };
+              }
+            });
 
-          const riskResults = await Promise.all(riskPromises);
-          riskResults.forEach(({ address, score }) => {
-            if (score !== undefined) {
-              addressRiskScores[address] = score;
-            }
-          });
-        } catch (error) {
-          console.log('Batch risk scoring failed, continuing without risk data');
+            const riskResults = await Promise.allSettled(riskPromises);
+            riskResults.forEach((result) => {
+              if (result.status === 'fulfilled' && result.value.score !== undefined) {
+                addressRiskScores[result.value.address] = result.value.score;
+              }
+            });
+            console.log('✅ Risk scores fetched:', Object.keys(addressRiskScores).length, 'addresses');
+          } catch (error) {
+            console.warn('Batch risk scoring failed, continuing without risk data:', error);
+          }
         }
 
         // STEP 3: Enhance transactions with entity and risk information
@@ -800,26 +783,26 @@ const NodeTxPicker: React.FC<Props> = ({ open, address, onOpenChange, onAdd, nod
   // Helper functions for styling
   // Use higher-contrast colors so that text is always clearly legible against its background
   const getRiskColor = (score: number | undefined) => {
-    if (score === undefined) return 'bg-gray-500 text-white border-gray-600';
-    if (score > 70) return 'bg-red-600 text-white border-red-700';
-    if (score > 40) return 'bg-yellow-500 text-white border-yellow-600';
-    return 'bg-green-600 text-white border-green-700';
+    if (score === undefined) return 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600';
+    if (score > 70) return 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 border-red-300 dark:border-red-600';
+    if (score > 40) return 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300 border-yellow-300 dark:border-yellow-600';
+    return 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 border-green-300 dark:border-green-600';
   };
 
   const getEntityTypeColor = (type: string | undefined) => {
-    if (!type) return 'bg-gray-500 text-white border-gray-600';
+    if (!type) return 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600';
     const colors: Record<string, string> = {
-      'exchange': 'bg-blue-600 text-white border-blue-700',
-      'wallet': 'bg-green-600 text-white border-green-700',
-      'mixer': 'bg-red-600 text-white border-red-700',
-      'defi': 'bg-purple-600 text-white border-purple-700',
-      'service': 'bg-orange-600 text-white border-orange-700',
-      'csam': 'bg-red-700 text-white border-red-800',
-      'gambling': 'bg-yellow-600 text-white border-yellow-700',
-      'mining': 'bg-cyan-600 text-white border-cyan-700',
-      'unknown': 'bg-gray-500 text-white border-gray-600'
+      'exchange': 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border-blue-300 dark:border-blue-600',
+      'wallet': 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 border-green-300 dark:border-green-600',
+      'mixer': 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 border-red-300 dark:border-red-600',
+      'defi': 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 border-purple-300 dark:border-purple-600',
+      'service': 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 border-orange-300 dark:border-orange-600',
+      'csam': 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 border-red-300 dark:border-red-600',
+      'gambling': 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300 border-yellow-300 dark:border-yellow-600',
+      'mining': 'bg-cyan-100 dark:bg-cyan-900/30 text-cyan-700 dark:text-cyan-300 border-cyan-300 dark:border-cyan-600',
+      'unknown': 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600'
     };
-    return colors[type.toLowerCase()] || 'bg-gray-500 text-white border-gray-600';
+    return colors[type.toLowerCase()] || 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600';
   };
 
   // Generate consistent colors for TXIDs
@@ -1011,10 +994,10 @@ const NodeTxPicker: React.FC<Props> = ({ open, address, onOpenChange, onAdd, nod
               // Grouped display
               <div className="space-y-4">
                 {Object.entries(groupedTransactions).map(([entityKey, txs]) => (
-                  <div key={entityKey} className="border rounded-lg border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
+                  <div key={entityKey} className="border rounded-lg border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm">
                     {/* Entity Header */}
                     <div
-                      className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-sm"
+                      className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 shadow-sm"
                       style={{
                         position: 'sticky',
                         top: '0px',
@@ -1030,17 +1013,17 @@ const NodeTxPicker: React.FC<Props> = ({ open, address, onOpenChange, onAdd, nod
                             className="w-8 h-8 rounded-full border border-gray-200 dark:border-gray-700"
                           />
                         ) : (
-                          <div className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 flex items-center justify-center">
-                            <span className="text-sm font-medium text-gray-500 dark:text-gray-900">
+                          <div className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-600 border border-gray-200 dark:border-gray-500 flex items-center justify-center">
+                            <span className="text-sm font-medium text-gray-600 dark:text-gray-200">
                               {txs[0]?.entityName?.charAt(0)?.toUpperCase() || '?'}
                             </span>
                           </div>
                         )}
                         <div>
-                          <div className="font-medium text-gray-900 dark:text-gray-900 text-lg">
+                          <div className="font-medium text-gray-900 dark:text-gray-100 text-lg">
                             {txs[0]?.entityName || 'Unknown Entity'}
                           </div>
-                          <div className="text-sm text-gray-500 dark:text-gray-900">
+                          <div className="text-sm text-gray-600 dark:text-gray-300">
                             {txs[0]?.entityType || 'Unknown Type'} · {txs[0]?.entityId || 'Unknown ID'}
                           </div>
                         </div>
@@ -1066,17 +1049,17 @@ const NodeTxPicker: React.FC<Props> = ({ open, address, onOpenChange, onAdd, nod
                         >
                           {txs.every(tx => selected.has(tx.txid)) ? 'Deselect All' : 'Select All'}
                         </Button>
-                        <Badge variant="outline" className="text-sm text-gray-800 dark:text-gray-900">
+                        <Badge variant="outline" className="text-sm text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-500">
                           {countUniqueTransactions(txs)} TX · {txs.length} UTXOs
                         </Badge>
                       </div>
                     </div>
 
                     {/* Transactions Table */}
-                    <div className="p-4">
+                    <div className="p-4 bg-white dark:bg-gray-800">
                       <table className="w-full">
                         <thead
-                          className="bg-gray-100 dark:bg-gray-700 shadow-sm"
+                          className="bg-gray-50 dark:bg-gray-700 shadow-sm"
                           style={{
                             position: 'sticky',
                             top: '0px',
@@ -1087,7 +1070,7 @@ const NodeTxPicker: React.FC<Props> = ({ open, address, onOpenChange, onAdd, nod
                             className="border-b border-gray-200 dark:border-gray-600"
                           >
                             <th
-                              className="text-left p-3 w-12 text-gray-700 dark:text-gray-100 font-medium"
+                              className="text-left p-3 w-12 text-gray-700 dark:text-gray-200 font-medium"
                             >
                               <Checkbox
                                 checked={txs.every(tx => selected.has(tx.txid))}
@@ -1107,28 +1090,28 @@ const NodeTxPicker: React.FC<Props> = ({ open, address, onOpenChange, onAdd, nod
                               />
                             </th>
                             <th
-                              className="text-left p-3 w-28 text-gray-700 dark:text-gray-100 font-medium"
+                              className="text-left p-3 w-28 text-gray-700 dark:text-gray-200 font-medium"
                             >Entity Name</th>
                             <th
-                              className="text-left p-3 w-28 text-gray-700 dark:text-gray-100 font-medium"
+                              className="text-left p-3 w-28 text-gray-700 dark:text-gray-200 font-medium"
                             >Entity ID</th>
                             <th
-                              className="text-left p-3 w-28 text-gray-700 dark:text-gray-100 font-medium"
+                              className="text-left p-3 w-28 text-gray-700 dark:text-gray-200 font-medium"
                             >Amount</th>
                             <th
-                              className="text-left p-3 w-24 text-gray-700 dark:text-gray-100 font-medium"
+                              className="text-left p-3 w-24 text-gray-700 dark:text-gray-200 font-medium"
                             >Date</th>
                             <th
-                              className="text-left p-3 w-16 text-gray-700 dark:text-gray-100 font-medium"
+                              className="text-left p-3 w-16 text-gray-700 dark:text-gray-200 font-medium"
                             >Risk</th>
                             <th
-                              className="text-left p-3 w-20 text-gray-700 dark:text-gray-100 font-medium"
+                              className="text-left p-3 w-20 text-gray-700 dark:text-gray-200 font-medium"
                             >Type</th>
                             <th
-                              className="text-left p-3 w-20 text-gray-700 dark:text-gray-100 font-medium"
+                              className="text-left p-3 w-20 text-gray-700 dark:text-gray-200 font-medium"
                             >Direction</th>
                             <th
-                              className="text-left p-3 w-28 text-gray-700 dark:text-gray-100 font-medium"
+                              className="text-left p-3 w-28 text-gray-700 dark:text-gray-200 font-medium"
                             >TXID</th>
                           </tr>
                         </thead>
@@ -1158,17 +1141,17 @@ const NodeTxPicker: React.FC<Props> = ({ open, address, onOpenChange, onAdd, nod
                                       }}
                                     />
                                   ) : (
-                                    <div className="w-6 h-6 rounded-full border border-gray-200 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
-                                      <span className="text-xs font-medium text-gray-800 dark:text-gray-900">
+                                    <div className="w-6 h-6 rounded-full border border-gray-200 dark:border-gray-500 bg-gray-100 dark:bg-gray-600 flex items-center justify-center">
+                                      <span className="text-xs font-medium text-gray-600 dark:text-gray-200">
                                         {tx.entityName?.charAt(0).toUpperCase() || '?'}
                                       </span>
                                     </div>
                                   )}
                                   <div>
-                                    <div className="font-medium text-gray-900 dark:text-gray-900 text-sm">
+                                    <div className="font-medium text-gray-900 dark:text-gray-100 text-sm">
                                       {tx.entityName || 'Unknown Entity'}
                                     </div>
-                                    <div className="text-gray-800 dark:text-gray-900 font-mono text-xs truncate">
+                                    <div className="text-gray-600 dark:text-gray-300 font-mono text-xs truncate">
                                       {(() => {
                                         const address = tx.direction === 'in' ? tx.inputs?.[0]?.addr : tx.outputs?.[0]?.addr || 'Unknown Address';
                                         return address.length > 12 ? `${address.slice(0, 6)}...${address.slice(-6)}` : address;
@@ -1178,20 +1161,20 @@ const NodeTxPicker: React.FC<Props> = ({ open, address, onOpenChange, onAdd, nod
                                 </div>
                               </td>
                               <td className="p-3">
-                                <div className="font-mono text-sm text-gray-800 dark:text-gray-900">
+                                <div className="font-mono text-sm text-gray-700 dark:text-gray-300">
                                   {tx.entityId ? (tx.entityId.length > 12 ? `${tx.entityId.slice(0, 6)}...${tx.entityId.slice(-6)}` : tx.entityId) : '-'}
                                 </div>
                               </td>
                               <td className="p-3">
-                                <div className="text-gray-900 dark:text-gray-900">
+                                <div className="text-gray-900 dark:text-gray-100">
                                   {tx.amount} {tx.currency}
                                 </div>
-                                <div className="text-sm text-gray-700 dark:text-gray-300">
+                                <div className="text-sm text-gray-600 dark:text-gray-400">
                                   {calculatedUsdValues.get(tx.txid) || tx.usdValue}
                                 </div>
                               </td>
                               <td className="p-3">
-                                <div className="text-sm text-gray-900 dark:text-gray-900">
+                                <div className="text-sm text-gray-900 dark:text-gray-100">
                                   {formatDateForDisplay(tx.date, tx.time)}
                                 </div>
                               </td>
@@ -1219,7 +1202,7 @@ const NodeTxPicker: React.FC<Props> = ({ open, address, onOpenChange, onAdd, nod
                               </td>
                               <td className="p-3">
                                 <div className="flex items-center gap-2">
-                                  <div className="font-mono text-xs text-gray-800 dark:text-gray-900 truncate max-w-24" title={tx.originalTxHash || tx.txid}>
+                                  <div className="font-mono text-xs text-gray-700 dark:text-gray-300 truncate max-w-24" title={tx.originalTxHash || tx.txid}>
                                     {(tx.originalTxHash || tx.txid).length > 12 ? `${(tx.originalTxHash || tx.txid).slice(0, 6)}...${(tx.originalTxHash || tx.txid).slice(-6)}` : (tx.originalTxHash || tx.txid)}
                                   </div>
                                   <button
@@ -1241,9 +1224,9 @@ const NodeTxPicker: React.FC<Props> = ({ open, address, onOpenChange, onAdd, nod
               </div>
             ) : (
               // Ungrouped display (styled as card)
-              <div className="border rounded-lg border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
+              <div className="border rounded-lg border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm">
                 <div
-                  className="p-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-sm"
+                  className="p-4 border-b border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 shadow-sm"
                   style={{
                     position: 'sticky',
                     top: '0px',
@@ -1253,14 +1236,14 @@ const NodeTxPicker: React.FC<Props> = ({ open, address, onOpenChange, onAdd, nod
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 flex items-center justify-center">
-                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">📋</span>
-                      </div>
+                            <div className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-600 border border-gray-200 dark:border-gray-500 flex items-center justify-center">
+                              <span className="text-sm font-medium text-gray-600 dark:text-gray-200">📋</span>
+                            </div>
                       <div>
-                        <div className="font-medium text-gray-900 dark:text-gray-900 text-lg">
+                        <div className="font-medium text-gray-900 dark:text-gray-100 text-lg">
                           All Transactions
                         </div>
-                        <div className="text-sm text-gray-700 dark:text-gray-300">
+                        <div className="text-sm text-gray-600 dark:text-gray-300">
                           {filteredTxs.length} UTXOs from {countUniqueTransactions(filteredTxs)} transactions
                         </div>
                       </div>
@@ -1274,16 +1257,16 @@ const NodeTxPicker: React.FC<Props> = ({ open, address, onOpenChange, onAdd, nod
                       >
                         {selected.size === filteredTxs.length && filteredTxs.length > 0 ? 'Deselect All' : 'Select All'}
                       </Button>
-                      <Badge variant="outline" className="text-sm text-gray-800 dark:text-gray-900">
+                      <Badge variant="outline" className="text-sm text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-500">
                         {countUniqueTransactions(filteredTxs)} TX · {filteredTxs.length} UTXOs
                       </Badge>
                     </div>
                   </div>
                 </div>
-                <div className="p-4">
+                <div className="p-4 bg-white dark:bg-gray-800">
                   <table className="w-full">
                 <thead
-                  className="bg-gray-100 dark:bg-gray-700 shadow-sm"
+                  className="bg-gray-50 dark:bg-gray-700 shadow-sm"
                   style={{
                     position: 'sticky',
                     top: '0px',
@@ -1294,7 +1277,7 @@ const NodeTxPicker: React.FC<Props> = ({ open, address, onOpenChange, onAdd, nod
                     className="border-b border-gray-200 dark:border-gray-600"
                   >
                     <th
-                      className="text-left p-3 w-12 text-gray-700 dark:text-gray-100 font-medium"
+                      className="text-left p-3 w-12 text-gray-700 dark:text-gray-200 font-medium"
                     >
                       <Checkbox
                         checked={selected.size === filteredTxs.length && filteredTxs.length > 0}
@@ -1303,28 +1286,28 @@ const NodeTxPicker: React.FC<Props> = ({ open, address, onOpenChange, onAdd, nod
                       />
                     </th>
                     <th
-                      className="text-left p-3 w-28 text-gray-700 dark:text-gray-100 font-medium"
+                      className="text-left p-3 w-28 text-gray-700 dark:text-gray-200 font-medium"
                     >Entity Name</th>
                     <th
-                      className="text-left p-3 w-28 text-gray-700 dark:text-gray-100 font-medium"
+                      className="text-left p-3 w-28 text-gray-700 dark:text-gray-200 font-medium"
                     >Entity ID</th>
                     <th
-                      className="text-left p-3 w-28 text-gray-700 dark:text-gray-100 font-medium"
+                      className="text-left p-3 w-28 text-gray-700 dark:text-gray-200 font-medium"
                     >Amount</th>
                     <th
-                      className="text-left p-3 w-24 text-gray-700 dark:text-gray-100 font-medium"
+                      className="text-left p-3 w-24 text-gray-700 dark:text-gray-200 font-medium"
                     >Date</th>
                     <th
-                      className="text-left p-3 w-16 text-gray-700 dark:text-gray-100 font-medium"
+                      className="text-left p-3 w-16 text-gray-700 dark:text-gray-200 font-medium"
                     >Risk</th>
                     <th
-                      className="text-left p-3 w-20 text-gray-700 dark:text-gray-100 font-medium"
+                      className="text-left p-3 w-20 text-gray-700 dark:text-gray-200 font-medium"
                     >Type</th>
                     <th
-                      className="text-left p-3 w-20 text-gray-700 dark:text-gray-100 font-medium"
+                      className="text-left p-3 w-20 text-gray-700 dark:text-gray-200 font-medium"
                     >Direction</th>
                     <th
-                      className="text-left p-3 w-28 text-gray-700 dark:text-gray-100 font-medium"
+                      className="text-left p-3 w-28 text-gray-700 dark:text-gray-200 font-medium"
                     >TXID</th>
                   </tr>
                 </thead>
@@ -1353,17 +1336,17 @@ const NodeTxPicker: React.FC<Props> = ({ open, address, onOpenChange, onAdd, nod
                               }}
                             />
                           ) : (
-                            <div className="w-8 h-8 rounded-full border border-gray-200 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
-                              <span className="text-sm font-medium text-gray-800 dark:text-gray-900">
+                            <div className="w-8 h-8 rounded-full border border-gray-200 dark:border-gray-500 bg-gray-100 dark:bg-gray-600 flex items-center justify-center">
+                              <span className="text-sm font-medium text-gray-600 dark:text-gray-200">
                                 {tx.entityName?.charAt(0).toUpperCase() || '?'}
                               </span>
                             </div>
                           )}
                           <div className="min-w-0 flex-1">
-                            <div className="font-medium text-gray-900 dark:text-gray-900 truncate">
+                            <div className="font-medium text-gray-900 dark:text-gray-100 truncate">
                               {tx.entityName || 'Unknown Entity'}
                             </div>
-                            <div className="text-gray-800 dark:text-gray-900 font-mono text-xs truncate">
+                            <div className="text-gray-600 dark:text-gray-300 font-mono text-xs truncate">
                               {(() => {
                                 const address = tx.direction === 'in' ? tx.inputs?.[0]?.addr : tx.outputs?.[0]?.addr || 'Unknown Address';
                                 return address.length > 12 ? `${address.slice(0, 6)}...${address.slice(-6)}` : address;
@@ -1373,18 +1356,18 @@ const NodeTxPicker: React.FC<Props> = ({ open, address, onOpenChange, onAdd, nod
                         </div>
                       </td>
                       <td className="p-3">
-                        <div className="font-mono text-sm text-gray-800 dark:text-gray-900">
+                        <div className="font-mono text-sm text-gray-700 dark:text-gray-300">
                           {tx.entityId ? (tx.entityId.slice(0, 12) + (tx.entityId.length > 12 ? '...' : '')) : '-'}
                         </div>
                       </td>
                       <td className="p-3">
-                        <div className="font-mono text-sm text-gray-900 dark:text-gray-900">
+                        <div className="font-mono text-sm text-gray-900 dark:text-gray-100">
                           {tx.amount} {tx.currency}
                         </div>
-                        <div className="text-xs text-gray-700 dark:text-gray-300">{calculatedUsdValues.get(tx.txid) || tx.usdValue}</div>
+                        <div className="text-xs text-gray-600 dark:text-gray-400">{calculatedUsdValues.get(tx.txid) || tx.usdValue}</div>
                       </td>
                       <td className="p-3">
-                        <div className="text-sm text-gray-900 dark:text-gray-900">
+                        <div className="text-sm text-gray-900 dark:text-gray-100">
                           {formatDateForDisplay(tx.date, tx.time)}
                         </div>
                       </td>
@@ -1412,7 +1395,7 @@ const NodeTxPicker: React.FC<Props> = ({ open, address, onOpenChange, onAdd, nod
                       </td>
                       <td className="p-3">
                         <div className="flex items-center gap-2">
-                          <div className="font-mono text-xs text-gray-800 dark:text-gray-900 truncate max-w-24" title={tx.originalTxHash || tx.txid}>
+                          <div className="font-mono text-xs text-gray-700 dark:text-gray-300 truncate max-w-24" title={tx.originalTxHash || tx.txid}>
                             {(tx.originalTxHash || tx.txid).length > 12 ? `${(tx.originalTxHash || tx.txid).slice(0, 6)}...${(tx.originalTxHash || tx.txid).slice(-6)}` : (tx.originalTxHash || tx.txid)}
                           </div>
                           <button

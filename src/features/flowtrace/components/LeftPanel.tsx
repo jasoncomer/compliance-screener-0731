@@ -211,7 +211,10 @@ const LeftPanel: React.FC<Props> = ({
   isLoading = false
 }) => {
   const activeOrg = useAppSelector(selectActiveOrganization as any) as any;
-  const orgId = activeOrg?._id as string | undefined;
+  const orgId = activeOrg?._id || localStorage.getItem('organizationId') || undefined;
+  
+  // Debug logging
+  console.log('LeftPanel orgId:', orgId, 'activeOrg:', activeOrg);
   const [copied, setCopied] = useState(false);
   
   // Use the actual transaction data as a fallback for transaction count

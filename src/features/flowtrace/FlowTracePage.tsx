@@ -105,7 +105,8 @@ const FlowTracePage: React.FC = () => {
   const fetchAndSetLeftPanelData = async (address: string) => {
     setIsLeftPanelLoading(true);
     try {
-      const [data, summary, txs, profile] = await Promise.all([
+      // Fetch core data first (fast)
+      const [data, summary, txs] = await Promise.all([
         flowtraceService.fetchAddress(address).catch((error) => {
           console.error('fetchAddress error:', error);
           return {} as any;
@@ -118,11 +119,19 @@ const FlowTracePage: React.FC = () => {
           console.error('fetchTransactions error:', error);
           return { txs: [] } as any;
         }),
-        flowtraceService.fetchEntityProfile(address).catch((error) => {
-          console.error('fetchEntityProfile error:', error);
-          return {} as any;
-        }),
       ]);
+
+      // Fetch entity profile with timeout (this includes risk score)
+      let profile = {} as any;
+      try {
+        const profilePromise = flowtraceService.fetchEntityProfile(address);
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Profile fetch timeout')), 10000)
+        );
+        profile = await Promise.race([profilePromise, timeoutPromise]);
+      } catch (error) {
+        console.warn('fetchEntityProfile error (continuing without profile):', error);
+      }
       
       console.log('API Debug:', {
         address,
@@ -130,6 +139,14 @@ const FlowTracePage: React.FC = () => {
         summary,
         txs,
         profile
+      });
+      
+      // Debug risk score specifically
+      console.log('🔍 Risk Score Debug:', {
+        address,
+        profileRiskScore: profile.riskScore,
+        profileType: typeof profile.riskScore,
+        profileData: profile
       });
 
       // Use actual transaction count from the transactions API instead of summary
@@ -257,7 +274,7 @@ const FlowTracePage: React.FC = () => {
       // Clear any existing left panel data to prevent showing stale information
       setLeftPanelData(null);
       
-      // Fetch background data and hydrate once available
+      // Fetch background data and hydrate once available (includes risk score)
       await fetchAndSetLeftPanelData(address);
 
       // Add node to graph
@@ -284,22 +301,30 @@ const FlowTracePage: React.FC = () => {
     }
   };
 
-  // Prefetch attribution profile and logos for a list of addresses
+  // Prefetch attribution profile and logos for a list of addresses (non-blocking)
   const prefetchProfilesAndLogos = async (addresses: string[]) => {
     console.log('prefetchProfilesAndLogos called with addresses:', addresses);
     const unique = Array.from(new Set(addresses.filter(Boolean)));
     if (!unique.length) return;
-    await Promise.allSettled(
+    
+    // Don't await this - let it run in the background
+    Promise.allSettled(
       unique.map(async (addr) => {
         try {
-          const profile = await flowtraceService.fetchEntityProfile(addr).catch(() => ({} as any));
+          // Add timeout to prevent hanging
+          const profilePromise = flowtraceService.fetchEntityProfile(addr);
+          const timeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Profile fetch timeout')), 8000)
+          );
+          
+          const profile = await Promise.race([profilePromise, timeoutPromise]).catch(() => ({} as any));
           
           // The logo URL should come directly from the SOT data in the profile
           const logoUrl = (profile as any)?.logoUrl || null;
           
           setNodes((prev) => prev.map((n) => (n.id === addr ? {
             ...n,
-            label: (profile as any)?.label ?? n.label,
+            label: ((profile as any)?.properName || (profile as any)?.label) ?? n.label,
             risk: (profile as any)?.riskScore ?? n.risk,
             logoUrl: logoUrl ?? n.logoUrl,
             entityId: (profile as any)?.entityId ?? n.entityId,
@@ -324,7 +349,7 @@ const FlowTracePage: React.FC = () => {
             } : null);
           }
         } catch (error) {
-          console.error('Error in prefetchProfilesAndLogos for', addr, ':', error);
+          console.warn('Error in prefetchProfilesAndLogos for', addr, ':', error);
         }
       })
     );
@@ -548,7 +573,8 @@ const FlowTracePage: React.FC = () => {
     // Use the new aggregation logic
     handleAddConnections(newConnections)
 
-    // Fetch entity profiles and logos for all involved addresses
+    // Fetch entity profiles and logos for all involved addresses (non-blocking)
+    // This runs in the background and updates nodes as data becomes available
     prefetchProfilesAndLogos(Array.from(addressesToPrefetch).filter(Boolean))
   }, [handleAddConnections, prefetchProfilesAndLogos])
 
