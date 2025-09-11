@@ -640,7 +640,7 @@ const NodeTxPicker: React.FC<Props> = ({ open, address, onOpenChange, onAdd, nod
                 originalTxHash: tx.txid // Store the original transaction hash
               };
 
-              // Add connection matching logic for incoming transactions
+              // Add connection matching logic for outgoing transactions
               if (transactionDirection === 'out') {
                 const utxoKey = generateUTXOKey({
                   originalTxHash: transaction.originalTxHash,
@@ -837,8 +837,8 @@ const NodeTxPicker: React.FC<Props> = ({ open, address, onOpenChange, onAdd, nod
                 originalTxHash: tx.txid // Store the original transaction hash
               };
 
-              // Add connection matching logic for incoming transactions
-              if (transactionDirection === 'in') {
+              // Add connection matching logic for outgoing transactions
+              if (transactionDirection === 'out') {
                 const utxoKey = generateUTXOKey({
                   originalTxHash: transaction.originalTxHash,
                   txid: transaction.txid,
@@ -846,8 +846,8 @@ const NodeTxPicker: React.FC<Props> = ({ open, address, onOpenChange, onAdd, nod
                   originalOutputIndex: transaction.originalOutputIndex,
                   inputs: transaction.inputs,
                   outputs: transaction.outputs,
-                  sourceAddress: inputAddress,
-                  destinationAddress: address,
+                  sourceAddress: address,
+                  destinationAddress: outputAddress,
                   amount: transaction.amount
                 });
                 
