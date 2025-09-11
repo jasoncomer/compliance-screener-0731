@@ -3,7 +3,7 @@
  * Tracks performance, validates system health, and provides alerting
  */
 
-import { validateUTXOKey, matchUTXOKey } from './utxoKeyGeneration';
+import { validateUTXOKey } from './utxoKeyGeneration';
 
 export interface PerformanceMetrics {
   utxoKeyGenerationTime: number;
@@ -156,7 +156,7 @@ class UTXOMonitor {
     const recommendations: string[] = [];
     
     // Check UTXO key validation
-    const { validCount, invalidCount, duplicateCount, issues: validationIssues } = 
+    const { invalidCount, duplicateCount, issues: validationIssues } = 
       this.validateUtxoKeyHealth(connections);
     
     issues.push(...validationIssues);
@@ -337,7 +337,7 @@ class UTXOMonitor {
   getSystemStatus(): {
     overallHealth: 'healthy' | 'warning' | 'critical';
     activeAlerts: number;
-    performanceTrends: ReturnType<typeof this.getPerformanceTrends>;
+    performanceTrends: any;
     recentMetrics: PerformanceMetrics | null;
   } {
     const recentMetrics = this.metrics[this.metrics.length - 1] || null;

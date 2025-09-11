@@ -189,8 +189,8 @@ describe('Complex Connection Scenarios', () => {
       // Get all unique nodes connected to the start node
       const connectedNodes = new Set<string>();
       startConnections.forEach(conn => {
-        if (conn.from === startNode) connectedNodes.add(conn.to);
-        if (conn.to === startNode) connectedNodes.add(conn.from);
+        if (conn.from === startNode && conn.to) connectedNodes.add(conn.to);
+        if (conn.to === startNode && conn.from) connectedNodes.add(conn.from);
       });
       
       console.log('🔍 REACHABLE NODES TEST:');
@@ -285,7 +285,7 @@ describe('Complex Connection Scenarios', () => {
       expect(aggConn.originalConnections).toHaveLength(2);
       
       // Verify original connections are properly structured
-      aggConn.originalConnections?.forEach(origConn => {
+      aggConn.originalConnections?.forEach((origConn: any) => {
         expect(connectionInvolvesAddress(origConn, nodeA)).toBe(true);
         expect(connectionInvolvesAddress(origConn, nodeC)).toBe(true);
       });

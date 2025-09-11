@@ -3,7 +3,7 @@
  * Handles data transformation and cleanup during system migration
  */
 
-import { generateUTXOKey, matchUTXOKey, validateUTXOKey, UTXOKeyGenerationInput } from './utxoKeyGeneration';
+import { generateUTXOKey, validateUTXOKey, UTXOKeyGenerationInput } from './utxoKeyGeneration';
 
 export interface ConnectionMigrationData {
   from: string;

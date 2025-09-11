@@ -1,6 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import {
-  connectionInvolvesAddress,
   findConnectionsForAddress,
   ensureConnectionKeys
 } from '../utxoKeyGeneration';
@@ -55,7 +54,7 @@ describe('Connected Status Tests - What Users Actually See', () => {
       connectedConnections.forEach(conn => {
         // Determine the counterparty node
         const counterparty = conn.from === sourceNode ? conn.to : conn.from;
-        connectedNodes.add(counterparty);
+        if (counterparty) connectedNodes.add(counterparty);
       });
       
       console.log('Nodes that should show as "CONNECTED" in the modal:');
@@ -83,7 +82,7 @@ describe('Connected Status Tests - What Users Actually See', () => {
       const connectedNodes = new Set<string>();
       connectedConnections.forEach(conn => {
         const counterparty = conn.from === sourceNode ? conn.to : conn.from;
-        connectedNodes.add(counterparty);
+        if (counterparty) connectedNodes.add(counterparty);
       });
       
       console.log('Nodes that should show as "CONNECTED" in the modal:');
@@ -109,7 +108,7 @@ describe('Connected Status Tests - What Users Actually See', () => {
       const connectedNodes = new Set<string>();
       connectedConnections.forEach(conn => {
         const counterparty = conn.from === sourceNode ? conn.to : conn.from;
-        connectedNodes.add(counterparty);
+        if (counterparty) connectedNodes.add(counterparty);
       });
       
       console.log('Nodes that should show as "CONNECTED" in the modal:');
@@ -181,7 +180,7 @@ describe('Connected Status Tests - What Users Actually See', () => {
         // Log each connection for this node
         nodeConnections.forEach((conn, index) => {
           const counterparty = conn.from === nodeId ? conn.to : conn.from;
-          console.log(`  Connection ${index + 1}: ${nodeId} ↔ ${counterparty} (${conn.amount} ${conn.currency})`);
+          console.log(`  Connection ${index + 1}: ${nodeId} ↔ ${counterparty} (${conn.amount} BTC)`);
         });
       });
       
@@ -219,7 +218,7 @@ describe('Connected Status Tests - What Users Actually See', () => {
       const connectedNodes = new Set<string>();
       connectedConnections.forEach(conn => {
         const counterparty = conn.from === sourceNode ? conn.to : conn.from;
-        connectedNodes.add(counterparty);
+        if (counterparty) connectedNodes.add(counterparty);
       });
       
       console.log('In the Expand Node Modal, these nodes should show as CONNECTED:');

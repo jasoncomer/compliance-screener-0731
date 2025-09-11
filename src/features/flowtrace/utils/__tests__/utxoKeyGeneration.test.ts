@@ -312,7 +312,7 @@ describe('UTXO Key Generation', () => {
         { address: bech32Address, expected: 'bech32' }
       ];
       
-      inputs.forEach(({ address, expected }) => {
+      inputs.forEach(({ address }) => {
         const input: UTXOKeyGenerationInput = {
           txid: 'abc123def456',
           originalInputIndex: 0,

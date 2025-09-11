@@ -54,7 +54,7 @@ interface EnhancedTransaction {
   connectedNodeId?: string; // The ID of the node this UTXO is connected to
 }
 
-const NodeTxPicker: React.FC<Props> = ({ open, address, onOpenChange, onAdd, nodeLabel, existingConnections = [], sourceNode = null }) => {
+const NodeTxPicker: React.FC<Props> = ({ open, address, onOpenChange, onAdd, nodeLabel, existingConnections = [] }) => {
   const [loading, setLoading] = useState(false);
   const [txs, setTxs] = useState<EnhancedTransaction[]>([]);
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -641,7 +641,7 @@ const NodeTxPicker: React.FC<Props> = ({ open, address, onOpenChange, onAdd, nod
               };
 
               // Add connection matching logic for incoming transactions
-              if (transactionDirection === 'in') {
+              if (transactionDirection === 'out') {
                 const utxoKey = generateUTXOKey({
                   originalTxHash: transaction.originalTxHash,
                   txid: transaction.txid,
@@ -649,8 +649,8 @@ const NodeTxPicker: React.FC<Props> = ({ open, address, onOpenChange, onAdd, nod
                   originalOutputIndex: transaction.originalOutputIndex,
                   inputs: transaction.inputs,
                   outputs: transaction.outputs,
-                  sourceAddress: inputAddress,
-                  destinationAddress: address,
+                  sourceAddress: address,
+                  destinationAddress: outputAddress,
                   amount: transaction.amount
                 });
                 
@@ -702,7 +702,7 @@ const NodeTxPicker: React.FC<Props> = ({ open, address, onOpenChange, onAdd, nod
                 transaction.isAlreadyConnected = !!connectionInfo;
                 transaction.isConnectedToNode = isConnectedToNode;
                 transaction.connectedNodeId = connectedNodeId;
-              } else if (transactionDirection === 'out') {
+              } else if (transactionDirection === 'in') {
                 const utxoKey = generateUTXOKey({
                   originalTxHash: transaction.originalTxHash,
                   txid: transaction.txid,

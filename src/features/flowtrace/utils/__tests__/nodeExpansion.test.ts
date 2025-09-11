@@ -3,7 +3,7 @@
  * Tests UTXO key matching in real-world scenarios
  */
 
-import { matchUTXOKey, generateUTXOKey, UTXOKeyGenerationInput } from '../utxoKeyGeneration';
+import { matchUTXOKey, generateUTXOKey } from '../utxoKeyGeneration';
 
 describe('Node Expansion Integration Tests', () => {
   describe('Bidirectional UTXO Matching', () => {

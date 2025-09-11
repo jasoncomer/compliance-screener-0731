@@ -450,69 +450,6 @@ const FlowTracePage: React.FC = () => {
   }, []);
 
 
-  const handleRemoveConnections = useCallback((utxoKeysToRemove: string[]) => {
-    setConnections(prev => {
-      let updatedConnections = [...prev];
-      
-      utxoKeysToRemove.forEach(utxoKey => {
-        // Find and remove the UTXO
-        const existingUtxoIndex = updatedConnections.findIndex(conn => {
-          // Check direct match
-          if (conn.utxoKey === utxoKey) return true;
-          
-          // Check if it's in an aggregated connection's originalConnections
-          if (conn.isAggregated && conn.originalConnections) {
-            return conn.originalConnections.some(origConn => origConn.utxoKey === utxoKey);
-          }
-          
-          return false;
-        });
-        
-        if (existingUtxoIndex !== -1) {
-          const existingUtxo = updatedConnections[existingUtxoIndex];
-          
-          if (existingUtxo.isAggregated && existingUtxo.originalConnections) {
-            // If it's an aggregated connection, remove the specific UTXO from originalConnections
-            const remainingConnections = existingUtxo.originalConnections.filter(
-              origConn => origConn.utxoKey !== utxoKey
-            );
-            
-            if (remainingConnections.length === 0) {
-              // If no connections left, remove the entire aggregated connection
-              updatedConnections.splice(existingUtxoIndex, 1);
-            } else if (remainingConnections.length === 1) {
-              // If only one connection left, convert back to individual connection
-              updatedConnections[existingUtxoIndex] = remainingConnections[0];
-            } else {
-              // Update the aggregated connection with remaining connections
-              const totalAmount = remainingConnections.reduce((sum, conn) => 
-                sum + parseFloat(conn.amount || '0'), 0
-              );
-              
-              updatedConnections[existingUtxoIndex] = {
-                ...existingUtxo,
-                amount: totalAmount.toFixed(8),
-                txHash: remainingConnections.map(c => c.txHash).join(","),
-                txid: remainingConnections.map(c => c.txid).filter(Boolean).join(","),
-                utxoCount: remainingConnections.length,
-                originalConnections: remainingConnections,
-                _aggregatedText: {
-                  amount: totalAmount.toFixed(8),
-                  count: remainingConnections.length,
-                  currency: existingUtxo.currency
-                }
-              };
-            }
-          } else {
-            // If it's an individual connection, just remove it
-            updatedConnections.splice(existingUtxoIndex, 1);
-          }
-        }
-      });
-      
-      return updatedConnections;
-    });
-  }, []);
 
   const handleAddConnections = useCallback((newConnections: FTConnection[]) => {
     setConnections(prev => {

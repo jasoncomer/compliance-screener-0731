@@ -4,8 +4,7 @@ import {
   connectionInvolvesAddress,
   findConnectionsForAddress,
   ensureConnectionKeys,
-  connectionsAreSame,
-  generateUTXOKey
+  connectionsAreSame
 } from '../utxoKeyGeneration';
 
 // Mock connection data similar to your test nodes

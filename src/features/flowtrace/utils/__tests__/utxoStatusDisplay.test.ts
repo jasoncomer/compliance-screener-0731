@@ -5,19 +5,6 @@ const generateUTXOKey = (params: any) => {
   return `${params.originalTxHash || params.txid}::${params.originalInputIndex || 0}::${params.address}::${params.amount}`;
 };
 
-// Mock the connectionInvolvesAddress function
-const connectionInvolvesAddress = (connection: any, address: string) => {
-  if (connection.from && connection.to) {
-    return connection.from === address || connection.to === address;
-  }
-  if (connection.utxoKey && (!connection.from || !connection.to)) {
-    // Simplified utxoKey matching for this test
-    return connection.utxoKey.includes(address);
-  }
-  if (connection.from) { return connection.from === address; }
-  if (connection.to) { return connection.to === address; }
-  return false;
-};
 
 describe('UTXO Status Display Logic', () => {
   it('should correctly identify UTXOs that are connected to another node', () => {
@@ -27,7 +14,8 @@ describe('UTXO Status Display Logic', () => {
         from: 'bc1qy5usrvs0pg3wt3uc3m9sm29jnngkc038j6tz9w',
         to: 'bc1qankq7lpa8ldq5yk36ndsxdsu0x84ylmrkjmn9s',
         amount: '1000000',
-        utxoKey: 'tx123::0::bc1qankq7lpa8ldq5yk36ndsxdsu0x84ylmrkjmn9s::1000000'
+        utxoKey: 'tx123::0::bc1qankq7lpa8ldq5yk36ndsxdsu0x84ylmrkjmn9s::1000000',
+        currency: 'BTC'
       }
     ];
 
@@ -71,6 +59,7 @@ describe('UTXO Status Display Logic', () => {
       {
         // This connection has no from/to, just a utxoKey (in graph but not connected to another node)
         utxoKey: 'tx456::0::bc1qdef456789012345678901234567890123456789::500000',
+        currency: 'BTC',
         amount: '500000'
       }
     ];
@@ -116,7 +105,8 @@ describe('UTXO Status Display Logic', () => {
         from: 'bc1qy5usrvs0pg3wt3uc3m9sm29jnngkc038j6tz9w',
         to: 'bc1qankq7lpa8ldq5yk36ndsxdsu0x84ylmrkjmn9s',
         amount: '1000000',
-        utxoKey: 'tx123::0::bc1qankq7lpa8ldq5yk36ndsxdsu0x84ylmrkjmn9s::1000000'
+        utxoKey: 'tx123::0::bc1qankq7lpa8ldq5yk36ndsxdsu0x84ylmrkjmn9s::1000000',
+        currency: 'BTC'
       }
     ];
 
@@ -164,10 +154,12 @@ describe('UTXO Status Display Logic', () => {
         isAggregated: true,
         originalConnections: [
           {
-            utxoKey: 'tx1::0::bc1qankq7lpa8ldq5yk36ndsxdsu0x84ylmrkjmn9s::2000000'
+            utxoKey: 'tx1::0::bc1qankq7lpa8ldq5yk36ndsxdsu0x84ylmrkjmn9s::2000000',
+        currency: 'BTC'
           },
           {
-            utxoKey: 'tx2::0::bc1qankq7lpa8ldq5yk36ndsxdsu0x84ylmrkjmn9s::3000000'
+            utxoKey: 'tx2::0::bc1qankq7lpa8ldq5yk36ndsxdsu0x84ylmrkjmn9s::3000000',
+            currency: 'BTC'
           }
         ]
       }
