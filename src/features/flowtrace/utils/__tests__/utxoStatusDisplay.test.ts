@@ -35,14 +35,14 @@ describe('UTXO Status Display Logic', () => {
     let connectedNodeId = '';
     
     const connectionInfo = existingConnections.find(conn => {
-      if (conn.utxoKey === utxoKey) return true;
+      if ((conn as any).utxoKey === utxoKey) return true;
       return false;
     });
 
     if (connectionInfo) {
-      if (connectionInfo.from && connectionInfo.to) {
+      if ((connectionInfo as any).from && (connectionInfo as any).to) {
         isConnectedToNode = true;
-        connectedNodeId = connectionInfo.from === address ? connectionInfo.to : connectionInfo.from;
+        connectedNodeId = (connectionInfo as any).from === address ? (connectionInfo as any).to : (connectionInfo as any).from;
       }
     }
 
@@ -80,14 +80,14 @@ describe('UTXO Status Display Logic', () => {
     let connectedNodeId = '';
     
     const connectionInfo = existingConnections.find(conn => {
-      if (conn.utxoKey === utxoKey) return true;
+      if ((conn as any).utxoKey === utxoKey) return true;
       return false;
     });
 
     if (connectionInfo) {
-      if (connectionInfo.from && connectionInfo.to) {
+      if ((connectionInfo as any).from && (connectionInfo as any).to) {
         isConnectedToNode = true;
-        connectedNodeId = connectionInfo.from === address ? connectionInfo.to : connectionInfo.from;
+        connectedNodeId = (connectionInfo as any).from === address ? (connectionInfo as any).to : (connectionInfo as any).from;
       }
     }
 
@@ -126,14 +126,14 @@ describe('UTXO Status Display Logic', () => {
     let connectedNodeId = '';
     
     const connectionInfo = existingConnections.find(conn => {
-      if (conn.utxoKey === utxoKey) return true;
+      if ((conn as any).utxoKey === utxoKey) return true;
       return false;
     });
 
     if (connectionInfo) {
-      if (connectionInfo.from && connectionInfo.to) {
+      if ((connectionInfo as any).from && (connectionInfo as any).to) {
         isConnectedToNode = true;
-        connectedNodeId = connectionInfo.from === address ? connectionInfo.to : connectionInfo.from;
+        connectedNodeId = (connectionInfo as any).from === address ? (connectionInfo as any).to : (connectionInfo as any).from;
       }
     }
 
@@ -172,7 +172,7 @@ describe('UTXO Status Display Logic', () => {
     let connectedNodeId = '';
     
     const connectionInfo = existingConnections.find(conn => {
-      if (conn.utxoKey === utxoKey) return true;
+      if ((conn as any).utxoKey === utxoKey) return true;
       
       if (conn.isAggregated && conn.originalConnections) {
         return conn.originalConnections.some(origConn => {
@@ -185,9 +185,9 @@ describe('UTXO Status Display Logic', () => {
     });
 
     if (connectionInfo) {
-      if (connectionInfo.from && connectionInfo.to) {
+      if ((connectionInfo as any).from && (connectionInfo as any).to) {
         isConnectedToNode = true;
-        connectedNodeId = connectionInfo.from === address ? connectionInfo.to : connectionInfo.from;
+        connectedNodeId = (connectionInfo as any).from === address ? (connectionInfo as any).to : (connectionInfo as any).from;
       }
     }
 

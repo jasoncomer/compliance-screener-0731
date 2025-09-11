@@ -279,7 +279,7 @@ describe('Complex Connection Scenarios', () => {
       // Should find the aggregated connection
       expect(aConnections).toHaveLength(1);
       
-      const aggConn = aConnections[0];
+      const aggConn = aConnections[0] as any;
       expect(aggConn.isAggregated).toBe(true);
       expect(aggConn.amount).toBe('5000000');
       expect(aggConn.originalConnections).toHaveLength(2);

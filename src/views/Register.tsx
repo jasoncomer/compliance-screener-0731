@@ -234,13 +234,13 @@ const Register = () => {
             <Input
               type="text"
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setName(e.target.value)}
               placeholder='First Name'
             />
             <Input
               type="text"
               value={surname}
-              onChange={(e) => setSurname(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSurname(e.target.value)}
               placeholder='Last Name'
             />
           </NameRow>
@@ -249,13 +249,13 @@ const Register = () => {
             <Input
               type="email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
               placeholder='Enter your email'
             />
             <Input
               type="password"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
               placeholder='Create a password'
             />
           </InputGroup>
