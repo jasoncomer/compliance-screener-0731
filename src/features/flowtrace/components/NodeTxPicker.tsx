@@ -757,6 +757,7 @@ const NodeTxPicker: React.FC<Props> = ({ open, address, onOpenChange, onAdd, nod
                 }
               }
 
+
               transaction.isAlreadyConnected = !!connectionInfo; // In graph (any connection)
               transaction.isConnectedToNode = isConnectedToNode; // Connected to another node
               transaction.connectedNodeId = connectedNodeId;
@@ -878,6 +879,7 @@ const NodeTxPicker: React.FC<Props> = ({ open, address, onOpenChange, onAdd, nod
                   connectedNodeId = connectionInfo.from === address ? connectionInfo.to : connectionInfo.from;
                 }
               }
+
 
               transaction.isAlreadyConnected = !!connectionInfo; // In graph (any connection)
               transaction.isConnectedToNode = isConnectedToNode; // Connected to another node
@@ -1375,7 +1377,7 @@ const NodeTxPicker: React.FC<Props> = ({ open, address, onOpenChange, onAdd, nod
                                     disabled={tx.isConnectedToNode}
                                     className={`h-4 w-4 ${tx.isConnectedToNode ? 'opacity-50' : ''}`}
                                   />
-                                  {tx.isConnectedToNode && (
+                                  {(tx.isConnectedToNode || selected.has(tx.txid)) && (
                                     <div className="flex items-center gap-1">
                                       <span className="text-xs text-green-600 dark:text-green-400 font-medium bg-green-50 dark:bg-green-900/20 px-2 py-1 rounded">
                                         🔗 Connected Node
@@ -1385,12 +1387,6 @@ const NodeTxPicker: React.FC<Props> = ({ open, address, onOpenChange, onAdd, nod
                                   {tx.isAlreadyConnected && !tx.isConnectedToNode && (
                                     <span className="text-xs text-gray-500 dark:text-gray-400 italic bg-gray-50 dark:bg-gray-800 px-2 py-1 rounded">
                                       In graph
-                                    </span>
-                                  )}
-                                  {/* Connection status info - only show when there's actual content */}
-                                  {process.env.NODE_ENV === 'development' && tx.isConnectedToNode && (
-                                    <span className="text-xs text-blue-500">
-                                      Connected Node{tx.isAlreadyConnected ? ' | In Graph' : ' | Not In Graph'}
                                     </span>
                                   )}
                                 </div>
@@ -1591,7 +1587,7 @@ const NodeTxPicker: React.FC<Props> = ({ open, address, onOpenChange, onAdd, nod
                             disabled={tx.isConnectedToNode}
                             className="h-4 w-4"
                           />
-                          {tx.isConnectedToNode && (
+                          {(tx.isConnectedToNode || selected.has(tx.txid)) && (
                             <span className="text-xs text-green-600 dark:text-green-400 font-medium bg-green-50 dark:bg-green-900/20 px-2 py-1 rounded">
                               🔗 Connected Node
                             </span>

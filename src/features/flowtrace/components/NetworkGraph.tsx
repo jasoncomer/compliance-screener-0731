@@ -421,6 +421,9 @@ export const NetworkGraph = forwardRef<NetworkGraphHandle, NetworkGraphProps>(({
           conn.from === toId && conn.to === fromId
         )
 
+        // Check if we have bidirectional connections
+        const hasBidirectional = outgoingConnections.length > 0 && incomingConnections.length > 0;
+        
         // Draw outgoing connections (from first node to second node)
         if (outgoingConnections.length > 0) {
           const edgeColor = outgoingConnections[0]?.customColor || (isDark ? "#6b7280" : "#9ca3af")
@@ -429,39 +432,82 @@ export const NetworkGraph = forwardRef<NetworkGraphHandle, NetworkGraphProps>(({
           const utxoCount = outgoingConnections.length
           const currency = outgoingConnections[0]?.currency || "BTC"
 
-          // Draw the line
-          ctx.strokeStyle = edgeColor
-          ctx.lineWidth = 2
-          ctx.beginPath()
-          ctx.moveTo(fromNode.x, fromNode.y)
-          ctx.lineTo(toNode.x, toNode.y)
-          ctx.stroke()
+          if (hasBidirectional) {
+            // Use curved line for bidirectional connections to avoid overlap
+            const curveOffset = 40; // Offset for the curve
+            drawCurvedConnection(ctx, fromNode.x, fromNode.y, toNode.x, toNode.y, curveOffset)
+            drawCurvedArrow(ctx, fromNode.x, fromNode.y, toNode.x, toNode.y, curveOffset, 8, edgeColor)
+            
+            // Position text on the curve
+            const midX = (fromNode.x + toNode.x) / 2
+            const midY = (fromNode.y + toNode.y) / 2
+            const dx = toNode.x - fromNode.x
+            const dy = toNode.y - fromNode.y
+            const length = Math.sqrt(dx*dx+dy*dy)||1;
+            const unitX = -dy/length;
+            const unitY = dx/length;
+            
+            const textX = midX + unitX * curveOffset * 0.5
+            const textY = midY + unitY * curveOffset * 0.5
+            
+            const isCustomNode = fromNode.type === 'custom' || toNode.type === 'custom'
+            const amountText = isCustomNode 
+              ? `${totalFormatted} ${currency}`
+              : utxoCount > 1 
+                ? `${totalFormatted} ${currency} (${utxoCount} UTXOs)`
+                : `${totalFormatted} ${currency}`
 
-          // Draw arrow
-          const dx = toNode.x - fromNode.x;
-          const dy = toNode.y - fromNode.y;
-          drawArrow(ctx, fromNode.x, fromNode.y, toNode.x, toNode.y, undefined, edgeColor)
+            const textDx = toNode.x - fromNode.x
+            const textDy = toNode.y - fromNode.y
+            let angle = Math.atan2(textDy, textDx)
+            
+            if (angle > Math.PI / 2 || angle < -Math.PI / 2) {
+              angle += Math.PI
+            }
+            
+            ctx.save()
+            ctx.translate(textX, textY)
+            ctx.rotate(angle)
+            ctx.fillStyle = isDark ? "#ffffff" : "#000000";
+            ctx.font = "12px sans-serif";
+            ctx.textAlign = "center";
+            ctx.fillText(amountText, 0, 0);
+            ctx.restore();
+          } else {
+            // Draw straight line for unidirectional connections
+            ctx.strokeStyle = edgeColor
+            ctx.lineWidth = 2
+            ctx.beginPath()
+            ctx.moveTo(fromNode.x, fromNode.y)
+            ctx.lineTo(toNode.x, toNode.y)
+            ctx.stroke()
 
-          // Draw amount text
-          const isCustomNode = fromNode.type === 'custom' || toNode.type === 'custom'
-          const amountText = isCustomNode 
-            ? `${totalFormatted} ${currency}`
-            : utxoCount > 1 
-              ? `${totalFormatted} ${currency} (${utxoCount} UTXOs)`
-              : `${totalFormatted} ${currency}`
+            // Draw arrow
+            const dx = toNode.x - fromNode.x;
+            const dy = toNode.y - fromNode.y;
+            drawArrow(ctx, fromNode.x, fromNode.y, toNode.x, toNode.y, undefined, edgeColor)
 
-          const textAngle = Math.atan2(dy, dx);
-          const textX = (fromNode.x + toNode.x) / 2 + Math.cos(textAngle) * 20;
-          const textY = (fromNode.y + toNode.y) / 2 + Math.sin(textAngle) * 20;
+            // Draw amount text
+            const isCustomNode = fromNode.type === 'custom' || toNode.type === 'custom'
+            const amountText = isCustomNode 
+              ? `${totalFormatted} ${currency}`
+              : utxoCount > 1 
+                ? `${totalFormatted} ${currency} (${utxoCount} UTXOs)`
+                : `${totalFormatted} ${currency}`
 
-          ctx.save();
-          ctx.translate(textX, textY);
-          ctx.rotate(textAngle);
-          ctx.fillStyle = isDark ? "#ffffff" : "#000000";
-          ctx.font = "12px sans-serif";
-          ctx.textAlign = "center";
-          ctx.fillText(amountText, 0, 0);
-          ctx.restore();
+            const textAngle = Math.atan2(dy, dx);
+            const textX = (fromNode.x + toNode.x) / 2 + Math.cos(textAngle) * 20;
+            const textY = (fromNode.y + toNode.y) / 2 + Math.sin(textAngle) * 20;
+
+            ctx.save();
+            ctx.translate(textX, textY);
+            ctx.rotate(textAngle);
+            ctx.fillStyle = isDark ? "#ffffff" : "#000000";
+            ctx.font = "12px sans-serif";
+            ctx.textAlign = "center";
+            ctx.fillText(amountText, 0, 0);
+            ctx.restore();
+          }
         }
 
         // Draw incoming connections (from second node to first node) if they exist
@@ -472,39 +518,82 @@ export const NetworkGraph = forwardRef<NetworkGraphHandle, NetworkGraphProps>(({
           const utxoCount = incomingConnections.length
           const currency = incomingConnections[0]?.currency || "BTC"
 
-          // Draw the line with offset to avoid overlap
-          ctx.strokeStyle = edgeColor
-          ctx.lineWidth = 2
-          ctx.beginPath()
-          ctx.moveTo(toNode.x, toNode.y)
-          ctx.lineTo(fromNode.x, fromNode.y)
-          ctx.stroke()
+          if (hasBidirectional) {
+            // Use curved line for bidirectional connections to avoid overlap
+            const curveOffset = -40; // Negative offset for the opposite direction
+            drawCurvedConnection(ctx, toNode.x, toNode.y, fromNode.x, fromNode.y, curveOffset)
+            drawCurvedArrow(ctx, toNode.x, toNode.y, fromNode.x, fromNode.y, curveOffset, 8, edgeColor)
+            
+            // Position text on the curve
+            const midX = (fromNode.x + toNode.x) / 2
+            const midY = (fromNode.y + toNode.y) / 2
+            const dx = fromNode.x - toNode.x
+            const dy = fromNode.y - toNode.y
+            const length = Math.sqrt(dx*dx+dy*dy)||1;
+            const unitX = -dy/length;
+            const unitY = dx/length;
+            
+            const textX = midX + unitX * curveOffset * 0.5
+            const textY = midY + unitY * curveOffset * 0.5
+            
+            const isCustomNode = fromNode.type === 'custom' || toNode.type === 'custom'
+            const amountText = isCustomNode 
+              ? `${totalFormatted} ${currency}`
+              : utxoCount > 1 
+                ? `${totalFormatted} ${currency} (${utxoCount} UTXOs)`
+                : `${totalFormatted} ${currency}`
 
-          // Draw arrow
-          const dx = fromNode.x - toNode.x;
-          const dy = fromNode.y - toNode.y;
-          drawArrow(ctx, toNode.x, toNode.y, fromNode.x, fromNode.y, undefined, edgeColor)
+            const textDx = fromNode.x - toNode.x
+            const textDy = fromNode.y - toNode.y
+            let angle = Math.atan2(textDy, textDx)
+            
+            if (angle > Math.PI / 2 || angle < -Math.PI / 2) {
+              angle += Math.PI
+            }
+            
+            ctx.save()
+            ctx.translate(textX, textY)
+            ctx.rotate(angle)
+            ctx.fillStyle = isDark ? "#ffffff" : "#000000";
+            ctx.font = "12px sans-serif";
+            ctx.textAlign = "center";
+            ctx.fillText(amountText, 0, 0);
+            ctx.restore();
+          } else {
+            // Draw straight line for unidirectional connections
+            ctx.strokeStyle = edgeColor
+            ctx.lineWidth = 2
+            ctx.beginPath()
+            ctx.moveTo(toNode.x, toNode.y)
+            ctx.lineTo(fromNode.x, fromNode.y)
+            ctx.stroke()
 
-          // Draw amount text with offset
-          const isCustomNode = fromNode.type === 'custom' || toNode.type === 'custom'
-          const amountText = isCustomNode 
-            ? `${totalFormatted} ${currency}`
-            : utxoCount > 1 
-              ? `${totalFormatted} ${currency} (${utxoCount} UTXOs)`
-              : `${totalFormatted} ${currency}`
+            // Draw arrow
+            const dx = fromNode.x - toNode.x;
+            const dy = fromNode.y - toNode.y;
+            drawArrow(ctx, toNode.x, toNode.y, fromNode.x, fromNode.y, undefined, edgeColor)
 
-          const textAngle = Math.atan2(dy, dx);
-          const textX = (fromNode.x + toNode.x) / 2 - Math.cos(textAngle) * 20;
-          const textY = (fromNode.y + toNode.y) / 2 - Math.sin(textAngle) * 20;
+            // Draw amount text
+            const isCustomNode = fromNode.type === 'custom' || toNode.type === 'custom'
+            const amountText = isCustomNode 
+              ? `${totalFormatted} ${currency}`
+              : utxoCount > 1 
+                ? `${totalFormatted} ${currency} (${utxoCount} UTXOs)`
+                : `${totalFormatted} ${currency}`
 
-          ctx.save();
-          ctx.translate(textX, textY);
-          ctx.rotate(textAngle);
-          ctx.fillStyle = isDark ? "#ffffff" : "#000000";
-          ctx.font = "12px sans-serif";
-          ctx.textAlign = "center";
-          ctx.fillText(amountText, 0, 0);
-          ctx.restore();
+            const textAngle = Math.atan2(dy, dx);
+            const textX = (fromNode.x + toNode.x) / 2 - Math.cos(textAngle) * 20;
+            const textY = (fromNode.y + toNode.y) / 2 - Math.sin(textAngle) * 20;
+
+            ctx.save();
+            ctx.translate(textX, textY);
+            ctx.rotate(textAngle);
+            ctx.fillStyle = isDark ? "#ffffff" : "#000000";
+            ctx.font = "12px sans-serif";
+            ctx.textAlign = "center";
+            ctx.fillText(amountText, 0, 0);
+            ctx.restore();
+          }
         }
       })
     } else {

@@ -560,6 +560,40 @@ const FlowTracePage: React.FC = () => {
         outputs: tx.outputs
       });
       
+      // Check if this UTXO is already connected in any direction
+      const counterparty = tx.counterpartyAddress || (tx.direction === 'in' ? tx.inputs?.[0]?.addr : tx.outputs?.[0]?.addr);
+      if (!counterparty) return;
+      
+      // Generate UTXO key to check for existing connections
+      const utxoKey = generateUTXOKey({
+        originalTxHash: tx.originalTxHash,
+        txid: tx.txid,
+        originalInputIndex: tx.originalInputIndex,
+        originalOutputIndex: tx.originalOutputIndex,
+        inputs: tx.inputs,
+        outputs: tx.outputs,
+        sourceAddress: tx.direction === 'in' ? counterparty : address,
+        destinationAddress: tx.direction === 'in' ? address : counterparty,
+        amount: tx.amount
+      });
+      
+      // Check if this UTXO is already connected in any direction
+      const existingConnection = connections.find(conn => {
+        if (conn.utxoKey === utxoKey) return true;
+        
+        // Check if it's in an aggregated connection's originalConnections
+        if (conn.isAggregated && conn.originalConnections) {
+          return conn.originalConnections.some(origConn => origConn.utxoKey === utxoKey);
+        }
+        
+        return false;
+      });
+      
+      if (existingConnection) {
+        console.log('🚫 Skipping already connected UTXO:', utxoKey, 'existing connection:', existingConnection);
+        return;
+      }
+      
       if (tx.direction === 'in') {
         // This is an input UTXO - the address is receiving money
         // The connection goes from the input address to the current address
@@ -576,18 +610,7 @@ const FlowTracePage: React.FC = () => {
           })
         }
         
-        // Use centralized UTXO key generation for consistency
-        const utxoKey = generateUTXOKey({
-          originalTxHash: tx.originalTxHash,
-          txid: tx.txid,
-          originalInputIndex: tx.originalInputIndex,
-          originalOutputIndex: tx.originalOutputIndex,
-          inputs: tx.inputs,
-          outputs: tx.outputs,
-          sourceAddress: inputAddress,
-          destinationAddress: address,
-          amount: tx.amount
-        });
+        // UTXO key already generated above for deduplication check
         console.log('🔗 Creating input connection with utxoKey:', utxoKey, 'from', inputAddress, 'to', address);
         
         const connection: FTConnection = {
@@ -634,18 +657,7 @@ const FlowTracePage: React.FC = () => {
           })
         }
         
-        // Use centralized UTXO key generation for consistency
-        const utxoKey = generateUTXOKey({
-          originalTxHash: tx.originalTxHash,
-          txid: tx.txid,
-          originalInputIndex: tx.originalInputIndex,
-          originalOutputIndex: tx.originalOutputIndex,
-          inputs: tx.inputs,
-          outputs: tx.outputs,
-          sourceAddress: address,
-          destinationAddress: outputAddress,
-          amount: tx.amount
-        });
+        // UTXO key already generated above for deduplication check
         console.log('🔗 Creating output connection with utxoKey:', utxoKey, 'from', address, 'to', outputAddress);
         
         const connection: FTConnection = {
