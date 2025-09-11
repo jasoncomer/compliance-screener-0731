@@ -81,10 +81,29 @@ const RiskScoreModal: React.FC<RiskScoreModalProps> = ({
   const renderRiskScoreCards = () => {
     if (!riskScores) return null;
 
-    const overallRiskScore = Math.round(riskScores.overallRisk * 100) || 0;
-    const transactionRiskScore = Math.round(riskScores.transactionRisk.aggregateScore * 100) || 0;
-    const entityRiskScore = Math.round(riskScores.entityRisk.aggregateScore * 100) || 0;
-    const jurisdictionRiskScore = Math.round(riskScores.jurisdictionRisk.aggregateScore * 100) || 0;
+    // Debug logging to understand the data structure
+    console.log('🔍 RiskScoreModal - riskScores data:', riskScores);
+
+    // Handle different possible data formats
+    const getRiskScore = (value: number | undefined): number => {
+      if (value === undefined || value === null) return 0;
+      // If value is already in 0-100 range, use it directly
+      if (value > 1) return Math.round(value);
+      // If value is in 0-1 range, convert to percentage
+      return Math.round(value * 100);
+    };
+
+    const overallRiskScore = getRiskScore(riskScores.overallRisk);
+    const transactionRiskScore = getRiskScore(riskScores.transactionRisk?.aggregateScore);
+    const entityRiskScore = getRiskScore(riskScores.entityRisk?.aggregateScore);
+    const jurisdictionRiskScore = getRiskScore(riskScores.jurisdictionRisk?.aggregateScore);
+
+    console.log('🔍 RiskScoreModal - calculated scores:', {
+      overallRiskScore,
+      transactionRiskScore,
+      entityRiskScore,
+      jurisdictionRiskScore
+    });
 
     return (
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '24px' }}>
@@ -224,7 +243,7 @@ const RiskScoreModal: React.FC<RiskScoreModalProps> = ({
                   ),
                   children: (
                     <Table 
-                      dataSource={riskScores.entityRisk.factors}
+                      dataSource={riskScores.entityRisk?.factors || []}
                       columns={columns}
                       pagination={false}
                       locale={{ emptyText: customEmptyState(<UserOutlined />, 'No entity risk factors were found for this address') }}
@@ -244,7 +263,7 @@ const RiskScoreModal: React.FC<RiskScoreModalProps> = ({
                   ),
                   children: (
                     <Table 
-                      dataSource={riskScores.transactionRisk.factors}
+                      dataSource={riskScores.transactionRisk?.factors || []}
                       columns={columns}
                       pagination={false}
                       rowKey="id"
@@ -264,7 +283,7 @@ const RiskScoreModal: React.FC<RiskScoreModalProps> = ({
                   ),
                   children: (
                     <Table 
-                      dataSource={riskScores.jurisdictionRisk.factors}
+                      dataSource={riskScores.jurisdictionRisk?.factors || []}
                       columns={columns}
                       pagination={false}
                       rowKey="id"
