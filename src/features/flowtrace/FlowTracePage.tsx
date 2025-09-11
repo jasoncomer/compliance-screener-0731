@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { flowtraceService } from '../../services/flowtraceService';
 import { Network } from 'lucide-react';
+import { generateUTXOKey, connectionInvolvesAddress, generateConnectionKey, findConnectionsForAddress, ensureConnectionKeys } from './utils/utxoKeyGeneration';
 
 import { getBlockchainType } from '../../utils/addressValidation';
 import { NetworkGraph, FTConnection, FTNode, NetworkGraphHandle } from './components/NetworkGraph';
@@ -24,6 +25,7 @@ import { Button } from '@/components/ui/button'
 import CustomNodeDialog from './components/CustomNodeDialog'
 import CustomNodeExpandDialog from './components/CustomNodeExpandDialog'
 import { WalletClusterPanel } from './components/WalletClusterPanel'
+import { AggregatedNodeDialog } from './components/AggregatedNodeDialog'
 import { Wallet } from 'lucide-react'
 
 // helper to merge duplicate edges (same from,to,currency,type)
@@ -66,7 +68,7 @@ const FlowTracePage: React.FC = () => {
   const [walletPanelOpen, setWalletPanelOpen] = useState(false)
   const [consolidatedEntities, setConsolidatedEntities] = useState<string[]>([])
   // Store originals so we can undo aggregation
-  const aggregationMap = React.useRef<Record<string, { nodes: FTNode[]; connections: FTConnection[]; addresses: string[] }>>({})
+  const aggregationMap = React.useRef<Record<string, { nodes: FTNode[]; connections: FTConnection[]; allMemberConnections?: FTConnection[]; addresses: string[] }>>({})
   const [customDialogOpen, setCustomDialogOpen] = useState(false);
   
   // Drawing toolbar state
@@ -84,7 +86,12 @@ const FlowTracePage: React.FC = () => {
   const [selectedEdge, setSelectedEdge] = useState<FTConnection | null>(null);
   const [customExpandOpen, setCustomExpandOpen] = useState(false);
   const [expandSourceNode, setExpandSourceNode] = useState<FTNode | null>(null);
+  const [nodeTxPickerSourceNode, setNodeTxPickerSourceNode] = useState<string | null>(null);
   const graphRef = React.useRef<NetworkGraphHandle | null>(null);
+  
+  // Aggregated node dialog state
+  const [aggregatedNodeDialogOpen, setAggregatedNodeDialogOpen] = useState(false);
+  const [selectedAggregatedNode, setSelectedAggregatedNode] = useState<FTNode | null>(null);
 
   const [workspaceMgrOpen, setWorkspaceMgrOpen] = useState(false);
   const [workspaceId, setWorkspaceId] = useState<string | null>(null);
@@ -181,6 +188,13 @@ const FlowTracePage: React.FC = () => {
 
   // Function to handle node selection and update left panel
   const handleNodeSelection = useCallback(async (node: FTNode) => {
+    // Check if this is an aggregated node (starts with 'agg:')
+    if (node.id.startsWith('agg:')) {
+      setSelectedAggregatedNode(node);
+      setAggregatedNodeDialogOpen(true);
+      return;
+    }
+    
     // Immediately update the current address
     setCurrentAddress(node.id);
     
@@ -253,6 +267,73 @@ const FlowTracePage: React.FC = () => {
     }
   };
 
+  const handleLoadSampleData = () => {
+    const sampleNodes: FTNode[] = [
+      {
+        id: 'bc1qankq7lpa8ldq5yk36ndsxdsu0x84ylmrkjmn9s',
+        label: 'bc1qankq7lpa8ldq5yk36ndsxdsu0x84ylmrkjmn9s',
+        x: 200,
+        y: 200,
+        type: 'wallet',
+        risk: 0.2
+      },
+      {
+        id: 'bc1qy5usrvs0pg3wt3uc3m9sm29jnngkc038j6tz9w',
+        label: 'bc1qy5usrvs0pg3wt3uc3m9sm29jnngkc038j6tz9w',
+        x: 400,
+        y: 200,
+        type: 'wallet',
+        risk: 0.1
+      },
+      {
+        id: 'bc1qdef456789012345678901234567890123456789',
+        label: 'bc1qdef456789012345678901234567890123456789',
+        x: 300,
+        y: 350,
+        type: 'wallet',
+        risk: 0.3
+      }
+    ];
+
+    const sampleConnections: FTConnection[] = [
+      {
+        from: 'bc1qankq7lpa8ldq5yk36ndsxdsu0x84ylmrkjmn9s',
+        to: 'bc1qy5usrvs0pg3wt3uc3m9sm29jnngkc038j6tz9w',
+        amount: '1000000',
+        currency: 'BTC',
+        date: '2024-01-15',
+        txHash: 'tx123',
+        utxoKey: 'tx123::0::bc1qy5usrvs0pg3wt3uc3m9sm29jnngkc038j6tz9w::1000000',
+        connectionKey: 'bc1qankq7lpa8ldq5yk36ndsxdsu0x84ylmrkjmn9s:bc1qy5usrvs0pg3wt3uc3m9sm29jnngkc038j6tz9w:tx123::0::bc1qy5usrvs0pg3wt3uc3m9sm29jnngkc038j6tz9w::1000000:1000000'
+      },
+      {
+        from: 'bc1qy5usrvs0pg3wt3uc3m9sm29jnngkc038j6tz9w',
+        to: 'bc1qankq7lpa8ldq5yk36ndsxdsu0x84ylmrkjmn9s',
+        amount: '500000',
+        currency: 'BTC',
+        date: '2024-01-16',
+        txHash: 'tx456',
+        utxoKey: 'tx456::0::bc1qankq7lpa8ldq5yk36ndsxdsu0x84ylmrkjmn9s::500000',
+        connectionKey: 'bc1qy5usrvs0pg3wt3uc3m9sm29jnngkc038j6tz9w:bc1qankq7lpa8ldq5yk36ndsxdsu0x84ylmrkjmn9s:tx456::0::bc1qankq7lpa8ldq5yk36ndsxdsu0x84ylmrkjmn9s::500000:500000'
+      },
+      {
+        from: 'bc1qankq7lpa8ldq5yk36ndsxdsu0x84ylmrkjmn9s',
+        to: 'bc1qdef456789012345678901234567890123456789',
+        amount: '2000000',
+        currency: 'BTC',
+        date: '2024-01-17',
+        txHash: 'tx789',
+        utxoKey: 'tx789::0::bc1qdef456789012345678901234567890123456789::2000000',
+        connectionKey: 'bc1qankq7lpa8ldq5yk36ndsxdsu0x84ylmrkjmn9s:bc1qdef456789012345678901234567890123456789:tx789::0::bc1qdef456789012345678901234567890123456789::2000000:2000000'
+      }
+    ];
+
+    setNodes(sampleNodes);
+    setConnections(sampleConnections);
+    setCurrentAddress('bc1qankq7lpa8ldq5yk36ndsxdsu0x84ylmrkjmn9s');
+    setCenterNodeId('bc1qankq7lpa8ldq5yk36ndsxdsu0x84ylmrkjmn9s');
+  };
+
   const handleImportData = (data: any) => {
     try {
       if (data.nodes) setNodes(data.nodes);
@@ -284,6 +365,7 @@ const FlowTracePage: React.FC = () => {
         x: 300,
         y: 240,
         type: 'wallet', // Will be updated by prefetchProfilesAndLogos
+        risk: 0, // Initialize with 0, will be updated by prefetchProfilesAndLogos
       };
 
       setNodes(prev => {
@@ -333,6 +415,14 @@ const FlowTracePage: React.FC = () => {
             custodian: (profile as any)?.custodian ?? n.custodian,
           } : n)));
           
+          // Debug logging for risk score updates
+          console.log('🔍 Risk score update:', {
+            address: addr,
+            profileRiskScore: (profile as any)?.riskScore,
+            profileType: typeof (profile as any)?.riskScore,
+            profileData: profile
+          });
+          
           // If this is the currently selected address, also update the left panel data
           if (addr === currentAddress || addr === centerNodeId) {
             setLeftPanelData((prev: any) => prev ? {
@@ -359,19 +449,112 @@ const FlowTracePage: React.FC = () => {
     // initial mount: empty graph
   }, []);
 
+
+  const handleRemoveConnections = useCallback((utxoKeysToRemove: string[]) => {
+    setConnections(prev => {
+      let updatedConnections = [...prev];
+      
+      utxoKeysToRemove.forEach(utxoKey => {
+        // Find and remove the UTXO
+        const existingUtxoIndex = updatedConnections.findIndex(conn => {
+          // Check direct match
+          if (conn.utxoKey === utxoKey) return true;
+          
+          // Check if it's in an aggregated connection's originalConnections
+          if (conn.isAggregated && conn.originalConnections) {
+            return conn.originalConnections.some(origConn => origConn.utxoKey === utxoKey);
+          }
+          
+          return false;
+        });
+        
+        if (existingUtxoIndex !== -1) {
+          const existingUtxo = updatedConnections[existingUtxoIndex];
+          
+          if (existingUtxo.isAggregated && existingUtxo.originalConnections) {
+            // If it's an aggregated connection, remove the specific UTXO from originalConnections
+            const remainingConnections = existingUtxo.originalConnections.filter(
+              origConn => origConn.utxoKey !== utxoKey
+            );
+            
+            if (remainingConnections.length === 0) {
+              // If no connections left, remove the entire aggregated connection
+              updatedConnections.splice(existingUtxoIndex, 1);
+            } else if (remainingConnections.length === 1) {
+              // If only one connection left, convert back to individual connection
+              updatedConnections[existingUtxoIndex] = remainingConnections[0];
+            } else {
+              // Update the aggregated connection with remaining connections
+              const totalAmount = remainingConnections.reduce((sum, conn) => 
+                sum + parseFloat(conn.amount || '0'), 0
+              );
+              
+              updatedConnections[existingUtxoIndex] = {
+                ...existingUtxo,
+                amount: totalAmount.toFixed(8),
+                txHash: remainingConnections.map(c => c.txHash).join(","),
+                txid: remainingConnections.map(c => c.txid).filter(Boolean).join(","),
+                utxoCount: remainingConnections.length,
+                originalConnections: remainingConnections,
+                _aggregatedText: {
+                  amount: totalAmount.toFixed(8),
+                  count: remainingConnections.length,
+                  currency: existingUtxo.currency
+                }
+              };
+            }
+          } else {
+            // If it's an individual connection, just remove it
+            updatedConnections.splice(existingUtxoIndex, 1);
+          }
+        }
+      });
+      
+      return updatedConnections;
+    });
+  }, []);
+
   const handleAddConnections = useCallback((newConnections: FTConnection[]) => {
     setConnections(prev => {
       let updatedConnections = [...prev]
       
       newConnections.forEach(newConnection => {
+        // First check if this exact UTXO already exists (by utxoKey)
+        const existingUtxo = updatedConnections.find(conn => {
+          // Check direct match
+          if (conn.utxoKey === newConnection.utxoKey) return true;
+          
+          // Check if it's in an aggregated connection's originalConnections
+          if (conn.isAggregated && conn.originalConnections) {
+            return conn.originalConnections.some(origConn => origConn.utxoKey === newConnection.utxoKey);
+          }
+          
+          return false;
+        });
+        
+        // Skip if this UTXO already exists
+        if (existingUtxo) {
+          console.log('🚫 Skipping duplicate UTXO:', newConnection.utxoKey);
+          return;
+        }
+        
         // Check if there are existing connections between the same nodes
-        const existingConnections = updatedConnections.filter(conn => 
+        const existingIndividualConnections = updatedConnections.filter(conn => 
           conn.from === newConnection.from && conn.to === newConnection.to && !conn.isAggregated
         )
         
-        if (utxoCollapseMode === 'aggregated' && existingConnections.length > 0) {
-          // There are existing individual connections, create or update an aggregated connection
-          const allConnections = [...existingConnections, newConnection]
+        const existingAggregatedConnection = updatedConnections.find(conn => 
+          conn.from === newConnection.from && conn.to === newConnection.to && conn.isAggregated
+        )
+        
+        if (utxoCollapseMode === 'aggregated' && (existingIndividualConnections.length > 0 || existingAggregatedConnection)) {
+          // There are existing connections, create or update an aggregated connection
+          let allConnections = [...existingIndividualConnections, newConnection]
+          
+          // If there's already an aggregated connection, include its original connections
+          if (existingAggregatedConnection && existingAggregatedConnection.originalConnections) {
+            allConnections = [...existingAggregatedConnection.originalConnections, newConnection]
+          }
           
           // Calculate totals
           const totalAmount = allConnections.reduce((sum, conn) => 
@@ -383,6 +566,7 @@ const FlowTracePage: React.FC = () => {
             ...newConnection,
             amount: totalAmount.toFixed(8),
             txHash: allConnections.map(c => c.txHash).join(","),
+            txid: allConnections.map(c => c.txid).filter(Boolean).join(","),
             isAggregated: true,
             utxoCount: allConnections.length,
             originalConnections: allConnections,
@@ -410,6 +594,16 @@ const FlowTracePage: React.FC = () => {
 
   const onAdd = useCallback((payload: { address: string; selectedTxs: any[] }) => {
     const { selectedTxs, address } = payload
+    
+    // Since selectedTxs only contains NEW connections (filtered by !t.wouldCreateExistingConnection),
+    // we don't need to handle removals here. The removal logic was incorrectly assuming that
+    // all existing connections for the node were being re-selected, but that's not how it works.
+    // We only add new connections, we don't remove existing ones.
+    
+    // Note: If we need to handle removals in the future, we should track which UTXOs were
+    // previously selected in the dialog, not all existing connections for the node.
+    
+    // Handle additions only - no removals needed since selectedTxs only contains NEW connections
     const newConnections: FTConnection[] = []
     const addressesToPrefetch = new Set<string>()
     const addressEntityData = new Map<string, { entityName?: string; entityId?: string; entityType?: string; logoUrl?: string }>()
@@ -420,10 +614,19 @@ const FlowTracePage: React.FC = () => {
     selectedTxs.forEach((tx: any) => {
       // Each tx is an EnhancedTransaction representing a single UTXO
       // The direction tells us if this is an input or output UTXO
+      console.log('🔍 Processing selectedTx:', {
+        txid: tx.txid,
+        direction: tx.direction,
+        amount: tx.amount,
+        currency: tx.currency,
+        inputs: tx.inputs,
+        outputs: tx.outputs
+      });
+      
       if (tx.direction === 'in') {
         // This is an input UTXO - the address is receiving money
         // The connection goes from the input address to the current address
-        const inputAddress = tx.inputs?.[0]?.addr
+        const inputAddress = tx.counterpartyAddress || tx.inputs?.[0]?.addr
         if (!inputAddress) return
         
         // Store entity data for the input address
@@ -436,7 +639,19 @@ const FlowTracePage: React.FC = () => {
           })
         }
         
-        const utxoKey = `${tx.originalTxHash || tx.txid}::${address}::in`
+        // Use centralized UTXO key generation for consistency
+        const utxoKey = generateUTXOKey({
+          originalTxHash: tx.originalTxHash,
+          txid: tx.txid,
+          originalInputIndex: tx.originalInputIndex,
+          originalOutputIndex: tx.originalOutputIndex,
+          inputs: tx.inputs,
+          outputs: tx.outputs,
+          sourceAddress: inputAddress,
+          destinationAddress: address,
+          amount: tx.amount
+        });
+        console.log('🔗 Creating input connection with utxoKey:', utxoKey, 'from', inputAddress, 'to', address);
         
         const connection: FTConnection = {
           from: inputAddress,
@@ -445,10 +660,19 @@ const FlowTracePage: React.FC = () => {
           currency: tx.currency || 'BTC',
           date: tx.time ? new Date(tx.time * 1000).toISOString() : new Date().toISOString(),
           txHash: tx.originalTxHash || tx.txid,
+          txid: tx.txid,
           utxoKey,
           type: 'in',
           usdValue: tx.usdValue,
         }
+        
+        console.log('🔗 Created connection:', {
+          from: connection.from,
+          to: connection.to,
+          amount: connection.amount,
+          type: connection.type,
+          utxoKey: connection.utxoKey
+        });
         
         // Group connections by counterparty address
         if (!addressConnections.has(inputAddress)) {
@@ -460,7 +684,7 @@ const FlowTracePage: React.FC = () => {
       } else if (tx.direction === 'out') {
         // This is an output UTXO - the address is spending money
         // The connection goes from the current address to the output address
-        const outputAddress = tx.outputs?.[0]?.addr
+        const outputAddress = tx.counterpartyAddress || tx.outputs?.[0]?.addr
         if (!outputAddress) return
         
         // Store entity data for the output address
@@ -473,7 +697,19 @@ const FlowTracePage: React.FC = () => {
           })
         }
         
-        const utxoKey = `${tx.originalTxHash || tx.txid}::${outputAddress}::out`
+        // Use centralized UTXO key generation for consistency
+        const utxoKey = generateUTXOKey({
+          originalTxHash: tx.originalTxHash,
+          txid: tx.txid,
+          originalInputIndex: tx.originalInputIndex,
+          originalOutputIndex: tx.originalOutputIndex,
+          inputs: tx.inputs,
+          outputs: tx.outputs,
+          sourceAddress: address,
+          destinationAddress: outputAddress,
+          amount: tx.amount
+        });
+        console.log('🔗 Creating output connection with utxoKey:', utxoKey, 'from', address, 'to', outputAddress);
         
         const connection: FTConnection = {
           from: address,
@@ -482,10 +718,19 @@ const FlowTracePage: React.FC = () => {
           currency: tx.currency || 'BTC',
           date: tx.time ? new Date(tx.time * 1000).toISOString() : new Date().toISOString(),
           txHash: tx.originalTxHash || tx.txid,
+          txid: tx.txid,
           utxoKey,
           type: 'out',
           usdValue: tx.usdValue,
         }
+        
+        console.log('🔗 Created connection:', {
+          from: connection.from,
+          to: connection.to,
+          amount: connection.amount,
+          type: connection.type,
+          utxoKey: connection.utxoKey
+        });
         
         // Group connections by counterparty address
         if (!addressConnections.has(outputAddress)) {
@@ -544,7 +789,8 @@ const FlowTracePage: React.FC = () => {
             type: 'wallet',
             entityId: entityData?.entityId,
             entityType: entityData?.entityType,
-            logoUrl: entityData?.logoUrl
+            logoUrl: entityData?.logoUrl,
+            risk: 0 // Initialize with 0, will be updated when profile is fetched
           })
         }
       })
@@ -562,7 +808,8 @@ const FlowTracePage: React.FC = () => {
             type: 'wallet',
             entityId: entityData?.entityId,
             entityType: entityData?.entityType,
-            logoUrl: entityData?.logoUrl
+            logoUrl: entityData?.logoUrl,
+            risk: 0 // Initialize with 0, will be updated when profile is fetched
           })
         }
       })
@@ -619,7 +866,7 @@ const FlowTracePage: React.FC = () => {
 
       {/* Main Content */}
       {isEmptyState ? (
-        <FlowTraceEmptyState />
+        <FlowTraceEmptyState onLoadSampleData={handleLoadSampleData} />
       ) : (
         <div className="relative mt-4">
           {/* Main Toolbar - positioned on the right to avoid left panel */}
@@ -686,6 +933,8 @@ const FlowTracePage: React.FC = () => {
                   setExpandSourceNode(node);
                   setCustomExpandOpen(true);
                 } else {
+                  // Set the source node to the currently selected node (the one we're expanding from)
+                  setNodeTxPickerSourceNode(currentAddress || centerNodeId);
                   setCurrentAddress(node.id);
                   setNodeTxPickerOpen(true);
                 }
@@ -731,11 +980,17 @@ const FlowTracePage: React.FC = () => {
 
       <NodeTxPicker
         open={nodeTxPickerOpen}
-        onOpenChange={setNodeTxPickerOpen}
+        onOpenChange={(open) => {
+          setNodeTxPickerOpen(open);
+          if (!open) {
+            setNodeTxPickerSourceNode(null);
+          }
+        }}
         address={currentAddress || ''}
         nodeLabel={nodes.find(n => n.id === currentAddress)?.label}
         onAdd={onAdd}
-        existingConnections={connections}
+                existingConnections={currentAddress ? findConnectionsForAddress(ensureConnectionKeys(connections), currentAddress) : []}
+        sourceNode={nodeTxPickerSourceNode}
       />
 
       <EdgeDialog
@@ -814,26 +1069,66 @@ const FlowTracePage: React.FC = () => {
           sourceNode={expandSourceNode}
           existingNodes={nodes}
           onCreateEdges={(edges) => {
-            const newEdges: FTConnection[] = edges.map((e, idx) => ({
-              from: e.direction === 'out' ? expandSourceNode.id : e.targetId,
-              to: e.direction === 'out' ? e.targetId : expandSourceNode.id,
-              amount: e.amount,
-              currency: e.currency,
-              date: e.date,
-              txHash: `ce-${Date.now()}-${idx}`,
-              type: e.direction,
-            } as FTConnection));
+            const newEdges: FTConnection[] = edges.map((e, idx) => {
+              const from = e.direction === 'out' ? expandSourceNode.id : e.targetId;
+              const to = e.direction === 'out' ? e.targetId : expandSourceNode.id;
+              const txHash = `ce-${Date.now()}-${idx}`;
+              
+              // Generate utxoKey for the new connection
+              let utxoKey: string | undefined;
+              try {
+                utxoKey = generateUTXOKey({
+                  txid: txHash,
+                  sourceAddress: from, // Source address
+                  destinationAddress: to, // Destination address
+                  amount: e.amount
+                });
+              } catch (error) {
+                console.warn('Failed to generate UTXO key for new connection:', error);
+              }
+              
+              const connection: FTConnection = {
+                from,
+                to,
+                amount: e.amount,
+                currency: e.currency,
+                date: e.date,
+                txHash,
+                type: e.direction,
+                utxoKey
+              };
+              
+              // Generate connection key
+              connection.connectionKey = generateConnectionKey(connection);
+              
+              return connection;
+            });
             setConnections(prev => mergeEdges(prev, newEdges));
           }}
-          existingConnections={connections.filter(c => c.from===expandSourceNode.id || c.to===expandSourceNode.id)}
+                existingConnections={(() => {
+                  // Ensure all connections have connectionKey
+                  const connectionsWithKeys = ensureConnectionKeys(connections);
+                  
+                  // Find connections that involve the source node using connection key approach
+                  const filtered = findConnectionsForAddress(connectionsWithKeys, expandSourceNode.id);
+                  
+                  console.log('🔍 CONNECTION FILTERING (Connection Key Approach):');
+                  console.log('Source node:', expandSourceNode.id);
+                  console.log('Found connections:', filtered.length);
+                  console.log('Connection keys:', filtered.map(c => c.connectionKey));
+                  
+                  return filtered;
+                })()}
           onEditEdges={(edges)=>{
             setConnections(prev => {
               const targetsKept = new Set(edges.map(e=>e.targetId))
               // Remove edges between custom node and nodes that are now unchecked
               const filtered = prev.filter(c => {
-                const isCustomEdge = c.from===expandSourceNode.id || c.to===expandSourceNode.id
+                const isCustomEdge = connectionInvolvesAddress(c, expandSourceNode.id)
                 if (!isCustomEdge) return true
-                const otherId = c.from===expandSourceNode.id ? c.to : c.from
+                // For custom edges, we need to check if the other node is still in targetsKept
+                // This is a bit tricky with utxoKey, so we'll use the from/to fallback for this specific case
+                const otherId = c.from === expandSourceNode.id ? c.to : c.from
                 return targetsKept.has(otherId)
               })
 
@@ -841,15 +1136,36 @@ const FlowTracePage: React.FC = () => {
               edges.forEach((e, idx) => {
                 const from = e.direction==='out'? expandSourceNode.id : e.targetId
                 const to = e.direction==='out'? e.targetId : expandSourceNode.id
-                updated.push({
+                const txHash = `edit-${Date.now()}-${idx}`;
+                
+                // Generate utxoKey for the edited connection
+                let utxoKey: string | undefined;
+                try {
+                  utxoKey = generateUTXOKey({
+                    txid: txHash,
+                    sourceAddress: from, // Source address
+                    destinationAddress: to, // Destination address
+                    amount: e.amount
+                  });
+                } catch (error) {
+                  console.warn('Failed to generate UTXO key for edited connection:', error);
+                }
+                
+                const connection: FTConnection = {
                   from,
                   to,
                   amount: e.amount,
                   currency: e.currency,
                   date: e.date,
-                  txHash: `edit-${Date.now()}-${idx}`,
+                  txHash,
                   type: e.direction,
-                } as FTConnection)
+                  utxoKey
+                };
+                
+                // Generate connection key
+                connection.connectionKey = generateConnectionKey(connection);
+                
+                updated.push(connection);
               })
               return updated
             })
@@ -877,7 +1193,12 @@ const FlowTracePage: React.FC = () => {
           setNodes(newState.nodes as any)
           setConnections(newState.edges as any)
 
-          aggregationMap.current[entityKey] = { nodes: undo.nodes as any, connections: undo.edges as any, addresses: memberIdsArr }
+          aggregationMap.current[entityKey] = { 
+            nodes: undo.nodes as any, 
+            connections: undo.edges as any, 
+            allMemberConnections: undo.allMemberConnections as any,
+            addresses: memberIdsArr 
+          }
 
           if (!consolidatedEntities.includes(entityKey))
             setConsolidatedEntities([...consolidatedEntities, entityKey])
@@ -905,6 +1226,24 @@ const FlowTracePage: React.FC = () => {
           setConsolidatedEntities(prev => prev.filter(e => e !== entityKey))
         }}
       />
+
+      {/* Aggregated Node Dialog */}
+      <AggregatedNodeDialog
+        open={aggregatedNodeDialogOpen}
+        onOpenChange={setAggregatedNodeDialogOpen}
+        aggregatedNode={selectedAggregatedNode}
+        originalNodes={selectedAggregatedNode ? 
+          aggregationMap.current[selectedAggregatedNode.id]?.nodes || [] : []
+        }
+        originalConnections={selectedAggregatedNode ? 
+          aggregationMap.current[selectedAggregatedNode.id]?.connections || [] : []
+        }
+        allMemberConnections={selectedAggregatedNode ? 
+          aggregationMap.current[selectedAggregatedNode.id]?.allMemberConnections || [] : []
+        }
+        allConnections={connections}
+      />
+
     </ViewWrapper>
   );
 };

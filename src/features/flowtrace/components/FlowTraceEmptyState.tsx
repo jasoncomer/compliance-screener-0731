@@ -1,8 +1,13 @@
 import React from 'react';
-import { ArrowLeftRight, Network, GitBranch, Zap, Shield, TrendingUp } from 'lucide-react';
+import { ArrowLeftRight, Network, GitBranch, Zap, Shield, TrendingUp, Play } from 'lucide-react';
 import EmptyState from '../../../components/common/EmptyState';
+import { Button } from '@/components/ui/button';
 
-const FlowTraceEmptyState: React.FC = () => (
+interface FlowTraceEmptyStateProps {
+  onLoadSampleData?: () => void;
+}
+
+const FlowTraceEmptyState: React.FC<FlowTraceEmptyStateProps> = ({ onLoadSampleData }) => (
   <EmptyState
     variant="initial"
     icon={<Network className="w-12 h-12" />}
@@ -63,6 +68,22 @@ const FlowTraceEmptyState: React.FC = () => (
             </p>
           </div>
         </div>
+
+        {onLoadSampleData && (
+          <div className="mb-4">
+            <Button 
+              onClick={onLoadSampleData}
+              className="flex items-center gap-2"
+              variant="outline"
+            >
+              <Play className="w-4 h-4" />
+              Load Sample Data
+            </Button>
+            <p className="text-xs text-muted-foreground mt-2">
+              Try the app with sample Bitcoin addresses and connections
+            </p>
+          </div>
+        )}
 
         <div className="p-3 rounded-lg bg-muted/50 border border-border max-w-md">
           <p className="text-sm text-muted-foreground">

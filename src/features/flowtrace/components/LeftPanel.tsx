@@ -333,7 +333,6 @@ const LeftPanel: React.FC<Props> = ({
           <div className="p-4 border-b border-gray-200 dark:border-gray-800">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Entity Details</h2>
-              <div className="text-xs text-gray-500">BlockScout Research</div>
             </div>
           </div>
 

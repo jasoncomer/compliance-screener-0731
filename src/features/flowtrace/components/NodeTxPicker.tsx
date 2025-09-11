@@ -10,6 +10,7 @@ import { Button } from '../../../components/ui/button';
 import { Search, Filter, TrendingUp, CheckSquare, Square, Copy } from 'lucide-react';
 import { applyBeneficialOwnerOverride } from '../../../utils/entityUtils';
 import { useCryptoPrices } from '../../../hooks/useCryptoPrices';
+import { generateUTXOKey, connectionInvolvesAddress } from '../utils/utxoKeyGeneration';
 
 type Props = {
   open: boolean;
@@ -17,7 +18,8 @@ type Props = {
   onOpenChange: (open: boolean) => void;
   onAdd: (payload: { address: string; selectedTxs: any[] }) => void;
   nodeLabel?: string;
-  existingConnections?: { from: string; to: string; utxoKey?: string }[];
+  existingConnections?: { from?: string; to?: string; utxoKey?: string; isAggregated?: boolean; originalConnections?: any[] }[];
+  sourceNode?: string | null; // The node we're expanding from
 };
 
 // Enhanced transaction type with entity and risk information
@@ -44,9 +46,15 @@ interface EnhancedTransaction {
   cospendId?: string;
   transactionCount?: number;
   originalTxHash?: string; // The original transaction hash
+  counterpartyAddress?: string; // The specific counterparty address for this UTXO
+  originalInputIndex?: number; // Store the original input index for UTXO key generation
+  originalOutputIndex?: number; // Store the original output index for UTXO key generation
+  isAlreadyConnected?: boolean; // Whether this UTXO is already connected in the graph
+  isConnectedToNode?: boolean; // Whether this UTXO is connected to another node (not just in graph)
+  connectedNodeId?: string; // The ID of the node this UTXO is connected to
 }
 
-const NodeTxPicker: React.FC<Props> = ({ open, address, onOpenChange, onAdd, nodeLabel, existingConnections = [] }) => {
+const NodeTxPicker: React.FC<Props> = ({ open, address, onOpenChange, onAdd, nodeLabel, existingConnections = [], sourceNode = null }) => {
   const [loading, setLoading] = useState(false);
   const [txs, setTxs] = useState<EnhancedTransaction[]>([]);
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -71,16 +79,24 @@ const NodeTxPicker: React.FC<Props> = ({ open, address, onOpenChange, onAdd, nod
       if (conn.utxoKey) keySet.add(conn.utxoKey);
     };
 
-    existingConnections.forEach((c: any) => {
-      if (c.from === address && c.to) addrSet.add(c.to);
-      if (c.to === address && c.from) addrSet.add(c.from);
+      existingConnections.forEach((c: any) => {
+        // Use connection key approach to find connections involving this address
+        if (connectionInvolvesAddress(c, address)) {
+          // Use simple from/to matching to determine counterparty address
+          if (c.from === address && c.to) {
+            addrSet.add(c.to);
+          }
+          if (c.to === address && c.from) {
+            addrSet.add(c.from);
+          }
+        }
 
-      collect(c);
-      // If aggregated, iterate originals
-      if (Array.isArray(c.originalConnections)) {
-        c.originalConnections.forEach((oc: any) => collect(oc));
-      }
-    });
+        collect(c);
+        // If aggregated, iterate originals
+        if (Array.isArray(c.originalConnections)) {
+          c.originalConnections.forEach((oc: any) => collect(oc));
+        }
+      });
 
     return { expandedAddresses: addrSet, expandedUtxoKeys: keySet };
   }, [existingConnections, address]);
@@ -257,27 +273,83 @@ const NodeTxPicker: React.FC<Props> = ({ open, address, onOpenChange, onAdd, nod
   // Pre-select already-expanded addresses only on initial load (when nothing is selected yet)
   useEffect(() => {
     if (!open) return;
-    if (selected.size > 0) return; // keep user's manual selection
-
-    const pre = new Set<string>();
-    txs.forEach((tx) => {
-      const counterparty = tx.direction === 'in' ? tx.inputs?.[0]?.addr : tx.outputs?.[0]?.addr;
-
-      let utxoKey: string | null = null;
-      if (tx.direction === 'in') {
-        // funds to current node, key uses current address
-        utxoKey = `${tx.originalTxHash || tx.txid}::${address}::in`;
-      } else {
-        utxoKey = `${tx.originalTxHash || tx.txid}::${counterparty}::out`;
-      }
-
-      if ((counterparty && expandedAddresses.has(counterparty)) || (utxoKey && expandedUtxoKeys.has(utxoKey))) {
-        pre.add(tx.txid);
-      }
-    });
-    if (pre.size > 0) {
-      setSelected(pre);
+    
+    // Only skip if user has manually selected something (not just initial state)
+    if (selected.size > 0) {
+      return; // keep user's manual selection
     }
+
+    // Don't run pre-selection if we don't have transactions yet
+    if (txs.length === 0) {
+      return;
+    }
+
+    // Don't run pre-selection if we don't have expanded sets yet
+    if (expandedAddresses.size === 0 && expandedUtxoKeys.size === 0) {
+      return;
+    }
+
+    // Add a small delay to prevent race conditions
+    const timeoutId = setTimeout(() => {
+      const pre = new Set<string>();
+    
+      txs.forEach((tx) => {
+        const counterparty = tx.counterpartyAddress || (tx.direction === 'in' ? tx.inputs?.[0]?.addr : tx.outputs?.[0]?.addr);
+
+        // Use centralized UTXO key generation for consistency
+        let utxoKey: string | null = null;
+        try {
+          if (counterparty && address) {
+            // Generate key the same way FlowTracePage does
+            if (tx.direction === 'in') {
+              // Incoming: sourceAddress = counterparty (where money came from), destinationAddress = address (where money went to)
+              utxoKey = generateUTXOKey({
+                originalTxHash: tx.originalTxHash,
+                txid: tx.txid,
+                originalInputIndex: tx.originalInputIndex,
+                originalOutputIndex: tx.originalOutputIndex,
+                inputs: tx.inputs,
+                outputs: tx.outputs,
+                sourceAddress: counterparty,
+                destinationAddress: address,
+                amount: tx.amount
+              });
+            } else if (tx.direction === 'out') {
+              // Outgoing: sourceAddress = address (where money came from), destinationAddress = counterparty (where money went to)
+              utxoKey = generateUTXOKey({
+                originalTxHash: tx.originalTxHash,
+                txid: tx.txid,
+                originalInputIndex: tx.originalInputIndex,
+                originalOutputIndex: tx.originalOutputIndex,
+                inputs: tx.inputs,
+                outputs: tx.outputs,
+                sourceAddress: address,
+                destinationAddress: counterparty,
+                amount: tx.amount
+              });
+            }
+          }
+        } catch (error) {
+          console.warn('Failed to generate UTXO key for transaction:', tx.txid, error);
+          utxoKey = null;
+        }
+
+        // Check for exact UTXO key match first
+        if (utxoKey && expandedUtxoKeys.has(utxoKey)) {
+          pre.add(tx.txid);
+        }
+        // Fallback: Check for counterparty address match (more flexible)
+        else if (counterparty && expandedAddresses.has(counterparty)) {
+          pre.add(tx.txid);
+        }
+      });
+      
+      if (pre.size > 0) {
+        setSelected(pre);
+      }
+    }, 100); // Small delay to prevent race conditions
+
+    return () => clearTimeout(timeoutId);
   }, [txs, expandedAddresses, expandedUtxoKeys, open, selected.size]);
 
   useEffect(() => {
@@ -568,6 +640,131 @@ const NodeTxPicker: React.FC<Props> = ({ open, address, onOpenChange, onAdd, nod
                 originalTxHash: tx.txid // Store the original transaction hash
               };
 
+              // Add connection matching logic for incoming transactions
+              if (transactionDirection === 'in') {
+                const utxoKey = generateUTXOKey({
+                  originalTxHash: transaction.originalTxHash,
+                  txid: transaction.txid,
+                  originalInputIndex: transaction.originalInputIndex,
+                  originalOutputIndex: transaction.originalOutputIndex,
+                  inputs: transaction.inputs,
+                  outputs: transaction.outputs,
+                  sourceAddress: inputAddress,
+                  destinationAddress: address,
+                  amount: transaction.amount
+                });
+                
+                let isConnectedToNode = false;
+                let connectedNodeId = '';
+                
+                const connectionInfo = existingConnections.find(conn => {
+                  if (conn.utxoKey === utxoKey) return true;
+                  
+                  if (conn.isAggregated && conn.originalConnections) {
+                    return conn.originalConnections.some(origConn => {
+                      if (origConn.utxoKey === utxoKey) return true;
+                      return false;
+                    });
+                  }
+                  
+                  // Fallback: Check if this connection involves the same addresses and transaction
+                  if (conn.from && conn.to && conn.utxoKey) {
+                    const connKeyParts = conn.utxoKey.split('::');
+                    const currentKeyParts = utxoKey.split('::');
+                    
+                    if (connKeyParts.length >= 4 && currentKeyParts.length >= 4) {
+                      const connTxHash = connKeyParts[0];
+                      const connFrom = connKeyParts[2];
+                      const connTo = connKeyParts[3];
+                      
+                      const currentTxHash = currentKeyParts[0];
+                      const currentFrom = currentKeyParts[2];
+                      const currentTo = currentKeyParts[3];
+                      
+                      if (connTxHash === currentTxHash && 
+                          connFrom === currentFrom && 
+                          connTo === currentTo) {
+                        return true;
+                      }
+                    }
+                  }
+                  
+                  return false;
+                });
+
+                if (connectionInfo) {
+                  if (connectionInfo.from && connectionInfo.to) {
+                    isConnectedToNode = true;
+                    connectedNodeId = connectionInfo.from === address ? connectionInfo.to : connectionInfo.from;
+                  }
+                }
+
+                transaction.isAlreadyConnected = !!connectionInfo;
+                transaction.isConnectedToNode = isConnectedToNode;
+                transaction.connectedNodeId = connectedNodeId;
+              } else if (transactionDirection === 'out') {
+                const utxoKey = generateUTXOKey({
+                  originalTxHash: transaction.originalTxHash,
+                  txid: transaction.txid,
+                  originalInputIndex: transaction.originalInputIndex,
+                  originalOutputIndex: transaction.originalOutputIndex,
+                  inputs: transaction.inputs,
+                  outputs: transaction.outputs,
+                  sourceAddress: address,
+                  destinationAddress: outputAddress,
+                  amount: transaction.amount
+                });
+                
+                let isConnectedToNode = false;
+                let connectedNodeId = '';
+                
+                const connectionInfo = existingConnections.find(conn => {
+                  if (conn.utxoKey === utxoKey) return true;
+                  
+                  if (conn.isAggregated && conn.originalConnections) {
+                    return conn.originalConnections.some(origConn => {
+                      if (origConn.utxoKey === utxoKey) return true;
+                      return false;
+                    });
+                  }
+                  
+                  // Fallback: Check if this connection involves the same addresses and transaction
+                  if (conn.from && conn.to && conn.utxoKey) {
+                    const connKeyParts = conn.utxoKey.split('::');
+                    const currentKeyParts = utxoKey.split('::');
+                    
+                    if (connKeyParts.length >= 4 && currentKeyParts.length >= 4) {
+                      const connTxHash = connKeyParts[0];
+                      const connFrom = connKeyParts[2];
+                      const connTo = connKeyParts[3];
+                      
+                      const currentTxHash = currentKeyParts[0];
+                      const currentFrom = currentKeyParts[2];
+                      const currentTo = currentKeyParts[3];
+                      
+                      if (connTxHash === currentTxHash && 
+                          connFrom === currentFrom && 
+                          connTo === currentTo) {
+                        return true;
+                      }
+                    }
+                  }
+                  
+                  return false;
+                });
+
+                if (connectionInfo) {
+                  if (connectionInfo.from && connectionInfo.to) {
+                    isConnectedToNode = true;
+                    connectedNodeId = connectionInfo.from === address ? connectionInfo.to : connectionInfo.from;
+                  }
+                }
+
+                transaction.isAlreadyConnected = !!connectionInfo;
+                transaction.isConnectedToNode = isConnectedToNode;
+                transaction.connectedNodeId = connectedNodeId;
+              }
+
               enhancedTxs.push(transaction);
             });
           }
@@ -640,6 +837,131 @@ const NodeTxPicker: React.FC<Props> = ({ open, address, onOpenChange, onAdd, nod
                 originalTxHash: tx.txid // Store the original transaction hash
               };
 
+              // Add connection matching logic for incoming transactions
+              if (transactionDirection === 'in') {
+                const utxoKey = generateUTXOKey({
+                  originalTxHash: transaction.originalTxHash,
+                  txid: transaction.txid,
+                  originalInputIndex: transaction.originalInputIndex,
+                  originalOutputIndex: transaction.originalOutputIndex,
+                  inputs: transaction.inputs,
+                  outputs: transaction.outputs,
+                  sourceAddress: inputAddress,
+                  destinationAddress: address,
+                  amount: transaction.amount
+                });
+                
+                let isConnectedToNode = false;
+                let connectedNodeId = '';
+                
+                const connectionInfo = existingConnections.find(conn => {
+                  if (conn.utxoKey === utxoKey) return true;
+                  
+                  if (conn.isAggregated && conn.originalConnections) {
+                    return conn.originalConnections.some(origConn => {
+                      if (origConn.utxoKey === utxoKey) return true;
+                      return false;
+                    });
+                  }
+                  
+                  // Fallback: Check if this connection involves the same addresses and transaction
+                  if (conn.from && conn.to && conn.utxoKey) {
+                    const connKeyParts = conn.utxoKey.split('::');
+                    const currentKeyParts = utxoKey.split('::');
+                    
+                    if (connKeyParts.length >= 4 && currentKeyParts.length >= 4) {
+                      const connTxHash = connKeyParts[0];
+                      const connFrom = connKeyParts[2];
+                      const connTo = connKeyParts[3];
+                      
+                      const currentTxHash = currentKeyParts[0];
+                      const currentFrom = currentKeyParts[2];
+                      const currentTo = currentKeyParts[3];
+                      
+                      if (connTxHash === currentTxHash && 
+                          connFrom === currentFrom && 
+                          connTo === currentTo) {
+                        return true;
+                      }
+                    }
+                  }
+                  
+                  return false;
+                });
+
+                if (connectionInfo) {
+                  if (connectionInfo.from && connectionInfo.to) {
+                    isConnectedToNode = true;
+                    connectedNodeId = connectionInfo.from === address ? connectionInfo.to : connectionInfo.from;
+                  }
+                }
+
+                transaction.isAlreadyConnected = !!connectionInfo;
+                transaction.isConnectedToNode = isConnectedToNode;
+                transaction.connectedNodeId = connectedNodeId;
+              } else if (transactionDirection === 'out') {
+                const utxoKey = generateUTXOKey({
+                  originalTxHash: transaction.originalTxHash,
+                  txid: transaction.txid,
+                  originalInputIndex: transaction.originalInputIndex,
+                  originalOutputIndex: transaction.originalOutputIndex,
+                  inputs: transaction.inputs,
+                  outputs: transaction.outputs,
+                  sourceAddress: address,
+                  destinationAddress: outputAddress,
+                  amount: transaction.amount
+                });
+                
+                let isConnectedToNode = false;
+                let connectedNodeId = '';
+                
+                const connectionInfo = existingConnections.find(conn => {
+                  if (conn.utxoKey === utxoKey) return true;
+                  
+                  if (conn.isAggregated && conn.originalConnections) {
+                    return conn.originalConnections.some(origConn => {
+                      if (origConn.utxoKey === utxoKey) return true;
+                      return false;
+                    });
+                  }
+                  
+                  // Fallback: Check if this connection involves the same addresses and transaction
+                  if (conn.from && conn.to && conn.utxoKey) {
+                    const connKeyParts = conn.utxoKey.split('::');
+                    const currentKeyParts = utxoKey.split('::');
+                    
+                    if (connKeyParts.length >= 4 && currentKeyParts.length >= 4) {
+                      const connTxHash = connKeyParts[0];
+                      const connFrom = connKeyParts[2];
+                      const connTo = connKeyParts[3];
+                      
+                      const currentTxHash = currentKeyParts[0];
+                      const currentFrom = currentKeyParts[2];
+                      const currentTo = currentKeyParts[3];
+                      
+                      if (connTxHash === currentTxHash && 
+                          connFrom === currentFrom && 
+                          connTo === currentTo) {
+                        return true;
+                      }
+                    }
+                  }
+                  
+                  return false;
+                });
+
+                if (connectionInfo) {
+                  if (connectionInfo.from && connectionInfo.to) {
+                    isConnectedToNode = true;
+                    connectedNodeId = connectionInfo.from === address ? connectionInfo.to : connectionInfo.from;
+                  }
+                }
+
+                transaction.isAlreadyConnected = !!connectionInfo;
+                transaction.isConnectedToNode = isConnectedToNode;
+                transaction.connectedNodeId = connectedNodeId;
+              }
+
               enhancedTxs.push(transaction);
             });
           }
@@ -695,7 +1017,7 @@ const NodeTxPicker: React.FC<Props> = ({ open, address, onOpenChange, onAdd, nod
 
   const confirm = () => {
     if (!address) return;
-    const rows = txs.filter((t) => selected.has(t.txid));
+    const rows = txs.filter((t) => selected.has(t.txid) || t.isConnectedToNode);
     onAdd({ address, selectedTxs: rows });
     onOpenChange(false);
     setSelected(new Set());
@@ -956,7 +1278,7 @@ const NodeTxPicker: React.FC<Props> = ({ open, address, onOpenChange, onAdd, nod
                 onClick={toggleAll}
                 className="flex items-center gap-2"
               >
-                {selected.size === filteredTxs.length ? (
+                {selected.size + filteredTxs.filter(tx => tx.isConnectedToNode).length === filteredTxs.length ? (
                   <>
                     <Square className="h-4 w-4" />
                     Deselect All
@@ -969,7 +1291,9 @@ const NodeTxPicker: React.FC<Props> = ({ open, address, onOpenChange, onAdd, nod
                 )}
               </Button>
               <span className="text-sm text-gray-600 dark:text-gray-400">
-                <span className="font-medium text-orange-600">{selected.size}</span> of{' '}
+                <span className="font-medium text-orange-600">
+                  {selected.size + filteredTxs.filter(tx => tx.isConnectedToNode).length}
+                </span> of{' '}
                 <span className="font-medium">{filteredTxs.length}</span> selected
               </span>
             </div>
@@ -1123,11 +1447,24 @@ const NodeTxPicker: React.FC<Props> = ({ open, address, onOpenChange, onAdd, nod
                               className={`border-b border-gray-100 dark:border-gray-700 hover:opacity-80 transition-colors ${getTxidColor(tx.originalTxHash || tx.txid)}`}
                             >
                               <td className="p-3">
-                                <Checkbox
-                                  checked={selected.has(tx.txid)}
-                                  onCheckedChange={() => toggle(tx.txid)}
-                                  className="h-4 w-4"
-                                />
+                                  <div className="flex items-center gap-2">
+                                    <Checkbox
+                                      checked={tx.isConnectedToNode || selected.has(tx.txid)}
+                                      onCheckedChange={() => toggle(tx.txid)}
+                                      disabled={tx.isConnectedToNode}
+                                      className={`h-4 w-4 ${tx.isConnectedToNode ? 'opacity-50' : ''}`}
+                                    />
+                                    {tx.isConnectedToNode && (
+                                      <span className="text-xs text-green-600 dark:text-green-400 font-medium bg-green-50 dark:bg-green-900/20 px-2 py-1 rounded">
+                                        🔗 Connected Node
+                                      </span>
+                                    )}
+                                    {tx.isAlreadyConnected && !tx.isConnectedToNode && (
+                                      <span className="text-xs text-gray-500 dark:text-gray-400 italic bg-gray-50 dark:bg-gray-800 px-2 py-1 rounded">
+                                        In graph
+                                      </span>
+                                    )}
+                                  </div>
                               </td>
                               <td className="p-3">
                                 <div className="flex items-center gap-3">
@@ -1255,7 +1592,7 @@ const NodeTxPicker: React.FC<Props> = ({ open, address, onOpenChange, onAdd, nod
                         onClick={toggleAll}
                         className="h-8 px-3 text-sm"
                       >
-                        {selected.size === filteredTxs.length && filteredTxs.length > 0 ? 'Deselect All' : 'Select All'}
+                        {selected.size + filteredTxs.filter(tx => tx.isConnectedToNode).length === filteredTxs.length && filteredTxs.length > 0 ? 'Deselect All' : 'Select All'}
                       </Button>
                       <Badge variant="outline" className="text-sm text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-500">
                         {countUniqueTransactions(filteredTxs)} TX · {filteredTxs.length} UTXOs
@@ -1280,7 +1617,7 @@ const NodeTxPicker: React.FC<Props> = ({ open, address, onOpenChange, onAdd, nod
                       className="text-left p-3 w-12 text-gray-700 dark:text-gray-200 font-medium"
                     >
                       <Checkbox
-                        checked={selected.size === filteredTxs.length && filteredTxs.length > 0}
+                        checked={selected.size + filteredTxs.filter(tx => tx.isConnectedToNode).length === filteredTxs.length && filteredTxs.length > 0}
                         onCheckedChange={toggleAll}
                         className="h-4 w-4"
                       />
@@ -1318,11 +1655,24 @@ const NodeTxPicker: React.FC<Props> = ({ open, address, onOpenChange, onAdd, nod
                       className={`border-b border-gray-100 dark:border-gray-700 hover:opacity-80 transition-colors ${getTxidColor(tx.originalTxHash || tx.txid)}`}
                     >
                       <td className="p-3">
-                        <Checkbox
-                          checked={selected.has(tx.txid)}
-                          onCheckedChange={() => toggle(tx.txid)}
-                          className="h-4 w-4"
-                        />
+                                  <div className="flex items-center gap-2">
+                                    <Checkbox
+                                      checked={tx.isConnectedToNode || selected.has(tx.txid)}
+                                      onCheckedChange={() => toggle(tx.txid)}
+                                      disabled={tx.isConnectedToNode}
+                                      className={`h-4 w-4 ${tx.isConnectedToNode ? 'opacity-50' : ''}`}
+                                    />
+                                    {tx.isConnectedToNode && (
+                                      <span className="text-xs text-green-600 dark:text-green-400 font-medium bg-green-50 dark:bg-green-900/20 px-2 py-1 rounded">
+                                        🔗 Connected Node
+                                      </span>
+                                    )}
+                                    {tx.isAlreadyConnected && !tx.isConnectedToNode && (
+                                      <span className="text-xs text-gray-500 dark:text-gray-400 italic bg-gray-50 dark:bg-gray-800 px-2 py-1 rounded">
+                                        In graph
+                                      </span>
+                                    )}
+                                  </div>
                       </td>
                       <td className="p-3">
                         <div className="flex items-center gap-3">
@@ -1432,11 +1782,11 @@ const NodeTxPicker: React.FC<Props> = ({ open, address, onOpenChange, onAdd, nod
             </span>
             <Button
               onClick={confirm}
-              disabled={selected.size === 0}
+                disabled={selected.size + filteredTxs.filter(tx => tx.isConnectedToNode).length === 0}
               className="px-6 py-2 bg-orange-600 hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium"
             >
               <TrendingUp className="h-4 w-4 mr-2" />
-              Confirm Expansion ({selected.size})
+              Confirm Expansion ({selected.size + filteredTxs.filter(tx => tx.isConnectedToNode).length})
             </Button>
           </div>
         </div>

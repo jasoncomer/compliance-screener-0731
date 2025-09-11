@@ -1,16 +1,16 @@
-import React, { useEffect, useMemo, useState } from 'react'
-import { Wallet, Search, Filter, ChevronDown, ChevronRight, Bitcoin } from 'lucide-react'
+import React, { useMemo, useState } from 'react'
+import { Wallet, Search, Filter, ChevronDown, ChevronRight, Bitcoin, SortAsc, SortDesc, Download, Upload, Users } from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../../../components/ui/dialog'
 import { Button } from '../../../components/ui/button'
 import { Badge } from '../../../components/ui/badge'
 import { Input } from '../../../components/ui/input'
 import { Card, CardContent } from '../../../components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../../components/ui/tabs'
-import { Checkbox } from '../../../components/ui/checkbox'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../components/ui/select'
+import { Progress } from '../../../components/ui/progress'
 
-import { UTXOClusteringService, WalletCluster, UTXO } from '../../../lib/utxo-clustering'
 import type { FTNode, FTConnection } from './NetworkGraph'
-import { flowtraceService } from '../../../services/flowtraceService'
+import { connectionInvolvesAddress } from '../utils/utxoKeyGeneration'
 
 interface Props {
   open: boolean
@@ -18,7 +18,7 @@ interface Props {
   nodes: FTNode[]
   connections: FTConnection[]
   consolidatedEntities: string[]
-  onConfirmSelection?: (entityKey: string, utxos: UTXO[]) => void
+  onConfirmSelection?: (entityKey: string, utxos: any[]) => void
   onUndoAggregation?: (entityKey: string) => void
 }
 
@@ -31,156 +31,136 @@ export const WalletClusterPanel: React.FC<Props> = ({
   onOpenChange,
   nodes,
   connections,
+  consolidatedEntities,
   onConfirmSelection,
+  onUndoAggregation,
 }) => {
-  const clusteringService = UTXOClusteringService.getInstance()
-
-  const [clusters, setClusters] = useState<WalletCluster[]>([])
   const [searchQuery, setSearchQuery] = useState('')
   const [expandedEntities, setExpandedEntities] = useState<Set<string>>(new Set())
-  const [selectedUtxoIds, setSelectedUtxoIds] = useState<Set<string>>(new Set())
   const [activeTab, setActiveTab] = useState('clusters')
+  const [sortBy, setSortBy] = useState<'utxos' | 'nodes' | 'name' | 'connections'>('nodes')
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
+  const [filterBy, setFilterBy] = useState<'all' | 'large-entities' | 'high-utxos'>('all')
 
-  // Helper: transform connections to utxos (simplified from reference)
-  const connectionsToUtxos = (edges: FTConnection[]): UTXO[] => {
-    const out: UTXO[] = []
-    edges.forEach((c, idx) => {
-      if (!c.txHash || !c.amount) return
-      const amount = parseFloat(String(c.amount))
-      if (!isFinite(amount) || amount <= 0) return
-      const src = nodes.find((n) => n.id === c.from)
-      const dst = nodes.find((n) => n.id === c.to)
-      out.push({
-        id: `u-${c.txHash}-${idx}-src`,
-        txHash: c.txHash,
-        vout: idx,
-        amount,
-        address: src?.label || src?.id || 'unknown',
-        entityName: src?.label,
-        entityType: src?.entityType,
-        fromNodeId: c.from,
-        toNodeId: c.to,
+
+  // Helper function to calculate UTXO count for a node
+  const calculateNodeUtxoCount = (nodeId: string): number => {
+    let utxoCount = 0
+    
+    connections.forEach(conn => {
+      // If this is an aggregated connection, use the original connections for UTXO count
+      const connectionsToUse = conn.originalConnections || [conn]
+      
+      connectionsToUse.forEach(originalConn => {
+        // Count each connection as a UTXO
+        if (originalConn.from === nodeId || originalConn.to === nodeId) {
+          utxoCount++
+        }
       })
-      if (dst && dst !== src) {
-        out.push({
-          id: `u-${c.txHash}-${idx}-dst`,
-          txHash: c.txHash,
-          vout: idx + 1000,
-          amount,
-          address: dst?.label || dst?.id || 'unknown',
-          entityName: dst?.label,
-          entityType: dst?.entityType,
-          fromNodeId: c.from,
-          toNodeId: c.to,
-        })
-      }
     })
-    return out
+    
+    return utxoCount
   }
 
-  // (Optional) enrich missing block info using existing service
-  const enrichUtxos = async (utxos: UTXO[]): Promise<UTXO[]> => {
-    const enriched = [...utxos]
-    const addrSet = new Set<string>()
-    utxos.forEach((u) => {
-      if (!u.blockHeight) addrSet.add(u.address)
-    })
-    for (const addr of addrSet) {
-      try {
-        const resp: any = await flowtraceService.fetchAllTransactions(addr, 50)
-        const txs = resp?.txs || []
-        enriched.forEach((u) => {
-          if (u.address !== addr) return
-          const t = txs.find((t: any) => t.txid === u.txHash)
-          if (t) {
-            u.blockHeight = t.block_height
-            u.confirmations = t.confirmations
-          }
-        })
-      } catch {
-        /* ignore */
-      }
-    }
-    return enriched
-  }
 
-  // Build clusters when inputs change
-  useEffect(() => {
-    const build = async () => {
-      const utxos = await enrichUtxos(connectionsToUtxos(connections))
-      const cls = clusteringService.createWalletClusters(utxos)
-      setClusters(cls)
-    }
-    if (nodes.length && connections.length) build()
-    else setClusters([])
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [nodes, connections])
-
-  // Group clusters by entity key (label)
+  // Group nodes by entity_id for aggregation
   const entityGroups = useMemo(() => {
-    const map = new Map<string, { utxos: UTXO[]; total: number; type?: string }>()
-    clusters.forEach((c) => {
-      const key = c.entityName || c.label
-      if (!key) return
-      const g = map.get(key) || { utxos: [], total: 0, type: c.entityType }
-      g.utxos.push(...c.utxos)
-      g.total += c.totalBalance
-      if (!g.type) g.type = c.entityType
-      map.set(key, g)
+    const entityMap = new Map<string, { 
+      entityId: string
+      entityName: string
+      entityType?: string
+      nodes: FTNode[]
+      totalConnections: number
+      totalUtxoCount: number
+      logoUrl?: string
+    }>()
+    
+    // Group nodes by entityId
+    nodes.forEach(node => {
+      if (!node.entityId) return
+      
+      const existing = entityMap.get(node.entityId)
+      if (existing) {
+        existing.nodes.push(node)
+        existing.totalConnections += connections.filter(c => connectionInvolvesAddress(c, node.id)).length
+        // Calculate UTXO metrics
+        const nodeUtxoCount = calculateNodeUtxoCount(node.id)
+        existing.totalUtxoCount += nodeUtxoCount
+      } else {
+        const nodeUtxoCount = calculateNodeUtxoCount(node.id)
+        entityMap.set(node.entityId, {
+          entityId: node.entityId,
+          entityName: node.label || node.entityId,
+          entityType: node.entityType,
+          nodes: [node],
+          totalConnections: connections.filter(c => connectionInvolvesAddress(c, node.id)).length,
+          totalUtxoCount: nodeUtxoCount,
+          logoUrl: node.logoUrl
+        })
+      }
     })
-    const arr = Array.from(map.entries()).map(([k, v]) => ({ entityKey: k, entityName: k, ...v }))
-    arr.sort((a, b) => b.total - a.total)
+    
+    // Convert to array and filter out single-node entities
+    let arr = Array.from(entityMap.values())
+      .filter(group => group.nodes.length > 1) // Only show entities with multiple nodes
+    
+    // Apply filters
+    if (filterBy !== 'all') {
+      arr = arr.filter(g => {
+        switch (filterBy) {
+          case 'large-entities': return g.nodes.length > 3
+          case 'high-utxos': return g.totalUtxoCount > 10
+          default: return true
+        }
+      })
+    }
+    
+    // Apply sorting
+    arr.sort((a, b) => {
+      let aVal: any, bVal: any
+      switch (sortBy) {
+        case 'utxos': aVal = a.totalUtxoCount; bVal = b.totalUtxoCount; break
+        case 'nodes': aVal = a.nodes.length; bVal = b.nodes.length; break
+        case 'name': aVal = a.entityName.toLowerCase(); bVal = b.entityName.toLowerCase(); break
+        case 'connections': aVal = a.totalConnections; bVal = b.totalConnections; break
+        default: aVal = a.nodes.length; bVal = b.nodes.length
+      }
+      
+      if (sortOrder === 'asc') {
+        return aVal > bVal ? 1 : aVal < bVal ? -1 : 0
+      } else {
+        return aVal < bVal ? 1 : aVal > bVal ? -1 : 0
+      }
+    })
+    
     return arr
-  }, [clusters])
+  }, [nodes, connections, sortBy, sortOrder, calculateNodeUtxoCount])
 
-  const toggleEntityExpand = (k: string) => {
+  const toggleEntityExpand = (entityId: string) => {
     setExpandedEntities((prev) => {
       const next = new Set(prev)
-      next.has(k) ? next.delete(k) : next.add(k)
+      next.has(entityId) ? next.delete(entityId) : next.add(entityId)
       return next
     })
   }
 
-  const isUtxoSelected = (id: string) => selectedUtxoIds.has(id)
-  const toggleUtxo = (id: string) => {
-    setSelectedUtxoIds((prev) => {
-      const n = new Set(prev)
-      n.has(id) ? n.delete(id) : n.add(id)
-      return n
-    })
-  }
 
-  const formatBtc = (v?: number) => {
-    const num = Number(v)
-    return (isFinite(num) ? num : 0).toFixed(8)
-  }
+  // Enhanced statistics
+  const stats = useMemo(() => {
+    const totalNodes = entityGroups.reduce((sum, g) => sum + g.nodes.length, 0)
+    const totalUtxoCount = entityGroups.reduce((sum, g) => sum + g.totalUtxoCount, 0)
+    const totalConnections = entityGroups.reduce((sum, g) => sum + g.totalConnections, 0)
+    const avgNodesPerEntity = entityGroups.length > 0 ? totalNodes / entityGroups.length : 0
 
-  // visible stats
-  const visibleUtxoCount = entityGroups.reduce((sum, g) => sum + g.utxos.length, 0)
-  const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
+    return {
+      totalClusters: entityGroups.length,
+      totalNodes,
+      totalUtxoCount,
+      totalConnections,
+      avgNodesPerEntity
+    }
+  }, [entityGroups])
 
-  useEffect(() => {
-    if (clusters.length) setLastUpdated(new Date())
-  }, [clusters])
-
-  // All UTXOs across clusters
-  const allUtxos = clusters.flatMap((c) => c.utxos)
-  const allIds = allUtxos.map((u) => u.id)
-  const allSelected = allIds.length > 0 && allIds.every((id) => selectedUtxoIds.has(id))
-
-  const toggleAll = () => {
-    setSelectedUtxoIds((prev) => {
-      const next = new Set(prev)
-      if (allSelected) {
-        // clear all
-        allIds.forEach((id) => next.delete(id))
-      } else {
-        // select all
-        allIds.forEach((id) => next.add(id))
-      }
-      return next
-    })
-  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -188,155 +168,281 @@ export const WalletClusterPanel: React.FC<Props> = ({
         <DialogHeader>
           <DialogTitle className="text-lg flex items-center gap-2">
             <Wallet className="h-5 w-5" /> Wallet Clusters
-            <Badge variant="secondary" className="ml-auto">{entityGroups.length}</Badge>
           </DialogTitle>
+          
+          {/* Enhanced Controls */}
           <div className="flex gap-2 pt-2">
             <div className="relative flex-1">
               <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search..." className="pl-8" />
+              <Input 
+                value={searchQuery} 
+                onChange={(e) => setSearchQuery(e.target.value)} 
+                placeholder="Search entities..." 
+                className="pl-8" 
+              />
             </div>
+            <Select value={filterBy} onValueChange={(value: any) => setFilterBy(value)}>
+              <SelectTrigger className="w-32">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All</SelectItem>
+                <SelectItem value="large-entities">Large Entities</SelectItem>
+                <SelectItem value="high-utxos">High UTXOs</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={sortBy} onValueChange={(value: any) => setSortBy(value)}>
+              <SelectTrigger className="w-32">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="utxos">UTXOs</SelectItem>
+                <SelectItem value="nodes">Nodes</SelectItem>
+                <SelectItem value="name">Name</SelectItem>
+                <SelectItem value="connections">Connections</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+            >
+              {sortOrder === 'asc' ? <SortAsc className="h-4 w-4" /> : <SortDesc className="h-4 w-4" />}
+            </Button>
             <Button variant="outline" size="sm" onClick={() => {/* refresh placeholder */}}>
-              <Filter className="h-4 w-4" /> Refresh
+              <Filter className="h-4 w-4" />
             </Button>
           </div>
 
-          {/* Stats */}
-          <div className="grid grid-cols-2 gap-4 pt-2">
+          {/* Enhanced Stats */}
+          <div className="grid grid-cols-4 gap-2 pt-2">
             <div className="text-center p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-              <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">{visibleUtxoCount}</div>
-              <div className="text-xs text-muted-foreground">Total UTXOs</div>
+              <div className="text-lg font-bold text-blue-600 dark:text-blue-400">{stats.totalClusters}</div>
+              <div className="text-xs text-muted-foreground">Entities</div>
             </div>
             <div className="text-center p-2 bg-green-50 dark:bg-green-900/20 rounded-lg">
-              <div className="text-2xl font-bold text-green-600 dark:text-green-400">
-                {formatBtc(
-                  entityGroups.reduce((sum, g) => {
-                    const selectedUtxos = g.utxos.filter(u => selectedUtxoIds.has(u.id))
-                    return sum + selectedUtxos.reduce((acc, u) => acc + u.amount, 0)
-                  }, 0)
-                )}
+              <div className="text-lg font-bold text-green-600 dark:text-green-400">{stats.totalNodes}</div>
+              <div className="text-xs text-muted-foreground">Total Nodes</div>
+            </div>
+            <div className="text-center p-2 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
+              <div className="text-lg font-bold text-purple-600 dark:text-purple-400">
+                {stats.totalUtxoCount}
               </div>
-              <div className="text-xs text-muted-foreground">Total Balance (BTC)</div>
+              <div className="text-xs text-muted-foreground">Total UTXOs</div>
+            </div>
+            <div className="text-center p-2 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
+              <div className="text-lg font-bold text-orange-600 dark:text-orange-400">{stats.totalConnections}</div>
+              <div className="text-xs text-muted-foreground">Connections</div>
             </div>
           </div>
 
-          {lastUpdated && (
-            <div className="text-xs text-muted-foreground text-center pt-2">Last updated: {lastUpdated.toLocaleTimeString()}</div>
-          )}
+          {/* Average Nodes per Entity */}
+          <div className="pt-2">
+            <div className="flex justify-between text-xs text-muted-foreground mb-1">
+              <span>Average Nodes per Entity</span>
+              <span>{stats.avgNodesPerEntity.toFixed(1)}</span>
+            </div>
+            <Progress value={Math.min(100, stats.avgNodesPerEntity * 10)} className="h-2" />
+          </div>
+
 
         </DialogHeader>
 
         <Card className="h-full border-0 shadow-none flex flex-col">
           <CardContent className="pt-0 flex-1 overflow-y-auto">
             <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="clusters">Clusters</TabsTrigger>
-                <TabsTrigger value="details">Details</TabsTrigger>
+              <TabsList className="grid w-full grid-cols-1">
+                <TabsTrigger value="clusters">Entities</TabsTrigger>
               </TabsList>
 
               <TabsContent value="clusters" className="mt-4 space-y-2">
-                {entityGroups
-                  .filter((g) =>
-                    searchQuery ? g.entityName.toLowerCase().includes(searchQuery.toLowerCase()) : true,
-                  )
-                  .map((g) => {
-                    const expanded = expandedEntities.has(g.entityKey)
+                
+                {/* Available Entities (not yet consolidated) */}
+                {entityGroups.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p>No entities with multiple nodes found.</p>
+                    <p className="text-sm">Entities need to have multiple nodes to be shown here.</p>
+                    <p className="text-xs mt-2">Total nodes: {nodes.length}, Total connections: {connections.length}</p>
+                  </div>
+                ) : (
+                  entityGroups
+                    .filter((g) =>
+                      searchQuery ? g.entityName.toLowerCase().includes(searchQuery.toLowerCase()) : true,
+                    )
+                    .length === 0 ? (
+                      <div className="text-center py-8 text-muted-foreground">
+                        <Search className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                        <p>No entities match your search.</p>
+                        <p className="text-sm">Try adjusting your search terms.</p>
+                      </div>
+                    ) : (
+                      entityGroups
+                        .filter((g) =>
+                          searchQuery ? g.entityName.toLowerCase().includes(searchQuery.toLowerCase()) : true,
+                        )
+                        .map((g) => {
+                    const expanded = expandedEntities.has(g.entityId)
+                    
                     return (
                       <div
-                        key={g.entityKey}
-                        className={`p-3 border rounded-lg cursor-pointer text-gray-900 ${expanded ? 'border-blue-500 bg-blue-50' : 'hover:bg-blue-50'}`}
-                        onClick={() => toggleEntityExpand(g.entityKey)}
+                        key={g.entityId}
+                        className={`p-3 border rounded-lg cursor-pointer transition-all ${
+                          expanded 
+                            ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' 
+                            : 'hover:bg-gray-50 dark:hover:bg-gray-800'
+                        } border-l-4 border-l-blue-500`}
+                        onClick={() => toggleEntityExpand(g.entityId)}
                       >
                         <div className="flex justify-between items-center">
                           <div className="flex items-center gap-2">
-                            {expanded ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
-                            <span className="font-medium text-sm">{g.entityName}</span>
+                            {expanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                            <div className="flex items-center gap-2">
+                              {g.logoUrl && (
+                                <img src={g.logoUrl} alt="" className="w-4 h-4 rounded" />
+                              )}
+                              <span className="font-medium text-sm">{g.entityName}</span>
+                              <Badge variant="outline" className="text-xs">
+                                {g.entityType || 'entity'}
+                              </Badge>
+                            </div>
                           </div>
                           <div className="flex items-center gap-2 text-sm">
-                            <span>
-                              {(() => {
-                                const selectedUtxos = g.utxos.filter(u => selectedUtxoIds.has(u.id))
-                                const sum = selectedUtxos.reduce((acc, u) => acc + u.amount, 0)
-                                return `${formatBtc(sum)} BTC`
-                              })()}
-                            </span>
-                            <Badge>{g.utxos.length} UTXOs</Badge>
+                            <div className="text-right">
+                              <div className="font-mono">{g.totalUtxoCount} UTXOs</div>
+                              <div className="text-xs text-muted-foreground">
+                                {g.totalConnections} connections
+                              </div>
+                            </div>
+                            <Badge variant="default">
+                              {g.nodes.length} nodes
+                            </Badge>
 
-                            {/* Per-entity select */}
+                            {/* Aggregate button */}
                             <Button
                               variant="outline"
                               size="sm"
                               onClick={(e) => {
                                 e.stopPropagation()
-                                const allSelected = g.utxos.every((u) => selectedUtxoIds.has(u.id))
-                                setSelectedUtxoIds((prev) => {
-                                  const next = new Set(prev)
-                                  if (allSelected) g.utxos.forEach((u) => next.delete(u.id))
-                                  else g.utxos.forEach((u) => next.add(u.id))
-                                  return next
-                                })
+                                if (onConfirmSelection) {
+                                  onConfirmSelection(g.entityId, [])
+                                }
                               }}
-                              className="h-6 px-2 text-xs dark:text-gray-300"
+                              className="h-6 px-2 text-xs"
                             >
-                              {g.utxos.every((u) => selectedUtxoIds.has(u.id)) ? 'Deselect' : 'Select'}
+                              Aggregate
                             </Button>
                           </div>
                         </div>
+                        
+                        {/* Entity metadata */}
+                        <div className="mt-2 flex items-center gap-4 text-xs text-muted-foreground">
+                          <div className="flex items-center gap-1">
+                            <Users className="h-3 w-3" />
+                            <span>Entity ID: {g.entityId}</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Bitcoin className="h-3 w-3" />
+                            <span>Avg: {Math.round(g.totalUtxoCount / g.nodes.length)} UTXOs/node</span>
+                          </div>
+                        </div>
+                        
                         {expanded && (
                           <div className="mt-3 space-y-1">
-                            {g.utxos.map((u) => (
-                              <div key={u.id} className="flex justify-between items-center text-xs bg-gray-50 rounded p-1">
+                            {g.nodes.map((node) => (
+                              <div key={node.id} className="flex justify-between items-center text-xs bg-gray-50 dark:bg-gray-800 rounded p-2">
                                 <div className="flex items-center gap-2">
-                                  <Checkbox
-                                    checked={isUtxoSelected(u.id)}
-                                    onCheckedChange={() => toggleUtxo(u.id)}
-                                    onClick={(e) => e.stopPropagation()}
-                                  />
-                                  <Bitcoin className="h-3 w-3 text-orange-500" />
-                                  <span className="font-mono">{u.txHash.substring(0, 8)}...</span>
-                                  <span>#{u.vout}</span>
+                                  {node.logoUrl && (
+                                    <img src={node.logoUrl} alt="" className="w-3 h-3 rounded" />
+                                  )}
+                                  <span className="font-mono">{node.id.substring(0, 12)}...</span>
+                                  <span className="text-muted-foreground">{node.label}</span>
                                 </div>
-                                <span>{formatBtc(u.amount)} BTC</span>
+                                <div className="text-right">
+                                  <div className="font-mono">{calculateNodeUtxoCount(node.id)} UTXOs</div>
+                                  <div className="text-muted-foreground">
+                                    {connections.filter(c => connectionInvolvesAddress(c, node.id)).length} connections
+                                  </div>
+                                </div>
                               </div>
                             ))}
                           </div>
                         )}
                       </div>
                     )
-                  })}
+                  })
+                )
+                )}
+
+                {/* Consolidated Entities */}
+                {consolidatedEntities.length > 0 && (
+                  <>
+                    <div className="mt-6 mb-3">
+                      <h3 className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
+                        <Users className="h-4 w-4" />
+                        Consolidated Entities
+                      </h3>
+                    </div>
+                    {consolidatedEntities.map((entityId) => {
+                      const aggNode = nodes.find(n => n.id === `agg:${entityId.replace(/\s+/g, '_')}`)
+                      if (!aggNode) return null
+                      
+                      return (
+                        <div
+                          key={entityId}
+                          className="p-3 border rounded-lg border-l-4 border-l-green-500 bg-green-50 dark:bg-green-900/20"
+                        >
+                          <div className="flex justify-between items-center">
+                            <div className="flex items-center gap-2">
+                              {aggNode.logoUrl && (
+                                <img src={aggNode.logoUrl} alt="" className="w-4 h-4 rounded" />
+                              )}
+                              <span className="font-medium text-sm">{aggNode.label}</span>
+                              <Badge variant="outline" className="text-xs">
+                                {aggNode.entityType || 'entity'}
+                              </Badge>
+                              <Badge variant="default" className="text-xs bg-green-600">
+                                Consolidated
+                              </Badge>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <div className="text-right text-sm">
+                                <div className="font-mono">{calculateNodeUtxoCount(aggNode.id)} UTXOs</div>
+                                <div className="text-xs text-muted-foreground">
+                                  {connections.filter(c => connectionInvolvesAddress(c, aggNode.id)).length} connections
+                                </div>
+                              </div>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  if (onUndoAggregation) {
+                                    onUndoAggregation(entityId)
+                                  }
+                                }}
+                                className="h-6 px-2 text-xs text-red-600 hover:text-red-700 hover:bg-red-50"
+                              >
+                                Un-aggregate
+                              </Button>
+                            </div>
+                          </div>
+                          <div className="mt-2 text-xs text-muted-foreground">
+                            <div className="flex items-center gap-1">
+                              <Users className="h-3 w-3" />
+                              <span>Entity ID: {entityId}</span>
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </>
+                )}
               </TabsContent>
 
-              <TabsContent value="details" className="mt-4">
-                {/* Placeholder: could show selected cluster details here */}
-                <div className="text-center text-muted-foreground py-8">Select a cluster on the left</div>
-              </TabsContent>
+
             </Tabs>
           </CardContent>
 
-          {/* Footer with Select All & Confirm */}
-          <div className="sticky bottom-0 border-t border-border bg-background p-4 flex justify-between items-center">
-            <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
-              <Checkbox checked={allSelected} onCheckedChange={toggleAll} /> Select All ({allIds.length})
-            </label>
-            <Button
-              onClick={() => {
-                if (!onConfirmSelection) return
-                const map = new Map<string, UTXO[]>()
-                allUtxos.forEach((u) => {
-                  if (!selectedUtxoIds.has(u.id)) return
-                  const key = u.entityName || 'unknown'
-                  if (!map.has(key)) map.set(key, [])
-                  map.get(key)!.push(u)
-                })
-
-                map.forEach((utxos, key) => onConfirmSelection(key, utxos))
-
-                setSelectedUtxoIds(new Set())
-              }}
-              disabled={selectedUtxoIds.size === 0}
-            >
-              Confirm ({selectedUtxoIds.size})
-            </Button>
-          </div>
         </Card>
       </DialogContent>
     </Dialog>

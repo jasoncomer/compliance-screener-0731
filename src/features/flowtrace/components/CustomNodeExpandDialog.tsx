@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react'
-import { Dialog, DialogContent, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Dialog, DialogContent, DialogFooter, DialogTitle, DialogDescription } from '@/components/ui/dialog'
+import { Edit3, Trash2, Plus } from 'lucide-react'
+import { FTNode } from './NetworkGraph'
+import { connectionInvolvesAddress } from '../utils/utxoKeyGeneration'
 import { getPopularCurrencies } from '../lib/currency-icons'
-import type { FTNode } from './NetworkGraph'
-import type { FTConnection } from './NetworkGraph'
-import { Plus, Trash2, Edit3 } from 'lucide-react'
 
 interface EdgeConfig {
   targetId: string
@@ -13,6 +13,7 @@ interface EdgeConfig {
   currency: string
   direction: 'out' | 'in'
   date: string
+  utxoKey?: string
 }
 
 interface Props {
@@ -20,8 +21,8 @@ interface Props {
   onOpenChange: (open: boolean) => void
   sourceNode: FTNode
   existingNodes: FTNode[]
-  existingConnections?: FTConnection[]
-  onCreateEdges: (edges: EdgeConfig[]) => void
+  existingConnections?: { from?: string; to?: string; utxoKey?: string; amount?: string | number; currency?: string; date?: string; txHash?: string; isAggregated?: boolean; originalConnections?: any[] }[]
+  onCreateEdges?: (edges: EdgeConfig[]) => void
   onEditEdges?: (edges: EdgeConfig[]) => void
 }
 
@@ -31,13 +32,50 @@ const CustomNodeExpandDialog: React.FC<Props> = ({ open, onOpenChange, sourceNod
   // Unique list of available target nodes (excluding source)
   const otherNodes = Array.from(new Map(existingNodes.filter(n => n.id !== sourceNode.id).map(n => [n.id, n])).values())
   
-  const buildPrefill = () => existingConnections.map(c => ({
-    targetId: c.from === sourceNode.id ? c.to : c.from,
-    amount: c.amount,
-    currency: c.currency,
-    date: c.date?.split('T')[0] || new Date().toISOString().split('T')[0],
-    direction: (c.from === sourceNode.id ? 'out' : 'in') as 'in' | 'out'
-  }))
+  const buildPrefill = () => {
+    const edgeMap = new Map<string, EdgeConfig>();
+    
+    existingConnections.forEach(c => {
+      // Use connection key approach to determine if connection involves sourceNode
+      if (!connectionInvolvesAddress(c, sourceNode.id)) return;
+      
+      // Determine target address using simple from/to matching (most reliable)
+      const targetId = c.from === sourceNode.id ? c.to : c.from;
+      
+      // Handle aggregated connections
+      if (c.originalConnections) {
+        c.originalConnections.forEach(oc => {
+          // Use simple from/to matching for original connections too
+          const ocTargetId = oc.from === sourceNode.id ? oc.to : oc.from;
+          
+          if (ocTargetId && !edgeMap.has(ocTargetId)) {
+            edgeMap.set(ocTargetId, {
+              targetId: ocTargetId,
+              amount: String(c.amount || '0'), // Use aggregated amount
+              currency: c.currency || 'USD',
+              date: c.date?.split('T')[0] || new Date().toISOString().split('T')[0],
+              direction: (oc.from === sourceNode.id ? 'out' : 'in') as 'in' | 'out',
+              utxoKey: oc.utxoKey // Preserve UTXO key
+            });
+          }
+        });
+      } else {
+        // Handle individual connections
+        if (targetId && !edgeMap.has(targetId)) {
+          edgeMap.set(targetId, {
+            targetId,
+            amount: String(c.amount || '0'),
+            currency: c.currency || 'USD',
+            date: c.date?.split('T')[0] || new Date().toISOString().split('T')[0],
+            direction: (c.from === sourceNode.id ? 'out' : 'in') as 'in' | 'out',
+            utxoKey: c.utxoKey
+          });
+        }
+      }
+    });
+    
+    return Array.from(edgeMap.values());
+  }
 
   const [connectedEdges, setConnectedEdges] = useState<EdgeConfig[]>(() => buildPrefill())
   const [newEdges, setNewEdges] = useState<EdgeConfig[]>([])
@@ -88,7 +126,7 @@ const CustomNodeExpandDialog: React.FC<Props> = ({ open, onOpenChange, sourceNod
     if (allEdges.length) {
       if (existingConnections.length && onEditEdges) {
         onEditEdges(allEdges)
-      } else {
+      } else if (onCreateEdges) {
         onCreateEdges(allEdges)
       }
       setConnectedEdges([])

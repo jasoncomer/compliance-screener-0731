@@ -27,8 +27,11 @@ export interface FTConnection {
   currency: string
   date: string
   txHash: string
+  txid?: string // Transaction ID for display in Transaction Details
   // Unique key to identify a specific UTXO within a tx when in individual mode
   utxoKey?: string
+  // Primary connection key in format: source:destination:utxo:amount
+  connectionKey?: string
   type?: "in" | "out"
   usdValue?: string
   fee?: string
@@ -382,86 +385,127 @@ export const NetworkGraph = forwardRef<NetworkGraphHandle, NetworkGraphProps>(({
       const drawableConnections = connections.filter((c) => c.from !== c.to)
 
       drawableConnections.forEach((connection) => {
-        // Use the original connection type or determine from the connection data
-        const connectionType = connection.type || "out"
-        const key = JSON.stringify({ from: connection.from, to: connection.to, type: connectionType })
-        if (!connectionGroups.has(key)) {
-          connectionGroups.set(key, [])
+        // Group by node pair only to handle bidirectional connections
+        // Each UTXO maintains its uniqueness through its utxoKey
+        const nodePair = [connection.from, connection.to].sort().join('|')
+        
+        if (!connectionGroups.has(nodePair)) {
+          connectionGroups.set(nodePair, [])
         }
-        connectionGroups.get(key)!.push(connection)
+        connectionGroups.get(nodePair)!.push(connection)
       })
       
       console.log('🔗 Processing connections:', {
         total: drawableConnections.length,
         groups: connectionGroups.size,
         connections: Array.from(connectionGroups.entries()).map(([key, conns]) => ({
-          key: JSON.parse(key),
+          key: key,
           count: conns.length
         }))
       });
 
       connectionGroups.forEach((connections, key) => {
-        const { from: fromId, to: toId } = JSON.parse(key)
+        const [fromId, toId] = key.split('|')
         const fromNode = nodes.find((n) => n.id === fromId)
         const toNode = nodes.find((n) => n.id === toId)
         if (!fromNode || !toNode) {
           return
         }
 
-        // Consolidate all connections between the same pair of nodes into a single aggregated edge
-        const edgeColor = connections[0]?.customColor || (isDark ? "#6b7280" : "#9ca3af")
+        // Separate connections by direction to handle bidirectional flow
+        // Since fromId and toId are sorted in the grouping key, we need to check the actual connection direction
+        const outgoingConnections = connections.filter(conn => 
+          conn.from === fromId && conn.to === toId
+        )
+        const incomingConnections = connections.filter(conn => 
+          conn.from === toId && conn.to === fromId
+        )
 
-        // Calculate aggregated values (total amount and UTXO count)
-        const totalAmount = connections.reduce((sum, conn) => sum + parseFloat(conn.amount || "0"), 0).toFixed(8)
-        const totalFormatted = formatAmount(String(totalAmount))
-        const utxoCount = connections.length
-        const currency = connections[0]?.currency || "BTC"
+        // Draw outgoing connections (from first node to second node)
+        if (outgoingConnections.length > 0) {
+          const edgeColor = outgoingConnections[0]?.customColor || (isDark ? "#6b7280" : "#9ca3af")
+          const totalAmount = outgoingConnections.reduce((sum, conn) => sum + parseFloat(conn.amount || "0"), 0).toFixed(8)
+          const totalFormatted = formatAmount(String(totalAmount))
+          const utxoCount = outgoingConnections.length
+          const currency = outgoingConnections[0]?.currency || "BTC"
 
-        // In aggregated mode, we don't need offset calculations since edges are always centered
+          // Draw the line
+          ctx.strokeStyle = edgeColor
+          ctx.lineWidth = 2
+          ctx.beginPath()
+          ctx.moveTo(fromNode.x, fromNode.y)
+          ctx.lineTo(toNode.x, toNode.y)
+          ctx.stroke()
 
-        // In aggregated mode, always center edges on nodes regardless of multiple connections
-        // This is the key difference from individual mode - consolidated edges should be centered
-        const midX = (fromNode.x + toNode.x) / 2
-        const midY = (fromNode.y + toNode.y) / 2
+          // Draw arrow
+          const dx = toNode.x - fromNode.x;
+          const dy = toNode.y - fromNode.y;
+          drawArrow(ctx, fromNode.x, fromNode.y, toNode.x, toNode.y, undefined, edgeColor)
 
-        // Draw the line first - always centered
-        ctx.strokeStyle = edgeColor
-        ctx.lineWidth = 2
-        ctx.beginPath()
-        ctx.moveTo(fromNode.x, fromNode.y)
-        ctx.lineTo(toNode.x, toNode.y)
-        ctx.stroke()
+          // Draw amount text
+          const isCustomNode = fromNode.type === 'custom' || toNode.type === 'custom'
+          const amountText = isCustomNode 
+            ? `${totalFormatted} ${currency}`
+            : utxoCount > 1 
+              ? `${totalFormatted} ${currency} (${utxoCount} UTXOs)`
+              : `${totalFormatted} ${currency}`
 
-        // Draw arrow - always centered
-        const dx = toNode.x - fromNode.x;
-        const dy = toNode.y - fromNode.y;
-        drawArrow(ctx, fromNode.x, fromNode.y, toNode.x, toNode.y, undefined, edgeColor)
+          const textAngle = Math.atan2(dy, dx);
+          const textX = (fromNode.x + toNode.x) / 2 + Math.cos(textAngle) * 20;
+          const textY = (fromNode.y + toNode.y) / 2 + Math.sin(textAngle) * 20;
 
-        // Create amount text for aggregated connection
-        // For custom nodes, don't show UTXO count
-        // For regular nodes, only show UTXO count if more than 1
-        const isCustomNode = fromNode.type === 'custom' || toNode.type === 'custom'
-        const amountText = isCustomNode 
-          ? `${totalFormatted} ${currency}`
-          : utxoCount > 1 
-            ? `${totalFormatted} ${currency} (${utxoCount} UTXOs)`
-            : `${totalFormatted} ${currency}`
-
-        const textAngle = Math.atan2(dy, dx);
-        let finalAngle = textAngle;
-        if (textAngle > Math.PI / 2 || textAngle < -Math.PI / 2) {
-          finalAngle += Math.PI;
+          ctx.save();
+          ctx.translate(textX, textY);
+          ctx.rotate(textAngle);
+          ctx.fillStyle = isDark ? "#ffffff" : "#000000";
+          ctx.font = "12px sans-serif";
+          ctx.textAlign = "center";
+          ctx.fillText(amountText, 0, 0);
+          ctx.restore();
         }
 
-        ctx.fillStyle = isDark ? "#e5e7eb" : "#374151";
-        ctx.font = "12px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
-        ctx.textAlign = "center";
+        // Draw incoming connections (from second node to first node) if they exist
+        if (incomingConnections.length > 0) {
+          const edgeColor = incomingConnections[0]?.customColor || (isDark ? "#9ca3af" : "#6b7280")
+          const totalAmount = incomingConnections.reduce((sum, conn) => sum + parseFloat(conn.amount || "0"), 0).toFixed(8)
+          const totalFormatted = formatAmount(String(totalAmount))
+          const utxoCount = incomingConnections.length
+          const currency = incomingConnections[0]?.currency || "BTC"
 
-        ctx.save();
-        ctx.translate(midX, midY);
-        ctx.rotate(finalAngle);
-        ctx.fillText(amountText, 0, 0);
-        ctx.restore();
+          // Draw the line with offset to avoid overlap
+          ctx.strokeStyle = edgeColor
+          ctx.lineWidth = 2
+          ctx.beginPath()
+          ctx.moveTo(toNode.x, toNode.y)
+          ctx.lineTo(fromNode.x, fromNode.y)
+          ctx.stroke()
+
+          // Draw arrow
+          const dx = fromNode.x - toNode.x;
+          const dy = fromNode.y - toNode.y;
+          drawArrow(ctx, toNode.x, toNode.y, fromNode.x, fromNode.y, undefined, edgeColor)
+
+          // Draw amount text with offset
+          const isCustomNode = fromNode.type === 'custom' || toNode.type === 'custom'
+          const amountText = isCustomNode 
+            ? `${totalFormatted} ${currency}`
+            : utxoCount > 1 
+              ? `${totalFormatted} ${currency} (${utxoCount} UTXOs)`
+              : `${totalFormatted} ${currency}`
+
+          const textAngle = Math.atan2(dy, dx);
+          const textX = (fromNode.x + toNode.x) / 2 - Math.cos(textAngle) * 20;
+          const textY = (fromNode.y + toNode.y) / 2 - Math.sin(textAngle) * 20;
+
+          ctx.save();
+          ctx.translate(textX, textY);
+          ctx.rotate(textAngle);
+          ctx.fillStyle = isDark ? "#ffffff" : "#000000";
+          ctx.font = "12px sans-serif";
+          ctx.textAlign = "center";
+          ctx.fillText(amountText, 0, 0);
+          ctx.restore();
+        }
       })
     } else {
       console.log('🔀 Using INDIVIDUAL mode');
@@ -747,25 +791,45 @@ export const NetworkGraph = forwardRef<NetworkGraphHandle, NetworkGraphProps>(({
       }
       
       // Risk score
-      if (typeof n.risk === 'number') {
-        const riskColor = n.risk > 70 ? '#ef4444' : n.risk > 40 ? '#f59e0b' : '#10b981';
-        ctx.fillStyle = riskColor;
-        ctx.font = `bold ${10 / zoom}px Inter, system-ui, sans-serif`;
-        ctx.textAlign = 'center';
-        ctx.fillText(`Risk: ${n.risk}`, n.x, n.y + yOffset);
-        yOffset += 14 / zoom;
+      if (n.risk !== undefined && n.risk !== null) {
+        const riskValue = typeof n.risk === 'number' ? n.risk : parseFloat(String(n.risk));
+        if (!isNaN(riskValue) && riskValue >= 0) {
+          const riskColor = riskValue > 70 ? '#ef4444' : riskValue > 40 ? '#f59e0b' : '#10b981';
+          ctx.fillStyle = riskColor;
+          ctx.font = `bold ${10 / zoom}px Inter, system-ui, sans-serif`;
+          ctx.textAlign = 'center';
+          ctx.fillText(`Risk: ${Math.round(riskValue)}`, n.x, n.y + yOffset);
+          yOffset += 14 / zoom;
+          
+          // Debug logging for all nodes with risk scores
+          console.log('🔍 Node risk display:', {
+            nodeId: n.id,
+            label: n.label,
+            risk: n.risk,
+            riskValue,
+            rounded: Math.round(riskValue),
+            isAggregated: n.id.startsWith('agg:')
+          });
+        } else {
+          // Debug logging for nodes without valid risk scores
+          console.log('⚠️ Node missing valid risk score:', {
+            nodeId: n.id,
+            label: n.label,
+            risk: n.risk,
+            riskValue,
+            isAggregated: n.id.startsWith('agg:')
+          });
+        }
+      } else {
+        // Debug logging for nodes without risk property
+        console.log('❌ Node missing risk property:', {
+          nodeId: n.id,
+          label: n.label,
+          risk: n.risk,
+          isAggregated: n.id.startsWith('agg:')
+        });
       }
       
-      // Balance
-      if (n.balance !== undefined) {
-        const balanceValue = typeof n.balance === 'number' ? n.balance / 100000000 : Number(n.balance) / 100000000;
-        const balanceText = balanceValue.toFixed(8);
-        ctx.fillStyle = '#10b981';
-        ctx.font = `${10 / zoom}px Inter, system-ui, sans-serif`;
-        ctx.textAlign = 'center';
-        ctx.fillText(`Balance: ${balanceText}`, n.x, n.y + yOffset);
-        yOffset += 14 / zoom;
-      }
       
       // USD Value
       if (n.usdValue !== undefined) {
@@ -1124,6 +1188,7 @@ export const NetworkGraph = forwardRef<NetworkGraphHandle, NetworkGraphProps>(({
                 isAggregated: true,
                 utxoCount: sameGroup.length,
                 txHash: sameGroup.map(c => c.txHash).join(","),
+                txid: sameGroup.map(c => c.txid).filter(Boolean).join(","),
                 date: sameGroup.map(c => c.date).join(","),
                 _aggregatedText: {
                   amount: totalAmount,
