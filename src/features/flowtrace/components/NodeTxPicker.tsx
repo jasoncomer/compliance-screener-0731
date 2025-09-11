@@ -338,11 +338,15 @@ const NodeTxPicker: React.FC<Props> = ({ open, address, onOpenChange, onAdd, nod
           });
         }
 
-        // Use fetchAllTransactions to get transactions for the address (limit to 50 for better performance)
-        const resp = await flowtraceService.fetchAllTransactions(address, 50).catch(() => ({ txs: [], pagination: { totalTxs: 0 } } as any));
+        // Use optimized endpoint to get transactions for the address
+        console.log('🚀 NodeTxPicker: Using optimized FlowTrace endpoint for better performance');
+        const optimizedResponse = await flowtraceService.expandNodeOptimized(address, {
+          includeRiskScores: true,
+          includeTransactions: true
+        });
 
-        // Show both UTXOs (address in outputs) and spending transactions (address in inputs)
-        const allTransactions = (resp as any)?.txs || [];
+        // Extract transactions from optimized response
+        const allTransactions = optimizedResponse.data.transactions || [];
         console.log('📊 Raw transactions:', allTransactions.slice(0, 2)); // Log first 2 transactions
 
         // Debug: Check what date fields are available in transaction data
@@ -377,87 +381,52 @@ const NodeTxPicker: React.FC<Props> = ({ open, address, onOpenChange, onAdd, nod
           }
         }
 
-        // Get all unique addresses from transactions for attribution and risk scoring
-        const allAddresses = new Set<string>();
-        allTransactions.forEach((tx: any) => {
-          (tx.inputs || []).forEach((i: any) => allAddresses.add(i.addr));
-          (tx.outputs || []).forEach((o: any) => allAddresses.add(o.addr));
+        // Extract data from optimized response (no need for separate API calls!)
+        const { enhancedData, riskScores } = optimizedResponse.data;
+        
+        // Build address entities and logos from enhanced data
+        const addressEntities: Record<string, any> = {};
+        const addressLogos: Record<string, string> = {};
+        const addressRiskScores: Record<string, number> = {};
+
+        enhancedData.forEach((item: any) => {
+          const address = item.address;
+          if (address && item.attribution) {
+            addressEntities[address] = {
+              name: item.attribution.entity_proper_name || item.attribution.entity,
+              entity: item.attribution.entity,
+              bo: item.attribution.bo,
+              cospend_id: item.attribution.cospend_id || address
+            };
+          }
+          
+          if (address && item.entityProfile?.logo) {
+            addressLogos[address] = item.entityProfile.logo;
+          }
         });
 
-        console.log('📍 Unique addresses found:', Array.from(allAddresses));
-
-        // STEP 1: Fetch attribution data to map addresses to entities
-        let addressEntities: Record<string, any> = {};
-        let addressLogos: Record<string, string> = {};
-
-        if (allAddresses.size > 0) {
-          try {
-            console.log('🔄 Fetching attribution data for addresses...');
-            const attributionResponse = await flowtraceService.fetchAttribution(Array.from(allAddresses));
-            console.log('📊 Raw attribution response:', attributionResponse);
-
-            if (attributionResponse && attributionResponse.data) {
-              attributionResponse.data.forEach((item: any) => {
-                const address = item.address || item.addr;
-                if (address && item.entity) {
-                  // Store entity identifiers
-                  addressEntities[address] = {
-                    name: item.entity_proper_name || item.entity,
-                    entity: item.entity,
-                    bo: item.bo,
-                    cospend_id: item.cospend_id || address
-                  };
-
-                  // Extract logo if available
-                  if (item.logo) {
-                    addressLogos[address] = item.logo;
-                  }
-                }
-              });
-            }
-
-            console.log('✅ Attribution data loaded for', Object.keys(addressEntities).length, 'addresses');
-            console.log('📋 Address entities mapping:', addressEntities);
-            console.log('🖼️ Address logos mapping:', addressLogos);
-          } catch (error) {
-            console.error('❌ Error fetching attribution data:', error);
-            console.log('⚠️ Continuing without attribution data...');
+        // Extract risk scores from optimized response
+        Object.entries(riskScores).forEach(([addr, riskData]: [string, any]) => {
+          if (riskData?.overallRisk) {
+            addressRiskScores[addr] = Math.round(riskData.overallRisk * 100);
           }
-        }
+        });
 
-        // STEP 2: Batch fetch risk scores for all addresses (with timeout to prevent hanging)
-        const addressRiskScores: Record<string, number> = {};
-        if (allAddresses.size > 0) {
-          console.log('🔍 Fetching risk scores for', allAddresses.size, 'addresses...');
-          try {
-            const riskPromises = Array.from(allAddresses).map(async (addr) => {
-              try {
-                // Add timeout to prevent hanging on slow risk score API
-                const riskPromise = flowtraceService.fetchRiskScore(addr, 'address');
-                const timeoutPromise = new Promise((_, reject) => 
-                  setTimeout(() => reject(new Error('Risk score timeout')), 5000)
-                );
-                
-                const riskResponse = await Promise.race([riskPromise, timeoutPromise]);
-                const score = (riskResponse as any)?.data?.overallRisk ? Math.round((riskResponse as any).data.overallRisk * 100) : undefined;
-                return { address: addr, score };
-              } catch (error) {
-                console.warn(`Risk score fetch failed for ${addr}:`, error);
-                return { address: addr, score: undefined };
-              }
-            });
-
-            const riskResults = await Promise.allSettled(riskPromises);
-            riskResults.forEach((result) => {
-              if (result.status === 'fulfilled' && result.value.score !== undefined) {
-                addressRiskScores[result.value.address] = result.value.score;
-              }
-            });
-            console.log('✅ Risk scores fetched:', Object.keys(addressRiskScores).length, 'addresses');
-          } catch (error) {
-            console.warn('Batch risk scoring failed, continuing without risk data:', error);
-          }
-        }
+        console.log('✅ Using optimized data - no separate API calls needed!');
+        console.log('📋 Address entities:', Object.keys(addressEntities).length);
+        console.log('🖼️ Address logos:', Object.keys(addressLogos).length);
+        console.log('🎯 Risk scores:', Object.keys(addressRiskScores).length);
+        
+        // Performance metrics
+        console.log(`\n🎯 ===== NODE TX PICKER PERFORMANCE =====`);
+        console.log(`📍 Address: ${address}`);
+        console.log(`⚡ Backend Time: ${optimizedResponse.performance.totalTime}ms`);
+        console.log(`📊 API Calls Saved: ${optimizedResponse.performance.apiCallsSaved}`);
+        console.log(`🎯 Addresses Processed: ${optimizedResponse.performance.addressesProcessed}`);
+        console.log(`💾 Cache Hit Rate: ${(optimizedResponse.performance as any).cacheHitRate || 'N/A'}`);
+        console.log(`📈 Total Transactions: ${optimizedResponse.data.summary.totalTransactions}`);
+        console.log(`🔗 Unique Addresses: ${optimizedResponse.data.summary.uniqueAddresses}`);
+        console.log(`==========================================\n`);
 
         // STEP 3: Enhance transactions with entity and risk information
         // Create individual rows for each input/output to show all UTXOs (like working example)
