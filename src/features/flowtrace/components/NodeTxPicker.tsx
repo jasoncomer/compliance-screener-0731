@@ -1387,11 +1387,10 @@ const NodeTxPicker: React.FC<Props> = ({ open, address, onOpenChange, onAdd, nod
                                       In graph
                                     </span>
                                   )}
-                                  {/* Connection status info */}
-                                  {process.env.NODE_ENV === 'development' && (
+                                  {/* Connection status info - only show when there's actual content */}
+                                  {process.env.NODE_ENV === 'development' && tx.isConnectedToNode && (
                                     <span className="text-xs text-blue-500">
-                                      {tx.isConnectedToNode && 'Connected Node'}
-                                      {tx.isConnectedToNode && (tx.isAlreadyConnected ? ' | In Graph' : ' | Not In Graph')}
+                                      Connected Node{tx.isAlreadyConnected ? ' | In Graph' : ' | Not In Graph'}
                                     </span>
                                   )}
                                 </div>
