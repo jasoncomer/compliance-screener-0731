@@ -54,7 +54,7 @@ interface EnhancedTransaction {
   connectedNodeId?: string; // The ID of the node this UTXO is connected to
 }
 
-const NodeTxPicker: React.FC<Props> = ({ open, address, onOpenChange, onAdd, nodeLabel, existingConnections = [] }) => {
+const NodeTxPicker: React.FC<Props> = ({ open, address, onOpenChange, onAdd, nodeLabel, existingConnections = [], sourceNode = null }) => {
   const [loading, setLoading] = useState(false);
   const [txs, setTxs] = useState<EnhancedTransaction[]>([]);
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -640,8 +640,8 @@ const NodeTxPicker: React.FC<Props> = ({ open, address, onOpenChange, onAdd, nod
                 originalTxHash: tx.txid // Store the original transaction hash
               };
 
-              // Add connection matching logic for outgoing transactions
-              if (transactionDirection === 'out') {
+              // Add connection matching logic for incoming transactions
+              if (transactionDirection === 'in') {
                 const utxoKey = generateUTXOKey({
                   originalTxHash: transaction.originalTxHash,
                   txid: transaction.txid,
@@ -649,8 +649,8 @@ const NodeTxPicker: React.FC<Props> = ({ open, address, onOpenChange, onAdd, nod
                   originalOutputIndex: transaction.originalOutputIndex,
                   inputs: transaction.inputs,
                   outputs: transaction.outputs,
-                  sourceAddress: address,
-                  destinationAddress: outputAddress,
+                  sourceAddress: inputAddress,
+                  destinationAddress: address,
                   amount: transaction.amount
                 });
                 
@@ -702,7 +702,7 @@ const NodeTxPicker: React.FC<Props> = ({ open, address, onOpenChange, onAdd, nod
                 transaction.isAlreadyConnected = !!connectionInfo;
                 transaction.isConnectedToNode = isConnectedToNode;
                 transaction.connectedNodeId = connectedNodeId;
-              } else if (transactionDirection === 'in') {
+              } else if (transactionDirection === 'out') {
                 const utxoKey = generateUTXOKey({
                   originalTxHash: transaction.originalTxHash,
                   txid: transaction.txid,
@@ -837,8 +837,8 @@ const NodeTxPicker: React.FC<Props> = ({ open, address, onOpenChange, onAdd, nod
                 originalTxHash: tx.txid // Store the original transaction hash
               };
 
-              // Add connection matching logic for outgoing transactions
-              if (transactionDirection === 'out') {
+              // Add connection matching logic for incoming transactions
+              if (transactionDirection === 'in') {
                 const utxoKey = generateUTXOKey({
                   originalTxHash: transaction.originalTxHash,
                   txid: transaction.txid,
@@ -846,8 +846,8 @@ const NodeTxPicker: React.FC<Props> = ({ open, address, onOpenChange, onAdd, nod
                   originalOutputIndex: transaction.originalOutputIndex,
                   inputs: transaction.inputs,
                   outputs: transaction.outputs,
-                  sourceAddress: address,
-                  destinationAddress: outputAddress,
+                  sourceAddress: inputAddress,
+                  destinationAddress: address,
                   amount: transaction.amount
                 });
                 
@@ -1454,11 +1454,11 @@ const NodeTxPicker: React.FC<Props> = ({ open, address, onOpenChange, onAdd, nod
                                       disabled={tx.isConnectedToNode}
                                       className={`h-4 w-4 ${tx.isConnectedToNode ? 'opacity-50' : ''}`}
                                     />
-                                    {tx.isConnectedToNode && (
-                                      <span className="text-xs text-green-600 dark:text-green-400 font-medium bg-green-50 dark:bg-green-900/20 px-2 py-1 rounded">
-                                        🔗 Connected Node
-                                      </span>
-                                    )}
+                                     {tx.isConnectedToNode && (
+                                       <span className="text-xs text-green-600 dark:text-green-400 font-medium bg-green-50 dark:bg-green-900/20 px-2 py-1 rounded">
+                                         🔗 Connected Node
+                                       </span>
+                                     )}
                                     {tx.isAlreadyConnected && !tx.isConnectedToNode && (
                                       <span className="text-xs text-gray-500 dark:text-gray-400 italic bg-gray-50 dark:bg-gray-800 px-2 py-1 rounded">
                                         In graph
@@ -1662,11 +1662,11 @@ const NodeTxPicker: React.FC<Props> = ({ open, address, onOpenChange, onAdd, nod
                                       disabled={tx.isConnectedToNode}
                                       className={`h-4 w-4 ${tx.isConnectedToNode ? 'opacity-50' : ''}`}
                                     />
-                                    {tx.isConnectedToNode && (
-                                      <span className="text-xs text-green-600 dark:text-green-400 font-medium bg-green-50 dark:bg-green-900/20 px-2 py-1 rounded">
-                                        🔗 Connected Node
-                                      </span>
-                                    )}
+                                     {tx.isConnectedToNode && (
+                                       <span className="text-xs text-green-600 dark:text-green-400 font-medium bg-green-50 dark:bg-green-900/20 px-2 py-1 rounded">
+                                         🔗 Connected Node
+                                       </span>
+                                     )}
                                     {tx.isAlreadyConnected && !tx.isConnectedToNode && (
                                       <span className="text-xs text-gray-500 dark:text-gray-400 italic bg-gray-50 dark:bg-gray-800 px-2 py-1 rounded">
                                         In graph
