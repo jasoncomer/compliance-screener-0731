@@ -1380,9 +1380,6 @@ const NodeTxPicker: React.FC<Props> = ({ open, address, onOpenChange, onAdd, nod
                                       <span className="text-xs text-green-600 dark:text-green-400 font-medium bg-green-50 dark:bg-green-900/20 px-2 py-1 rounded">
                                         🔗 Connected Node
                                       </span>
-                                      <span className="text-xs text-gray-500 dark:text-gray-400">
-                                        (Read-only)
-                                      </span>
                                     </div>
                                   )}
                                   {tx.isAlreadyConnected && !tx.isConnectedToNode && (
@@ -1596,8 +1593,8 @@ const NodeTxPicker: React.FC<Props> = ({ open, address, onOpenChange, onAdd, nod
                             className="h-4 w-4"
                           />
                           {tx.isConnectedToNode && (
-                            <span className="text-xs text-green-600 dark:text-green-400 font-medium">
-                              Connected Node
+                            <span className="text-xs text-green-600 dark:text-green-400 font-medium bg-green-50 dark:bg-green-900/20 px-2 py-1 rounded">
+                              🔗 Connected Node
                             </span>
                           )}
                           {tx.isAlreadyConnected && !tx.isConnectedToNode && (
