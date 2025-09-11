@@ -55,19 +55,28 @@ export const EntityPanel: React.FC<EntityPanelProps> = ({ address, selectedNode 
   const [riskData, setRiskData] = useState<any>(null)
 
   useEffect(() => {
-    if (!selectedNode?.address) return
+    if (!address) return
 
     const fetchRiskData = async () => {
       try {
-        const data = await flowtraceService.fetchRiskScore(selectedNode.address || '', "address")
-        setRiskData(data)
+        // Use optimized endpoint instead of separate risk score call
+        const optimizedResponse = await flowtraceService.expandNodeOptimized(address, {
+          includeRiskScores: true,
+          includeTransactions: false // We only need risk scores here
+        });
+        
+        // Extract risk score data from optimized response
+        const riskScores = optimizedResponse.data.riskScores[address];
+        if (riskScores) {
+          setRiskData(riskScores);
+        }
       } catch (err) {
         console.error("Failed to fetch risk data", err)
       }
     }
 
     fetchRiskData()
-  }, [selectedNode?.address])
+  }, [address])
 
   return (
     <Card className="w-full h-full overflow-y-auto">

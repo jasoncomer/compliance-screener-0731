@@ -81,8 +81,6 @@ const RiskScoreModal: React.FC<RiskScoreModalProps> = ({
   const renderRiskScoreCards = () => {
     if (!riskScores) return null;
 
-    // Debug logging to understand the data structure
-    console.log('🔍 RiskScoreModal - riskScores data:', riskScores);
 
     // Handle different possible data formats
     const getRiskScore = (value: number | undefined): number => {
@@ -98,12 +96,6 @@ const RiskScoreModal: React.FC<RiskScoreModalProps> = ({
     const entityRiskScore = getRiskScore(riskScores.entityRisk?.aggregateScore);
     const jurisdictionRiskScore = getRiskScore(riskScores.jurisdictionRisk?.aggregateScore);
 
-    console.log('🔍 RiskScoreModal - calculated scores:', {
-      overallRiskScore,
-      transactionRiskScore,
-      entityRiskScore,
-      jurisdictionRiskScore
-    });
 
     return (
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '24px' }}>

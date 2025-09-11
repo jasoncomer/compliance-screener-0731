@@ -105,8 +105,6 @@ const FlowTracePage: React.FC = () => {
   const fetchAndSetLeftPanelData = async (address: string) => {
     setIsLeftPanelLoading(true);
     try {
-      console.log(`🚀 FlowTrace: Starting optimized data fetch for ${address}`);
-      const startTime = Date.now();
 
       // Use the new optimized endpoint that replaces 15-20 API calls with 1
       const optimizedResponse = await flowtraceService.expandNodeOptimized(address, {
@@ -114,30 +112,6 @@ const FlowTracePage: React.FC = () => {
         includeTransactions: true
       });
 
-      const endTime = Date.now();
-      const frontendTime = endTime - startTime;
-      const backendTime = optimizedResponse.performance.totalTime;
-      
-      // 🎯 DETAILED PERFORMANCE METRICS
-      console.log(`\n🎯 ===== FLOWTRACE PERFORMANCE METRICS =====`);
-      console.log(`📍 Address: ${address}`);
-      console.log(`⏱️  Frontend Time: ${frontendTime}ms`);
-      console.log(`⚡ Backend Time: ${backendTime}ms`);
-      console.log(`📊 API Calls Saved: ${optimizedResponse.performance.apiCallsSaved}`);
-      console.log(`🎯 Addresses Processed: ${optimizedResponse.performance.addressesProcessed}`);
-      console.log(`💾 Cache Hit Rate: ${(optimizedResponse.performance as any).cacheHitRate || 'N/A'}`);
-      console.log(`📈 Total Transactions: ${optimizedResponse.data.summary.totalTransactions}`);
-      console.log(`🔗 Unique Addresses: ${optimizedResponse.data.summary.uniqueAddresses}`);
-      console.log(`🏷️  Has Attribution: ${optimizedResponse.data.summary.hasAttribution ? '✅ Yes' : '❌ No'}`);
-      
-      // Comparison with previous method (estimated)
-      const estimatedOldTime = optimizedResponse.performance.apiCallsSaved * 50; // 50ms per API call
-      const speedImprovement = Math.round(estimatedOldTime / backendTime);
-      console.log(`\n📊 PERFORMANCE COMPARISON:`);
-      console.log(`🐌 Estimated Old Method: ~${estimatedOldTime}ms`);
-      console.log(`🚀 New Optimized Method: ${backendTime}ms`);
-      console.log(`🎯 Speed Improvement: ${speedImprovement}x faster!`);
-      console.log(`==========================================\n`);
 
       // Extract data from optimized response
       const { transactions, enhancedData, riskScores, summary } = optimizedResponse.data;
@@ -304,6 +278,8 @@ const FlowTracePage: React.FC = () => {
   const handleTrace = async () => {
     if (!address) return;
     setIsLoading(true);
+    
+    
     try {
       // Set both center node and current address to ensure left panel shows correct data
       setCenterNodeId(address);
@@ -332,8 +308,11 @@ const FlowTracePage: React.FC = () => {
 
       // Fetch entity profile and logo for the new node
       prefetchProfilesAndLogos([address]);
+      
+      
     } catch (error) {
       console.error('Error:', error);
+      
     } finally {
       setIsLoading(false);
     }
@@ -341,7 +320,6 @@ const FlowTracePage: React.FC = () => {
 
   // Prefetch attribution profile and logos for a list of addresses (non-blocking)
   const prefetchProfilesAndLogos = async (addresses: string[]) => {
-    console.log('prefetchProfilesAndLogos called with addresses:', addresses);
     const unique = Array.from(new Set(addresses.filter(Boolean)));
     if (!unique.length) return;
     

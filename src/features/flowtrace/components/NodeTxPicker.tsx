@@ -339,7 +339,6 @@ const NodeTxPicker: React.FC<Props> = ({ open, address, onOpenChange, onAdd, nod
         }
 
         // Use optimized endpoint to get transactions for the address
-        console.log('🚀 NodeTxPicker: Using optimized FlowTrace endpoint for better performance');
         const optimizedResponse = await flowtraceService.expandNodeOptimized(address, {
           includeRiskScores: true,
           includeTransactions: true
@@ -347,26 +346,10 @@ const NodeTxPicker: React.FC<Props> = ({ open, address, onOpenChange, onAdd, nod
 
         // Extract transactions from optimized response
         const allTransactions = optimizedResponse.data.transactions || [];
-        console.log('📊 Raw transactions:', allTransactions.slice(0, 2)); // Log first 2 transactions
-
-        // Debug: Check what date fields are available in transaction data
-        if (allTransactions.length > 0) {
-          const sampleTx = allTransactions[0];
-          console.log('🔍 Sample transaction date fields:', {
-            timestamp: sampleTx.timestamp,
-            time: sampleTx.time,
-            block_date: sampleTx.block_date,
-            block: sampleTx.block,
-            hasTimestamp: !!sampleTx.timestamp,
-            hasTime: !!sampleTx.time,
-            hasBlockDate: !!sampleTx.block_date
-          });
-        }
 
         // If no SOT data in Redux, try to fetch it directly
         let sotDataToUse = itemsMap;
         if (!itemsMap || Object.keys(itemsMap).length === 0) {
-          console.log('⚠️ No SOT data in Redux, using local data...');
           if (localSotData.length > 0) {
             const sotMap = localSotData.reduce((acc, item) => {
               acc[item.entity_id] = item;
@@ -412,21 +395,6 @@ const NodeTxPicker: React.FC<Props> = ({ open, address, onOpenChange, onAdd, nod
           }
         });
 
-        console.log('✅ Using optimized data - no separate API calls needed!');
-        console.log('📋 Address entities:', Object.keys(addressEntities).length);
-        console.log('🖼️ Address logos:', Object.keys(addressLogos).length);
-        console.log('🎯 Risk scores:', Object.keys(addressRiskScores).length);
-        
-        // Performance metrics
-        console.log(`\n🎯 ===== NODE TX PICKER PERFORMANCE =====`);
-        console.log(`📍 Address: ${address}`);
-        console.log(`⚡ Backend Time: ${optimizedResponse.performance.totalTime}ms`);
-        console.log(`📊 API Calls Saved: ${optimizedResponse.performance.apiCallsSaved}`);
-        console.log(`🎯 Addresses Processed: ${optimizedResponse.performance.addressesProcessed}`);
-        console.log(`💾 Cache Hit Rate: ${(optimizedResponse.performance as any).cacheHitRate || 'N/A'}`);
-        console.log(`📈 Total Transactions: ${optimizedResponse.data.summary.totalTransactions}`);
-        console.log(`🔗 Unique Addresses: ${optimizedResponse.data.summary.uniqueAddresses}`);
-        console.log(`==========================================\n`);
 
         // STEP 3: Enhance transactions with entity and risk information
         // Create individual rows for each input/output to show all UTXOs (like working example)

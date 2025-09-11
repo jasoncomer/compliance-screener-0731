@@ -288,7 +288,6 @@ const LeftPanel: React.FC<Props> = ({
     
     try {
       const riskData = await flowtraceService.fetchRiskScore(address, 'address');
-      console.log('🔍 Risk data received:', riskData);
       
       // Ensure the data has the expected structure
       const normalizedRiskData = {
@@ -299,8 +298,6 @@ const LeftPanel: React.FC<Props> = ({
         analysisType: riskData?.analysisType || 'address',
         ...riskData
       };
-      
-      console.log('🔍 Normalized risk data:', normalizedRiskData);
       
       setRiskModalData(normalizedRiskData);
     } catch (error) {
