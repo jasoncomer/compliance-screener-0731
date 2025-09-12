@@ -191,7 +191,7 @@ const RiskDashboard: React.FC = React.memo(() => {
         console.log('Processing incoming counterparty:', { address, entityId, itemsMapKeys: Object.keys(itemsMap).length });
         const entity = entityId ? Object.values(itemsMap).find(sot => sot.entity_id === entityId) : null;
         console.log('Found entity:', entity);
-        const entityName = entity?.proper_name || truncateAddress(address);
+        const entityName = entity?.proper_name || address;
         
         return {
           entity: entityName,
@@ -214,7 +214,7 @@ const RiskDashboard: React.FC = React.memo(() => {
       .map(([address, data]) => {
         const entityId = attributions[address]?.entity || attributions[address]?.bo || attributions[address]?.custodian;
         const entity = entityId ? Object.values(itemsMap).find(sot => sot.entity_id === entityId) : null;
-        const entityName = entity?.proper_name || truncateAddress(address);
+        const entityName = entity?.proper_name || address;
         
         return {
           entity: entityName,
