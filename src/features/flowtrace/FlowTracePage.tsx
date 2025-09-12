@@ -195,7 +195,7 @@ const FlowTracePage: React.FC = () => {
   }, [nodes.length, connections.length, drawingHistory.length]);
 
   const findDuplicateNode = useCallback((address: string) => {
-    return nodes.find(node => node.id === address || (node.address && node.address === address));
+    return nodes.find(node => node.id === address);
   }, [nodes]);
 
   // const hasCustomElements = useCallback(() => {
