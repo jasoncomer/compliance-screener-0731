@@ -349,13 +349,13 @@ export const NetworkGraph = forwardRef<NetworkGraphHandle, NetworkGraphProps>(({
   }
 
   // Track rendered text to prevent duplicate text rendering using connection keys
-  const renderedTextRef = useRef<Set<string>>(new Set());
+  // const renderedTextRef = useRef<Set<string>>(new Set());
   
   // Function to clear rendered text when starting fresh
-  const clearRenderedText = useCallback(() => {
-    console.log('🧹 Clearing rendered text tracking');
-    renderedTextRef.current.clear();
-  }, []);
+  // const clearRenderedText = useCallback(() => {
+  //   console.log('🧹 Clearing rendered text tracking');
+  //   renderedTextRef.current.clear();
+  // }, []);
 
   // Helper function to render text (temporarily disabled tracking to fix blank screen)
   const renderTextOnce = useCallback((ctx: CanvasRenderingContext2D, connection: FTConnection, text: string, x: number, y: number, angle: number) => {
@@ -808,8 +808,8 @@ export const NetworkGraph = forwardRef<NetworkGraphHandle, NetworkGraphProps>(({
           connectionGroups.get(key)!.push(connection)
         })
 
-      connectionGroups.forEach((connections, key) => {
-        // Since we're using utxoKey/txHash as keys, we need to get from/to from the first connection
+      connectionGroups.forEach((connections) => {
+        // Since we're using node pairs as keys, we need to get from/to from the first connection
         const firstConnection = connections[0]
         const fromId = firstConnection.from
         const toId = firstConnection.to
