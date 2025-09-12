@@ -401,6 +401,9 @@ const FlowTracePage: React.FC = () => {
     if (!pendingNewGraphAddress) return;
     
     try {
+      // Show loading state
+      setIsLoading(true);
+      
       // Save current work to the selected workspace
       await saveVersion(workspaceId, {
         nodes,
@@ -410,6 +413,12 @@ const FlowTracePage: React.FC = () => {
         hidePassThrough: false
       }, 'auto', 'Auto-saved before starting new graph');
       setHasUnsavedChanges(false);
+      
+      // Close workspace manager first
+      setWorkspaceMgrOpen(false);
+      
+      // Brief delay to show save completion
+      await new Promise(resolve => setTimeout(resolve, 500));
       
       // Clear workspace info and start new graph
       clearWorkspaceInfo();
@@ -429,10 +438,11 @@ const FlowTracePage: React.FC = () => {
       setAddress(pendingNewGraphAddress);
       setPendingNewGraphAddress(null);
       
-      // Trigger the trace for the new address
+      // Perform trace for the new address
       await performTrace(pendingNewGraphAddress);
     } catch (error) {
       console.error('Failed to save to existing workspace and start new graph:', error);
+      setIsLoading(false);
     }
   }, [pendingNewGraphAddress, nodes, connections, saveVersion, clearWorkspaceInfo]);
 
