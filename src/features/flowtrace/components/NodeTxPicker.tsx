@@ -771,8 +771,13 @@ const NodeTxPicker: React.FC<Props> = ({ open, address, onOpenChange, onAdd, nod
             const outputs = Array.isArray(tx.outputs) ? tx.outputs : [];
             let externalOutputs = outputs.filter((o: any) => o?.addr && o.addr !== address);
             
-            // Process all external outputs
-
+            // Get the inputs from this specific address - this is the amount this address sent
+            const addressInputs = tx.inputs?.filter((inp: any) => inp.addr === address) || [];
+            const addressInputAmount = addressInputs.reduce((sum: number, inp: any) => 
+              sum + (inp.amt || 0), 0);
+            const addressInputAmountBtc = addressInputAmount / 100000000;
+            
+            // Process all external outputs - each gets the same amount (what this address sent)
             externalOutputs.forEach((o: any, outIndex: number) => {
               const outputAddress = o.addr || 'Unknown';
               const entityData = addressEntities[outputAddress];
@@ -809,9 +814,8 @@ const NodeTxPicker: React.FC<Props> = ({ open, address, onOpenChange, onAdd, nod
               }
 
               const risk = addressRiskScores[outputAddress] || 0;
-              const outputAmountBtc = (o.amt || 0) / 100000000;
 
-              // Create one row per output (UTXO)
+              // Create one row per output (UTXO) with the actual amount this address sent
               const transaction: EnhancedTransaction = {
                 txid: `tx_out_${index}_${outIndex}`,
                 time: tx.timestamp || tx.time || 0,
@@ -820,12 +824,12 @@ const NodeTxPicker: React.FC<Props> = ({ open, address, onOpenChange, onAdd, nod
                 entityName,
                 entityId,
                 entityType,
-            logo,
+                logo,
                 riskScore: risk,
-                amount: outputAmountBtc.toFixed(8),
-            currency: 'BTC',
+                amount: addressInputAmountBtc.toFixed(8), // Actual amount this address sent (e.g., 0.32516944 BTC)
+                currency: 'BTC',
                 direction: 'out',
-                            usdValue: calculateUsdValue(outputAmountBtc, 'BTC'),
+                usdValue: calculateUsdValue(addressInputAmountBtc, 'BTC'),
                 date: tx.timestamp ? new Date(tx.timestamp * 1000).toISOString().split('T')[0] : 'Unknown',
                 entityTags,
                 ofac: false, // Placeholder
@@ -940,7 +944,16 @@ const NodeTxPicker: React.FC<Props> = ({ open, address, onOpenChange, onAdd, nod
 
   const confirm = () => {
     if (!address) return;
-    const rows = txs.filter((t) => selected.has(t.txid) || t.isConnectedToNode);
+    // Only send newly selected transactions, not existing connections
+    // The existing connections are already in the graph and don't need to be re-added
+    const rows = txs.filter((t) => selected.has(t.txid));
+    console.log('🔍 NodeTxPicker confirm:', {
+      totalTxs: txs.length,
+      selectedCount: selected.size,
+      existingConnectedCount: txs.filter(t => t.isConnectedToNode).length,
+      sendingRows: rows.length,
+      sendingTxs: rows.map(t => ({ txid: t.txid, isConnectedToNode: t.isConnectedToNode }))
+    });
     onAdd({ address, selectedTxs: rows });
     onOpenChange(false);
     setSelected(new Set());
