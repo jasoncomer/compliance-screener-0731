@@ -1,6 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { flowtraceService } from '../../services/flowtraceService';
-import { Network } from 'lucide-react';
 import { generateUTXOKey, connectionInvolvesAddress, generateConnectionKey, findConnectionsForAddress, ensureConnectionKeys } from './utils/utxoKeyGeneration';
 
 import { getBlockchainType } from '../../utils/addressValidation';
@@ -19,14 +18,16 @@ import AddressSearchInput from '../../components/common/AddressSearchInput';
 import ViewWrapper from '../../components/ViewWrapper';
 import SaveWorkspaceButton from '@/components/workspace/SaveWorkspaceButton'
 import GitHubWorkspaceManager from '@/components/workspace/GitHubWorkspaceManager'
-import { loadVersion, type Workspace } from '@/lib/workspace-utils'
-import { GitBranch } from 'lucide-react'
+import { loadVersion, saveVersion, type Workspace } from '@/lib/workspace-utils'
+import { GitBranch, Save, Network, Wallet } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import CustomNodeDialog from './components/CustomNodeDialog'
 import CustomNodeExpandDialog from './components/CustomNodeExpandDialog'
 import { WalletClusterPanel } from './components/WalletClusterPanel'
 import { AggregatedNodeDialog } from './components/AggregatedNodeDialog'
-import { Wallet } from 'lucide-react'
+import { WorkspaceInfo } from './components/WorkspaceInfo'
+import SearchConfirmationDialog from './components/SearchConfirmationDialog'
+import DuplicateNodeDialog from './components/DuplicateNodeDialog'
 
 // helper to merge duplicate edges using the same key format as generateConnectionKey
 const mergeEdges = (existing: FTConnection[], incoming: FTConnection[]) => {
@@ -133,6 +134,30 @@ const FlowTracePage: React.FC = () => {
   const [workspaceMgrOpen, setWorkspaceMgrOpen] = useState(false);
   const [workspaceId, setWorkspaceId] = useState<string | null>(null);
   const [currentVersionId, setCurrentVersionId] = useState<string>('master');
+  const [workspaceName, setWorkspaceName] = useState<string | null>(null);
+  const [versionName, setVersionName] = useState<string | null>(null);
+  const [versionTimestamp, setVersionTimestamp] = useState<string | null>(null);
+
+  // Search confirmation dialog state
+  const [searchConfirmationOpen, setSearchConfirmationOpen] = useState(false);
+  const [pendingAddress, setPendingAddress] = useState<string | null>(null);
+  const [duplicateNodeDialogOpen, setDuplicateNodeDialogOpen] = useState(false);
+  const [duplicateAddress, setDuplicateAddress] = useState<string | null>(null);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+
+  // Track unsaved changes
+  useEffect(() => {
+    if (nodes.length > 0 || connections.length > 0) {
+      setHasUnsavedChanges(true);
+    }
+  }, [nodes, connections]);
+
+  // Reset unsaved changes when workspace is loaded
+  useEffect(() => {
+    if (workspaceId) {
+      setHasUnsavedChanges(false);
+    }
+  }, [workspaceId]);
 
   // Handles loading a workspace/version chosen in the manager
   const handleLoadWorkspaceFromManager = useCallback(async (ws: Workspace, versionId?: string) => {
@@ -142,8 +167,194 @@ const FlowTracePage: React.FC = () => {
       setConnections(version.graphState.edges as any);
       setWorkspaceId(ws.id);
       setCurrentVersionId(version.id);
+      setWorkspaceName(ws.name);
+      setVersionName(version.name);
+      setVersionTimestamp(version.timestamp);
     }
   }, [setNodes, setConnections]);
+
+  // Clear workspace info when starting a new investigation
+  const clearWorkspaceInfo = useCallback(() => {
+    setWorkspaceName(null);
+    setVersionName(null);
+    setVersionTimestamp(null);
+    setWorkspaceId(null);
+    setCurrentVersionId('master');
+  }, []);
+
+  // Handle workspace creation
+  const handleWorkspaceCreated = useCallback((workspaceId: string) => {
+    setWorkspaceId(workspaceId);
+    // Note: We'll need to fetch the workspace details to get the name
+    // This will be handled when the workspace is loaded
+  }, []);
+
+  // Helper functions for graph state detection
+  const hasExistingWork = useCallback(() => {
+    return nodes.length > 1 || connections.length > 0 || drawingHistory.length > 0;
+  }, [nodes.length, connections.length, drawingHistory.length]);
+
+  const findDuplicateNode = useCallback((address: string) => {
+    return nodes.find(node => node.id === address || (node.address && node.address === address));
+  }, [nodes]);
+
+  // const hasCustomElements = useCallback(() => {
+  //   return nodes.some(node => node.type === 'custom') || 
+  //          connections.some(conn => conn.customColor) ||
+  //          drawingHistory.length > 0;
+  // }, [nodes, connections, drawingHistory.length]);
+
+  // Action handlers for search confirmation dialog
+  const handleAddToGraph = useCallback(async () => {
+    if (!pendingAddress) return;
+    setSearchConfirmationOpen(false);
+    await performTrace(pendingAddress);
+    setPendingAddress(null);
+  }, [pendingAddress]);
+
+  const handleSaveAndNew = useCallback(async () => {
+    if (!pendingAddress) return;
+    
+    // Auto-save current work if there's a workspace
+    if (workspaceId) {
+      try {
+        await saveVersion(workspaceId, {
+          nodes,
+          edges: connections,
+          zoom: 1,
+          pan: { x: 0, y: 0 },
+          hidePassThrough: false
+        }, 'auto', 'Auto-save before new investigation');
+        setHasUnsavedChanges(false);
+      } catch (error) {
+        console.error('Failed to auto-save:', error);
+      }
+    }
+    
+    // Clear workspace info and start new investigation
+    clearWorkspaceInfo();
+    setSearchConfirmationOpen(false);
+    await performTrace(pendingAddress);
+    setPendingAddress(null);
+  }, [pendingAddress, workspaceId, nodes, connections, clearWorkspaceInfo]);
+
+  const handleDiscardAndNew = useCallback(async () => {
+    if (!pendingAddress) return;
+    
+    // Clear everything and start new investigation
+    clearWorkspaceInfo();
+    setNodes([]);
+    setConnections([]);
+    setDrawingHistory([]);
+    setHistoryIndex(-1);
+    setSearchConfirmationOpen(false);
+    await performTrace(pendingAddress);
+    setPendingAddress(null);
+  }, [pendingAddress, clearWorkspaceInfo]);
+
+  const handleCancelSearch = useCallback(() => {
+    setSearchConfirmationOpen(false);
+    setPendingAddress(null);
+  }, []);
+
+  // Action handlers for duplicate node dialog
+  const handleViewExisting = useCallback(() => {
+    if (!duplicateAddress) return;
+    setDuplicateNodeDialogOpen(false);
+    setCenterNodeId(duplicateAddress);
+    setCurrentAddress(duplicateAddress);
+    setDuplicateAddress(null);
+  }, [duplicateAddress]);
+
+  const handleCancelDuplicate = useCallback(() => {
+    setDuplicateNodeDialogOpen(false);
+    setDuplicateAddress(null);
+  }, []);
+
+  // Quick save functionality
+  const handleQuickSave = useCallback(async () => {
+    if (!workspaceId) {
+      // If no workspace, open the workspace manager to create one
+      setWorkspaceMgrOpen(true);
+      return;
+    }
+
+    try {
+      await saveVersion(workspaceId, {
+        nodes,
+        edges: connections,
+        zoom: 1,
+        pan: { x: 0, y: 0 },
+        hidePassThrough: false
+      }, 'quick', 'Quick save');
+      setHasUnsavedChanges(false);
+      setVersionTimestamp(new Date().toISOString());
+    } catch (error) {
+      console.error('Failed to quick save:', error);
+    }
+  }, [workspaceId, nodes, connections]);
+
+  // Prefetch attribution profile and logos for a list of addresses (non-blocking)
+  const prefetchProfilesAndLogos = async (addresses: string[]) => {
+    console.log('prefetchProfilesAndLogos called with addresses:', addresses);
+    const unique = Array.from(new Set(addresses.filter(Boolean)));
+    if (!unique.length) return;
+    
+    // Don't await this - let it run in the background
+    Promise.allSettled(
+      unique.map(async (addr) => {
+        try {
+          // Add timeout to prevent hanging
+          const profilePromise = flowtraceService.fetchEntityProfile(addr);
+          const timeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Profile fetch timeout')), 8000)
+          );
+          
+          const profile = await Promise.race([profilePromise, timeoutPromise]).catch(() => ({} as any));
+          
+          // The logo URL should come directly from the SOT data in the profile
+          const logoUrl = (profile as any)?.logoUrl || null;
+          
+          setNodes((prev) => prev.map((n) => (n.id === addr ? {
+            ...n,
+            label: ((profile as any)?.properName || (profile as any)?.label) ?? n.label,
+            risk: (profile as any)?.riskScore ?? n.risk,
+            logoUrl: logoUrl ?? n.logoUrl,
+            entityId: (profile as any)?.entityId ?? n.entityId,
+            entityType: (profile as any)?.entityType ?? n.entityType,
+            bo: (profile as any)?.bo ?? n.bo,
+            custodian: (profile as any)?.custodian ?? n.custodian,
+          } : n)));
+          
+          // Debug logging for risk score updates
+          console.log('🔍 Risk score update:', {
+            address: addr,
+            profileRiskScore: (profile as any)?.riskScore,
+            profileType: typeof (profile as any)?.riskScore,
+            profileData: profile
+          });
+          
+          // If this is the currently selected address, also update the left panel data
+          if (addr === currentAddress || addr === centerNodeId) {
+            setLeftPanelData((prev: any) => prev ? {
+              ...prev,
+              selectedEntity: {
+                ...prev.selectedEntity,
+                label: (profile as any)?.properName || (profile as any)?.label || prev.selectedEntity?.label,
+                logoUrl: logoUrl ?? prev.selectedEntity?.logoUrl,
+                type: (profile as any)?.entityType || prev.selectedEntity?.type,
+                riskScore: (profile as any)?.riskScore ?? prev.selectedEntity?.riskScore,
+                bo: (profile as any)?.bo ?? prev.selectedEntity?.bo,
+                custodian: (profile as any)?.custodian ?? prev.selectedEntity?.custodian,
+              }
+            } : null);
+          }
+        } catch (error) {
+          console.warn('Error in prefetchProfilesAndLogos for', addr, ':', error);
+        }
+      })
+    );
+  };
 
   // Function to fetch and set left panel data for an address
   const fetchAndSetLeftPanelData = async (address: string) => {
@@ -222,6 +433,48 @@ const FlowTracePage: React.FC = () => {
       setIsLeftPanelLoading(false);
     }
   };
+
+  // Core trace function that performs the actual address search and node addition
+  const performTrace = useCallback(async (addressToTrace: string) => {
+    setIsLoading(true);
+    try {
+      // Set both center node and current address to ensure left panel shows correct data
+      setCenterNodeId(addressToTrace);
+      setCurrentAddress(addressToTrace);
+      
+      // Clear any existing left panel data to prevent showing stale information
+      setLeftPanelData(null);
+      
+      // Fetch background data and hydrate once available (includes risk score)
+      await fetchAndSetLeftPanelData(addressToTrace);
+
+      // Add node to graph
+      const newNode: FTNode = {
+        id: addressToTrace,
+        label: addressToTrace, // Will be updated by prefetchProfilesAndLogos
+        x: 300,
+        y: 240,
+        type: 'wallet', // Will be updated by prefetchProfilesAndLogos
+        risk: 0, // Initialize with 0, will be updated by prefetchProfilesAndLogos
+      };
+
+      setNodes(prev => {
+        const exists = prev.find(n => n.id === addressToTrace);
+        if (exists) return prev;
+        return [...prev, newNode];
+      });
+
+      // Fetch entity profile and logo for the new node
+      prefetchProfilesAndLogos([addressToTrace]);
+      
+      // Mark as having unsaved changes
+      setHasUnsavedChanges(true);
+    } catch (error) {
+      console.error('Error:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [fetchAndSetLeftPanelData, prefetchProfilesAndLogos]);
 
   // Function to handle node selection and update left panel
   const handleNodeSelection = useCallback(async (node: FTNode) => {
@@ -386,103 +639,24 @@ const FlowTracePage: React.FC = () => {
 
   const handleTrace = async () => {
     if (!address) return;
-    setIsLoading(true);
-    try {
-      // Set both center node and current address to ensure left panel shows correct data
-      setCenterNodeId(address);
-      setCurrentAddress(address);
-      
-      // Clear any existing left panel data to prevent showing stale information
-      setLeftPanelData(null);
-      
-      // Fetch background data and hydrate once available (includes risk score)
-      await fetchAndSetLeftPanelData(address);
-
-      // Add node to graph
-      const newNode: FTNode = {
-        id: address,
-        label: address, // Will be updated by prefetchProfilesAndLogos
-        x: 300,
-        y: 240,
-        type: 'wallet', // Will be updated by prefetchProfilesAndLogos
-        risk: 0, // Initialize with 0, will be updated by prefetchProfilesAndLogos
-      };
-
-      setNodes(prev => {
-        const exists = prev.find(n => n.id === address);
-        if (exists) return prev;
-        return [...prev, newNode];
-      });
-
-      // Fetch entity profile and logo for the new node
-      prefetchProfilesAndLogos([address]);
-    } catch (error) {
-      console.error('Error:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Prefetch attribution profile and logos for a list of addresses (non-blocking)
-  const prefetchProfilesAndLogos = async (addresses: string[]) => {
-    console.log('prefetchProfilesAndLogos called with addresses:', addresses);
-    const unique = Array.from(new Set(addresses.filter(Boolean)));
-    if (!unique.length) return;
     
-    // Don't await this - let it run in the background
-    Promise.allSettled(
-      unique.map(async (addr) => {
-        try {
-          // Add timeout to prevent hanging
-          const profilePromise = flowtraceService.fetchEntityProfile(addr);
-          const timeoutPromise = new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('Profile fetch timeout')), 8000)
-          );
-          
-          const profile = await Promise.race([profilePromise, timeoutPromise]).catch(() => ({} as any));
-          
-          // The logo URL should come directly from the SOT data in the profile
-          const logoUrl = (profile as any)?.logoUrl || null;
-          
-          setNodes((prev) => prev.map((n) => (n.id === addr ? {
-            ...n,
-            label: ((profile as any)?.properName || (profile as any)?.label) ?? n.label,
-            risk: (profile as any)?.riskScore ?? n.risk,
-            logoUrl: logoUrl ?? n.logoUrl,
-            entityId: (profile as any)?.entityId ?? n.entityId,
-            entityType: (profile as any)?.entityType ?? n.entityType,
-            bo: (profile as any)?.bo ?? n.bo,
-            custodian: (profile as any)?.custodian ?? n.custodian,
-          } : n)));
-          
-          // Debug logging for risk score updates
-          console.log('🔍 Risk score update:', {
-            address: addr,
-            profileRiskScore: (profile as any)?.riskScore,
-            profileType: typeof (profile as any)?.riskScore,
-            profileData: profile
-          });
-          
-          // If this is the currently selected address, also update the left panel data
-          if (addr === currentAddress || addr === centerNodeId) {
-            setLeftPanelData((prev: any) => prev ? {
-              ...prev,
-              selectedEntity: {
-                ...prev.selectedEntity,
-                label: (profile as any)?.properName || (profile as any)?.label || prev.selectedEntity?.label,
-                logoUrl: logoUrl ?? prev.selectedEntity?.logoUrl,
-                type: (profile as any)?.entityType || prev.selectedEntity?.type,
-                riskScore: (profile as any)?.riskScore ?? prev.selectedEntity?.riskScore,
-                bo: (profile as any)?.bo ?? prev.selectedEntity?.bo,
-                custodian: (profile as any)?.custodian ?? prev.selectedEntity?.custodian,
-              }
-            } : null);
-          }
-        } catch (error) {
-          console.warn('Error in prefetchProfilesAndLogos for', addr, ':', error);
-        }
-      })
-    );
+    // Check for duplicate node first
+    const duplicateNode = findDuplicateNode(address);
+    if (duplicateNode) {
+      setDuplicateAddress(address);
+      setDuplicateNodeDialogOpen(true);
+      return;
+    }
+    
+    // Check if there's existing work
+    if (hasExistingWork()) {
+      setPendingAddress(address);
+      setSearchConfirmationOpen(true);
+      return;
+    }
+    
+    // No existing work and no duplicate - proceed directly
+    await performTrace(address);
   };
 
   useEffect(() => {
@@ -827,15 +1001,23 @@ const FlowTracePage: React.FC = () => {
       {/* Sticky Search Bar */}
       <div className={`sticky top-[0] z-20 bg-white dark:bg-background border-b border-gray-200 dark:border-gray-700 px-4 ${isEmptyState ? 'pt-2 py-4 mb-2' : 'py-4'}`}>
         <div className="flex justify-between items-center gap-4">
-          <div className="flex-1 max-w-2xl">
-            <AddressSearchInput
-              placeholder="Enter Bitcoin address to trace (e.g., bc1qxy2...)"
-              value={address}
-              onChange={(e) => setAddress(e.target.value)}
-              onSearch={handleTrace}
-              loading={isLoading}
-              disabled={isLoading}
-              showValidation={true}
+          <div className="flex items-center gap-4 flex-1">
+            <div className="max-w-2xl flex-1">
+              <AddressSearchInput
+                placeholder="Enter Bitcoin address to trace (e.g., bc1qxy2...)"
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
+                onSearch={handleTrace}
+                loading={isLoading}
+                disabled={isLoading}
+                showValidation={true}
+              />
+            </div>
+            <WorkspaceInfo 
+              workspaceName={workspaceName || undefined}
+              versionName={versionName || undefined}
+              versionTimestamp={versionTimestamp || undefined}
+              hasUnsavedChanges={hasUnsavedChanges}
             />
           </div>
           <div className="flex items-center gap-2">
@@ -844,9 +1026,19 @@ const FlowTracePage: React.FC = () => {
               <Wallet className="h-4 w-4" />
               Wallet Clusters
             </Button>
+            {hasUnsavedChanges && (
+              <Button variant="outline" size="sm" className="flex gap-1 items-center" onClick={handleQuickSave}>
+                <Save className="h-4 w-4" />
+                Quick Save
+              </Button>
+            )}
             <SaveWorkspaceButton
               workspaceId={workspaceId}
               graphState={{ nodes, edges: connections, zoom: 1, pan: { x: 0, y: 0 }, hidePassThrough: false }}
+              onSaveSuccess={() => {
+                setHasUnsavedChanges(false);
+                setVersionTimestamp(new Date().toISOString());
+              }}
             />
             <Button variant="ghost" size="icon" aria-label="Manage workspaces" onClick={() => setWorkspaceMgrOpen(true)}>
               <GitBranch className="h-4 w-4" />
@@ -1011,7 +1203,30 @@ const FlowTracePage: React.FC = () => {
         onLoadWorkspace={handleLoadWorkspaceFromManager}
         currentWorkspaceId={workspaceId || undefined}
         currentVersionId={currentVersionId}
-        onWorkspaceCreated={setWorkspaceId}
+        onWorkspaceCreated={handleWorkspaceCreated}
+      />
+
+      {/* Search Confirmation Dialog */}
+      <SearchConfirmationDialog
+        open={searchConfirmationOpen}
+        onOpenChange={setSearchConfirmationOpen}
+        newAddress={pendingAddress || ''}
+        existingNodeCount={nodes.length}
+        existingConnectionCount={connections.length}
+        onAddToGraph={handleAddToGraph}
+        onSaveAndNew={handleSaveAndNew}
+        onDiscardAndNew={handleDiscardAndNew}
+        onCancel={handleCancelSearch}
+      />
+
+      {/* Duplicate Node Dialog */}
+      <DuplicateNodeDialog
+        open={duplicateNodeDialogOpen}
+        onOpenChange={setDuplicateNodeDialogOpen}
+        duplicateAddress={duplicateAddress || ''}
+        existingNodeLabel={findDuplicateNode(duplicateAddress || '')?.label}
+        onViewExisting={handleViewExisting}
+        onCancel={handleCancelDuplicate}
       />
 
       {/* Custom Node Dialog */}
