@@ -53,6 +53,7 @@ interface GitHubWorkspaceManagerProps {
   onWorkspaceCreated?: (workspaceId: string) => void
   onStartNewInvestigation?: (workspaceId: string) => void
   refreshTrigger?: number
+  isSaveAndNewMode?: boolean
 }
 
 export default function GitHubWorkspaceManager(props: GitHubWorkspaceManagerProps) {
@@ -66,6 +67,7 @@ export default function GitHubWorkspaceManager(props: GitHubWorkspaceManagerProp
     onWorkspaceCreated,
     onStartNewInvestigation,
     refreshTrigger,
+    isSaveAndNewMode = false,
   } = props
 
   const [workspaces, setWorkspaces] = useState<Workspace[]>([])
@@ -227,7 +229,8 @@ export default function GitHubWorkspaceManager(props: GitHubWorkspaceManagerProp
                               <DropdownMenuContent align="end">
                                 <DropdownMenuLabel>Actions</DropdownMenuLabel>
                                 <DropdownMenuItem onClick={() => onStartNewInvestigation?.(ws.id)}>
-                                  <Plus className="h-4 w-4 mr-2" /> Start New Investigation
+                                  <Plus className="h-4 w-4 mr-2" /> 
+                                  {isSaveAndNewMode ? 'Save & Start New Graph' : 'Start New Investigation'}
                                 </DropdownMenuItem>
                                 <DropdownMenuItem onClick={() => renameWorkspace(ws.id, prompt('New name', ws.name) || ws.name, ws.description || '')}>
                                   <Edit3 className="h-4 w-4 mr-2" /> Rename

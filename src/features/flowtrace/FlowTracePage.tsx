@@ -396,6 +396,46 @@ const FlowTracePage: React.FC = () => {
     setPendingNewGraphAddress(null);
   }, []);
 
+  // Handler for starting new investigation from existing workspace
+  const handleStartNewInvestigation = useCallback(async (workspaceId: string) => {
+    if (!pendingNewGraphAddress) return;
+    
+    try {
+      // Save current work to the selected workspace
+      await saveVersion(workspaceId, {
+        nodes,
+        edges: connections,
+        zoom: 1,
+        pan: { x: 0, y: 0 },
+        hidePassThrough: false
+      }, 'auto', 'Auto-saved before starting new graph');
+      setHasUnsavedChanges(false);
+      
+      // Clear workspace info and start new graph
+      clearWorkspaceInfo();
+      setStartNewGraphConfirmationOpen(false);
+      setPendingStartNewGraphAfterSave(false);
+      
+      // Clear the current graph
+      setNodes([]);
+      setConnections([]);
+      setDrawingHistory([]);
+      setHistoryIndex(-1);
+      setCurrentAddress('');
+      setCenterNodeId('');
+      setLeftPanelData(null);
+      
+      // Start fresh with the new address
+      setAddress(pendingNewGraphAddress);
+      setPendingNewGraphAddress(null);
+      
+      // Trigger the trace for the new address
+      await performTrace(pendingNewGraphAddress);
+    } catch (error) {
+      console.error('Failed to save to existing workspace and start new graph:', error);
+    }
+  }, [pendingNewGraphAddress, nodes, connections, saveVersion, clearWorkspaceInfo]);
+
   // Quick save functionality
   const handleQuickSave = useCallback(async () => {
     if (!workspaceId) {
@@ -1348,6 +1388,8 @@ const FlowTracePage: React.FC = () => {
         currentWorkspaceId={workspaceId || undefined}
         currentVersionId={currentVersionId}
         onWorkspaceCreated={handleWorkspaceCreated}
+        onStartNewInvestigation={handleStartNewInvestigation}
+        isSaveAndNewMode={pendingStartNewGraphAfterSave}
       />
 
       {/* Search Confirmation Dialog */}
