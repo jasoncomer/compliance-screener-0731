@@ -778,6 +778,7 @@ const RiskDashboard: React.FC = React.memo(() => {
               <SimpleSankeyTest 
                 address={address}
                 maxTransactions={20}
+                addressSummaryData={addressSummaryData}
               />
             </div>
           )}
