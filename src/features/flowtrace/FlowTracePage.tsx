@@ -285,9 +285,7 @@ const FlowTracePage: React.FC = () => {
   const handleSaveAndStartNewGraph = useCallback(async () => {
     if (!pendingNewGraphAddress) return;
     
-    setStartNewGraphConfirmationOpen(false);
-    
-    // Save current work first
+    // Auto-save current work if there's a workspace
     if (workspaceId) {
       try {
         await saveVersion(workspaceId, {
@@ -301,32 +299,10 @@ const FlowTracePage: React.FC = () => {
       } catch (error) {
         console.error('Failed to save before starting new graph:', error);
       }
-    } else {
-      // If no workspace, open the workspace manager to create one
-      setWorkspaceMgrOpen(true);
-      return;
     }
     
-    // Clear the current graph
-    setNodes([]);
-    setConnections([]);
-    setDrawingHistory([]);
-    setHistoryIndex(-1);
-    setCurrentAddress('');
-    setCenterNodeId('');
-    setLeftPanelData(null);
-    
-    // Start fresh with the new address
-    setAddress(pendingNewGraphAddress);
-    setPendingNewGraphAddress(null);
-    
-    // Trigger the trace for the new address
-    performTrace(pendingNewGraphAddress);
-  }, [pendingNewGraphAddress, workspaceId, nodes, connections, saveVersion]);
-
-  const handleDiscardAndStartNewGraph = useCallback(() => {
-    if (!pendingNewGraphAddress) return;
-    
+    // Clear workspace info and start new graph
+    clearWorkspaceInfo();
     setStartNewGraphConfirmationOpen(false);
     
     // Clear the current graph
@@ -343,8 +319,32 @@ const FlowTracePage: React.FC = () => {
     setPendingNewGraphAddress(null);
     
     // Trigger the trace for the new address
-    performTrace(pendingNewGraphAddress);
-  }, [pendingNewGraphAddress]);
+    await performTrace(pendingNewGraphAddress);
+  }, [pendingNewGraphAddress, workspaceId, nodes, connections, saveVersion, clearWorkspaceInfo]);
+
+  const handleDiscardAndStartNewGraph = useCallback(async () => {
+    if (!pendingNewGraphAddress) return;
+    
+    // Clear workspace info and start new graph
+    clearWorkspaceInfo();
+    setStartNewGraphConfirmationOpen(false);
+    
+    // Clear the current graph
+    setNodes([]);
+    setConnections([]);
+    setDrawingHistory([]);
+    setHistoryIndex(-1);
+    setCurrentAddress('');
+    setCenterNodeId('');
+    setLeftPanelData(null);
+    
+    // Start fresh with the new address
+    setAddress(pendingNewGraphAddress);
+    setPendingNewGraphAddress(null);
+    
+    // Trigger the trace for the new address
+    await performTrace(pendingNewGraphAddress);
+  }, [pendingNewGraphAddress, clearWorkspaceInfo]);
 
   const handleCancelStartNewGraph = useCallback(() => {
     setStartNewGraphConfirmationOpen(false);
