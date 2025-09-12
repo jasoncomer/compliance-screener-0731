@@ -56,6 +56,7 @@ const TopCounterparties: React.FC<TopCounterpartiesProps> = ({
     return entity?.proper_name || null;
   };
 
+
   // Get transactions for a specific counterparty
   const getCounterpartyTransactions = (address: string) => {
     return transactions.filter(tx => 

@@ -55,6 +55,7 @@ const TransactionHistory: React.FC<TransactionHistoryProps> = ({
     return transformBtcTransactions(transactionData.txs, address, btcPrice);
   }, [transactionData?.txs, address, btcPrice]);
 
+
   // Function to open BlockScout explorer
   const handleViewInBlockScout = () => {
     if (address) {

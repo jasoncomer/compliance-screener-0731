@@ -579,28 +579,43 @@ export const SimpleSankeyTest = ({
         
         // Show tooltip
         const tooltip = d3.select("body").append("div")
-          .attr("class", "tooltip")
-          .style("position", "absolute")
-          .style("background", theme === 'dark' ? "#1f2937" : "#ffffff")
-          .style("border", "1px solid #d1d5db")
+          .attr("class", "sankey-tooltip")
+          .style("position", "fixed")
+          .style("background", theme === 'dark' ? "#374151" : "#ffffff")
+          .style("border", `1px solid ${theme === 'dark' ? "#4b5563" : "#d1d5db"}`)
           .style("border-radius", "8px")
           .style("padding", "12px")
           .style("font-size", "14px")
           .style("pointer-events", "none")
           .style("z-index", "1000")
-          .style("box-shadow", "0 4px 6px -1px rgba(0, 0, 0, 0.1)")
-          .style("color", theme === 'dark' ? "#ffffff" : "#000000")
+          .style("box-shadow", "0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)")
+          .style("color", theme === 'dark' ? "#f9fafb" : "#111827")
+          .style("font-family", "system-ui, -apple-system, sans-serif")
+          .style("max-width", "300px")
+          .style("opacity", 0)
+          .style("left", "-1000px")
+          .style("top", "-1000px")
 
         tooltip.html(`
-          <div class="font-semibold">${d.label}</div>
-          <div class="text-sm text-gray-500 mt-1">Click for details</div>
+          <div style="font-weight: 600; margin-bottom: 4px;">${d.label}</div>
+          <div style="font-size: 12px; color: ${theme === 'dark' ? '#9ca3af' : '#6b7280'};">Click for detailed transaction flow information</div>
         `)
+        
+        // Animate tooltip appearance
+        tooltip.transition()
+          .duration(200)
+          .style("opacity", 1)
       })
       .on("mousemove", function(event) {
-        const tooltip = d3.select(".tooltip")
+        const tooltip = d3.select(".sankey-tooltip")
+        if (tooltip.empty()) return
+        
+        const mouseX = event.clientX || event.pageX || 0
+        const mouseY = event.clientY || event.pageY || 0
+        
         tooltip
-          .style("left", (event.pageX + 10) + "px")
-          .style("top", (event.pageY - 10) + "px")
+          .style("left", (mouseX + 15) + "px")
+          .style("top", (mouseY - 10) + "px")
       })
       .on("click", function(_, d: any) {
         // Get source and target node information using the D3 node indices
@@ -668,7 +683,12 @@ export const SimpleSankeyTest = ({
         svg.selectAll("path")
           .attr("opacity", 0.6)
         
-        d3.select(".tooltip").remove()
+        // Animate tooltip removal
+        const tooltip = d3.select(".sankey-tooltip")
+        tooltip.transition()
+          .duration(150)
+          .style("opacity", 0)
+          .remove()
       })
 
     // Add nodes
@@ -698,35 +718,56 @@ export const SimpleSankeyTest = ({
         
         // Show tooltip
         const tooltip = d3.select("body").append("div")
-          .attr("class", "tooltip")
-          .style("position", "absolute")
-          .style("background", theme === 'dark' ? "#1f2937" : "#ffffff")
-          .style("border", "1px solid #d1d5db")
+          .attr("class", "sankey-tooltip")
+          .style("position", "fixed")
+          .style("background", theme === 'dark' ? "#374151" : "#ffffff")
+          .style("border", `1px solid ${theme === 'dark' ? "#4b5563" : "#d1d5db"}`)
           .style("border-radius", "8px")
           .style("padding", "12px")
           .style("font-size", "14px")
           .style("pointer-events", "none")
           .style("z-index", "1000")
-          .style("box-shadow", "0 4px 6px -1px rgba(0, 0, 0, 0.1)")
-                  .style("color", theme === 'dark' ? "#ffffff" : "#000000")
+          .style("box-shadow", "0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)")
+          .style("color", theme === 'dark' ? "#f9fafb" : "#111827")
+          .style("font-family", "system-ui, -apple-system, sans-serif")
+          .style("max-width", "300px")
+          .style("opacity", 0)
+          .style("left", "-1000px")
+          .style("top", "-1000px")
 
         const displayName = d.name.replace(/In: |Out: /g, "")
         const addresses = d.addresses || []
         
         tooltip.html(`
-          <div class="font-semibold">${displayName}</div>
-          ${addresses.length > 0 ? `<div class="text-gray-500 font-mono text-xs">${addresses.length} address${addresses.length > 1 ? 'es' : ''}</div>` : ''}
+          <div style="font-weight: 600; margin-bottom: 4px;">${displayName}</div>
+          ${addresses.length > 0 ? `<div style="font-size: 12px; color: ${theme === 'dark' ? '#9ca3af' : '#6b7280'}; font-family: monospace;">${addresses.length} address${addresses.length > 1 ? 'es' : ''}</div>` : ''}
+          <div style="font-size: 12px; color: ${theme === 'dark' ? '#9ca3af' : '#6b7280'}; margin-top: 4px;">Click for entity details</div>
         `)
+        
+        // Animate tooltip appearance
+        tooltip.transition()
+          .duration(200)
+          .style("opacity", 1)
         })
       .on("mousemove", function(event) {
-        const tooltip = d3.select(".tooltip")
+        const tooltip = d3.select(".sankey-tooltip")
+        if (tooltip.empty()) return
+        
+        const mouseX = event.clientX || event.pageX || 0
+        const mouseY = event.clientY || event.pageY || 0
+        
         tooltip
-          .style("left", (event.pageX + 10) + "px")
-          .style("top", (event.pageY - 10) + "px")
+          .style("left", (mouseX + 15) + "px")
+          .style("top", (mouseY - 10) + "px")
       })
       .on("mouseout", function() {
         d3.select(this).attr("opacity", 0.9)
-        d3.select(".tooltip").remove()
+        // Animate tooltip removal
+        const tooltip = d3.select(".sankey-tooltip")
+        tooltip.transition()
+          .duration(150)
+          .style("opacity", 0)
+          .remove()
       })
       .on("click", function(_, d: any) {
         // Get the original node data using the D3 node index
