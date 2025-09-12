@@ -146,6 +146,7 @@ const FlowTracePage: React.FC = () => {
   const [duplicateAddress, setDuplicateAddress] = useState<string | null>(null);
   const [startNewGraphConfirmationOpen, setStartNewGraphConfirmationOpen] = useState(false);
   const [pendingNewGraphAddress, setPendingNewGraphAddress] = useState<string | null>(null);
+  const [pendingStartNewGraphAfterSave, setPendingStartNewGraphAfterSave] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
   // Track unsaved changes
@@ -186,11 +187,50 @@ const FlowTracePage: React.FC = () => {
   }, []);
 
   // Handle workspace creation
-  const handleWorkspaceCreated = useCallback((workspaceId: string) => {
+  const handleWorkspaceCreated = useCallback(async (workspaceId: string) => {
     setWorkspaceId(workspaceId);
     // Note: We'll need to fetch the workspace details to get the name
     // This will be handled when the workspace is loaded
-  }, []);
+    
+    // If there's a pending start new graph action, execute it
+    if (pendingStartNewGraphAfterSave && pendingNewGraphAddress) {
+      try {
+        // Save current work to the new workspace
+        await saveVersion(workspaceId, {
+          nodes,
+          edges: connections,
+          zoom: 1,
+          pan: { x: 0, y: 0 },
+          hidePassThrough: false
+        }, 'auto', 'Auto-saved before starting new graph');
+        setHasUnsavedChanges(false);
+        
+        // Clear workspace info and start new graph
+        clearWorkspaceInfo();
+        setStartNewGraphConfirmationOpen(false);
+        setPendingStartNewGraphAfterSave(false);
+        
+        // Clear the current graph
+        setNodes([]);
+        setConnections([]);
+        setDrawingHistory([]);
+        setHistoryIndex(-1);
+        setCurrentAddress('');
+        setCenterNodeId('');
+        setLeftPanelData(null);
+        
+        // Start fresh with the new address
+        setAddress(pendingNewGraphAddress);
+        setPendingNewGraphAddress(null);
+        
+        // Trigger the trace for the new address
+        await performTrace(pendingNewGraphAddress);
+      } catch (error) {
+        console.error('Failed to save and start new graph after workspace creation:', error);
+        setPendingStartNewGraphAfterSave(false);
+      }
+    }
+  }, [pendingStartNewGraphAfterSave, pendingNewGraphAddress, nodes, connections, saveVersion, clearWorkspaceInfo]);
 
   // Helper functions for graph state detection
   const hasExistingWork = useCallback(() => {
@@ -299,6 +339,11 @@ const FlowTracePage: React.FC = () => {
       } catch (error) {
         console.error('Failed to save before starting new graph:', error);
       }
+    } else {
+      // If no workspace, open the workspace manager to create one
+      setPendingStartNewGraphAfterSave(true);
+      setWorkspaceMgrOpen(true);
+      return;
     }
     
     // Clear workspace info and start new graph
@@ -1289,7 +1334,15 @@ const FlowTracePage: React.FC = () => {
 
       <GitHubWorkspaceManager
         open={workspaceMgrOpen}
-        onOpenChange={setWorkspaceMgrOpen}
+        onOpenChange={(open) => {
+          setWorkspaceMgrOpen(open);
+          // If workspace manager is closed and there was a pending start new graph action, cancel it
+          if (!open && pendingStartNewGraphAfterSave) {
+            setPendingStartNewGraphAfterSave(false);
+            setStartNewGraphConfirmationOpen(false);
+            setPendingNewGraphAddress(null);
+          }
+        }}
         currentState={{ nodes, edges: connections, zoom: 1, pan: { x: 0, y: 0 }, hidePassThrough: false }}
         onLoadWorkspace={handleLoadWorkspaceFromManager}
         currentWorkspaceId={workspaceId || undefined}
