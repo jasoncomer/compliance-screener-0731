@@ -271,6 +271,27 @@ const FlowTracePage: React.FC = () => {
     setDuplicateAddress(null);
   }, []);
 
+  const handleStartNewGraph = useCallback(() => {
+    if (!duplicateAddress) return;
+    setDuplicateNodeDialogOpen(false);
+    
+    // Clear the current graph
+    setNodes([]);
+    setConnections([]);
+    setDrawingHistory([]);
+    setHistoryIndex(-1);
+    setCurrentAddress('');
+    setCenterNodeId('');
+    setLeftPanelData(null);
+    
+    // Start fresh with the duplicate address
+    setAddress(duplicateAddress);
+    setDuplicateAddress(null);
+    
+    // Trigger the trace for the new address
+    performTrace(duplicateAddress);
+  }, [duplicateAddress]);
+
   // Quick save functionality
   const handleQuickSave = useCallback(async () => {
     if (!workspaceId) {
@@ -1237,6 +1258,7 @@ const FlowTracePage: React.FC = () => {
         duplicateAddress={duplicateAddress || ''}
         existingNodeLabel={findDuplicateNode(duplicateAddress || '')?.label}
         onViewExisting={handleViewExisting}
+        onStartNewGraph={handleStartNewGraph}
         onCancel={handleCancelDuplicate}
       />
 
