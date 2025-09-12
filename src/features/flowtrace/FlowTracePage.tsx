@@ -262,9 +262,6 @@ const FlowTracePage: React.FC = () => {
   }, [pendingStartNewGraphAfterSave, pendingNewGraphAddress, nodes, connections, saveVersion, clearWorkspaceInfo]);
 
   // Helper functions for graph state detection
-  const hasExistingWork = useCallback(() => {
-    return nodes.length > 1 || connections.length > 0 || drawingHistory.length > 0;
-  }, [nodes.length, connections.length, drawingHistory.length]);
 
   const findDuplicateNode = useCallback((address: string) => {
     return nodes.find(node => node.id === address);
