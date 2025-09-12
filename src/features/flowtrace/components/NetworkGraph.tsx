@@ -444,14 +444,20 @@ export const NetworkGraph = forwardRef<NetworkGraphHandle, NetworkGraphProps>(({
       const drawableConnections = connections.filter((c) => c.from !== c.to)
 
       drawableConnections.forEach((connection) => {
-        // Group by node pair to handle bidirectional connections
-        // Use a consistent key that preserves direction information
-        const nodePair = `${connection.from}|${connection.to}`
-        
-        if (!connectionGroups.has(nodePair)) {
-          connectionGroups.set(nodePair, [])
+        // If connection is already aggregated, treat it as a single connection
+        if (connection.isAggregated) {
+          const nodePair = `${connection.from}|${connection.to}`
+          connectionGroups.set(nodePair, [connection])
+        } else {
+          // Group by node pair to handle bidirectional connections
+          // Use a consistent key that preserves direction information
+          const nodePair = `${connection.from}|${connection.to}`
+          
+          if (!connectionGroups.has(nodePair)) {
+            connectionGroups.set(nodePair, [])
+          }
+          connectionGroups.get(nodePair)!.push(connection)
         }
-        connectionGroups.get(nodePair)!.push(connection)
       })
       
       // Also check for reverse connections and group them together
@@ -512,8 +518,11 @@ export const NetworkGraph = forwardRef<NetworkGraphHandle, NetworkGraphProps>(({
         const hasBidirectional = outgoingConnections.length > 0 && incomingConnections.length > 0;
         
         // Check if we have multiple connections in the same direction (need curves)
-        const hasMultipleOutgoing = outgoingConnections.length > 1;
-        const hasMultipleIncoming = incomingConnections.length > 1;
+        // For aggregated connections, treat as single connection
+        const hasAggregatedOutgoing = outgoingConnections.some(conn => conn.isAggregated);
+        const hasAggregatedIncoming = incomingConnections.some(conn => conn.isAggregated);
+        const hasMultipleOutgoing = !hasAggregatedOutgoing && outgoingConnections.length > 1;
+        const hasMultipleIncoming = !hasAggregatedIncoming && incomingConnections.length > 1;
         
         console.log('🔍 Connection analysis:', {
           fromId,
@@ -528,12 +537,76 @@ export const NetworkGraph = forwardRef<NetworkGraphHandle, NetworkGraphProps>(({
         // Draw outgoing connections (from first node to second node)
         if (outgoingConnections.length > 0) {
           const edgeColor = outgoingConnections[0]?.customColor || (isDark ? "#6b7280" : "#9ca3af")
-          const totalAmount = outgoingConnections.reduce((sum, conn) => sum + parseFloat(conn.amount || "0"), 0).toFixed(8)
-          const totalFormatted = formatAmount(String(totalAmount))
-          const utxoCount = outgoingConnections.length
-          const currency = outgoingConnections[0]?.currency || "BTC"
+          
+          // Check if we have an aggregated connection
+          const aggregatedConnection = outgoingConnections.find(conn => conn.isAggregated);
+          
+          let totalAmount: string;
+          let totalFormatted: string;
+          let utxoCount: number;
+          let currency: string;
+          
+          if (aggregatedConnection) {
+            // Use pre-calculated values from aggregated connection
+            totalAmount = aggregatedConnection.amount || "0";
+            totalFormatted = formatAmount(String(totalAmount));
+            utxoCount = aggregatedConnection.utxoCount || outgoingConnections.length;
+            currency = aggregatedConnection.currency || "BTC";
+          } else {
+            // Calculate from individual connections
+            totalAmount = outgoingConnections.reduce((sum, conn) => sum + parseFloat(conn.amount || "0"), 0).toFixed(8);
+            totalFormatted = formatAmount(String(totalAmount));
+            utxoCount = outgoingConnections.length;
+            currency = outgoingConnections[0]?.currency || "BTC";
+          }
 
-          if (hasBidirectional || hasMultipleOutgoing) {
+          // Handle aggregated connections as single straight lines
+          if (hasAggregatedOutgoing) {
+            console.log('📊 Drawing aggregated connection as straight line');
+            const connection = outgoingConnections[0]; // Should only be one aggregated connection
+            
+            // Draw straight line
+            ctx.beginPath();
+            ctx.moveTo(fromNode.x, fromNode.y);
+            ctx.lineTo(toNode.x, toNode.y);
+            ctx.strokeStyle = connection.customColor || edgeColor;
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            
+            // Draw arrow
+            const dx = toNode.x - fromNode.x;
+            const dy = toNode.y - fromNode.y;
+            const length = Math.sqrt(dx*dx + dy*dy);
+            const unitX = dx / length;
+            const unitY = dy / length;
+            const arrowX = toNode.x - unitX * 20;
+            const arrowY = toNode.y - unitY * 20;
+            
+            ctx.beginPath();
+            ctx.moveTo(arrowX - unitY * 8, arrowY + unitX * 8);
+            ctx.lineTo(arrowX, arrowY);
+            ctx.lineTo(arrowX + unitY * 8, arrowY - unitX * 8);
+            ctx.strokeStyle = connection.customColor || edgeColor;
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            
+            // Draw text with count
+            const midX = (fromNode.x + toNode.x) / 2;
+            const midY = (fromNode.y + toNode.y) / 2;
+            const textX = midX + unitY * 15;
+            const textY = midY - unitX * 15;
+            
+            const amountText = `${totalFormatted} ${currency}`;
+            const countText = `${utxoCount} UTXOs`;
+            
+            ctx.save();
+            ctx.fillStyle = isDark ? "#ffffff" : "#000000";
+            ctx.font = "12px sans-serif";
+            ctx.textAlign = "center";
+            ctx.fillText(amountText, textX, textY - 6);
+            ctx.fillText(countText, textX, textY + 6);
+            ctx.restore();
+          } else if (hasBidirectional || hasMultipleOutgoing) {
             console.log('🎯 Drawing curved connections:', {
               hasBidirectional,
               hasMultipleOutgoing,
@@ -664,12 +737,76 @@ export const NetworkGraph = forwardRef<NetworkGraphHandle, NetworkGraphProps>(({
         // Draw incoming connections (from second node to first node) if they exist
         if (incomingConnections.length > 0) {
           const edgeColor = incomingConnections[0]?.customColor || (isDark ? "#9ca3af" : "#6b7280")
-          const totalAmount = incomingConnections.reduce((sum, conn) => sum + parseFloat(conn.amount || "0"), 0).toFixed(8)
-          const totalFormatted = formatAmount(String(totalAmount))
-          const utxoCount = incomingConnections.length
-          const currency = incomingConnections[0]?.currency || "BTC"
+          
+          // Check if we have an aggregated connection
+          const aggregatedConnection = incomingConnections.find(conn => conn.isAggregated);
+          
+          let totalAmount: string;
+          let totalFormatted: string;
+          let utxoCount: number;
+          let currency: string;
+          
+          if (aggregatedConnection) {
+            // Use pre-calculated values from aggregated connection
+            totalAmount = aggregatedConnection.amount || "0";
+            totalFormatted = formatAmount(String(totalAmount));
+            utxoCount = aggregatedConnection.utxoCount || incomingConnections.length;
+            currency = aggregatedConnection.currency || "BTC";
+          } else {
+            // Calculate from individual connections
+            totalAmount = incomingConnections.reduce((sum, conn) => sum + parseFloat(conn.amount || "0"), 0).toFixed(8);
+            totalFormatted = formatAmount(String(totalAmount));
+            utxoCount = incomingConnections.length;
+            currency = incomingConnections[0]?.currency || "BTC";
+          }
 
-          if (hasBidirectional || hasMultipleIncoming) {
+          // Handle aggregated connections as single straight lines
+          if (hasAggregatedIncoming) {
+            console.log('📊 Drawing aggregated incoming connection as straight line');
+            const connection = incomingConnections[0]; // Should only be one aggregated connection
+            
+            // Draw straight line
+            ctx.beginPath();
+            ctx.moveTo(toNode.x, toNode.y);
+            ctx.lineTo(fromNode.x, fromNode.y);
+            ctx.strokeStyle = connection.customColor || edgeColor;
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            
+            // Draw arrow
+            const dx = fromNode.x - toNode.x;
+            const dy = fromNode.y - toNode.y;
+            const length = Math.sqrt(dx*dx + dy*dy);
+            const unitX = dx / length;
+            const unitY = dy / length;
+            const arrowX = fromNode.x - unitX * 20;
+            const arrowY = fromNode.y - unitY * 20;
+            
+            ctx.beginPath();
+            ctx.moveTo(arrowX - unitY * 8, arrowY + unitX * 8);
+            ctx.lineTo(arrowX, arrowY);
+            ctx.lineTo(arrowX + unitY * 8, arrowY - unitX * 8);
+            ctx.strokeStyle = connection.customColor || edgeColor;
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            
+            // Draw text with count
+            const midX = (fromNode.x + toNode.x) / 2;
+            const midY = (fromNode.y + toNode.y) / 2;
+            const textX = midX - unitY * 15;
+            const textY = midY + unitX * 15;
+            
+            const amountText = `${totalFormatted} ${currency}`;
+            const countText = `${utxoCount} UTXOs`;
+            
+            ctx.save();
+            ctx.fillStyle = isDark ? "#ffffff" : "#000000";
+            ctx.font = "12px sans-serif";
+            ctx.textAlign = "center";
+            ctx.fillText(amountText, textX, textY - 6);
+            ctx.fillText(countText, textX, textY + 6);
+            ctx.restore();
+          } else if (hasBidirectional || hasMultipleIncoming) {
             // Draw individual curved lines for each connection when there are multiple
             if (hasMultipleIncoming) {
               const OFFSET_STEP = 40;

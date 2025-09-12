@@ -557,75 +557,6 @@ const FlowTracePage: React.FC = () => {
     }
   };
 
-  const handleLoadSampleData = () => {
-    const sampleNodes: FTNode[] = [
-      {
-        id: 'bc1qankq7lpa8ldq5yk36ndsxdsu0x84ylmrkjmn9s',
-        label: 'bc1qankq7lpa8ldq5yk36ndsxdsu0x84ylmrkjmn9s',
-        x: 200,
-        y: 200,
-        type: 'wallet',
-        risk: 0.2
-      },
-      {
-        id: 'bc1qy5usrvs0pg3wt3uc3m9sm29jnngkc038j6tz9w',
-        label: 'bc1qy5usrvs0pg3wt3uc3m9sm29jnngkc038j6tz9w',
-        x: 400,
-        y: 200,
-        type: 'wallet',
-        risk: 0.1
-      },
-      {
-        id: 'bc1qdef456789012345678901234567890123456789',
-        label: 'bc1qdef456789012345678901234567890123456789',
-        x: 300,
-        y: 350,
-        type: 'wallet',
-        risk: 0.3
-      }
-    ];
-
-    const sampleConnections: FTConnection[] = [
-      {
-        from: 'bc1qankq7lpa8ldq5yk36ndsxdsu0x84ylmrkjmn9s',
-        to: 'bc1qy5usrvs0pg3wt3uc3m9sm29jnngkc038j6tz9w',
-        amount: '1000000',
-        currency: 'BTC',
-        date: '2024-01-15',
-        txHash: 'tx123',
-        utxoKey: 'tx123::0::bc1qy5usrvs0pg3wt3uc3m9sm29jnngkc038j6tz9w::1000000',
-        connectionKey: 'bc1qankq7lpa8ldq5yk36ndsxdsu0x84ylmrkjmn9s:bc1qy5usrvs0pg3wt3uc3m9sm29jnngkc038j6tz9w:tx123::0::bc1qy5usrvs0pg3wt3uc3m9sm29jnngkc038j6tz9w::1000000:1000000',
-        locked: true // Mark as locked to prevent any future modifications
-      },
-      {
-        from: 'bc1qy5usrvs0pg3wt3uc3m9sm29jnngkc038j6tz9w',
-        to: 'bc1qankq7lpa8ldq5yk36ndsxdsu0x84ylmrkjmn9s',
-        amount: '500000',
-        currency: 'BTC',
-        date: '2024-01-16',
-        txHash: 'tx456',
-        utxoKey: 'tx456::0::bc1qankq7lpa8ldq5yk36ndsxdsu0x84ylmrkjmn9s::500000',
-        connectionKey: 'bc1qy5usrvs0pg3wt3uc3m9sm29jnngkc038j6tz9w:bc1qankq7lpa8ldq5yk36ndsxdsu0x84ylmrkjmn9s:tx456::0::bc1qankq7lpa8ldq5yk36ndsxdsu0x84ylmrkjmn9s::500000:500000',
-        locked: true // Mark as locked to prevent any future modifications
-      },
-      {
-        from: 'bc1qankq7lpa8ldq5yk36ndsxdsu0x84ylmrkjmn9s',
-        to: 'bc1qdef456789012345678901234567890123456789',
-        amount: '2000000',
-        currency: 'BTC',
-        date: '2024-01-17',
-        txHash: 'tx789',
-        utxoKey: 'tx789::0::bc1qdef456789012345678901234567890123456789::2000000',
-        connectionKey: 'bc1qankq7lpa8ldq5yk36ndsxdsu0x84ylmrkjmn9s:bc1qdef456789012345678901234567890123456789:tx789::0::bc1qdef456789012345678901234567890123456789::2000000:2000000',
-        locked: true // Mark as locked to prevent any future modifications
-      }
-    ];
-
-    setNodes(sampleNodes);
-    setConnections(sampleConnections);
-    setCurrentAddress('bc1qankq7lpa8ldq5yk36ndsxdsu0x84ylmrkjmn9s');
-    setCenterNodeId('bc1qankq7lpa8ldq5yk36ndsxdsu0x84ylmrkjmn9s');
-  };
 
   const handleImportData = (data: any) => {
     try {
@@ -742,6 +673,82 @@ const FlowTracePage: React.FC = () => {
       return updatedConnections;
     });
   }, [utxoCollapseMode]);
+
+  // Function to process existing connections when UTXO mode changes
+  const processConnectionsForMode = useCallback((mode: "aggregated" | "individual") => {
+    setConnections(prev => {
+      if (mode === "individual") {
+        // Expand aggregated connections back to individual ones
+        const expandedConnections: FTConnection[] = [];
+        
+        prev.forEach(conn => {
+          if (conn.isAggregated && conn.originalConnections) {
+            // Add all original individual connections
+            expandedConnections.push(...conn.originalConnections);
+          } else {
+            // Keep non-aggregated connections as-is
+            expandedConnections.push(conn);
+          }
+        });
+        
+        return expandedConnections;
+      } else {
+        // Aggregate individual connections
+        const connectionGroups = new Map<string, FTConnection[]>();
+        const nonGroupedConnections: FTConnection[] = [];
+        
+        prev.forEach(conn => {
+          if (conn.isAggregated) {
+            // Keep existing aggregated connections
+            nonGroupedConnections.push(conn);
+          } else {
+            // Group individual connections by from-to pair
+            const groupKey = `${conn.from}|${conn.to}`;
+            if (!connectionGroups.has(groupKey)) {
+              connectionGroups.set(groupKey, []);
+            }
+            connectionGroups.get(groupKey)!.push(conn);
+          }
+        });
+        
+        // Process each group
+        const processedConnections: FTConnection[] = [...nonGroupedConnections];
+        
+        connectionGroups.forEach((groupConnections, groupKey) => {
+          if (groupConnections.length > 1) {
+            // Create aggregated connection
+            const firstConn = groupConnections[0];
+            const totalAmount = groupConnections.reduce((sum, conn) => 
+              sum + parseFloat(conn.amount || '0'), 0
+            );
+            
+            const aggregatedConnection: FTConnection = {
+              ...firstConn,
+              amount: totalAmount.toFixed(8),
+              txHash: groupConnections.map(c => c.txHash).join(","),
+              txid: groupConnections.map(c => c.txid).filter(Boolean).join(","),
+              isAggregated: true,
+              utxoCount: groupConnections.length,
+              originalConnections: groupConnections,
+              groupId: groupKey,
+              _aggregatedText: {
+                amount: totalAmount.toFixed(8),
+                count: groupConnections.length,
+                currency: firstConn.currency
+              }
+            };
+            
+            processedConnections.push(aggregatedConnection);
+          } else {
+            // Keep single connections as-is
+            processedConnections.push(...groupConnections);
+          }
+        });
+        
+        return processedConnections;
+      }
+    });
+  }, []);
 
   const onAdd = useCallback((payload: { address: string; selectedTxs: any[] }) => {
     const { selectedTxs, address } = payload
@@ -1049,7 +1056,7 @@ const FlowTracePage: React.FC = () => {
 
       {/* Main Content */}
       {isEmptyState ? (
-        <FlowTraceEmptyState onLoadSampleData={handleLoadSampleData} />
+        <FlowTraceEmptyState />
       ) : (
         <div className="relative mt-4">
           {/* Main Toolbar - positioned on the right to avoid left panel */}
@@ -1063,7 +1070,11 @@ const FlowTracePage: React.FC = () => {
                 setDrawingToolbarVisible(!drawingToolbarVisible);
               }}
               utxoCollapseMode={utxoCollapseMode}
-              onToggleUtxoMode={() => setUtxoCollapseMode(prev => prev === "aggregated" ? "individual" : "aggregated")}
+              onToggleUtxoMode={() => {
+                const newMode = utxoCollapseMode === "aggregated" ? "individual" : "aggregated";
+                setUtxoCollapseMode(newMode);
+                processConnectionsForMode(newMode);
+              }}
             />
           </div>
 
