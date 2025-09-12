@@ -29,6 +29,8 @@ import { WorkspaceInfo } from './components/WorkspaceInfo'
 import SearchConfirmationDialog from './components/SearchConfirmationDialog'
 import DuplicateNodeDialog from './components/DuplicateNodeDialog'
 import StartNewGraphConfirmationDialog from './components/StartNewGraphConfirmationDialog'
+import SaveAndNewDialog from './components/SaveAndNewDialog'
+import { useAutosave } from '../../context/AutosaveContext'
 
 // helper to merge duplicate edges using the same key format as generateConnectionKey
 const mergeEdges = (existing: FTConnection[], incoming: FTConnection[]) => {
@@ -95,6 +97,7 @@ const mergeEdges = (existing: FTConnection[], incoming: FTConnection[]) => {
 }
 
 const FlowTracePage: React.FC = () => {
+  const { autosaveInterval, isAutosaveEnabled } = useAutosave();
   const [address, setAddress] = useState('');
   const [nodes, setNodes] = useState<FTNode[]>([]);
   const [connections, setConnections] = useState<FTConnection[]>([]);
@@ -148,6 +151,7 @@ const FlowTracePage: React.FC = () => {
   const [pendingNewGraphAddress, setPendingNewGraphAddress] = useState<string | null>(null);
   const [pendingStartNewGraphAfterSave, setPendingStartNewGraphAfterSave] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [saveAndNewDialogOpen, setSaveAndNewDialogOpen] = useState(false);
 
   // Track unsaved changes
   useEffect(() => {
@@ -162,6 +166,31 @@ const FlowTracePage: React.FC = () => {
       setHasUnsavedChanges(false);
     }
   }, [workspaceId]);
+
+  // Autosave functionality
+  useEffect(() => {
+    if (!isAutosaveEnabled || !workspaceId || !hasUnsavedChanges) {
+      return;
+    }
+
+    const interval = setInterval(async () => {
+      try {
+        await saveVersion(workspaceId, {
+          nodes,
+          edges: connections,
+          zoom: 1,
+          pan: { x: 0, y: 0 },
+          hidePassThrough: false
+        }, 'auto', 'Auto-save', 'Automatic save');
+        setHasUnsavedChanges(false);
+        setVersionTimestamp(new Date().toISOString());
+      } catch (error) {
+        console.error('Failed to autosave:', error);
+      }
+    }, autosaveInterval * 60 * 1000); // Convert minutes to milliseconds
+
+    return () => clearInterval(interval);
+  }, [isAutosaveEnabled, workspaceId, hasUnsavedChanges, nodes, connections, autosaveInterval]);
 
   // Handles loading a workspace/version chosen in the manager
   const handleLoadWorkspaceFromManager = useCallback(async (ws: Workspace, versionId?: string) => {
@@ -255,31 +284,13 @@ const FlowTracePage: React.FC = () => {
     setPendingAddress(null);
   }, [pendingAddress]);
 
-  const handleSaveAndNew = useCallback(async () => {
+  const handleSaveAndNew = useCallback(() => {
     if (!pendingAddress) return;
     
-    // Auto-save current work if there's a workspace
-    if (workspaceId) {
-      try {
-        await saveVersion(workspaceId, {
-          nodes,
-          edges: connections,
-          zoom: 1,
-          pan: { x: 0, y: 0 },
-          hidePassThrough: false
-        }, 'auto', 'Auto-save before new investigation');
-        setHasUnsavedChanges(false);
-      } catch (error) {
-        console.error('Failed to auto-save:', error);
-      }
-    }
-    
-    // Clear workspace info and start new investigation
-    clearWorkspaceInfo();
+    // Show the save and new dialog instead of directly saving
     setSearchConfirmationOpen(false);
-    await performTrace(pendingAddress);
-    setPendingAddress(null);
-  }, [pendingAddress, workspaceId, nodes, connections, clearWorkspaceInfo]);
+    setSaveAndNewDialogOpen(true);
+  }, [pendingAddress]);
 
   const handleDiscardAndNew = useCallback(async () => {
     if (!pendingAddress) return;
@@ -297,6 +308,63 @@ const FlowTracePage: React.FC = () => {
 
   const handleCancelSearch = useCallback(() => {
     setSearchConfirmationOpen(false);
+    setPendingAddress(null);
+  }, []);
+
+  // Action handlers for save and new dialog
+  const handleSaveToExisting = useCallback(async (workspaceId: string) => {
+    if (!pendingAddress) return;
+    
+    try {
+      await saveVersion(workspaceId, {
+        nodes,
+        edges: connections,
+        zoom: 1,
+        pan: { x: 0, y: 0 },
+        hidePassThrough: false
+      }, 'auto', 'Auto-save before new investigation');
+      setHasUnsavedChanges(false);
+    } catch (error) {
+      console.error('Failed to save to existing workspace:', error);
+    }
+    
+    // Clear workspace info and start new investigation
+    clearWorkspaceInfo();
+    setSaveAndNewDialogOpen(false);
+    await performTrace(pendingAddress);
+    setPendingAddress(null);
+  }, [pendingAddress, nodes, connections, clearWorkspaceInfo]);
+
+  const handleCreateNewWorkspace = useCallback(async (name: string, description: string) => {
+    if (!pendingAddress) return;
+    
+    try {
+      const { createWorkspace } = await import('@/lib/workspace-utils');
+      const newWorkspace = await createWorkspace({
+        nodes,
+        edges: connections,
+        zoom: 1,
+        pan: { x: 0, y: 0 },
+        hidePassThrough: false
+      }, name, description);
+      
+      setWorkspaceId(newWorkspace.id);
+      setCurrentVersionId(newWorkspace.masterVersionId || 'master');
+      setWorkspaceName(newWorkspace.name);
+      setVersionName('Master');
+      setVersionTimestamp(newWorkspace.versions[0]?.timestamp || new Date().toISOString());
+      setHasUnsavedChanges(false);
+    } catch (error) {
+      console.error('Failed to create new workspace:', error);
+    }
+    
+    setSaveAndNewDialogOpen(false);
+    await performTrace(pendingAddress);
+    setPendingAddress(null);
+  }, [pendingAddress, nodes, connections]);
+
+  const handleCancelSaveAndNew = useCallback(() => {
+    setSaveAndNewDialogOpen(false);
     setPendingAddress(null);
   }, []);
 
@@ -754,15 +822,9 @@ const FlowTracePage: React.FC = () => {
       return;
     }
     
-    // Check if there's existing work
-    if (hasExistingWork()) {
-      setPendingAddress(address);
-      setSearchConfirmationOpen(true);
-      return;
-    }
-    
-    // No existing work and no duplicate - proceed directly
-    await performTrace(address);
+    // Always show confirmation dialog before adding new nodes
+    setPendingAddress(address);
+    setSearchConfirmationOpen(true);
   };
 
   useEffect(() => {
@@ -1436,6 +1498,15 @@ const FlowTracePage: React.FC = () => {
         onSaveAndNew={handleSaveAndStartNewGraph}
         onDiscardAndNew={handleDiscardAndStartNewGraph}
         onCancel={handleCancelStartNewGraph}
+      />
+
+      {/* Save and New Dialog */}
+      <SaveAndNewDialog
+        open={saveAndNewDialogOpen}
+        onOpenChange={setSaveAndNewDialogOpen}
+        onSaveToExisting={handleSaveToExisting}
+        onCreateNew={handleCreateNewWorkspace}
+        onCancel={handleCancelSaveAndNew}
       />
 
       {/* Custom Node Dialog */}

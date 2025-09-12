@@ -130,9 +130,8 @@ export const InfoItem = styled.div`
 
 export const Label = styled.span`
   font-size: 14px;
-  color: ${props => props.theme.theme === 'dark' ? '#a0a0a0' : '#7f8c8d'};
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+  color: ${props => props.theme.theme === 'dark' ? '#e0e0e0' : '#2c3e50'};
+  font-weight: 500;
   min-width: 200px;
   text-align: left;
   line-height: 1.5;
@@ -182,8 +181,8 @@ export const Button = styled.button`
 `;
 
 export const PreferencesGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  display: flex;
+  flex-direction: column;
   gap: 16px;
   margin-top: 24px;
 `;
@@ -192,12 +191,40 @@ export const PreferenceToggle = styled.div`
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 16px;
+  padding: 16px 20px;
   background: ${props => props.theme.theme === 'dark' ? '#141414' : '#f8f9fa'};
   border-radius: 8px;
+  border: 1px solid ${props => props.theme.theme === 'dark' ? '#2d2d2d' : '#e0e0e0'};
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: ${props => props.theme.theme === 'dark' ? '#1a1a1a' : '#f0f0f0'};
+    border-color: ${props => props.theme.theme === 'dark' ? '#3d3d3d' : '#d0d0d0'};
+  }
 
   label {
     width: auto;
     margin-right: 16px;
+    font-weight: 500;
+  }
+
+  .ant-switch {
+    background: ${props => props.theme.theme === 'dark' ? '#404040' : '#d0d0d0'};
+  }
+
+  .ant-switch-checked {
+    background: #1890ff;
+  }
+
+  .ant-input-number,
+  .ant-select {
+    background: ${props => props.theme.theme === 'dark' ? '#2d2d2d' : '#ffffff'};
+    border-color: ${props => props.theme.theme === 'dark' ? '#404040' : '#d0d0d0'};
+  }
+
+  .ant-input-number:focus,
+  .ant-select:focus {
+    border-color: #1890ff;
+    box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
   }
 `; 

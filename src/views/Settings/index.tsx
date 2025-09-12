@@ -3,6 +3,7 @@ import { message } from 'antd';
 import { SettingOutlined } from '@ant-design/icons';
 import { useAppContext } from '../../context/AppContext';
 import { useTheme } from '../../context/ThemeContext';
+import { useAutosave } from '../../context/AutosaveContext';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import {
   fetchOrganizations,
@@ -27,6 +28,7 @@ import { SettingsLayout, ContentArea } from './components/styled';
 const Settings = () => {
   const { theme, toggleTheme } = useTheme();
   const { user } = useAppContext();
+  const { autosaveInterval, setAutosaveInterval, isAutosaveEnabled, setIsAutosaveEnabled } = useAutosave();
   const dispatch = useAppDispatch();
   const organization = useAppSelector(selectCurrentOrganization);
 
@@ -143,6 +145,10 @@ const Settings = () => {
             notifications={notificationsEnabled}
             onNotificationsChange={handleNotificationsChange}
             onThemeChange={toggleTheme}
+            autosaveInterval={autosaveInterval}
+            onAutosaveIntervalChange={setAutosaveInterval}
+            isAutosaveEnabled={isAutosaveEnabled}
+            onAutosaveEnabledChange={setIsAutosaveEnabled}
           />
         );
       case 'notifications':

@@ -42,12 +42,6 @@ export const SearchConfirmationDialog: React.FC<SearchConfirmationDialogProps> =
 }) => {
   const hasExistingWork = existingNodeCount > 0 || existingConnectionCount > 0;
 
-  if (!hasExistingWork) {
-    // If no existing work, just proceed with adding to graph
-    onAddToGraph();
-    return null;
-  }
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="w-[95vw] max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -68,25 +62,33 @@ export const SearchConfirmationDialog: React.FC<SearchConfirmationDialogProps> =
               </code>
             </div>
             
-            <div className="rounded-lg bg-amber-50 dark:bg-amber-900/20 p-4 w-full">
-              <p className="font-medium text-amber-900 dark:text-amber-100 mb-3 text-base">
-                You currently have work in progress:
-              </p>
-              <div className="flex flex-wrap gap-3 w-full">
-                <div className="flex items-center gap-2 px-3 py-2 bg-gray-100 dark:bg-gray-700 rounded border text-sm flex-shrink-0">
-                  <Network className="h-4 w-4 text-gray-600 dark:text-gray-400 flex-shrink-0" />
-                  <span className="font-medium whitespace-nowrap">
-                    {existingNodeCount} node{existingNodeCount !== 1 ? 's' : ''}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2 px-3 py-2 bg-gray-100 dark:bg-gray-700 rounded border text-sm flex-shrink-0">
-                  <GitBranch className="h-4 w-4 text-gray-600 dark:text-gray-400 flex-shrink-0" />
-                  <span className="font-medium whitespace-nowrap">
-                    {existingConnectionCount} connection{existingConnectionCount !== 1 ? 's' : ''}
-                  </span>
+            {hasExistingWork ? (
+              <div className="rounded-lg bg-amber-50 dark:bg-amber-900/20 p-4 w-full">
+                <p className="font-medium text-amber-900 dark:text-amber-100 mb-3 text-base">
+                  You currently have work in progress:
+                </p>
+                <div className="flex flex-wrap gap-3 w-full">
+                  <div className="flex items-center gap-2 px-3 py-2 bg-gray-100 dark:bg-gray-700 rounded border text-sm flex-shrink-0">
+                    <Network className="h-4 w-4 text-gray-600 dark:text-gray-400 flex-shrink-0" />
+                    <span className="font-medium whitespace-nowrap">
+                      {existingNodeCount} node{existingNodeCount !== 1 ? 's' : ''}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 px-3 py-2 bg-gray-100 dark:bg-gray-700 rounded border text-sm flex-shrink-0">
+                    <GitBranch className="h-4 w-4 text-gray-600 dark:text-gray-400 flex-shrink-0" />
+                    <span className="font-medium whitespace-nowrap">
+                      {existingConnectionCount} connection{existingConnectionCount !== 1 ? 's' : ''}
+                    </span>
+                  </div>
                 </div>
               </div>
-            </div>
+            ) : (
+              <div className="rounded-lg bg-blue-50 dark:bg-blue-900/20 p-4 w-full">
+                <p className="font-medium text-blue-900 dark:text-blue-100 mb-3 text-base">
+                  This will start a new investigation with the address above.
+                </p>
+              </div>
+            )}
             
             <p className="text-gray-600 dark:text-gray-400 font-medium text-base">
               Choose how to proceed:
@@ -109,29 +111,31 @@ export const SearchConfirmationDialog: React.FC<SearchConfirmationDialogProps> =
               className="w-full sm:w-auto flex items-center justify-center gap-2 order-2 text-sm"
             >
               <Plus className="h-4 w-4" />
-              Add to Graph
+              {hasExistingWork ? 'Add to Graph' : 'Start Investigation'}
             </Button>
           </div>
           
-          <div className="flex flex-col gap-2 sm:flex-row sm:gap-2 w-full">
-            <Button
-              variant="secondary"
-              onClick={onSaveAndNew}
-              className="w-full sm:w-auto flex items-center justify-center gap-2 order-3 text-sm"
-            >
-              <Save className="h-4 w-4" />
-              Save & New
-            </Button>
-            
-            <Button
-              variant="destructive"
-              onClick={onDiscardAndNew}
-              className="w-full sm:w-auto flex items-center justify-center gap-2 order-4 text-sm"
-            >
-              <Trash2 className="h-4 w-4" />
-              Discard & New
-            </Button>
-          </div>
+          {hasExistingWork && (
+            <div className="flex flex-col gap-2 sm:flex-row sm:gap-2 w-full">
+              <Button
+                variant="secondary"
+                onClick={onSaveAndNew}
+                className="w-full sm:w-auto flex items-center justify-center gap-2 order-3 text-sm"
+              >
+                <Save className="h-4 w-4" />
+                Save & New
+              </Button>
+              
+              <Button
+                variant="destructive"
+                onClick={onDiscardAndNew}
+                className="w-full sm:w-auto flex items-center justify-center gap-2 order-4 text-sm"
+              >
+                <Trash2 className="h-4 w-4" />
+                Discard & New
+              </Button>
+            </div>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>

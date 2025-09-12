@@ -32,6 +32,7 @@ import { useAnalytics } from './hooks/useAnalytics';
 import { ComplianceDashboard } from "./views/compliance-v2/compliance-dashboard";
 import { Toaster } from './components/ui/toaster';
 import OAuthCallback from './components/OAuthCallback';
+import { AutosaveProvider } from './context/AutosaveContext';
 
 function App() {
   const dispatch = useAppDispatch();
@@ -116,6 +117,7 @@ function App() {
     <ConfigProvider theme={currentTheme}>
       {contextHolder}
       <Toaster />
+      <AutosaveProvider>
         <Routes>
           <Route path="/" element={<Navigate to="/home/block-explorer" replace />} />
           <Route path="/login" element={<Login />} />
@@ -146,6 +148,7 @@ function App() {
           </Route>
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
+      </AutosaveProvider>
     </ConfigProvider>
   )
 }
