@@ -28,6 +28,7 @@ import { AggregatedNodeDialog } from './components/AggregatedNodeDialog'
 import { WorkspaceInfo } from './components/WorkspaceInfo'
 import SearchConfirmationDialog from './components/SearchConfirmationDialog'
 import DuplicateNodeDialog from './components/DuplicateNodeDialog'
+import StartNewGraphConfirmationDialog from './components/StartNewGraphConfirmationDialog'
 
 // helper to merge duplicate edges using the same key format as generateConnectionKey
 const mergeEdges = (existing: FTConnection[], incoming: FTConnection[]) => {
@@ -143,6 +144,8 @@ const FlowTracePage: React.FC = () => {
   const [pendingAddress, setPendingAddress] = useState<string | null>(null);
   const [duplicateNodeDialogOpen, setDuplicateNodeDialogOpen] = useState(false);
   const [duplicateAddress, setDuplicateAddress] = useState<string | null>(null);
+  const [startNewGraphConfirmationOpen, setStartNewGraphConfirmationOpen] = useState(false);
+  const [pendingNewGraphAddress, setPendingNewGraphAddress] = useState<string | null>(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
   // Track unsaved changes
@@ -274,6 +277,35 @@ const FlowTracePage: React.FC = () => {
   const handleStartNewGraph = useCallback(() => {
     if (!duplicateAddress) return;
     setDuplicateNodeDialogOpen(false);
+    setPendingNewGraphAddress(duplicateAddress);
+    setStartNewGraphConfirmationOpen(true);
+  }, [duplicateAddress]);
+
+  // Handlers for start new graph confirmation dialog
+  const handleSaveAndStartNewGraph = useCallback(async () => {
+    if (!pendingNewGraphAddress) return;
+    
+    setStartNewGraphConfirmationOpen(false);
+    
+    // Save current work first
+    if (workspaceId) {
+      try {
+        await saveVersion(workspaceId, {
+          nodes,
+          edges: connections,
+          zoom: 1,
+          pan: { x: 0, y: 0 },
+          hidePassThrough: false
+        }, 'auto', 'Auto-saved before starting new graph');
+        setHasUnsavedChanges(false);
+      } catch (error) {
+        console.error('Failed to save before starting new graph:', error);
+      }
+    } else {
+      // If no workspace, open the workspace manager to create one
+      setWorkspaceMgrOpen(true);
+      return;
+    }
     
     // Clear the current graph
     setNodes([]);
@@ -284,13 +316,40 @@ const FlowTracePage: React.FC = () => {
     setCenterNodeId('');
     setLeftPanelData(null);
     
-    // Start fresh with the duplicate address
-    setAddress(duplicateAddress);
-    setDuplicateAddress(null);
+    // Start fresh with the new address
+    setAddress(pendingNewGraphAddress);
+    setPendingNewGraphAddress(null);
     
     // Trigger the trace for the new address
-    performTrace(duplicateAddress);
-  }, [duplicateAddress]);
+    performTrace(pendingNewGraphAddress);
+  }, [pendingNewGraphAddress, workspaceId, nodes, connections, saveVersion]);
+
+  const handleDiscardAndStartNewGraph = useCallback(() => {
+    if (!pendingNewGraphAddress) return;
+    
+    setStartNewGraphConfirmationOpen(false);
+    
+    // Clear the current graph
+    setNodes([]);
+    setConnections([]);
+    setDrawingHistory([]);
+    setHistoryIndex(-1);
+    setCurrentAddress('');
+    setCenterNodeId('');
+    setLeftPanelData(null);
+    
+    // Start fresh with the new address
+    setAddress(pendingNewGraphAddress);
+    setPendingNewGraphAddress(null);
+    
+    // Trigger the trace for the new address
+    performTrace(pendingNewGraphAddress);
+  }, [pendingNewGraphAddress]);
+
+  const handleCancelStartNewGraph = useCallback(() => {
+    setStartNewGraphConfirmationOpen(false);
+    setPendingNewGraphAddress(null);
+  }, []);
 
   // Quick save functionality
   const handleQuickSave = useCallback(async () => {
@@ -1260,6 +1319,18 @@ const FlowTracePage: React.FC = () => {
         onViewExisting={handleViewExisting}
         onStartNewGraph={handleStartNewGraph}
         onCancel={handleCancelDuplicate}
+      />
+
+      {/* Start New Graph Confirmation Dialog */}
+      <StartNewGraphConfirmationDialog
+        open={startNewGraphConfirmationOpen}
+        onOpenChange={setStartNewGraphConfirmationOpen}
+        newAddress={pendingNewGraphAddress || ''}
+        existingNodeCount={nodes.length}
+        existingConnectionCount={connections.length}
+        onSaveAndNew={handleSaveAndStartNewGraph}
+        onDiscardAndNew={handleDiscardAndStartNewGraph}
+        onCancel={handleCancelStartNewGraph}
       />
 
       {/* Custom Node Dialog */}
