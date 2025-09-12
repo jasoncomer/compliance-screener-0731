@@ -72,12 +72,34 @@ const deleteSOT = async (id: string): Promise<void> => {
   await axiosInstance.delete(`/sot/${id}`);
 };
 
+// Cache to prevent duplicate requests
+const relatedEntitiesCache = new Map<string, Promise<RelatedEntitiesResponse>>();
+
 const getRelatedEntities = async (entityId: string): Promise<RelatedEntitiesResponse> => {
-  
-  const response = await axiosInstance.get(`/attribution/entity/${entityId}/unique-values`);
- 
-    return response.data;
-  };
+  // Check if request is already in progress
+  if (relatedEntitiesCache.has(entityId)) {
+    console.log(`Using cached request for entity: ${entityId}`);
+    return relatedEntitiesCache.get(entityId)!;
+  }
+
+  const request = (async () => {
+    try {
+      console.log(`Fetching related entities for: ${entityId}`);
+      const response = await axiosInstance.get(`/attribution/entity/${entityId}/unique-values`);
+      return response.data;
+    } catch (error: any) {
+      console.error(`Error fetching related entities for ${entityId}:`, error);
+      throw error;
+    } finally {
+      // Remove from cache after completion (success or failure)
+      relatedEntitiesCache.delete(entityId);
+    }
+  })();
+
+  // Cache the promise
+  relatedEntitiesCache.set(entityId, request);
+  return request;
+};
 
 export const sot = {
   updateMongoDb,

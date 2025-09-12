@@ -42,28 +42,12 @@ export const useLogo = (options: UseLogoOptions = {}): UseLogoReturn => {
 
     try {
       // Try JPG first, then PNG if JPG fails
-      console.log('🔍 useLogo: Constructing logo URL for entity:', entityId);
-      
       const jpgUrl = `https://storage.googleapis.com/entity-logos/${entityId}.jpg`;
       const pngUrl = `https://storage.googleapis.com/entity-logos/${entityId}.png`;
-      
-      console.log('🔍 useLogo: Trying JPG first:', jpgUrl);
-      
-      // Special debugging for Coinbase
-      if (entityId?.toLowerCase().includes('coinbase')) {
-        console.log('🔍 Coinbase logo debugging:', {
-          entityId,
-          entityType,
-          jpgUrl,
-          pngUrl,
-          willTryBothFormats: true
-        });
-      }
       
       // Create a test image to check if JPG exists
       const testImg = new Image();
       testImg.onload = () => {
-        console.log('✅ useLogo: JPG loaded successfully:', jpgUrl);
         setLogoUrl(jpgUrl);
         
         // Cache the successful result
@@ -76,12 +60,9 @@ export const useLogo = (options: UseLogoOptions = {}): UseLogoReturn => {
       };
       
       testImg.onerror = () => {
-        console.log('❌ useLogo: JPG failed, trying PNG:', pngUrl);
-        
         // Try PNG if JPG fails
         const testPngImg = new Image();
         testPngImg.onload = () => {
-          console.log('✅ useLogo: PNG loaded successfully:', pngUrl);
           setLogoUrl(pngUrl);
           
           // Cache the successful result
@@ -94,18 +75,13 @@ export const useLogo = (options: UseLogoOptions = {}): UseLogoReturn => {
         };
         
         testPngImg.onerror = () => {
-          console.log('❌ useLogo: Both JPG and PNG failed for entity:', entityId);
-          
           // Try entity-type fallback if enabled
           if (enableFallback && entityType) {
-            console.log('🔄 useLogo: Trying entity-type fallback for:', entityType);
-            
             const typeJpgUrl = `https://storage.googleapis.com/entity-type-logos/${entityType}.jpg`;
             const typePngUrl = `https://storage.googleapis.com/entity-type-logos/${entityType}.png`;
             
             const testTypeImg = new Image();
             testTypeImg.onload = () => {
-              console.log('✅ useLogo: Entity-type JPG fallback loaded:', typeJpgUrl);
               setLogoUrl(typeJpgUrl);
               
               // Cache the successful result
@@ -120,7 +96,6 @@ export const useLogo = (options: UseLogoOptions = {}): UseLogoReturn => {
             testTypeImg.onerror = () => {
               const testTypePngImg = new Image();
               testTypePngImg.onload = () => {
-                console.log('✅ useLogo: Entity-type PNG fallback loaded:', typePngUrl);
                 setLogoUrl(typePngUrl);
                 
                 // Cache the successful result
@@ -133,7 +108,6 @@ export const useLogo = (options: UseLogoOptions = {}): UseLogoReturn => {
               };
               
               testTypePngImg.onerror = () => {
-                console.log('❌ useLogo: All fallbacks failed for entity:', entityId);
                 setLogoUrl(null);
                 setError('No logo found');
                 
@@ -151,7 +125,6 @@ export const useLogo = (options: UseLogoOptions = {}): UseLogoReturn => {
             
             testTypeImg.src = typeJpgUrl;
           } else {
-            console.log('❌ useLogo: No fallback enabled or no entity type for entity:', entityId);
             setLogoUrl(null);
             setError('No logo found');
             
@@ -233,8 +206,6 @@ export const useLogos = (entityIds: string[], entityType?: string) => {
     setError(null);
 
     try {
-      console.log('🔍 useLogos: Testing logo URLs for entities:', entityIds);
-      
       const logoMap: Record<string, string | null> = {};
       
       // Test each entity's logo (JPG first, then PNG)
@@ -243,28 +214,20 @@ export const useLogos = (entityIds: string[], entityType?: string) => {
           const jpgUrl = `https://storage.googleapis.com/entity-logos/${entityId}.jpg`;
           const pngUrl = `https://storage.googleapis.com/entity-logos/${entityId}.png`;
           
-          console.log('🔍 useLogos: Testing', entityId, 'JPG first:', jpgUrl);
-          
           const testImg = new Image();
           testImg.onload = () => {
-            console.log('✅ useLogos: JPG loaded for', entityId, ':', jpgUrl);
             logoMap[entityId] = jpgUrl;
             resolve();
           };
           
           testImg.onerror = () => {
-            console.log('❌ useLogos: JPG failed for', entityId, ', trying PNG:', pngUrl);
-            
             const testPngImg = new Image();
             testPngImg.onload = () => {
-              console.log('✅ useLogos: PNG loaded for', entityId, ':', pngUrl);
               logoMap[entityId] = pngUrl;
               resolve();
             };
             
             testPngImg.onerror = () => {
-              console.log('❌ useLogos: Both formats failed for', entityId);
-              
               // Try entity-type fallback
               if (entityType) {
                 const typeJpgUrl = `https://storage.googleapis.com/entity-type-logos/${entityType}.jpg`;
@@ -272,7 +235,6 @@ export const useLogos = (entityIds: string[], entityType?: string) => {
                 
                 const testTypeImg = new Image();
                 testTypeImg.onload = () => {
-                  console.log('✅ useLogos: Entity-type JPG fallback for', entityId, ':', typeJpgUrl);
                   logoMap[entityId] = typeJpgUrl;
                   resolve();
                 };
@@ -280,13 +242,11 @@ export const useLogos = (entityIds: string[], entityType?: string) => {
                 testTypeImg.onerror = () => {
                   const testTypePngImg = new Image();
                   testTypePngImg.onload = () => {
-                    console.log('✅ useLogos: Entity-type PNG fallback for', entityId, ':', typePngUrl);
                     logoMap[entityId] = typePngUrl;
                     resolve();
                   };
                   
                   testTypePngImg.onerror = () => {
-                    console.log('❌ useLogos: All fallbacks failed for', entityId);
                     logoMap[entityId] = null;
                     resolve();
                   };
