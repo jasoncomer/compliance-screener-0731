@@ -28,28 +28,65 @@ import { WalletClusterPanel } from './components/WalletClusterPanel'
 import { AggregatedNodeDialog } from './components/AggregatedNodeDialog'
 import { Wallet } from 'lucide-react'
 
-// helper to merge duplicate edges (same from,to,currency,type)
+// helper to merge duplicate edges using the same key format as generateConnectionKey
 const mergeEdges = (existing: FTConnection[], incoming: FTConnection[]) => {
   const map = new Map<string, FTConnection>()
 
-  const edgeKey = (e: FTConnection) => `${e.from}|${e.to}|${e.currency}|${e.type || 'out'}`
+  // Use the same key format as generateConnectionKey: from:to:utxo:amount
+  const edgeKey = (e: FTConnection) => generateConnectionKey(e)
 
   const addEdge = (edge: FTConnection) => {
     const k = edgeKey(edge)
     if (map.has(k)) {
-      const cur = map.get(k)!
-      // sum amounts numerically if possible
-      const total = (parseFloat(cur.amount) || 0) + (parseFloat(edge.amount) || 0)
-      cur.amount = String(total)
-      // concat txHash
-      cur.txHash = `${cur.txHash},${edge.txHash}`
-      cur.date = `${cur.date},${edge.date}`
+      const existingEdge = map.get(k)!
+      
+      // If existing edge is locked, never replace it
+      if (existingEdge.locked) {
+        console.log('🔒 Locked connection preserved:', {
+          key: k,
+          existing: existingEdge,
+          incoming: edge,
+          reason: 'existing connection is locked'
+        });
+        return;
+      }
+      
+      // If incoming edge is locked, replace the existing one
+      if (edge.locked) {
+        console.log('🔒 Locked connection replacing existing:', {
+          key: k,
+          existing: existingEdge,
+          incoming: edge,
+          reason: 'incoming connection is locked'
+        });
+        map.set(k, { ...edge });
+        return;
+      }
+      
+      // Neither is locked, keep existing (should not happen with proper keys)
+      console.log('⚠️ Duplicate connection detected:', {
+        key: k,
+        existing: existingEdge,
+        incoming: edge,
+        keeping: 'existing'
+      });
+      return;
     } else {
+      console.log('✅ Adding new unique connection:', {
+        key: k,
+        txHash: edge.txHash,
+        utxoKey: edge.utxoKey,
+        amount: edge.amount,
+        currency: edge.currency,
+        locked: edge.locked
+      });
       map.set(k, { ...edge })
     }
   }
 
+  // Add existing connections first (they may be locked)
   existing.forEach(addEdge)
+  // Then add incoming connections (they may override unlocked existing ones)
   incoming.forEach(addEdge)
 
   return Array.from(map.values())
@@ -304,7 +341,8 @@ const FlowTracePage: React.FC = () => {
         date: '2024-01-15',
         txHash: 'tx123',
         utxoKey: 'tx123::0::bc1qy5usrvs0pg3wt3uc3m9sm29jnngkc038j6tz9w::1000000',
-        connectionKey: 'bc1qankq7lpa8ldq5yk36ndsxdsu0x84ylmrkjmn9s:bc1qy5usrvs0pg3wt3uc3m9sm29jnngkc038j6tz9w:tx123::0::bc1qy5usrvs0pg3wt3uc3m9sm29jnngkc038j6tz9w::1000000:1000000'
+        connectionKey: 'bc1qankq7lpa8ldq5yk36ndsxdsu0x84ylmrkjmn9s:bc1qy5usrvs0pg3wt3uc3m9sm29jnngkc038j6tz9w:tx123::0::bc1qy5usrvs0pg3wt3uc3m9sm29jnngkc038j6tz9w::1000000:1000000',
+        locked: true // Mark as locked to prevent any future modifications
       },
       {
         from: 'bc1qy5usrvs0pg3wt3uc3m9sm29jnngkc038j6tz9w',
@@ -314,7 +352,8 @@ const FlowTracePage: React.FC = () => {
         date: '2024-01-16',
         txHash: 'tx456',
         utxoKey: 'tx456::0::bc1qankq7lpa8ldq5yk36ndsxdsu0x84ylmrkjmn9s::500000',
-        connectionKey: 'bc1qy5usrvs0pg3wt3uc3m9sm29jnngkc038j6tz9w:bc1qankq7lpa8ldq5yk36ndsxdsu0x84ylmrkjmn9s:tx456::0::bc1qankq7lpa8ldq5yk36ndsxdsu0x84ylmrkjmn9s::500000:500000'
+        connectionKey: 'bc1qy5usrvs0pg3wt3uc3m9sm29jnngkc038j6tz9w:bc1qankq7lpa8ldq5yk36ndsxdsu0x84ylmrkjmn9s:tx456::0::bc1qankq7lpa8ldq5yk36ndsxdsu0x84ylmrkjmn9s::500000:500000',
+        locked: true // Mark as locked to prevent any future modifications
       },
       {
         from: 'bc1qankq7lpa8ldq5yk36ndsxdsu0x84ylmrkjmn9s',
@@ -324,7 +363,8 @@ const FlowTracePage: React.FC = () => {
         date: '2024-01-17',
         txHash: 'tx789',
         utxoKey: 'tx789::0::bc1qdef456789012345678901234567890123456789::2000000',
-        connectionKey: 'bc1qankq7lpa8ldq5yk36ndsxdsu0x84ylmrkjmn9s:bc1qdef456789012345678901234567890123456789:tx789::0::bc1qdef456789012345678901234567890123456789::2000000:2000000'
+        connectionKey: 'bc1qankq7lpa8ldq5yk36ndsxdsu0x84ylmrkjmn9s:bc1qdef456789012345678901234567890123456789:tx789::0::bc1qdef456789012345678901234567890123456789::2000000:2000000',
+        locked: true // Mark as locked to prevent any future modifications
       }
     ];
 
@@ -624,6 +664,7 @@ const FlowTracePage: React.FC = () => {
           utxoKey,
           type: 'in',
           usdValue: tx.usdValue,
+          locked: true // Mark as locked to prevent any future modifications
         }
         
         console.log('🔗 Created connection:', {
@@ -671,6 +712,7 @@ const FlowTracePage: React.FC = () => {
           utxoKey,
           type: 'out',
           usdValue: tx.usdValue,
+          locked: true // Mark as locked to prevent any future modifications
         }
         
         console.log('🔗 Created connection:', {
