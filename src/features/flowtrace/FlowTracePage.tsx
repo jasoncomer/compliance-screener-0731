@@ -322,13 +322,18 @@ const FlowTracePage: React.FC = () => {
           // The logo URL should come directly from the SOT data in the profile
           const logoUrl = (profile as any)?.logoUrl || null;
           
+          // Use consistent entity resolution - prioritize SOT data
+          const resolvedLabel = (profile as any)?.properName || (profile as any)?.label || addr;
+          const resolvedEntityId = (profile as any)?.entityId;
+          const resolvedEntityType = (profile as any)?.entityType || 'wallet';
+          
           setNodes((prev) => prev.map((n) => (n.id === addr ? {
             ...n,
-            label: ((profile as any)?.properName || (profile as any)?.label) ?? n.label,
+            label: resolvedLabel,
             risk: (profile as any)?.riskScore ?? n.risk,
             logoUrl: logoUrl ?? n.logoUrl,
-            entityId: (profile as any)?.entityId ?? n.entityId,
-            entityType: (profile as any)?.entityType ?? n.entityType,
+            entityId: resolvedEntityId ?? n.entityId,
+            entityType: resolvedEntityType,
             bo: (profile as any)?.bo ?? n.bo,
             custodian: (profile as any)?.custodian ?? n.custodian,
           } : n)));
@@ -339,9 +344,9 @@ const FlowTracePage: React.FC = () => {
               ...prev,
               selectedEntity: {
                 ...prev.selectedEntity,
-                label: (profile as any)?.properName || (profile as any)?.label || prev.selectedEntity?.label,
+                label: resolvedLabel,
                 logoUrl: logoUrl ?? prev.selectedEntity?.logoUrl,
-                type: (profile as any)?.entityType || prev.selectedEntity?.type,
+                type: resolvedEntityType,
                 riskScore: (profile as any)?.riskScore ?? prev.selectedEntity?.riskScore,
                 bo: (profile as any)?.bo ?? prev.selectedEntity?.bo,
                 custodian: (profile as any)?.custodian ?? prev.selectedEntity?.custodian,
@@ -426,14 +431,18 @@ const FlowTracePage: React.FC = () => {
         const inputAddress = tx.inputs?.[0]?.addr
         if (!inputAddress) return
         
-        // Store entity data for the input address
+        // Store entity data for the input address - prioritize transaction-level attribution
         if (tx.entityName || tx.entityId || tx.entityType || tx.logo) {
-          addressEntityData.set(inputAddress, {
-            entityName: tx.entityName,
-            entityId: tx.entityId,
-            entityType: tx.entityType,
-            logoUrl: tx.logo
-          })
+          // Only set if we don't already have data for this address, or if the new data is more specific
+          const existing = addressEntityData.get(inputAddress);
+          if (!existing || (tx.entityId && !existing.entityId)) {
+            addressEntityData.set(inputAddress, {
+              entityName: tx.entityName,
+              entityId: tx.entityId,
+              entityType: tx.entityType,
+              logoUrl: tx.logo
+            })
+          }
         }
         
         const utxoKey = `${tx.originalTxHash || tx.txid}::${address}::in`
@@ -463,14 +472,18 @@ const FlowTracePage: React.FC = () => {
         const outputAddress = tx.outputs?.[0]?.addr
         if (!outputAddress) return
         
-        // Store entity data for the output address
+        // Store entity data for the output address - prioritize transaction-level attribution
         if (tx.entityName || tx.entityId || tx.entityType || tx.logo) {
-          addressEntityData.set(outputAddress, {
-            entityName: tx.entityName,
-            entityId: tx.entityId,
-            entityType: tx.entityType,
-            logoUrl: tx.logo
-          })
+          // Only set if we don't already have data for this address, or if the new data is more specific
+          const existing = addressEntityData.get(outputAddress);
+          if (!existing || (tx.entityId && !existing.entityId)) {
+            addressEntityData.set(outputAddress, {
+              entityName: tx.entityName,
+              entityId: tx.entityId,
+              entityType: tx.entityType,
+              logoUrl: tx.logo
+            })
+          }
         }
         
         const utxoKey = `${tx.originalTxHash || tx.txid}::${outputAddress}::out`
@@ -536,14 +549,18 @@ const FlowTracePage: React.FC = () => {
         if (!existingIds.has(addr)) {
           const y = baseY + (i - (inputAddresses.length - 1) / 2) * 80
           const entityData = addressEntityData.get(addr)
+          // Use consistent entity resolution - prioritize entityId over entityName
+          const resolvedLabel = entityData?.entityName || addr;
+          const resolvedEntityType = entityData?.entityType || 'wallet';
+          
           newNodes.push({
             id: addr,
-            label: entityData?.entityName || addr,
+            label: resolvedLabel,
             x: baseX - 220, // Left side for inputs
             y,
-            type: 'wallet',
+            type: resolvedEntityType,
             entityId: entityData?.entityId,
-            entityType: entityData?.entityType,
+            entityType: resolvedEntityType,
             logoUrl: entityData?.logoUrl
           })
         }
@@ -554,14 +571,18 @@ const FlowTracePage: React.FC = () => {
         if (!existingIds.has(addr)) {
           const y = baseY + (i - (outputAddresses.length - 1) / 2) * 80
           const entityData = addressEntityData.get(addr)
+          // Use consistent entity resolution - prioritize entityId over entityName
+          const resolvedLabel = entityData?.entityName || addr;
+          const resolvedEntityType = entityData?.entityType || 'wallet';
+          
           newNodes.push({
             id: addr,
-            label: entityData?.entityName || addr,
+            label: resolvedLabel,
             x: baseX + 220, // Right side for outputs
             y,
-            type: 'wallet',
+            type: resolvedEntityType,
             entityId: entityData?.entityId,
-            entityType: entityData?.entityType,
+            entityType: resolvedEntityType,
             logoUrl: entityData?.logoUrl
           })
         }
