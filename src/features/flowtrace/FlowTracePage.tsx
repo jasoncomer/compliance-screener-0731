@@ -105,38 +105,50 @@ const FlowTracePage: React.FC = () => {
   const fetchAndSetLeftPanelData = async (address: string) => {
     setIsLeftPanelLoading(true);
     try {
-      // Fetch core data first (fast)
-      const [data, summary, txs] = await Promise.all([
-        flowtraceService.fetchAddress(address).catch((error) => {
-          console.error('fetchAddress error:', error);
-          return {} as any;
-        }),
-        flowtraceService.fetchAddressSummary(address).catch((error) => {
-          console.error('fetchAddressSummary error:', error);
-          return {} as any;
-        }),
-        flowtraceService.fetchTransactions(address, 1, 50).catch((error) => {
-          console.error('fetchTransactions error:', error);
-          return { txs: [] } as any;
-        }),
-      ]);
 
-      // Fetch entity profile with timeout (this includes risk score)
-      let profile = {} as any;
-      try {
-        const profilePromise = flowtraceService.fetchEntityProfile(address);
-        const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Profile fetch timeout')), 10000)
-        );
-        profile = await Promise.race([profilePromise, timeoutPromise]);
-      } catch (error) {
-        console.warn('fetchEntityProfile error (continuing without profile):', error);
-      }
+      // Use the new optimized endpoint that replaces 15-20 API calls with 1
+      const optimizedResponse = await flowtraceService.expandNodeOptimized(address, {
+        includeRiskScores: true,
+        includeTransactions: true
+      });
+
+
+      // Extract data from optimized response
+      const { transactions, enhancedData, riskScores, summary } = optimizedResponse.data;
+      
+      // Convert to legacy format for compatibility
+      const data = {
+        address: optimizedResponse.data.address,
+        balance: '0', // Placeholder - could be calculated from transactions
+        txs: summary.totalTransactions,
+        network: 'bitcoin'
+      };
+
+      const summary_data = {
+        balance: '0',
+        usdValue: 0
+      };
+
+      const txs = {
+        txs: transactions,
+        pagination: { totalTxs: summary.totalTransactions }
+      };
+
+      // Extract profile data from enhanced data
+      const profile = {
+        entityId: enhancedData.find((item: any) => item.attribution?.entity)?.attribution?.entity,
+        entityType: enhancedData.find((item: any) => item.entityProfile?.entity_type)?.entityProfile?.entity_type,
+        properName: enhancedData.find((item: any) => item.entityProfile?.proper_name)?.entityProfile?.proper_name,
+        riskScore: riskScores[address]?.overallRisk ? Math.round(riskScores[address].overallRisk * 100) : undefined,
+        logoUrl: enhancedData.find((item: any) => item.entityProfile?.logo)?.entityProfile?.logo,
+        bo: enhancedData.find((item: any) => item.attribution?.bo)?.attribution?.bo,
+        custodian: enhancedData.find((item: any) => item.attribution?.custodian)?.attribution?.custodian
+      };
       
       console.log('API Debug:', {
         address,
         data,
-        summary,
+        summary: summary_data,
         txs,
         profile
       });
@@ -149,22 +161,22 @@ const FlowTracePage: React.FC = () => {
         profileData: profile
       });
 
-      // Use actual transaction count from the transactions API instead of summary
-      const actualTxCount = txs?.pagination?.totalTxs || txs?.txs?.length || 0;
+      // Use actual transaction count from the optimized response
+      const actualTxCount = summary.totalTransactions || 0;
 
       // Update left panel data
       const leftPanelData = {
         address,
         network: getBlockchainType(address) === 'bitcoin' ? 'Bitcoin' : 'Ethereum',
-        balance: summary.balance,
-        txCount: actualTxCount, // Use actual transaction count
+        balance: summary_data.balance,
+        txCount: actualTxCount,
         riskScore: profile.riskScore,
-        usdValue: summary.usdValue,
+        usdValue: summary_data.usdValue,
         selectedEntity: {
-          label: profile.properName || profile.label || address,
+          label: profile.properName || profile.entityId || address,
           address,
           logoUrl: profile.logoUrl,
-          type: profile.type || 'wallet',
+          type: profile.entityType || 'wallet',
           riskScore: profile.riskScore,
           bo: profile.bo,
           custodian: profile.custodian
@@ -266,6 +278,8 @@ const FlowTracePage: React.FC = () => {
   const handleTrace = async () => {
     if (!address) return;
     setIsLoading(true);
+    
+    
     try {
       // Set both center node and current address to ensure left panel shows correct data
       setCenterNodeId(address);
@@ -294,8 +308,11 @@ const FlowTracePage: React.FC = () => {
 
       // Fetch entity profile and logo for the new node
       prefetchProfilesAndLogos([address]);
+      
+      
     } catch (error) {
       console.error('Error:', error);
+      
     } finally {
       setIsLoading(false);
     }
@@ -303,7 +320,6 @@ const FlowTracePage: React.FC = () => {
 
   // Prefetch attribution profile and logos for a list of addresses (non-blocking)
   const prefetchProfilesAndLogos = async (addresses: string[]) => {
-    console.log('prefetchProfilesAndLogos called with addresses:', addresses);
     const unique = Array.from(new Set(addresses.filter(Boolean)));
     if (!unique.length) return;
     
@@ -311,26 +327,34 @@ const FlowTracePage: React.FC = () => {
     Promise.allSettled(
       unique.map(async (addr) => {
         try {
-          // Add timeout to prevent hanging
-          const profilePromise = flowtraceService.fetchEntityProfile(addr);
-          const timeoutPromise = new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('Profile fetch timeout')), 8000)
-          );
+          // Use optimized endpoint for better performance
+          const optimizedResponse = await flowtraceService.expandNodeOptimized(addr, {
+            includeRiskScores: true,
+            includeTransactions: false // We don't need transactions for profile prefetch
+          });
           
-          const profile = await Promise.race([profilePromise, timeoutPromise]).catch(() => ({} as any));
+          // Extract profile data from optimized response
+          const { enhancedData, riskScores } = optimizedResponse.data;
+          const profile = {
+            entityId: enhancedData.find((item: any) => item.attribution?.entity)?.attribution?.entity,
+            entityType: enhancedData.find((item: any) => item.entityProfile?.entity_type)?.entityProfile?.entity_type,
+            properName: enhancedData.find((item: any) => item.entityProfile?.proper_name)?.entityProfile?.proper_name,
+            riskScore: riskScores[addr]?.overallRisk ? Math.round(riskScores[addr].overallRisk * 100) : undefined,
+            logoUrl: enhancedData.find((item: any) => item.entityProfile?.logo)?.entityProfile?.logo,
+            bo: enhancedData.find((item: any) => item.attribution?.bo)?.attribution?.bo,
+            custodian: enhancedData.find((item: any) => item.attribution?.custodian)?.attribution?.custodian
+          };
           
-          // The logo URL should come directly from the SOT data in the profile
-          const logoUrl = (profile as any)?.logoUrl || null;
-          
+          // Update node with optimized profile data
           setNodes((prev) => prev.map((n) => (n.id === addr ? {
             ...n,
-            label: ((profile as any)?.properName || (profile as any)?.label) ?? n.label,
-            risk: (profile as any)?.riskScore ?? n.risk,
-            logoUrl: logoUrl ?? n.logoUrl,
-            entityId: (profile as any)?.entityId ?? n.entityId,
-            entityType: (profile as any)?.entityType ?? n.entityType,
-            bo: (profile as any)?.bo ?? n.bo,
-            custodian: (profile as any)?.custodian ?? n.custodian,
+            label: profile.properName || profile.entityId || n.label,
+            risk: profile.riskScore ?? n.risk,
+            logoUrl: profile.logoUrl ?? n.logoUrl,
+            entityId: profile.entityId ?? n.entityId,
+            entityType: profile.entityType ?? n.entityType,
+            bo: profile.bo ?? n.bo,
+            custodian: profile.custodian ?? n.custodian,
           } : n)));
           
           // If this is the currently selected address, also update the left panel data
@@ -339,12 +363,12 @@ const FlowTracePage: React.FC = () => {
               ...prev,
               selectedEntity: {
                 ...prev.selectedEntity,
-                label: (profile as any)?.properName || (profile as any)?.label || prev.selectedEntity?.label,
-                logoUrl: logoUrl ?? prev.selectedEntity?.logoUrl,
-                type: (profile as any)?.entityType || prev.selectedEntity?.type,
-                riskScore: (profile as any)?.riskScore ?? prev.selectedEntity?.riskScore,
-                bo: (profile as any)?.bo ?? prev.selectedEntity?.bo,
-                custodian: (profile as any)?.custodian ?? prev.selectedEntity?.custodian,
+                label: profile.properName || profile.entityId || prev.selectedEntity?.label,
+                logoUrl: profile.logoUrl ?? prev.selectedEntity?.logoUrl,
+                type: profile.entityType || prev.selectedEntity?.type,
+                riskScore: profile.riskScore ?? prev.selectedEntity?.riskScore,
+                bo: profile.bo ?? prev.selectedEntity?.bo,
+                custodian: profile.custodian ?? prev.selectedEntity?.custodian,
               }
             } : null);
           }

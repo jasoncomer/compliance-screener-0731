@@ -1,12 +1,15 @@
 import React, { useState } from 'react';
 import { formatAddress } from '../../../utils/addressValidation';
-import { Copy, Pencil, ChevronLeft, ChevronRight, ArrowUpRight, ArrowDownRight } from 'lucide-react';
+import { Copy, Pencil, ChevronLeft, ChevronRight, ArrowUpRight, ArrowDownRight, Info } from 'lucide-react';
 import { useAddressTransactions } from '../../../hooks/useAddressTransactions';
 import { transformBtcTransactions } from '../../../utils/transactionTransformers';
 import { useCryptoPrices } from '../../../hooks/useCryptoPrices';
 import AddressNotes from './AddressNotes';
 import { useAppSelector } from '../../../store/hooks';
 import { selectActiveOrganization } from '../../../store/slices/organizationsSlice';
+import RiskScoreModal from '../../../views/RiskDashboard/components/risk-analysis/RiskScoreModal';
+import { flowtraceService } from '../../../services/flowtraceService';
+import { RiskScoringResponse } from '../../../typings/riskScoring';
 
 const formatCompact = (value: number | string | undefined) => {
   if (value === undefined || value === null || value === '') return '—';
@@ -217,6 +220,11 @@ const LeftPanel: React.FC<Props> = ({
   console.log('LeftPanel orgId:', orgId, 'activeOrg:', activeOrg);
   const [copied, setCopied] = useState(false);
   
+  // Risk score modal state
+  const [riskModalOpen, setRiskModalOpen] = useState(false);
+  const [riskModalData, setRiskModalData] = useState<RiskScoringResponse | null>(null);
+  const [riskModalLoading, setRiskModalLoading] = useState(false);
+  
   // Use the actual transaction data as a fallback for transaction count
   const { data: transactionData } = useAddressTransactions(address || '', 1, 1);
   const actualTxCount = transactionData?.pagination?.totalTxs || transactionData?.txs?.length || txCount || 0;
@@ -270,6 +278,34 @@ const LeftPanel: React.FC<Props> = ({
       setCopied(true);
       setTimeout(() => setCopied(false), 1200);
     } catch {}
+  };
+
+  const handleShowRiskDetails = async () => {
+    if (!address) return;
+    
+    setRiskModalLoading(true);
+    setRiskModalOpen(true);
+    
+    try {
+      const riskData = await flowtraceService.fetchRiskScore(address, 'address');
+      
+      // Ensure the data has the expected structure
+      const normalizedRiskData = {
+        overallRisk: riskData?.overallRisk || 0,
+        entityRisk: riskData?.entityRisk || { factors: [], aggregateScore: 0 },
+        transactionRisk: riskData?.transactionRisk || { factors: [], aggregateScore: 0 },
+        jurisdictionRisk: riskData?.jurisdictionRisk || { factors: [], aggregateScore: 0 },
+        analysisType: riskData?.analysisType || 'address',
+        ...riskData
+      };
+      
+      setRiskModalData(normalizedRiskData);
+    } catch (error) {
+      console.error('Error fetching detailed risk score:', error);
+      setRiskModalData(null);
+    } finally {
+      setRiskModalLoading(false);
+    }
   };
 
   const getRiskColor = (score: number) => {
@@ -457,6 +493,13 @@ const LeftPanel: React.FC<Props> = ({
                             style={{ width: `${riskScore}%` }}
                           ></div>
                         </div>
+                        <button
+                          onClick={handleShowRiskDetails}
+                          className="p-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                          title="View detailed risk analysis"
+                        >
+                          <Info className="h-3 w-3 text-gray-500 dark:text-gray-400" />
+                        </button>
                       </>
                     ) : (
                       <span className="text-sm text-gray-400">—</span>
@@ -490,6 +533,15 @@ const LeftPanel: React.FC<Props> = ({
           </div>
         </>
       )}
+
+      {/* Risk Score Modal */}
+      <RiskScoreModal
+        visible={riskModalOpen}
+        onClose={() => setRiskModalOpen(false)}
+        riskScores={riskModalData}
+        address={address || ''}
+        loading={riskModalLoading}
+      />
     </div>
   );
 };

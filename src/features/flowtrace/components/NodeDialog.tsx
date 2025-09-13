@@ -36,14 +36,28 @@ const NodeDialog: React.FC<Props> = ({ open, address, onOpenChange, riskScore, e
       if (!open || !address) return;
       setLoading(true);
       try {
-        const [addrData, txResp] = await Promise.all([
-          flowtraceService.fetchAddress(address).catch(() => ({} as any)),
-          flowtraceService.fetchTransactions(address, 1, 10).catch(() => ({ txs: [], pagination: { totalTxs: 0 } } as any)),
-        ]);
-        setBalance((addrData as any)?.balance);
-        setUsdValue((addrData as any)?.usdValue);
-        setTxCount((txResp as any)?.pagination?.totalTxs ?? (txResp as any)?.total ?? ((txResp as any)?.txs?.length || 0));
-        setTxs(((txResp as any)?.txs || []).map((t: any) => ({ txid: t.txid, value: t.value, time: t.time, inputs: t.inputs, outputs: t.outputs })));
+        // Use optimized endpoint instead of multiple individual calls
+        const optimizedResponse = await flowtraceService.expandNodeOptimized(address, {
+          includeRiskScores: true,
+          includeTransactions: true
+        });
+        
+        // Extract data from optimized response
+        const { transactions, summary } = optimizedResponse.data;
+        
+        // Set balance (placeholder - could be calculated from transactions)
+        setBalance('0');
+        setUsdValue(0);
+        
+        // Set transaction count and data
+        setTxCount(summary.totalTransactions);
+        setTxs((transactions || []).slice(0, 10).map((t: any) => ({ 
+          txid: t.txid, 
+          value: t.value, 
+          time: t.time, 
+          inputs: t.inputs, 
+          outputs: t.outputs 
+        })));
       } finally {
         setLoading(false);
       }
