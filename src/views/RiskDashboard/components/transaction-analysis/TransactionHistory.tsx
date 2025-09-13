@@ -5,6 +5,9 @@ import { truncateStringMiddle } from '../../../../utils/generic';
 import { useAddressTransactions } from '../../../../hooks/useAddressTransactions';
 import { transformBtcTransactions } from '../../../../utils/transactionTransformers';
 import { useCryptoPrices } from '../../../../hooks/useCryptoPrices';
+import { useAttribution } from '../../../../context/AttributionContext';
+import { useAppSelector } from '../../../../store/hooks';
+import { RootState } from '../../../../store/store';
 import { ChevronLeft, ChevronRight, X, ExternalLink, Copy, Check, ArrowUpRight, ArrowDownRight } from 'lucide-react';
 
 interface TransactionHistoryProps {
@@ -23,6 +26,25 @@ const TransactionHistory: React.FC<TransactionHistoryProps> = ({
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const { getPrice } = useCryptoPrices();
   const btcPrice = getPrice('BTC') || 35000; // Default fallback price
+  
+  // Attribution and SOT data hooks
+  const { attributions } = useAttribution();
+  const { itemsMap } = useAppSelector((state: RootState) => state.sot);
+
+  // Helper function to get entity name for a counterparty address
+  const getEntityName = (counterpartyAddress: string): string | null => {
+    if (!counterpartyAddress || counterpartyAddress === 'Unknown') return null;
+    
+    const attribution = attributions[counterpartyAddress];
+    if (!attribution) return null;
+    
+    const entityId = attribution.entity || attribution.bo || attribution.custodian;
+    if (!entityId) return null;
+    
+    const entity = Object.values(itemsMap).find(sot => sot.entity_id === entityId);
+    // Only return proper_name if it exists and is not empty
+    return entity?.proper_name || null;
+  };
 
   // Fetch the 100 most recent transactions using React Query
   const { data: transactionData, isLoading, error } = useAddressTransactions(address, 1, 100);
@@ -32,6 +54,7 @@ const TransactionHistory: React.FC<TransactionHistoryProps> = ({
     if (!transactionData?.txs) return [];
     return transformBtcTransactions(transactionData.txs, address, btcPrice);
   }, [transactionData?.txs, address, btcPrice]);
+
 
   // Function to open BlockScout explorer
   const handleViewInBlockScout = () => {
@@ -249,14 +272,28 @@ const TransactionHistory: React.FC<TransactionHistoryProps> = ({
                                 </span>
                               </td>
                               <td className="py-3 px-2">
-                                <span className={`text-sm ${
-                                  theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
-                                }`}>
-                                  {transaction.type === 'in' 
-                                    ? truncateStringMiddle(transaction.from, 16)
-                                    : truncateStringMiddle(transaction.to, 16)
-                                  }
-                                </span>
+                                <div className="flex flex-col">
+                                  {(() => {
+                                    const counterpartyAddress = transaction.type === 'in' ? transaction.from : transaction.to;
+                                    const entityName = getEntityName(counterpartyAddress);
+                                    return (
+                                      <>
+                                        {entityName && (
+                                          <span className={`text-xs font-medium mb-1 ${
+                                            theme === 'dark' ? 'text-blue-400' : 'text-blue-600'
+                                          }`}>
+                                            {entityName}
+                                          </span>
+                                        )}
+                                        <span className={`text-sm ${
+                                          theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
+                                        }`}>
+                                          {truncateStringMiddle(counterpartyAddress, 16)}
+                                        </span>
+                                      </>
+                                    );
+                                  })()}
+                                </div>
                               </td>
                             </tr>
                           ))}
@@ -436,20 +473,32 @@ const TransactionHistory: React.FC<TransactionHistoryProps> = ({
                 }`}>
                   From Address
                 </label>
-                <div className="flex items-center space-x-2">
-                  <code className={`flex-1 p-3 rounded-lg text-sm font-mono break-all ${
-                    theme === 'dark' ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-800'
-                  }`}>
-                    {selectedTransaction.from}
-                  </code>
-                  <button
-                    onClick={() => copyToClipboard(selectedTransaction.from, 'from')}
-                    className={`p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${
-                      theme === 'dark' ? 'text-gray-400 hover:text-white' : 'text-gray-500 hover:text-gray-700'
-                    }`}
-                  >
-                    {copiedField === 'from' ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
-                  </button>
+                <div className="space-y-2">
+                  {(() => {
+                    const entityName = getEntityName(selectedTransaction.from);
+                    return entityName && (
+                      <div className={`text-sm font-medium ${
+                        theme === 'dark' ? 'text-blue-400' : 'text-blue-600'
+                      }`}>
+                        {entityName}
+                      </div>
+                    );
+                  })()}
+                  <div className="flex items-center space-x-2">
+                    <code className={`flex-1 p-3 rounded-lg text-sm font-mono break-all ${
+                      theme === 'dark' ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-800'
+                    }`}>
+                      {selectedTransaction.from}
+                    </code>
+                    <button
+                      onClick={() => copyToClipboard(selectedTransaction.from, 'from')}
+                      className={`p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${
+                        theme === 'dark' ? 'text-gray-400 hover:text-white' : 'text-gray-500 hover:text-gray-700'
+                      }`}
+                    >
+                      {copiedField === 'from' ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
+                    </button>
+                  </div>
                 </div>
               </div>
 
@@ -460,20 +509,32 @@ const TransactionHistory: React.FC<TransactionHistoryProps> = ({
                 }`}>
                   To Address
                 </label>
-                <div className="flex items-center space-x-2">
-                  <code className={`flex-1 p-3 rounded-lg text-sm font-mono break-all ${
-                    theme === 'dark' ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-800'
-                  }`}>
-                    {selectedTransaction.to}
-                  </code>
-                  <button
-                    onClick={() => copyToClipboard(selectedTransaction.to, 'to')}
-                    className={`p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${
-                      theme === 'dark' ? 'text-gray-400 hover:text-white' : 'text-gray-500 hover:text-gray-700'
-                    }`}
-                  >
-                    {copiedField === 'to' ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
-                  </button>
+                <div className="space-y-2">
+                  {(() => {
+                    const entityName = getEntityName(selectedTransaction.to);
+                    return entityName && (
+                      <div className={`text-sm font-medium ${
+                        theme === 'dark' ? 'text-blue-400' : 'text-blue-600'
+                      }`}>
+                        {entityName}
+                      </div>
+                    );
+                  })()}
+                  <div className="flex items-center space-x-2">
+                    <code className={`flex-1 p-3 rounded-lg text-sm font-mono break-all ${
+                      theme === 'dark' ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-800'
+                    }`}>
+                      {selectedTransaction.to}
+                    </code>
+                    <button
+                      onClick={() => copyToClipboard(selectedTransaction.to, 'to')}
+                      className={`p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${
+                        theme === 'dark' ? 'text-gray-400 hover:text-white' : 'text-gray-500 hover:text-gray-700'
+                      }`}
+                    >
+                      {copiedField === 'to' ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
+                    </button>
+                  </div>
                 </div>
               </div>
 

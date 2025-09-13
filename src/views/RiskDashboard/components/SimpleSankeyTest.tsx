@@ -13,6 +13,11 @@ import { BtcTransaction } from "../../../typings/BtcTransaction"
 interface SimpleSankeyTestProps {
   address: string
   maxTransactions?: number
+  addressSummaryData?: {
+    total_received: number
+    total_spent: number
+    balance: number
+  }
 }
 
 interface WalletModalData {
@@ -167,7 +172,7 @@ const formatCurrency = (value: number) => {
   }
 }
 
-// Helper function to get entity information for an address
+// Helper function to get entity information for an address - consistent with FlowTrace
 const getEntityInfo = (address: string, attributions: any, itemsMap: any) => {
   const attribution = attributions[address]
   if (!attribution) {
@@ -179,26 +184,34 @@ const getEntityInfo = (address: string, attributions: any, itemsMap: any) => {
     }
   }
 
+  // Use consistent entity resolution logic - prioritize entity, then bo, then custodian
   const entityId = attribution.entity || attribution.bo || attribution.custodian
   const entity = entityId ? Object.values(itemsMap).find((item: any) => (item as any).entity_id === entityId) : null
   
+  // Use SOT data as authoritative source for entity type and proper name
+  const entityType = (entity as any)?.entity_type || "Unknown"
+  const properName = (entity as any)?.proper_name || null
+  
+  // Use proper_name from SOT if available, otherwise fall back to truncated address
+  const displayName = properName || address.slice(0, 8) + "..."
+  
   return {
     entityId,
-    entityType: (entity as any)?.entity_type || "Unknown",
-    displayName: (entity as any)?.proper_name || address.slice(0, 8) + "...",
-    properName: (entity as any)?.proper_name || null
+    entityType,
+    displayName,
+    properName
   }
 }
 
-// Helper function to group addresses by entity
+// Helper function to group addresses by entity - consistent with FlowTrace
 const groupAddressesByEntity = (addresses: { addr: string; amt: number }[], attributions: any, itemsMap: any): EntityGroup[] => {
   const entityMap = new Map<string, EntityGroup>()
   
   addresses.forEach(({ addr, amt }) => {
     const { entityId, entityType, displayName, properName } = getEntityInfo(addr, attributions, itemsMap)
     
-    // Use entity name as key, fallback to display name if no entity
-    const entityKey = properName || displayName
+    // Use proper_name from SOT as primary key, fallback to entityId, then displayName
+    const entityKey = properName || entityId || displayName
     
     if (entityMap.has(entityKey)) {
       // Add to existing group
@@ -208,9 +221,9 @@ const groupAddressesByEntity = (addresses: { addr: string; amt: number }[], attr
       }
       group.totalAmount += amt
     } else {
-      // Create new group
+      // Create new group with consistent entity resolution
       entityMap.set(entityKey, {
-        name: entityKey,
+        name: properName || entityId || displayName,
         entityType,
         addresses: [addr],
         totalAmount: amt,
@@ -225,7 +238,8 @@ const groupAddressesByEntity = (addresses: { addr: string; amt: number }[], attr
 
 export const SimpleSankeyTest = ({ 
   address, 
-  maxTransactions = 20 
+  maxTransactions = 20,
+  addressSummaryData
 }: SimpleSankeyTestProps) => {
   const { theme } = useTheme()
   const svgRef = useRef<SVGSVGElement>(null)
@@ -397,25 +411,26 @@ export const SimpleSankeyTest = ({
     sortedIncomingFlows.forEach(([entityKey, flowData]) => {
       const entityName = entityKey.replace("In: ", "")
       
-      // Get entity info from the first address in the group
+      // Get entity info from the first address in the group - use consistent resolution
       const sourceAddresses = sortedTransactions
         .flatMap(tx => tx.inputs.filter(input => input.addr !== address))
         .filter(input => {
-          const { properName } = getEntityInfo(input.addr, attributions, itemsMap)
-          return properName === entityName || (!properName && input.addr.slice(0, 8) + "..." === entityName)
+          const { properName, entityId, displayName } = getEntityInfo(input.addr, attributions, itemsMap)
+          // Match by proper_name first, then entityId, then displayName
+          return properName === entityName || entityId === entityName || displayName === entityName
         })
       
       const firstAddress = sourceAddresses[0]
-      const { entityType } = firstAddress ? getEntityInfo(firstAddress.addr, attributions, itemsMap) : { entityType: "Unknown" }
+      const { entityType, properName: resolvedProperName } = firstAddress ? getEntityInfo(firstAddress.addr, attributions, itemsMap) : { entityType: "Unknown", properName: null }
       
       entityTypes.add(entityType)
       
       const sourceNode: SankeyNode = {
         id: entityKey,
-        name: entityName,
+        name: resolvedProperName || entityName,
         type: 'entity',
         entityType,
-        entityGroup: entityName,
+        entityGroup: resolvedProperName || entityName,
         addresses: sourceAddresses.map(input => input.addr),
         color: "hsl(210, 80%, 60%)" // Blue for incoming nodes
       }
@@ -426,7 +441,7 @@ export const SimpleSankeyTest = ({
         source: entityKey,
         target: "Address",
         value: flowData.amount,
-        label: `${entityName} → Address: ${formatCurrency(flowData.amount)}`,
+        label: `${resolvedProperName || entityName} → Address: ${formatCurrency(flowData.amount)}`,
         color: getLinkColor(flowData.amount, 'incoming', entityType),
         transactionIds: flowData.transactionIds
       })
@@ -436,25 +451,26 @@ export const SimpleSankeyTest = ({
     sortedOutgoingFlows.forEach(([entityKey, flowData]) => {
       const entityName = entityKey.replace("Out: ", "")
       
-      // Get entity info from the first address in the group
+      // Get entity info from the first address in the group - use consistent resolution
       const destAddresses = sortedTransactions
         .flatMap(tx => tx.outputs.filter(output => output.addr !== address))
         .filter(output => {
-          const { properName } = getEntityInfo(output.addr, attributions, itemsMap)
-          return properName === entityName || (!properName && output.addr.slice(0, 8) + "..." === entityName)
+          const { properName, entityId, displayName } = getEntityInfo(output.addr, attributions, itemsMap)
+          // Match by proper_name first, then entityId, then displayName
+          return properName === entityName || entityId === entityName || displayName === entityName
         })
       
       const firstAddress = destAddresses[0]
-      const { entityType } = firstAddress ? getEntityInfo(firstAddress.addr, attributions, itemsMap) : { entityType: "Unknown" }
+      const { entityType, properName: resolvedProperName } = firstAddress ? getEntityInfo(firstAddress.addr, attributions, itemsMap) : { entityType: "Unknown", properName: null }
       
       entityTypes.add(entityType)
       
       const targetNode: SankeyNode = {
         id: entityKey,
-        name: entityName,
+        name: resolvedProperName || entityName,
         type: 'entity',
         entityType,
-        entityGroup: entityName,
+        entityGroup: resolvedProperName || entityName,
         addresses: destAddresses.map(output => output.addr),
         color: "hsl(210, 80%, 60%)" // Blue for outgoing nodes
       }
@@ -465,7 +481,7 @@ export const SimpleSankeyTest = ({
         source: "Address",
         target: entityKey,
         value: flowData.amount,
-        label: `Address → ${entityName}: ${formatCurrency(flowData.amount)}`,
+        label: `Address → ${resolvedProperName || entityName}: ${formatCurrency(flowData.amount)}`,
         color: getLinkColor(flowData.amount, 'outgoing', entityType),
         transactionIds: flowData.transactionIds
       })
@@ -579,28 +595,43 @@ export const SimpleSankeyTest = ({
         
         // Show tooltip
         const tooltip = d3.select("body").append("div")
-          .attr("class", "tooltip")
-          .style("position", "absolute")
-          .style("background", theme === 'dark' ? "#1f2937" : "#ffffff")
-          .style("border", "1px solid #d1d5db")
+          .attr("class", "sankey-tooltip")
+          .style("position", "fixed")
+          .style("background", theme === 'dark' ? "#374151" : "#ffffff")
+          .style("border", `1px solid ${theme === 'dark' ? "#4b5563" : "#d1d5db"}`)
           .style("border-radius", "8px")
           .style("padding", "12px")
           .style("font-size", "14px")
           .style("pointer-events", "none")
           .style("z-index", "1000")
-          .style("box-shadow", "0 4px 6px -1px rgba(0, 0, 0, 0.1)")
-          .style("color", theme === 'dark' ? "#ffffff" : "#000000")
+          .style("box-shadow", "0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)")
+          .style("color", theme === 'dark' ? "#f9fafb" : "#111827")
+          .style("font-family", "system-ui, -apple-system, sans-serif")
+          .style("max-width", "300px")
+          .style("opacity", 0)
+          .style("left", "-1000px")
+          .style("top", "-1000px")
 
         tooltip.html(`
-          <div class="font-semibold">${d.label}</div>
-          <div class="text-sm text-gray-500 mt-1">Click for details</div>
+          <div style="font-weight: 600; margin-bottom: 4px;">${d.label}</div>
+          <div style="font-size: 12px; color: ${theme === 'dark' ? '#9ca3af' : '#6b7280'};">Click for detailed transaction flow information</div>
         `)
+        
+        // Animate tooltip appearance
+        tooltip.transition()
+          .duration(200)
+          .style("opacity", 1)
       })
       .on("mousemove", function(event) {
-        const tooltip = d3.select(".tooltip")
+        const tooltip = d3.select(".sankey-tooltip")
+        if (tooltip.empty()) return
+        
+        const mouseX = event.clientX || event.pageX || 0
+        const mouseY = event.clientY || event.pageY || 0
+        
         tooltip
-          .style("left", (event.pageX + 10) + "px")
-          .style("top", (event.pageY - 10) + "px")
+          .style("left", (mouseX + 15) + "px")
+          .style("top", (mouseY - 10) + "px")
       })
       .on("click", function(_, d: any) {
         // Get source and target node information using the D3 node indices
@@ -668,7 +699,12 @@ export const SimpleSankeyTest = ({
         svg.selectAll("path")
           .attr("opacity", 0.6)
         
-        d3.select(".tooltip").remove()
+        // Animate tooltip removal
+        const tooltip = d3.select(".sankey-tooltip")
+        tooltip.transition()
+          .duration(150)
+          .style("opacity", 0)
+          .remove()
       })
 
     // Add nodes
@@ -698,48 +734,67 @@ export const SimpleSankeyTest = ({
         
         // Show tooltip
         const tooltip = d3.select("body").append("div")
-          .attr("class", "tooltip")
-          .style("position", "absolute")
-          .style("background", theme === 'dark' ? "#1f2937" : "#ffffff")
-          .style("border", "1px solid #d1d5db")
+          .attr("class", "sankey-tooltip")
+          .style("position", "fixed")
+          .style("background", theme === 'dark' ? "#374151" : "#ffffff")
+          .style("border", `1px solid ${theme === 'dark' ? "#4b5563" : "#d1d5db"}`)
           .style("border-radius", "8px")
           .style("padding", "12px")
           .style("font-size", "14px")
           .style("pointer-events", "none")
           .style("z-index", "1000")
-          .style("box-shadow", "0 4px 6px -1px rgba(0, 0, 0, 0.1)")
-                  .style("color", theme === 'dark' ? "#ffffff" : "#000000")
+          .style("box-shadow", "0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)")
+          .style("color", theme === 'dark' ? "#f9fafb" : "#111827")
+          .style("font-family", "system-ui, -apple-system, sans-serif")
+          .style("max-width", "300px")
+          .style("opacity", 0)
+          .style("left", "-1000px")
+          .style("top", "-1000px")
 
         const displayName = d.name.replace(/In: |Out: /g, "")
         const addresses = d.addresses || []
         
         tooltip.html(`
-          <div class="font-semibold">${displayName}</div>
-          ${addresses.length > 0 ? `<div class="text-gray-500 font-mono text-xs">${addresses.length} address${addresses.length > 1 ? 'es' : ''}</div>` : ''}
+          <div style="font-weight: 600; margin-bottom: 4px;">${displayName}</div>
+          ${addresses.length > 0 ? `<div style="font-size: 12px; color: ${theme === 'dark' ? '#9ca3af' : '#6b7280'}; font-family: monospace;">${addresses.length} address${addresses.length > 1 ? 'es' : ''}</div>` : ''}
+          <div style="font-size: 12px; color: ${theme === 'dark' ? '#9ca3af' : '#6b7280'}; margin-top: 4px;">Click for entity details</div>
         `)
+        
+        // Animate tooltip appearance
+        tooltip.transition()
+          .duration(200)
+          .style("opacity", 1)
         })
       .on("mousemove", function(event) {
-        const tooltip = d3.select(".tooltip")
+        const tooltip = d3.select(".sankey-tooltip")
+        if (tooltip.empty()) return
+        
+        const mouseX = event.clientX || event.pageX || 0
+        const mouseY = event.clientY || event.pageY || 0
+        
         tooltip
-          .style("left", (event.pageX + 10) + "px")
-          .style("top", (event.pageY - 10) + "px")
+          .style("left", (mouseX + 15) + "px")
+          .style("top", (mouseY - 10) + "px")
       })
       .on("mouseout", function() {
         d3.select(this).attr("opacity", 0.9)
-        d3.select(".tooltip").remove()
+        // Animate tooltip removal
+        const tooltip = d3.select(".sankey-tooltip")
+        tooltip.transition()
+          .duration(150)
+          .style("opacity", 0)
+          .remove()
       })
       .on("click", function(_, d: any) {
         // Get the original node data using the D3 node index
         const originalNode = nodes[d.index]
         
         if (originalNode && originalNode.name === "Address") {
-          // Handle center wallet node - calculate totals from links
-          const totalIncoming = links
-            .filter(link => link.target === originalNode.id)
-            .reduce((sum, link) => sum + link.value, 0)
-          const totalOutgoing = links
-            .filter(link => link.source === originalNode.id)
-            .reduce((sum, link) => sum + link.value, 0)
+          // Handle center wallet node - use actual address summary data instead of limited Sankey links
+          // The Sankey diagram only shows a subset of transactions (maxTransactions), so we use the 
+          // authoritative total_received and total_spent from the address summary API
+          const totalIncoming = addressSummaryData?.total_received ? addressSummaryData.total_received / 100000000 : 0
+          const totalOutgoing = addressSummaryData?.total_spent ? addressSummaryData.total_spent / 100000000 : 0
           const netFlow = totalIncoming - totalOutgoing
           
           const centerWalletModalData: CenterWalletModalData = {

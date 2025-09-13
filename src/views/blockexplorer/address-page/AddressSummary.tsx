@@ -125,7 +125,14 @@ const AddressSummary: React.FC<AddressSummaryProps> = ({
                 ) : (
                   <Bitcoin className="w-4 h-4 text-orange-600 dark:text-orange-400" />
                 )}
-                <span className="text-xs font-medium text-gray-700 dark:text-gray-300">Bitcoin Address</span>
+                <span className="text-xs font-medium text-gray-700 dark:text-gray-300">{truncateAddress(address || '')}</span>
+                <button
+                  onClick={onCopyClick}
+                  className="p-0.5 hover:bg-gray-300 dark:hover:bg-gray-600 rounded transition-colors"
+                  title="Copy full address"
+                >
+                  {copySuccess ? <CheckCircle className="w-3 h-3 text-green-600" /> : <Copy className="w-3 h-3 text-gray-500" />}
+                </button>
               </div>
               <div className="text-lg font-bold break-all mb-1">{getDisplayName()}</div>
               
@@ -141,13 +148,6 @@ const AddressSummary: React.FC<AddressSummaryProps> = ({
               
               {/* Tags section with proper overflow handling */}
               <div className="flex items-start gap-1 mt-auto">
-                <button
-                  onClick={onCopyClick}
-                  className="p-0.5 hover:bg-gray-300 dark:hover:bg-gray-600 rounded transition-colors flex-shrink-0"
-                  title="Copy full address"
-                >
-                  {copySuccess ? <CheckCircle className="w-3 h-3 text-green-600" /> : <Copy className="w-3 h-3 text-gray-500" />}
-                </button>
                 <div className="flex gap-1 flex-wrap overflow-hidden">
                   {address && attributions[address] && getEntityTags(attributions[address]?.entity || '').slice(0, 5).map(tag => (
                     <Tag key={tag} color={getTagColor(tag.toLowerCase())} className="text-xs px-1 py-0 flex-shrink-0">

@@ -345,14 +345,18 @@ const FlowTracePage: React.FC = () => {
             custodian: enhancedData.find((item: any) => item.attribution?.custodian)?.attribution?.custodian
           };
           
-          // Update node with optimized profile data
+          // Update node with optimized profile data - use consistent entity resolution
+          const resolvedLabel = profile.properName || profile.entityId || addr;
+          const resolvedEntityId = profile.entityId;
+          const resolvedEntityType = profile.entityType || 'wallet';
+          
           setNodes((prev) => prev.map((n) => (n.id === addr ? {
             ...n,
-            label: profile.properName || profile.entityId || n.label,
+            label: resolvedLabel,
             risk: profile.riskScore ?? n.risk,
             logoUrl: profile.logoUrl ?? n.logoUrl,
-            entityId: profile.entityId ?? n.entityId,
-            entityType: profile.entityType ?? n.entityType,
+            entityId: resolvedEntityId ?? n.entityId,
+            entityType: resolvedEntityType,
             bo: profile.bo ?? n.bo,
             custodian: profile.custodian ?? n.custodian,
           } : n)));
@@ -363,9 +367,9 @@ const FlowTracePage: React.FC = () => {
               ...prev,
               selectedEntity: {
                 ...prev.selectedEntity,
-                label: profile.properName || profile.entityId || prev.selectedEntity?.label,
+                label: resolvedLabel,
                 logoUrl: profile.logoUrl ?? prev.selectedEntity?.logoUrl,
-                type: profile.entityType || prev.selectedEntity?.type,
+                type: resolvedEntityType,
                 riskScore: profile.riskScore ?? prev.selectedEntity?.riskScore,
                 bo: profile.bo ?? prev.selectedEntity?.bo,
                 custodian: profile.custodian ?? prev.selectedEntity?.custodian,
@@ -450,14 +454,18 @@ const FlowTracePage: React.FC = () => {
         const inputAddress = tx.inputs?.[0]?.addr
         if (!inputAddress) return
         
-        // Store entity data for the input address
+        // Store entity data for the input address - prioritize transaction-level attribution
         if (tx.entityName || tx.entityId || tx.entityType || tx.logo) {
-          addressEntityData.set(inputAddress, {
-            entityName: tx.entityName,
-            entityId: tx.entityId,
-            entityType: tx.entityType,
-            logoUrl: tx.logo
-          })
+          // Only set if we don't already have data for this address, or if the new data is more specific
+          const existing = addressEntityData.get(inputAddress);
+          if (!existing || (tx.entityId && !existing.entityId)) {
+            addressEntityData.set(inputAddress, {
+              entityName: tx.entityName,
+              entityId: tx.entityId,
+              entityType: tx.entityType,
+              logoUrl: tx.logo
+            })
+          }
         }
         
         const utxoKey = `${tx.originalTxHash || tx.txid}::${address}::in`
@@ -487,14 +495,18 @@ const FlowTracePage: React.FC = () => {
         const outputAddress = tx.outputs?.[0]?.addr
         if (!outputAddress) return
         
-        // Store entity data for the output address
+        // Store entity data for the output address - prioritize transaction-level attribution
         if (tx.entityName || tx.entityId || tx.entityType || tx.logo) {
-          addressEntityData.set(outputAddress, {
-            entityName: tx.entityName,
-            entityId: tx.entityId,
-            entityType: tx.entityType,
-            logoUrl: tx.logo
-          })
+          // Only set if we don't already have data for this address, or if the new data is more specific
+          const existing = addressEntityData.get(outputAddress);
+          if (!existing || (tx.entityId && !existing.entityId)) {
+            addressEntityData.set(outputAddress, {
+              entityName: tx.entityName,
+              entityId: tx.entityId,
+              entityType: tx.entityType,
+              logoUrl: tx.logo
+            })
+          }
         }
         
         const utxoKey = `${tx.originalTxHash || tx.txid}::${outputAddress}::out`
@@ -560,14 +572,18 @@ const FlowTracePage: React.FC = () => {
         if (!existingIds.has(addr)) {
           const y = baseY + (i - (inputAddresses.length - 1) / 2) * 80
           const entityData = addressEntityData.get(addr)
+          // Use consistent entity resolution - prioritize entityId over entityName
+          const resolvedLabel = entityData?.entityName || addr;
+          const resolvedEntityType = entityData?.entityType || 'wallet';
+          
           newNodes.push({
             id: addr,
-            label: entityData?.entityName || addr,
+            label: resolvedLabel,
             x: baseX - 220, // Left side for inputs
             y,
-            type: 'wallet',
+            type: resolvedEntityType,
             entityId: entityData?.entityId,
-            entityType: entityData?.entityType,
+            entityType: resolvedEntityType,
             logoUrl: entityData?.logoUrl
           })
         }
@@ -578,14 +594,18 @@ const FlowTracePage: React.FC = () => {
         if (!existingIds.has(addr)) {
           const y = baseY + (i - (outputAddresses.length - 1) / 2) * 80
           const entityData = addressEntityData.get(addr)
+          // Use consistent entity resolution - prioritize entityId over entityName
+          const resolvedLabel = entityData?.entityName || addr;
+          const resolvedEntityType = entityData?.entityType || 'wallet';
+          
           newNodes.push({
             id: addr,
-            label: entityData?.entityName || addr,
+            label: resolvedLabel,
             x: baseX + 220, // Right side for outputs
             y,
-            type: 'wallet',
+            type: resolvedEntityType,
             entityId: entityData?.entityId,
-            entityType: entityData?.entityType,
+            entityType: resolvedEntityType,
             logoUrl: entityData?.logoUrl
           })
         }

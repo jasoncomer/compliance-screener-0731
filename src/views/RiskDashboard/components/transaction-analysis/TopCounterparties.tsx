@@ -3,6 +3,9 @@ import { useTheme } from '../../../../context/ThemeContext';
 import { TransformedTransaction } from '../../../../utils/transactionTransformers';
 import { X, ExternalLink, Copy, Check, TrendingUp, BarChart3, ArrowUpRight, ArrowDownRight } from 'lucide-react';
 import { truncateAddress } from '../../../../utils/crypto';
+import { useAttribution } from '../../../../context/AttributionContext';
+import { useAppSelector } from '../../../../store/hooks';
+import { RootState } from '../../../../store/store';
 
 interface Counterparty {
   entity: string;
@@ -33,6 +36,26 @@ const TopCounterparties: React.FC<TopCounterpartiesProps> = ({
   const [selectedCounterparty, setSelectedCounterparty] = useState<Counterparty | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [copiedField, setCopiedField] = useState<string | null>(null);
+
+  // Attribution and SOT data hooks
+  const { attributions } = useAttribution();
+  const { itemsMap } = useAppSelector((state: RootState) => state.sot);
+
+  // Helper function to get entity name for a counterparty address
+  const getEntityName = (counterpartyAddress: string): string | null => {
+    if (!counterpartyAddress || counterpartyAddress === 'Unknown') return null;
+    
+    const attribution = attributions[counterpartyAddress];
+    if (!attribution) return null;
+    
+    const entityId = attribution.entity || attribution.bo || attribution.custodian;
+    if (!entityId) return null;
+    
+    const entity = Object.values(itemsMap).find(sot => sot.entity_id === entityId);
+    // Only return proper_name if it exists and is not empty
+    return entity?.proper_name || null;
+  };
+
 
   // Get transactions for a specific counterparty
   const getCounterpartyTransactions = (address: string) => {
@@ -220,6 +243,16 @@ const TopCounterparties: React.FC<TopCounterpartiesProps> = ({
                         <td className="py-3 px-2">
                           <div className="flex items-center space-x-2">
                             <div className="flex flex-col">
+                              {(() => {
+                                const entityName = getEntityName(record.address);
+                                return entityName && (
+                                  <span className={`text-xs font-medium mb-1 ${
+                                    theme === 'dark' ? 'text-blue-400' : 'text-blue-600'
+                                  }`}>
+                                    {entityName}
+                                  </span>
+                                );
+                              })()}
                               <span 
                                 className={`text-sm font-medium transition-colors duration-0 ${
                                   theme === 'dark' ? 'text-white' : 'text-gray-900'
@@ -310,28 +343,40 @@ const TopCounterparties: React.FC<TopCounterpartiesProps> = ({
                   <label className={`block text-sm font-medium mb-1 ${
                     theme === 'dark' ? 'text-gray-300' : 'text-gray-700'
                   }`}>Address</label>
-                  <div className="flex items-center space-x-2">
-                    <code className={`flex-1 text-sm font-mono truncate ${
-                      theme === 'dark' ? 'text-gray-300' : 'text-gray-800'
-                    }`}>
-                      {selectedCounterparty.address}
-                    </code>
-                    <button
-                      onClick={() => copyToClipboard(selectedCounterparty.address, 'address')}
-                      className={`flex-shrink-0 p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors ${
-                        theme === 'dark' ? 'text-gray-400 hover:text-white' : 'text-gray-500 hover:text-gray-700'
-                      }`}
-                    >
-                      {copiedField === 'address' ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
-                    </button>
-                    <button
-                      onClick={openAddressInExplorer}
-                      className={`flex-shrink-0 p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors ${
-                        theme === 'dark' ? 'text-gray-400 hover:text-white' : 'text-gray-500 hover:text-gray-700'
-                      }`}
-                    >
-                      <ExternalLink className="w-4 h-4" />
-                    </button>
+                  <div className="space-y-2">
+                    {(() => {
+                      const entityName = getEntityName(selectedCounterparty.address);
+                      return entityName && (
+                        <div className={`text-sm font-medium ${
+                          theme === 'dark' ? 'text-blue-400' : 'text-blue-600'
+                        }`}>
+                          {entityName}
+                        </div>
+                      );
+                    })()}
+                    <div className="flex items-center space-x-2">
+                      <code className={`flex-1 text-sm font-mono truncate ${
+                        theme === 'dark' ? 'text-gray-300' : 'text-gray-800'
+                      }`}>
+                        {selectedCounterparty.address}
+                      </code>
+                      <button
+                        onClick={() => copyToClipboard(selectedCounterparty.address, 'address')}
+                        className={`flex-shrink-0 p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors ${
+                          theme === 'dark' ? 'text-gray-400 hover:text-white' : 'text-gray-500 hover:text-gray-700'
+                        }`}
+                      >
+                        {copiedField === 'address' ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
+                      </button>
+                      <button
+                        onClick={openAddressInExplorer}
+                        className={`flex-shrink-0 p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors ${
+                          theme === 'dark' ? 'text-gray-400 hover:text-white' : 'text-gray-500 hover:text-gray-700'
+                        }`}
+                      >
+                        <ExternalLink className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
                 </div>
                 <div>

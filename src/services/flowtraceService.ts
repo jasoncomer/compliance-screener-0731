@@ -143,74 +143,61 @@ export const flowtraceService = {
       expectedStructure: 'API returns: { success: true, data: { overallRisk: 0.75, ... } }'
     });
     
-    // Use Bitcoin attribution if available, otherwise fall back to general attribution
+    // Prioritize Bitcoin attribution for Bitcoin addresses, but validate with SOT data
     let entityInfo = null;
+    let primaryEntityId = null;
+    let primaryEntityType = 'wallet';
+    let primaryLabel = null;
+    let primaryBo = null;
+    let primaryCustodian = null;
+    
     if (bitcoinAttr && bitcoinAttr.data) {
       console.log('Using Bitcoin attribution data for entity:', bitcoinAttr.data.entity);
-      
-      // Get SOT data to determine proper entity type
-      let entityType = 'wallet'; // default fallback
-      try {
-        const sotEntry = await this.fetchSOTByEntityId(bitcoinAttr.data.entity);
-        console.log('SOT Response received for entity:', bitcoinAttr.data.entity, sotEntry);
-        
-        if (sotEntry?.entity_type) {
-          entityType = sotEntry.entity_type;
-          console.log('✅ Found SOT entity_type:', entityType, 'for entity:', bitcoinAttr.data.entity);
-        } else {
-          console.log('❌ No SOT entry found for entity:', bitcoinAttr.data.entity);
-        }
-      } catch (error) {
-        console.error('Error fetching SOT data for entity:', bitcoinAttr.data.entity, error);
-      }
-      
-      entityInfo = {
-        entityId: bitcoinAttr.data.entity,
-        entityType: entityType,
-        label: bitcoinAttr.data.entity,
-        bo: bitcoinAttr.data.bo,
-        custodian: bitcoinAttr.data.custodian,
-      };
+      primaryEntityId = bitcoinAttr.data.entity;
+      primaryLabel = bitcoinAttr.data.entity;
+      primaryBo = bitcoinAttr.data.bo;
+      primaryCustodian = bitcoinAttr.data.custodian;
     } else {
+      // Fall back to general attribution
       const entry = Array.isArray((attr as any)?.data) ? (attr as any).data.find((a: any) => a.address === address) : undefined;
       if (entry) {
-        // Get SOT data to determine proper entity type for general attribution
-        let entityType = entry?.entityType || entry?.entity_type || 'wallet';
-        console.log('General attribution - initial entityType:', entityType, 'from entry:', { 
-          entityType: entry?.entityType, 
-          entity_type: entry?.entity_type,
-          entityId: entry?.entityId,
-          entity_id: entry?.entity_id,
-          fullEntry: entry
-        });
-        try {
-          if (entry?.entityId || entry?.entity_id) {
-            const entityId = entry?.entityId || entry?.entity_id;
-            console.log('General attribution - Looking for entity:', entityId);
-            
-            const sotEntry = await this.fetchSOTByEntityId(entityId);
-            console.log('General attribution - SOT Response received for entity:', entityId, sotEntry);
-            
-            if (sotEntry?.entity_type) {
-              entityType = sotEntry.entity_type;
-              console.log('✅ General attribution - Found SOT entity_type:', entityType, 'for entity:', entityId);
-            } else {
-              console.log('❌ General attribution - No SOT entry found for entity:', entityId);
-            }
-          } else {
-            console.log('General attribution - No entityId found in entry');
-          }
-        } catch (error) {
-          console.error('Error fetching SOT data for general attribution:', error);
-        }
-        
-        entityInfo = {
-          entityId: entry?.entityId || entry?.entity_id,
-          entityType: entityType,
-          label: entry?.label || entry?.name,
-        };
+        console.log('Using general attribution data for entity:', entry);
+        primaryEntityId = entry?.entityId || entry?.entity_id;
+        primaryLabel = entry?.label || entry?.name;
+        primaryBo = entry?.bo;
+        primaryCustodian = entry?.custodian;
       }
     }
+    
+    // Always fetch SOT data to get authoritative entity information
+    if (primaryEntityId) {
+      try {
+        const sotEntry = await this.fetchSOTByEntityId(primaryEntityId);
+        console.log('SOT Response received for entity:', primaryEntityId, sotEntry);
+        
+        if (sotEntry) {
+          // Use SOT data as the authoritative source
+          primaryEntityType = sotEntry.entity_type || 'wallet';
+          // Use proper_name from SOT if available, otherwise keep the original label
+          if (sotEntry.proper_name) {
+            primaryLabel = sotEntry.proper_name;
+          }
+          console.log('✅ Using SOT data - entity_type:', primaryEntityType, 'proper_name:', sotEntry.proper_name, 'for entity:', primaryEntityId);
+        } else {
+          console.log('❌ No SOT entry found for entity:', primaryEntityId);
+        }
+      } catch (error) {
+        console.error('Error fetching SOT data for entity:', primaryEntityId, error);
+      }
+    }
+    
+    entityInfo = {
+      entityId: primaryEntityId,
+      entityType: primaryEntityType,
+      label: primaryLabel,
+      bo: primaryBo,
+      custodian: primaryCustodian,
+    };
     
     // Simple logo URL construction - let image loading handle existence check
     let logoUrl: string | null = null;
