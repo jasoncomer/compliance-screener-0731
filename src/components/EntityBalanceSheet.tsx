@@ -8,8 +8,10 @@ interface EntityBalanceSheetProps {
 
 const CARD_STYLES = {
   style: { border: 'none', margin: 0, padding: 0 },
-  headStyle: { border: 'none', paddingLeft: 0 },
-  bodyStyle: { paddingLeft: 0, paddingRight: '40%' }
+  styles: {
+    header: { border: 'none', paddingLeft: 0 },
+    body: { paddingLeft: 0, paddingRight: '40%' }
+  }
 };
 
 const COLUMNS = [
@@ -51,8 +53,15 @@ const EntityBalanceSheet: React.FC<EntityBalanceSheetProps> = ({ currentEntityId
 
         const response = await getEntityBalance(currentEntityId);
         setData(response);
-      } catch (err) {
-        console.error('Failed to load balance data:', err);
+      } catch (err: any) {
+        // Handle 404 errors gracefully - entity might not have balance data
+        if (err?.response?.status === 404) {
+          console.log(`No balance data available for entity: ${currentEntityId}`);
+          setData(null);
+        } else {
+          console.error('Failed to load balance data:', err);
+          setData(null);
+        }
       } finally {
         setLoading(false);
       }

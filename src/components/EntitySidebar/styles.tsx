@@ -92,7 +92,7 @@ export const StyledCard: React.FC<StyledCardProps> = ({ children, onClick, class
       "hover:border-gray-400 dark:hover:border-gray-600",
       className
     )}
-    bodyStyle={{ padding: '12px', borderRadius: '8px' }}
+    styles={{ body: { padding: '12px', borderRadius: '8px' } }}
   >
     {children}
   </Card>

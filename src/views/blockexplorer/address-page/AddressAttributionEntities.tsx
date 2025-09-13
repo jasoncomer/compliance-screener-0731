@@ -132,7 +132,7 @@ const AddressAttributionEntities: React.FC<AddressAttributionEntitiesProps> = ({
         <Card
           style={{ 
             flex: 1, 
-            backgroundColor: theme === 'dark' ? '#1f2937' : '#f3f4f6',
+            backgroundColor: theme === 'dark' ? 'hsl(222.2 84% 4.9%)' : '#f3f4f6',
             marginRight: '0.5rem',
             height: 'fit-content',
             maxHeight: '120px'
@@ -151,7 +151,7 @@ const AddressAttributionEntities: React.FC<AddressAttributionEntitiesProps> = ({
         <Card
           style={{ 
             flex: 1, 
-            backgroundColor: theme === 'dark' ? '#1f2937' : '#f3f4f6',
+            backgroundColor: theme === 'dark' ? 'hsl(222.2 84% 4.9%)' : '#f3f4f6',
             marginLeft: '0.5rem',
             height: 'fit-content',
             maxHeight: '120px'
@@ -160,7 +160,7 @@ const AddressAttributionEntities: React.FC<AddressAttributionEntitiesProps> = ({
           bodyStyle={{ padding: '0.75rem' }}
           bordered={false}
         >
-          <div className="!bg-transparent dark:!bg-transparent !p-0 !mb-0">
+          <div className="!bg-transparent dark:red !p-0 !mb-0">
             {renderEntityWithHover(attributions[address].bo, 'Beneficial Owner')}
           </div>
         </Card>
@@ -170,7 +170,7 @@ const AddressAttributionEntities: React.FC<AddressAttributionEntitiesProps> = ({
         <Card
           style={{ 
             flex: 1, 
-            backgroundColor: theme === 'dark' ? '#1f2937' : '#f3f4f6',
+            backgroundColor: theme === 'dark' ? 'hsl(222.2 84% 4.9%)' : '#f3f4f6',
             marginLeft: '0.5rem',
             height: 'fit-content',
             maxHeight: '120px'

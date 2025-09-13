@@ -29,14 +29,10 @@ export const ErrorMessage = styled.div`
 export const BlockSummaryCard = styled(Card)`
   margin-bottom: 16px;
   margin-top: 0;
-  background: ${({ theme }) => theme.theme === 'dark' ? '#1f1f1f' : '#fafafa'} !important;
+  background: ${({ theme }) => theme.theme === 'dark' ? '#0a0e1a' : '#fafafa'} !important;
   color: ${({ theme }) => theme.theme === 'dark' ? '#fff' : '#141414'} !important;
   border-radius: 8px;
   font-family: monospace;
-  .ant-card-body {
-    padding: 12px;
-    font-family: monospace;
-  }
 `;
 
 export const Row = styled.div`
@@ -96,10 +92,10 @@ export const styles: Record<string, CSSProperties> = {
   blockHashContainer: {
     display: 'flex',
     alignItems: 'center',
-    background: '#181818',
+    background: '#0a0e1a',
     padding: '8px 12px',
     borderRadius: 8,
-    border: '1px solid #222',
+    border: '1px solid #374151',
     minHeight: 0
   },
   blockHashTitle: {

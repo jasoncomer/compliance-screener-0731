@@ -30,6 +30,7 @@ import { RootState } from '../../store/store';
 import { getEntityTypeLabel } from '../../utils/display-labels';
 import { EEntityType } from '../../typings/SOT';
 import { fetchSOT } from '../../store/slices/sotSlice';
+import { applyBeneficialOwnerOverride } from '../../utils/entityUtils';
 
 const RiskDashboard: React.FC = React.memo(() => {
   const { theme } = useTheme();
@@ -594,6 +595,32 @@ const RiskDashboard: React.FC = React.memo(() => {
 
   const entityTags = useMemo(() => primaryEntityId ? getEntityTags(primaryEntityId) : [], [primaryEntityId, getEntityTags]);
 
+  // Get display name with beneficial owner logic
+  const getDisplayName = useMemo(() => {
+    if (!address || !attributions[address]) {
+      return undefined;
+    }
+
+    const attribution = attributions[address];
+    const entitySOT = Object.values(itemsMap).find(sot => sot.entity_id === attribution.entity);
+    const beneficialOwnerSOT = attribution.bo ? 
+      Object.values(itemsMap).find(sot => sot.entity_id === attribution.bo) : undefined;
+    
+    const override = applyBeneficialOwnerOverride(
+      {
+        entity: attribution.entity,
+        bo: attribution.bo || '',
+        custodian: attribution.custodian || '',
+        script_type: attribution.script_type
+      },
+      entitySOT,
+      beneficialOwnerSOT,
+      Object.values(itemsMap)
+    );
+    
+    return override.displayTitle;
+  }, [address, attributions, itemsMap]);
+
   // Properly handle ResizeObserver cleanup
   useEffect(() => {
     if (!entityDetailsRef.current || !primaryEntityId) return;
@@ -697,7 +724,7 @@ const RiskDashboard: React.FC = React.memo(() => {
             <AddressHeader 
               address={address}
               entityTags={entityTags}
-              entityName={primaryEntityId ? (itemsMap[primaryEntityId]?.proper_name || primaryEntityId) : undefined}
+              entityName={getDisplayName}
             />
           </div>
 

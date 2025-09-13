@@ -1,4 +1,5 @@
 import { axiosInstance, api } from '../api/api';
+import { flowtraceOptimizedService } from './flowtraceOptimizedService';
 
 export interface AddressDataResponse {
   address: string;
@@ -27,6 +28,16 @@ export interface BitcoinAttribution {
 }
 
 export const flowtraceService = {
+  // NEW: Optimized FlowTrace methods
+  async expandNodeOptimized(address: string, options?: { includeRiskScores?: boolean; includeTransactions?: boolean }) {
+    return await flowtraceOptimizedService.expandNode(address, options);
+  },
+
+  async expandNodesBatchOptimized(addresses: string[], options?: { includeRiskScores?: boolean }) {
+    return await flowtraceOptimizedService.expandNodesBatch(addresses, options);
+  },
+
+  // Legacy methods (kept for backward compatibility)
   fetchAddress(address: string) {
     return axiosInstance.get<AddressDataResponse>(`/blockchain/address/${address}`).then(r => r.data);
   },
@@ -53,7 +64,17 @@ export const flowtraceService = {
       .post(`/risk-scoring/calculate`, { identifier, type }, { timeout: 10000 }) // 10 second timeout
       .then(r => {
         console.log('🔍 fetchRiskScore response for', identifier, ':', r.data);
-        return r.data;
+        
+        // Handle the response structure - check if it has success field
+        if (r.data.success && r.data.data) {
+          return r.data.data;
+        } else if (r.data.overallRisk !== undefined) {
+          // Direct response structure
+          return r.data;
+        } else {
+          console.warn('Unexpected risk score response structure:', r.data);
+          return r.data;
+        }
       })
       .catch(error => {
         console.error('🔍 fetchRiskScore error for', identifier, ':', error);

@@ -13,7 +13,6 @@ const HeaderWrapper = styled.div<{ theme?: { theme: Theme } }>`
   justify-content: space-between;
   align-items: center;
   padding: 10px;
-  background-color: ${props => props.theme?.theme === 'dark' ? '#141414' : '#f5f5f5'};
   border-radius: 4px;
   margin-bottom: 10px;
 `;
@@ -103,27 +102,27 @@ const BtcTransactionHeader: React.FC<BtcTransactionHeaderProps> = ({
   };
 
   return (
-    <HeaderWrapper theme={theme}>
-      <HeaderItem theme={theme} style={{ fontFamily: 'monospace' }}>
+    <HeaderWrapper theme={theme} className="dark:bg-gray-800 dark:text-white">
+      <HeaderItem theme={theme} className="dark:text-white" style={{ fontFamily: 'monospace' }} >
         <span>Transaction Hash:</span>
         <TransactionHashContainer>
           <CopyButton onClick={copyToClipboard} title="Copy transaction hash">
             {copySuccess ? '✓' : '⧉'}
           </CopyButton>
-          <Link to={`/home/block-explorer/transaction/${txHash}`} style={{ fontFamily: 'monospace' }}>
+          <Link to={`/home/block-explorer/transaction/${txHash}`} className="dark:text-white" style={{ fontFamily: 'monospace' }}>
             {isSmallScreen ? truncateAddress(txHash) : txHash}
           </Link>
         </TransactionHashContainer>
       </HeaderItem>
-      <HeaderItem theme={theme} style={{fontFamily: 'monospace'}}>
+      <HeaderItem theme={theme} className="dark:text-white" style={{fontFamily: 'monospace'}}>
         <span>Block Height:</span>
-        <span style={{ fontFamily: 'monospace' }}>{blockHeight.toLocaleString()}</span>
+        <span className="dark:text-white" style={{ fontFamily: 'monospace' }}>{blockHeight.toLocaleString()}</span>
       </HeaderItem>
-      <HeaderItem theme={theme} style={{fontFamily: 'monospace'}}>
+      <HeaderItem theme={theme} className="dark:text-white" style={{fontFamily: 'monospace'}}>
         <span>Fee:</span>
-        <span style={{ fontFamily: 'monospace' }}>{satsToBTC(fee).toFixed(8)} BTC</span>
+        <span className="dark:text-white" style={{ fontFamily: 'monospace' }}>{satsToBTC(fee).toFixed(8)} BTC</span>
       </HeaderItem>
-      <HeaderItem theme={theme} style={{fontFamily: 'monospace'}}>
+      <HeaderItem theme={theme} className="dark:text-white" style={{fontFamily: 'monospace'}}>
         <span>Date:</span>
         <span>{date}</span>
       </HeaderItem>
