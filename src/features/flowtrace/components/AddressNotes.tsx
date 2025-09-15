@@ -191,7 +191,7 @@ const AddressNotes: React.FC<AddressNotesProps> = ({ address, cospendId, organiz
             </button>
           </div>
           {noteType === 'cluster' && (
-            <span className="text-xs text-gray-500 dark:text-gray-400 font-mono truncate max-w-[120px]" title={cospendId}>
+            <span className="text-xs text-gray-500 dark:text-gray-400 font-mono truncate max-w-[120px]" title={cospendId || undefined}>
               {cospendId}
             </span>
           )}
