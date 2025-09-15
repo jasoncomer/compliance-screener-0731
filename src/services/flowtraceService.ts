@@ -301,6 +301,20 @@ export const flowtraceService = {
     });
   },
 
+  async fetchClusterNotes(cospendId: string, organizationId?: string) {
+    const orgId = organizationId ?? localStorage.getItem('organizationId') ?? '';
+    return api.notes.getClusterNotes(orgId, cospendId);
+  },
+
+  async createClusterNote(cospendId: string, content: string, organizationId?: string) {
+    const orgId = organizationId ?? localStorage.getItem('organizationId') ?? '';
+    return api.notes.create(orgId, {
+      cospendId,
+      content,
+      type: 'cluster'
+    });
+  },
+
   async updateNote(noteId: string, content: string, organizationId?: string) {
     const orgId = organizationId ?? localStorage.getItem('organizationId') ?? '';
     return api.notes.update(orgId, noteId, { content });

@@ -19,10 +19,11 @@ interface Note {
 
 interface AddressNotesProps {
   address: string | null;
+  cospendId?: string | null;
   organizationId?: string;
 }
 
-const AddressNotes: React.FC<AddressNotesProps> = ({ address, organizationId }) => {
+const AddressNotes: React.FC<AddressNotesProps> = ({ address, cospendId, organizationId }) => {
   const [notes, setNotes] = useState<Note[]>([]);
   const [loading, setLoading] = useState(false);
   const [newNote, setNewNote] = useState('');
@@ -30,6 +31,10 @@ const AddressNotes: React.FC<AddressNotesProps> = ({ address, organizationId }) 
   const [editContent, setEditContent] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [noteType, setNoteType] = useState<'address' | 'cluster'>('address');
+
+  // Debug logging
+  console.log('AddressNotes - address:', address, 'cospendId:', cospendId);
 
   useEffect(() => {
     if (address) {
@@ -37,14 +42,21 @@ const AddressNotes: React.FC<AddressNotesProps> = ({ address, organizationId }) 
     } else {
       setNotes([]);
     }
-  }, [address]);
+  }, [address, noteType, cospendId]);
 
   const fetchNotes = async () => {
     if (!address) return;
     
     setLoading(true);
     try {
-      const response = await flowtraceService.fetchAddressNotes(address, organizationId);
+      let response;
+      
+      if (noteType === 'cluster' && cospendId) {
+        response = await flowtraceService.fetchClusterNotes(cospendId, organizationId);
+      } else {
+        response = await flowtraceService.fetchAddressNotes(address, organizationId);
+      }
+      
       if (response.success) {
         // Convert API response to component format
         const notes = (response.data || []).map((note: INote) => ({
@@ -68,7 +80,14 @@ const AddressNotes: React.FC<AddressNotesProps> = ({ address, organizationId }) 
     
     setSubmitting(true);
     try {
-      const response = await flowtraceService.createAddressNote(address, newNote.trim(), organizationId);
+      let response;
+      
+      if (noteType === 'cluster' && cospendId) {
+        response = await flowtraceService.createClusterNote(cospendId, newNote.trim(), organizationId);
+      } else {
+        response = await flowtraceService.createAddressNote(address, newNote.trim(), organizationId);
+      }
+      
       if (response.success) {
         setNewNote('');
         setShowAddForm(false);
@@ -142,6 +161,43 @@ const AddressNotes: React.FC<AddressNotesProps> = ({ address, organizationId }) 
 
   return (
     <div className="space-y-3">
+      {/* Note Type Toggle */}
+      {address && (
+        <div className="flex items-center gap-2 p-2 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+          <span className="text-xs font-medium text-gray-600 dark:text-gray-400">Notes for:</span>
+          <div className="flex bg-white dark:bg-gray-700 rounded-md p-1">
+            <button
+              onClick={() => setNoteType('address')}
+              className={`px-2 py-1 text-xs rounded transition-colors ${
+                noteType === 'address'
+                  ? 'bg-blue-500 text-white'
+                  : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600'
+              }`}
+            >
+              Address
+            </button>
+            <button
+              onClick={() => setNoteType('cluster')}
+              disabled={!cospendId}
+              className={`px-2 py-1 text-xs rounded transition-colors ${
+                noteType === 'cluster'
+                  ? 'bg-blue-500 text-white'
+                  : !cospendId
+                  ? 'text-gray-400 dark:text-gray-500 cursor-not-allowed'
+                  : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600'
+              }`}
+            >
+              Cluster {!cospendId && '(N/A)'}
+            </button>
+          </div>
+          {noteType === 'cluster' && (
+            <span className="text-xs text-gray-500 dark:text-gray-400 font-mono truncate max-w-[120px]" title={cospendId}>
+              {cospendId}
+            </span>
+          )}
+        </div>
+      )}
+
       {/* Add Note Button */}
       {!showAddForm && (
         <Button
@@ -151,7 +207,7 @@ const AddressNotes: React.FC<AddressNotesProps> = ({ address, organizationId }) 
           className="w-full"
         >
           <Plus className="h-3 w-3 mr-2" />
-          Add Note
+          Add {noteType === 'cluster' ? 'Cluster' : 'Address'} Note
         </Button>
       )}
 
@@ -160,7 +216,9 @@ const AddressNotes: React.FC<AddressNotesProps> = ({ address, organizationId }) 
         <Card className="border border-gray-200 dark:border-gray-700">
           <CardContent className="p-3">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-gray-900 dark:text-gray-100">Add Note</span>
+              <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                Add {noteType === 'cluster' ? 'Cluster' : 'Address'} Note
+              </span>
               <Button
                 size="sm"
                 variant="ghost"
@@ -174,7 +232,7 @@ const AddressNotes: React.FC<AddressNotesProps> = ({ address, organizationId }) 
               </Button>
             </div>
             <Textarea
-              placeholder="Add a note about this address..."
+              placeholder={`Add a note about this ${noteType === 'cluster' ? 'cluster' : 'address'}...`}
               value={newNote}
               onChange={(e) => setNewNote(e.target.value)}
               className="mb-2"

@@ -10,7 +10,8 @@ export interface INote {
   updatedAt: string;
   transactionId?: string;
   address?: string;
-  type: 'general' | 'transaction' | 'address';
+  cospendId?: string;
+  type: 'general' | 'transaction' | 'address' | 'cluster';
   creatorName?: string;
 }
 
@@ -18,11 +19,12 @@ export interface ICreateNote {
   content: string;
   transactionId?: string;
   address?: string;
-  type?: 'general' | 'transaction' | 'address';
+  cospendId?: string;
+  type?: 'general' | 'transaction' | 'address' | 'cluster';
 }
 
 export interface IMarkNotesViewed {
-  contextType: 'general' | 'transaction' | 'address';
+  contextType: 'general' | 'transaction' | 'address' | 'cluster';
   contextId: string;
 }
 
@@ -49,6 +51,13 @@ export const notesApi = {
   getAddressNotes: async (organizationId: string, address: string): Promise<IBSApiResponse<INote[]>> => {
     const encodedAddress = encodeURIComponent(address);
     const response = await axiosInstance.get(`/organizations/${organizationId}/notes/address/${encodedAddress}`);
+    return response.data;
+  },
+
+  // Get notes for a specific cluster (cospend_id)
+  getClusterNotes: async (organizationId: string, cospendId: string): Promise<IBSApiResponse<INote[]>> => {
+    const encodedCospendId = encodeURIComponent(cospendId);
+    const response = await axiosInstance.get(`/organizations/${organizationId}/notes/cluster/${encodedCospendId}`);
     return response.data;
   },
 
