@@ -213,9 +213,7 @@ const LeftPanel: React.FC<Props> = ({
 }) => {
   const activeOrg = useAppSelector(selectActiveOrganization as any) as any;
   const orgId = activeOrg?._id || localStorage.getItem('organizationId') || undefined;
-  
-  // Debug logging
-  console.log('LeftPanel orgId:', orgId, 'activeOrg:', activeOrg);
+
   const [copied, setCopied] = useState(false);
   
   // Use the actual transaction data as a fallback for transaction count
@@ -225,10 +223,7 @@ const LeftPanel: React.FC<Props> = ({
   // Get address data to access cospend_id
   const { data: addressData } = useAddress(address || '');
   const cospendId = addressData?.cospend_id;
-  
-  // Debug logging
-  console.log('LeftPanel - address:', address, 'addressData:', addressData, 'cospendId:', cospendId);
-  
+
   // Get logo URL from the same source as NetworkGraph (nodeData) with fallback to selectedEntity
   const logoUrl = nodeData?.logoUrl || selectedEntity?.logoUrl;
   

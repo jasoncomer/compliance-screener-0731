@@ -33,9 +33,6 @@ const AddressNotes: React.FC<AddressNotesProps> = ({ address, cospendId, organiz
   const [showAddForm, setShowAddForm] = useState(false);
   const [noteType, setNoteType] = useState<'address' | 'cluster'>('address');
 
-  // Debug logging
-  console.log('AddressNotes - address:', address, 'cospendId:', cospendId);
-
   useEffect(() => {
     if (address) {
       fetchNotes();

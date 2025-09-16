@@ -1,26 +1,22 @@
 import { axiosInstance } from './api';
 import { IBSApiResponse } from '../typings/interfaces';
 
-export interface INote {
-  _id: string;
-  organizationId: string;
-  content: string;
-  createdBy: string;
-  createdAt: string;
-  updatedAt: string;
-  transactionId?: string;
-  address?: string;
-  cospendId?: string;
-  type: 'general' | 'transaction' | 'address' | 'cluster';
-  creatorName?: string;
-}
-
 export interface ICreateNote {
   content: string;
   transactionId?: string;
   address?: string;
   cospendId?: string;
   type?: 'general' | 'transaction' | 'address' | 'cluster';
+}
+
+export interface INote extends ICreateNote {
+  _id: string;
+  organizationId: string;
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
+  type: 'general' | 'transaction' | 'address' | 'cluster'; // Make required in INote
+  creatorName?: string;
 }
 
 export interface IMarkNotesViewed {
