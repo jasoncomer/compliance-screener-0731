@@ -1,28 +1,26 @@
 import { axiosInstance } from './api';
 import { IBSApiResponse } from '../typings/interfaces';
 
-export interface INote {
-  _id: string;
-  organizationId: string;
-  content: string;
-  createdBy: string;
-  createdAt: string;
-  updatedAt: string;
-  transactionId?: string;
-  address?: string;
-  type: 'general' | 'transaction' | 'address';
-  creatorName?: string;
-}
-
 export interface ICreateNote {
   content: string;
   transactionId?: string;
   address?: string;
-  type?: 'general' | 'transaction' | 'address';
+  cospendId?: string;
+  type?: 'general' | 'transaction' | 'address' | 'cluster';
+}
+
+export interface INote extends ICreateNote {
+  _id: string;
+  organizationId: string;
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
+  type: 'general' | 'transaction' | 'address' | 'cluster'; // Make required in INote
+  creatorName?: string;
 }
 
 export interface IMarkNotesViewed {
-  contextType: 'general' | 'transaction' | 'address';
+  contextType: 'general' | 'transaction' | 'address' | 'cluster';
   contextId: string;
 }
 
@@ -49,6 +47,13 @@ export const notesApi = {
   getAddressNotes: async (organizationId: string, address: string): Promise<IBSApiResponse<INote[]>> => {
     const encodedAddress = encodeURIComponent(address);
     const response = await axiosInstance.get(`/organizations/${organizationId}/notes/address/${encodedAddress}`);
+    return response.data;
+  },
+
+  // Get notes for a specific cluster (cospend_id)
+  getClusterNotes: async (organizationId: string, cospendId: string): Promise<IBSApiResponse<INote[]>> => {
+    const encodedCospendId = encodeURIComponent(cospendId);
+    const response = await axiosInstance.get(`/organizations/${organizationId}/notes/cluster/${encodedCospendId}`);
     return response.data;
   },
 

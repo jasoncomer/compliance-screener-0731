@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { formatAddress } from '../../../utils/addressValidation';
 import { Copy, Pencil, ChevronLeft, ChevronRight, ArrowUpRight, ArrowDownRight, Info } from 'lucide-react';
 import { useAddressTransactions } from '../../../hooks/useAddressTransactions';
+import { useAddress } from '../../../hooks/useAddress';
 import { transformBtcTransactions } from '../../../utils/transactionTransformers';
 import { useCryptoPrices } from '../../../hooks/useCryptoPrices';
 import AddressNotes from './AddressNotes';
@@ -215,9 +216,7 @@ const LeftPanel: React.FC<Props> = ({
 }) => {
   const activeOrg = useAppSelector(selectActiveOrganization as any) as any;
   const orgId = activeOrg?._id || localStorage.getItem('organizationId') || undefined;
-  
-  // Debug logging
-  console.log('LeftPanel orgId:', orgId, 'activeOrg:', activeOrg);
+
   const [copied, setCopied] = useState(false);
   
   // Risk score modal state
@@ -229,6 +228,10 @@ const LeftPanel: React.FC<Props> = ({
   const { data: transactionData } = useAddressTransactions(address || '', 1, 1);
   const actualTxCount = transactionData?.pagination?.totalTxs || transactionData?.txs?.length || txCount || 0;
   
+  // Get address data to access cospend_id
+  const { data: addressData } = useAddress(address || '');
+  const cospendId = addressData?.cospend_id;
+
   // Get logo URL from the same source as NetworkGraph (nodeData) with fallback to selectedEntity
   const logoUrl = nodeData?.logoUrl || selectedEntity?.logoUrl;
   
@@ -515,7 +518,7 @@ const LeftPanel: React.FC<Props> = ({
                 <div className="h-2 w-2 rounded-full bg-green-500"></div>
                 <h3 className="font-semibold text-gray-900 dark:text-gray-100">Notes</h3>
               </div>
-              <AddressNotes address={address || null} organizationId={orgId} />
+              <AddressNotes address={address || null} cospendId={cospendId || null} organizationId={orgId} />
             </div>
 
             {/* Transaction History */}
