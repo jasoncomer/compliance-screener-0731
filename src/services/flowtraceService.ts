@@ -13,6 +13,12 @@ export interface AddressDataResponse {
 
 export interface TransactionsResponse {
   txs: any[];
+  pagination?: {
+    currentPage: number;
+    totalPages: number;
+    totalTxs: number;
+    limit: number;
+  };
   total?: number;
   page?: number;
   limit?: number;
@@ -30,7 +36,56 @@ export interface BitcoinAttribution {
 export const flowtraceService = {
   // NEW: Optimized FlowTrace methods
   async expandNodeOptimized(address: string, options?: { includeRiskScores?: boolean; includeTransactions?: boolean }) {
-    return await flowtraceOptimizedService.expandNode(address, options);
+    try {
+      return await flowtraceOptimizedService.expandNode(address, options);
+    } catch (error) {
+      console.warn('Optimized FlowTrace endpoint not available, falling back to legacy methods:', error);
+      
+      // Fallback to legacy methods when optimized endpoint is not available
+      console.log('🔍 Starting legacy fallback for address:', address);
+      
+      const [addressData, transactions, riskScore] = await Promise.all([
+        this.fetchAddress(address),
+        options?.includeTransactions !== false ? this.fetchTransactions(address, 1, 50) : Promise.resolve({ txs: [], pagination: { totalTxs: 0 } }),
+        options?.includeRiskScores !== false ? this.fetchRiskScore(address) : Promise.resolve(null)
+      ]);
+
+      console.log('🔍 Legacy fallback data received:', {
+        addressData,
+        transactionsCount: transactions.txs?.length || 0,
+        riskScore
+      });
+
+      // Note: Entity profile data will be resolved client-side using AttributionContext and SOT data
+      // This avoids the authentication issues with the server-side attribution calls
+      const result = {
+        data: {
+          address,
+          transactions: transactions.txs || [],
+          enhancedData: [{
+            address,
+            attribution: addressData.attribution || {},
+            entityProfile: {
+              entity_type: 'wallet', // Will be resolved client-side
+              proper_name: null, // Will be resolved client-side
+              logo: null // Will be resolved client-side
+            }
+          }],
+          riskScores: riskScore ? { [address]: riskScore } : {},
+          summary: {
+            totalTransactions: transactions.pagination?.totalTxs || 0
+          }
+        },
+        performance: {
+          totalTime: 0,
+          apiCallsSaved: 0,
+          optimization: 'legacy-fallback'
+        }
+      };
+
+      console.log('🔍 Legacy fallback result:', result);
+      return result;
+    }
   },
 
   async expandNodesBatchOptimized(addresses: string[], options?: { includeRiskScores?: boolean }) {
@@ -117,8 +172,11 @@ export const flowtraceService = {
       });
   },
   async fetchEntityProfile(address: string) {
+    console.log('🔍 fetchEntityProfile called for address:', address);
+    
     // First try to get Bitcoin attribution data
     const bitcoinAttr = await this.fetchBitcoinAttribution(address);
+    console.log('🔍 Bitcoin attribution result:', bitcoinAttr);
     
     // Combine attribution + risk score for an address
     const [attr, risk] = await Promise.all([
@@ -171,9 +229,10 @@ export const flowtraceService = {
     
     // Always fetch SOT data to get authoritative entity information
     if (primaryEntityId) {
+      console.log('🔍 Attempting SOT lookup for entityId:', primaryEntityId);
       try {
         const sotEntry = await this.fetchSOTByEntityId(primaryEntityId);
-        console.log('SOT Response received for entity:', primaryEntityId, sotEntry);
+        console.log('🔍 SOT Response received for entity:', primaryEntityId, sotEntry);
         
         if (sotEntry) {
           // Use SOT data as the authoritative source
@@ -187,8 +246,10 @@ export const flowtraceService = {
           console.log('❌ No SOT entry found for entity:', primaryEntityId);
         }
       } catch (error) {
-        console.error('Error fetching SOT data for entity:', primaryEntityId, error);
+        console.error('❌ Error fetching SOT data for entity:', primaryEntityId, error);
       }
+    } else {
+      console.log('❌ No primaryEntityId found, skipping SOT lookup');
     }
     
     entityInfo = {
@@ -296,12 +357,18 @@ export const flowtraceService = {
 
   // Note-related methods
   async fetchAddressNotes(address: string, organizationId?: string) {
-    const orgId = organizationId ?? localStorage.getItem('organizationId') ?? '';
+    const orgId = organizationId ?? localStorage.getItem('organizationId');
+    if (!orgId) {
+      throw new Error('Organization ID is required to fetch notes');
+    }
     return api.notes.getAddressNotes(orgId, address);
   },
 
   async createAddressNote(address: string, content: string, organizationId?: string) {
-    const orgId = organizationId ?? localStorage.getItem('organizationId') ?? '';
+    const orgId = organizationId ?? localStorage.getItem('organizationId');
+    if (!orgId) {
+      throw new Error('Organization ID is required to create notes');
+    }
     return api.notes.create(orgId, {
       address,
       content,
@@ -310,12 +377,18 @@ export const flowtraceService = {
   },
 
   async fetchClusterNotes(cospendId: string, organizationId?: string) {
-    const orgId = organizationId ?? localStorage.getItem('organizationId') ?? '';
+    const orgId = organizationId ?? localStorage.getItem('organizationId');
+    if (!orgId) {
+      throw new Error('Organization ID is required to fetch cluster notes');
+    }
     return api.notes.getClusterNotes(orgId, cospendId);
   },
 
   async createClusterNote(cospendId: string, content: string, organizationId?: string) {
-    const orgId = organizationId ?? localStorage.getItem('organizationId') ?? '';
+    const orgId = organizationId ?? localStorage.getItem('organizationId');
+    if (!orgId) {
+      throw new Error('Organization ID is required to create cluster notes');
+    }
     return api.notes.create(orgId, {
       cospendId,
       content,
@@ -324,12 +397,18 @@ export const flowtraceService = {
   },
 
   async updateNote(noteId: string, content: string, organizationId?: string) {
-    const orgId = organizationId ?? localStorage.getItem('organizationId') ?? '';
+    const orgId = organizationId ?? localStorage.getItem('organizationId');
+    if (!orgId) {
+      throw new Error('Organization ID is required to update notes');
+    }
     return api.notes.update(orgId, noteId, { content });
   },
 
   async deleteNote(noteId: string, organizationId?: string) {
-    const orgId = organizationId ?? localStorage.getItem('organizationId') ?? '';
+    const orgId = organizationId ?? localStorage.getItem('organizationId');
+    if (!orgId) {
+      throw new Error('Organization ID is required to delete notes');
+    }
     return api.notes.delete(orgId, noteId);
   },
 };
