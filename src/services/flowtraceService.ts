@@ -13,6 +13,12 @@ export interface AddressDataResponse {
 
 export interface TransactionsResponse {
   txs: any[];
+  pagination?: {
+    currentPage: number;
+    totalPages: number;
+    totalTxs: number;
+    limit: number;
+  };
   total?: number;
   page?: number;
   limit?: number;
