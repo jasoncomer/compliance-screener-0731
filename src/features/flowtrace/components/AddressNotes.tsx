@@ -44,6 +44,12 @@ const AddressNotes: React.FC<AddressNotesProps> = ({ address, cospendId, organiz
   const fetchNotes = async () => {
     if (!address) return;
     
+    // Don't attempt to fetch notes if organizationId is missing
+    if (!organizationId) {
+      console.warn('Cannot fetch notes: Organization ID is missing');
+      return;
+    }
+    
     setLoading(true);
     try {
       let response;
@@ -73,7 +79,7 @@ const AddressNotes: React.FC<AddressNotesProps> = ({ address, cospendId, organiz
   };
 
   const handleCreateNote = async () => {
-    if (!address || !newNote.trim()) return;
+    if (!address || !newNote.trim() || !organizationId) return;
     
     setSubmitting(true);
     try {
@@ -98,7 +104,7 @@ const AddressNotes: React.FC<AddressNotesProps> = ({ address, cospendId, organiz
   };
 
   const handleUpdateNote = async (noteId: string) => {
-    if (!editContent.trim()) return;
+    if (!editContent.trim() || !organizationId) return;
     
     setSubmitting(true);
     try {
@@ -116,7 +122,7 @@ const AddressNotes: React.FC<AddressNotesProps> = ({ address, cospendId, organiz
   };
 
   const handleDeleteNote = async (noteId: string) => {
-    if (!confirm('Are you sure you want to delete this note?')) return;
+    if (!confirm('Are you sure you want to delete this note?') || !organizationId) return;
     
     setSubmitting(true);
     try {
@@ -151,6 +157,17 @@ const AddressNotes: React.FC<AddressNotesProps> = ({ address, cospendId, organiz
         <div className="flex items-center gap-2 text-gray-400">
           <StickyNote className="h-4 w-4" />
           <span>Select an address to view notes</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (!organizationId) {
+    return (
+      <div className="text-sm text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-800 rounded-lg p-3 border border-gray-200 dark:border-gray-700">
+        <div className="flex items-center gap-2 text-gray-400">
+          <StickyNote className="h-4 w-4" />
+          <span>Organization not available - notes feature disabled</span>
         </div>
       </div>
     );
