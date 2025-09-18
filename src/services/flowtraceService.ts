@@ -39,10 +39,8 @@ export const flowtraceService = {
     try {
       return await flowtraceOptimizedService.expandNode(address, options);
     } catch (error) {
-      console.warn('Optimized FlowTrace endpoint not available, falling back to legacy methods:', error);
       
       // Fallback to legacy methods when optimized endpoint is not available
-      console.log('🔍 Starting legacy fallback for address:', address);
       
       const [addressData, transactions, riskScore] = await Promise.all([
         this.fetchAddress(address),
@@ -50,25 +48,48 @@ export const flowtraceService = {
         options?.includeRiskScores !== false ? this.fetchRiskScore(address) : Promise.resolve(null)
       ]);
 
-      console.log('🔍 Legacy fallback data received:', {
-        addressData,
-        transactionsCount: transactions.txs?.length || 0,
-        riskScore
-      });
+
+      // Try to fetch attribution data for this address
+      let attributionData = null;
+      try {
+        const attributionResponse = await this.fetchEntityProfile(address);
+        attributionData = attributionResponse;
+      } catch (attributionError) {
+      }
 
       // Note: Entity profile data will be resolved client-side using AttributionContext and SOT data
       // This avoids the authentication issues with the server-side attribution calls
+      
+      // Get SOT data to resolve entity names properly
+      let resolvedEntityName = null;
+      let resolvedEntityType = 'wallet';
+      let resolvedLogo = null;
+      
+             if (attributionData?.entityId) {
+               try {
+                 const sotData = await this.getSOTDataFromStore();
+                 if (sotData && sotData[attributionData.entityId]) {
+                   const sotEntry = sotData[attributionData.entityId] as any; // Type assertion for SOT data
+                   resolvedEntityName = sotEntry.proper_name || attributionData.entityId;
+                   resolvedEntityType = sotEntry.entity_type || 'wallet';
+                   resolvedLogo = sotEntry.logo || null;
+                 }
+               } catch (error) {
+               }
+             }
+      
       const result = {
         data: {
           address,
           transactions: transactions.txs || [],
           enhancedData: [{
             address,
-            attribution: addressData.attribution || {},
+            attribution: attributionData || addressData.attribution || {},
             entityProfile: {
-              entity_type: 'wallet', // Will be resolved client-side
-              proper_name: null, // Will be resolved client-side
-              logo: null // Will be resolved client-side
+              entity_type: resolvedEntityType,
+               proper_name: resolvedEntityName || addressData.attribution?.entity || null,
+              logo: resolvedLogo || attributionData?.logoUrl || addressData.attribution?.logo || null,
+              entityId: attributionData?.entityId || addressData.attribution?.entity || null
             }
           }],
           riskScores: riskScore ? { [address]: riskScore } : {},
@@ -83,7 +104,6 @@ export const flowtraceService = {
         }
       };
 
-      console.log('🔍 Legacy fallback result:', result);
       return result;
     }
   },
@@ -114,11 +134,9 @@ export const flowtraceService = {
       .then(r => r.data);
   },
   fetchRiskScore(identifier: string, type: 'address' | 'transaction' = 'address') {
-    console.log('🔍 fetchRiskScore called for:', identifier, 'type:', type);
     return axiosInstance
       .post(`/risk-scoring/calculate`, { identifier, type }, { timeout: 10000 }) // 10 second timeout
       .then(r => {
-        console.log('🔍 fetchRiskScore response for', identifier, ':', r.data);
         
         // Handle the response structure - check if it has success field
         if (r.data.success && r.data.data) {
@@ -127,12 +145,10 @@ export const flowtraceService = {
           // Direct response structure
           return r.data;
         } else {
-          console.warn('Unexpected risk score response structure:', r.data);
           return r.data;
         }
       })
       .catch(error => {
-        console.error('🔍 fetchRiskScore error for', identifier, ':', error);
         throw error;
       });
   },
@@ -152,7 +168,6 @@ export const flowtraceService = {
       .get<BitcoinAttribution>(`/blockchain/bitcoin/attribution/${address}`)
       .then(r => r.data)
       .catch((error) => {
-        console.error('Bitcoin attribution API error:', error);
         // If it's a 404, the address might not have attribution data, which is normal
         if (error.response?.status === 404) {
           return null;
@@ -163,8 +178,7 @@ export const flowtraceService = {
             axiosInstance
               .get<BitcoinAttribution>(`/blockchain/bitcoin/attribution/${address}`)
               .then(r => resolve(r.data))
-              .catch((retryError) => {
-                console.error('Bitcoin attribution retry failed:', retryError);
+              .catch(() => {
                 resolve(null);
               });
           }, 1000);
@@ -172,34 +186,20 @@ export const flowtraceService = {
       });
   },
   async fetchEntityProfile(address: string) {
-    console.log('🔍 fetchEntityProfile called for address:', address);
     
     // First try to get Bitcoin attribution data
     const bitcoinAttr = await this.fetchBitcoinAttribution(address);
-    console.log('🔍 Bitcoin attribution result:', bitcoinAttr);
     
     // Combine attribution + risk score for an address
     const [attr, risk] = await Promise.all([
-      this.fetchAttribution([address]).catch((error) => {
-        console.error('fetchAttribution error:', error);
+      this.fetchAttribution([address]).catch(() => {
         return { data: [] };
       }),
-      this.fetchRiskScore(address, 'address').catch((error) => {
-        console.error('fetchRiskScore error:', error);
+      this.fetchRiskScore(address, 'address').catch(() => {
         return { score: undefined };
       }),
     ]);
     
-    // Debug risk score data
-    console.log('🔍 Risk score data for', address, ':', {
-      risk,
-      riskType: typeof risk,
-      riskData: risk?.data,
-      overallRisk: risk?.data?.overallRisk,
-      riskKeys: risk ? Object.keys(risk) : [],
-      riskDataKeys: risk?.data ? Object.keys(risk.data) : [],
-      expectedStructure: 'API returns: { success: true, data: { overallRisk: 0.75, ... } }'
-    });
     
     // Prioritize Bitcoin attribution for Bitcoin addresses, but validate with SOT data
     let entityInfo = null;
@@ -210,7 +210,6 @@ export const flowtraceService = {
     let primaryCustodian = null;
     
     if (bitcoinAttr && bitcoinAttr.data) {
-      console.log('Using Bitcoin attribution data for entity:', bitcoinAttr.data.entity);
       primaryEntityId = bitcoinAttr.data.entity;
       primaryLabel = bitcoinAttr.data.entity;
       primaryBo = bitcoinAttr.data.bo;
@@ -219,7 +218,6 @@ export const flowtraceService = {
       // Fall back to general attribution
       const entry = Array.isArray((attr as any)?.data) ? (attr as any).data.find((a: any) => a.address === address) : undefined;
       if (entry) {
-        console.log('Using general attribution data for entity:', entry);
         primaryEntityId = entry?.entityId || entry?.entity_id;
         primaryLabel = entry?.label || entry?.name;
         primaryBo = entry?.bo;
@@ -229,10 +227,8 @@ export const flowtraceService = {
     
     // Always fetch SOT data to get authoritative entity information
     if (primaryEntityId) {
-      console.log('🔍 Attempting SOT lookup for entityId:', primaryEntityId);
       try {
         const sotEntry = await this.fetchSOTByEntityId(primaryEntityId);
-        console.log('🔍 SOT Response received for entity:', primaryEntityId, sotEntry);
         
         if (sotEntry) {
           // Use SOT data as the authoritative source
@@ -241,15 +237,11 @@ export const flowtraceService = {
           if (sotEntry.proper_name) {
             primaryLabel = sotEntry.proper_name;
           }
-          console.log('✅ Using SOT data - entity_type:', primaryEntityType, 'proper_name:', sotEntry.proper_name, 'for entity:', primaryEntityId);
         } else {
-          console.log('❌ No SOT entry found for entity:', primaryEntityId);
         }
       } catch (error) {
-        console.error('❌ Error fetching SOT data for entity:', primaryEntityId, error);
       }
     } else {
-      console.log('❌ No primaryEntityId found, skipping SOT lookup');
     }
     
     entityInfo = {
@@ -282,7 +274,6 @@ export const flowtraceService = {
           }
         }
       } catch (error) {
-        console.error('SOT data lookup failed for entity:', entityInfo.entityId, error);
       }
     }
     
@@ -291,9 +282,7 @@ export const flowtraceService = {
       try {
         // For now, skip the fallback logo lookup to avoid loading entire SOT dataset
         // This can be optimized later with a specific endpoint for entity type logos
-        console.log('Skipping fallback logo lookup to avoid memory issues');
       } catch (error) {
-        console.error('Fallback logo lookup failed:', error);
       }
     }
     
@@ -322,13 +311,6 @@ export const flowtraceService = {
       logoUrl,
     };
     
-    // Debug logging for risk score
-    console.log('🔍 fetchEntityProfile result for', address, ':', {
-      riskScore: result.riskScore,
-      riskData: risk,
-      entityId: result.entityId,
-      properName: result.properName
-    });
     
     return result;
   },
@@ -337,14 +319,30 @@ export const flowtraceService = {
   },
   async fetchSOTByEntityId(entityId: string) {
     try {
+      // First try to get SOT data from Redux store (faster, no API call needed)
+      const sotData = await this.getSOTDataFromStore();
+      if (sotData && sotData[entityId]) {
+        return sotData[entityId];
+      }
+      
+      // Fallback to API call if not in store
       const response = await axiosInstance.get(`/sot/entity/${entityId}`);
       return response.data;
     } catch (error: any) {
       if (error.response?.status === 404) {
-        console.log('SOT entry not found for entity:', entityId);
         return null;
       }
       throw error;
+    }
+  },
+
+  async getSOTDataFromStore() {
+    try {
+      // For now, return null to avoid authentication issues
+      // The SOT data should be available in the component via Redux
+      return null;
+    } catch (error) {
+      return null;
     }
   },
   async fetchTotals(address: string) {

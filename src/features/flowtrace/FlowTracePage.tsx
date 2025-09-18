@@ -50,44 +50,18 @@ const mergeEdges = (existing: FTConnection[], incoming: FTConnection[]) => {
       
       // If existing edge is locked, never replace it
       if (existingEdge.locked) {
-        console.log('🔒 Locked connection preserved:', {
-          key: k,
-          existing: existingEdge,
-          incoming: edge,
-          reason: 'existing connection is locked'
-        });
         return;
       }
       
       // If incoming edge is locked, replace the existing one
       if (edge.locked) {
-        console.log('🔒 Locked connection replacing existing:', {
-          key: k,
-          existing: existingEdge,
-          incoming: edge,
-          reason: 'incoming connection is locked'
-        });
         map.set(k, { ...edge });
         return;
       }
       
       // Neither is locked, keep existing (should not happen with proper keys)
-      console.log('⚠️ Duplicate connection detected:', {
-        key: k,
-        existing: existingEdge,
-        incoming: edge,
-        keeping: 'existing'
-      });
       return;
     } else {
-      console.log('✅ Adding new unique connection:', {
-        key: k,
-        txHash: edge.txHash,
-        utxoKey: edge.utxoKey,
-        amount: edge.amount,
-        currency: edge.currency,
-        locked: edge.locked
-      });
       map.set(k, { ...edge })
     }
   }
@@ -194,7 +168,6 @@ const FlowTracePage: React.FC = () => {
         setHasUnsavedChanges(false);
         setVersionTimestamp(new Date().toISOString());
       } catch (error) {
-        console.error('Failed to autosave:', error);
       }
     }, autosaveInterval * 60 * 1000); // Convert minutes to milliseconds
 
@@ -264,7 +237,6 @@ const FlowTracePage: React.FC = () => {
         // Trigger the trace for the new address
         await performTrace(pendingNewGraphAddress);
       } catch (error) {
-        console.error('Failed to save and start new graph after workspace creation:', error);
         setPendingStartNewGraphAfterSave(false);
       }
     }
@@ -331,7 +303,6 @@ const FlowTracePage: React.FC = () => {
       }, 'auto', 'Auto-save before new investigation');
       setHasUnsavedChanges(false);
     } catch (error) {
-      console.error('Failed to save to existing workspace:', error);
     }
     
     // Clear workspace info and start new investigation
@@ -361,7 +332,6 @@ const FlowTracePage: React.FC = () => {
       setVersionTimestamp(newWorkspace.versions[0]?.timestamp || new Date().toISOString());
       setHasUnsavedChanges(false);
     } catch (error) {
-      console.error('Failed to create new workspace:', error);
     }
     
     setSaveAndNewDialogOpen(false);
@@ -411,7 +381,6 @@ const FlowTracePage: React.FC = () => {
         }, 'auto', 'Auto-saved before starting new graph');
         setHasUnsavedChanges(false);
       } catch (error) {
-        console.error('Failed to save before starting new graph:', error);
       }
     } else {
       // If no workspace, open the workspace manager to create one
@@ -515,7 +484,6 @@ const FlowTracePage: React.FC = () => {
       // Perform trace for the new address
       await performTrace(pendingNewGraphAddress);
     } catch (error) {
-      console.error('Failed to save to existing workspace and start new graph:', error);
       setIsLoading(false);
     }
   }, [pendingNewGraphAddress, nodes, connections, saveVersion, clearWorkspaceInfo]);
@@ -539,7 +507,6 @@ const FlowTracePage: React.FC = () => {
       setHasUnsavedChanges(false);
       setVersionTimestamp(new Date().toISOString());
     } catch (error) {
-      console.error('Failed to quick save:', error);
     }
   }, [workspaceId, nodes, connections]);
 
@@ -557,24 +524,11 @@ const FlowTracePage: React.FC = () => {
 
 
       // Extract data from optimized response
-      const { transactions, enhancedData, riskScores, summary } = optimizedResponse.data;
+      const { enhancedData, riskScores, summary } = optimizedResponse.data;
       
-      // Convert to legacy format for compatibility
-      const data = {
-        address: optimizedResponse.data.address,
-        balance: '0', // Placeholder - could be calculated from transactions
-        txs: summary.totalTransactions,
-        network: 'bitcoin'
-      };
-
       const summary_data = {
         balance: '0',
         usdValue: 0
-      };
-
-      const txs = {
-        txs: transactions,
-        pagination: { totalTxs: summary.totalTransactions }
       };
 
       // Use client-side resolved entity data if available, fallback to API data
@@ -582,10 +536,9 @@ const FlowTracePage: React.FC = () => {
       let profile;
       
       if (attribution && Object.keys(itemsMap).length > 0) {
-        // Use client-side resolution (same as node visualization)
-        const entitySOT = Object.values(itemsMap).find(sot => sot.entity_id === attribution.entity);
-        const beneficialOwnerSOT = attribution.bo ? 
-          Object.values(itemsMap).find(sot => sot.entity_id === attribution.bo) : undefined;
+        // Use client-side resolution with O(1) hashmap lookup (same as node visualization)
+        const entitySOT = itemsMap[attribution.entity];
+        const beneficialOwnerSOT = attribution.bo ? itemsMap[attribution.bo] : undefined;
         
         const override = applyBeneficialOwnerOverride(
           {
@@ -609,7 +562,6 @@ const FlowTracePage: React.FC = () => {
           custodian: attribution.custodian
         };
         
-        console.log('🔍 Using client-side resolved profile for left panel:', profile);
       } else {
         // Fallback to API data
         profile = {
@@ -622,24 +574,9 @@ const FlowTracePage: React.FC = () => {
           custodian: enhancedData.find((item: any) => item.attribution?.custodian)?.attribution?.custodian
         };
         
-        console.log('🔍 Using API fallback profile for left panel:', profile);
       }
       
-      console.log('API Debug:', {
-        address,
-        data,
-        summary: summary_data,
-        txs,
-        profile
-      });
       
-      // Debug risk score specifically
-      console.log('🔍 Risk Score Debug:', {
-        address,
-        profileRiskScore: profile.riskScore,
-        profileType: typeof profile.riskScore,
-        profileData: profile
-      });
 
       // Use actual transaction count from the optimized response
       const actualTxCount = summary.totalTransactions || 0;
@@ -674,7 +611,6 @@ const FlowTracePage: React.FC = () => {
         usdValue: summary_data.usdValue
       } : n)));
     } catch (error) {
-      console.error('Error fetching left panel data:', error);
     } finally {
       setIsLeftPanelLoading(false);
     }
@@ -685,12 +621,58 @@ const FlowTracePage: React.FC = () => {
     const unique = Array.from(new Set(addresses.filter(Boolean)));
     if (!unique.length) return;
     
+    
+    // Ensure SOT data is loaded first
+    if (Object.keys(itemsMap).length === 0) {
+      try {
+        await dispatch(fetchSOT()).unwrap();
+      } catch (error) {
+        return; // Don't proceed if SOT data can't be loaded
+      }
+    }
+    
     // Fetch attribution data for all addresses at once (same as Risk Dashboard)
     try {
       await fetchAttributions(unique);
-      console.log('🔍 FlowTrace: Attribution data fetch initiated for:', unique);
     } catch (error) {
-      console.warn('Error fetching attributions:', error);
+    }
+  };
+
+  // Fetch risk scores for newly added nodes (non-blocking)
+  const prefetchRiskScores = async (addresses: string[]) => {
+    const unique = Array.from(new Set(addresses.filter(Boolean)));
+    if (!unique.length) return;
+    
+    
+    // Fetch risk scores for all addresses in parallel
+    const riskScorePromises = unique.map(async (address) => {
+      try {
+        const response = await flowtraceService.expandNodeOptimized(address, {
+          includeRiskScores: true,
+          includeTransactions: false // We only need risk scores, not transactions
+        });
+        
+        const riskScore = response.data.riskScores?.[address]?.overallRisk;
+        if (riskScore !== undefined) {
+          const normalizedRiskScore = Math.round(riskScore * 100);
+          
+          // Update the node with the risk score
+          setNodes(prev => prev.map(node => 
+            node.id === address 
+              ? { ...node, risk: normalizedRiskScore }
+              : node
+          ));
+          
+          return { address, riskScore: normalizedRiskScore };
+        }
+      } catch (error) {
+      }
+      return null;
+    });
+    
+    try {
+      await Promise.all(riskScorePromises);
+    } catch (error) {
     }
   };
 
@@ -730,7 +712,6 @@ const FlowTracePage: React.FC = () => {
       // Mark as having unsaved changes
       setHasUnsavedChanges(true);
     } catch (error) {
-      console.error('Error:', error);
     } finally {
       setIsLoading(false);
     }
@@ -822,9 +803,7 @@ const FlowTracePage: React.FC = () => {
     try {
       if (data.nodes) setNodes(data.nodes);
       if (data.connections) setConnections(data.connections);
-      console.log('Data imported successfully');
     } catch (error) {
-      console.error('Failed to import data:', error);
     }
   };
 
@@ -847,14 +826,11 @@ const FlowTracePage: React.FC = () => {
 
   // Process attribution data when it becomes available (same pattern as Risk Dashboard)
   useEffect(() => {
+
     if (Object.keys(attributions).length === 0 || Object.keys(itemsMap).length === 0) {
       return; // Wait for both attributions and SOT data to be loaded
     }
 
-    console.log('🔍 FlowTrace: Processing attributions for nodes:', {
-      attributionKeys: Object.keys(attributions),
-      itemsMapKeys: Object.keys(itemsMap).length
-    });
 
     // Process each node that needs entity resolution
     setNodes((prevNodes) => {
@@ -865,17 +841,10 @@ const FlowTracePage: React.FC = () => {
         }
 
         try {
-          // Use client-side entity resolution (same as Risk Dashboard)
-          const entitySOT = Object.values(itemsMap).find(sot => sot.entity_id === attribution.entity);
-          const beneficialOwnerSOT = attribution.bo ? 
-            Object.values(itemsMap).find(sot => sot.entity_id === attribution.bo) : undefined;
+          // Use client-side entity resolution with O(1) hashmap lookup (same as Risk Dashboard)
+          const entitySOT = itemsMap[attribution.entity];
+          const beneficialOwnerSOT = attribution.bo ? itemsMap[attribution.bo] : undefined;
           
-          console.log('🔍 FlowTrace entity resolution for', node.id, ':', {
-            attribution,
-            entitySOT,
-            beneficialOwnerSOT,
-            itemsMapKeys: Object.keys(itemsMap).length
-          });
           
           const override = applyBeneficialOwnerOverride(
             {
@@ -889,7 +858,6 @@ const FlowTracePage: React.FC = () => {
             Object.values(itemsMap)
           );
           
-          console.log('🔍 FlowTrace override result for', node.id, ':', override);
           
           // Update node with client-side resolved profile data
           const resolvedLabel = override.displayTitle || node.id;
@@ -897,12 +865,6 @@ const FlowTracePage: React.FC = () => {
           const resolvedEntityType = override.entityType || 'wallet';
           const logoUrl = override.logo ? `https://storage.googleapis.com/entity-logos/${attribution.entity}.jpg` : null;
           
-          console.log('🔍 FlowTrace resolved data for', node.id, ':', {
-            resolvedLabel,
-            resolvedEntityId,
-            resolvedEntityType,
-            logoUrl
-          });
           
           return {
             ...node,
@@ -914,7 +876,6 @@ const FlowTracePage: React.FC = () => {
             custodian: attribution.custodian ?? node.custodian,
           };
         } catch (error) {
-          console.warn('Error processing attribution for', node.id, ':', error);
           return node;
         }
       });
@@ -923,9 +884,8 @@ const FlowTracePage: React.FC = () => {
     // Update left panel data if the current address has attribution
     if (currentAddress && attributions[currentAddress]) {
       const attribution = attributions[currentAddress];
-      const entitySOT = Object.values(itemsMap).find(sot => sot.entity_id === attribution.entity);
-      const beneficialOwnerSOT = attribution.bo ? 
-        Object.values(itemsMap).find(sot => sot.entity_id === attribution.bo) : undefined;
+      const entitySOT = itemsMap[attribution.entity];
+      const beneficialOwnerSOT = attribution.bo ? itemsMap[attribution.bo] : undefined;
       
       const override = applyBeneficialOwnerOverride(
         {
@@ -939,17 +899,41 @@ const FlowTracePage: React.FC = () => {
         Object.values(itemsMap)
       );
       
-      setLeftPanelData((prev: any) => prev ? {
-        ...prev,
-        selectedEntity: {
-          ...prev.selectedEntity,
-          label: override.displayTitle || currentAddress,
-          logoUrl: override.logo ? `https://storage.googleapis.com/entity-logos/${attribution.entity}.jpg` : prev.selectedEntity?.logoUrl,
-          type: override.entityType || 'wallet',
-          bo: attribution.bo ?? prev.selectedEntity?.bo,
-          custodian: attribution.custodian ?? prev.selectedEntity?.custodian,
+      setLeftPanelData((prev: any) => {
+        if (prev) {
+          // Update existing left panel data
+          return {
+            ...prev,
+            selectedEntity: {
+              ...prev.selectedEntity,
+              label: override.displayTitle || currentAddress,
+              logoUrl: override.logo ? `https://storage.googleapis.com/entity-logos/${attribution.entity}.jpg` : prev.selectedEntity?.logoUrl,
+              type: override.entityType || 'wallet',
+              bo: attribution.bo ?? prev.selectedEntity?.bo,
+              custodian: attribution.custodian ?? prev.selectedEntity?.custodian,
+            }
+          };
+        } else {
+          // Create new left panel data if none exists
+          return {
+            address: currentAddress,
+            network: getBlockchainType(currentAddress) === 'bitcoin' ? 'Bitcoin' : 'Ethereum',
+            balance: '0',
+            txCount: 0,
+            riskScore: undefined,
+            usdValue: '0',
+            selectedEntity: {
+              label: override.displayTitle || currentAddress,
+              address: currentAddress,
+              logoUrl: override.logo ? `https://storage.googleapis.com/entity-logos/${attribution.entity}.jpg` : null,
+              type: override.entityType || 'wallet',
+              riskScore: undefined,
+              bo: attribution.bo,
+              custodian: attribution.custodian
+            }
+          };
         }
-      } : null);
+      });
     }
   }, [attributions, itemsMap, currentAddress]);
 
@@ -959,7 +943,6 @@ const FlowTracePage: React.FC = () => {
 
   // Load SOT data on component mount (same as Risk Dashboard)
   useEffect(() => {
-    console.log('FlowTrace: Loading SOT data on component mount');
     dispatch(fetchSOT());
   }, [dispatch]);
 
@@ -983,7 +966,6 @@ const FlowTracePage: React.FC = () => {
         
         // Skip if this UTXO already exists
         if (existingUtxo) {
-          console.log('🚫 Skipping duplicate UTXO:', newConnection.utxoKey);
           return;
         }
         
@@ -1139,14 +1121,6 @@ const FlowTracePage: React.FC = () => {
     selectedTxs.forEach((tx: any) => {
       // Each tx is an EnhancedTransaction representing a single UTXO
       // The direction tells us if this is an input or output UTXO
-      console.log('🔍 Processing selectedTx:', {
-        txid: tx.txid,
-        direction: tx.direction,
-        amount: tx.amount,
-        currency: tx.currency,
-        inputs: tx.inputs,
-        outputs: tx.outputs
-      });
       
       // Check if this UTXO is already connected in any direction
       const counterparty = tx.counterpartyAddress || (tx.direction === 'in' ? tx.inputs?.[0]?.addr : tx.outputs?.[0]?.addr);
@@ -1178,7 +1152,6 @@ const FlowTracePage: React.FC = () => {
       });
       
       if (existingConnection) {
-        console.log('🚫 Skipping already connected UTXO:', utxoKey, 'existing connection:', existingConnection);
         return;
       }
       
@@ -1203,7 +1176,6 @@ const FlowTracePage: React.FC = () => {
         }
         
         // UTXO key already generated above for deduplication check
-        console.log('🔗 Creating input connection with utxoKey:', utxoKey, 'from', inputAddress, 'to', address);
         
         const connection: FTConnection = {
           from: inputAddress,
@@ -1219,13 +1191,6 @@ const FlowTracePage: React.FC = () => {
           locked: true // Mark as locked to prevent any future modifications
         }
         
-        console.log('🔗 Created connection:', {
-          from: connection.from,
-          to: connection.to,
-          amount: connection.amount,
-          type: connection.type,
-          utxoKey: connection.utxoKey
-        });
         
         // Group connections by counterparty address
         if (!addressConnections.has(inputAddress)) {
@@ -1255,7 +1220,6 @@ const FlowTracePage: React.FC = () => {
         }
         
         // UTXO key already generated above for deduplication check
-        console.log('🔗 Creating output connection with utxoKey:', utxoKey, 'from', address, 'to', outputAddress);
         
         const connection: FTConnection = {
           from: address,
@@ -1271,13 +1235,6 @@ const FlowTracePage: React.FC = () => {
           locked: true // Mark as locked to prevent any future modifications
         }
         
-        console.log('🔗 Created connection:', {
-          from: connection.from,
-          to: connection.to,
-          amount: connection.amount,
-          type: connection.type,
-          utxoKey: connection.utxoKey
-        });
         
         // Group connections by counterparty address
         if (!addressConnections.has(outputAddress)) {
@@ -1378,7 +1335,11 @@ const FlowTracePage: React.FC = () => {
     // Fetch entity profiles and logos for all involved addresses (non-blocking)
     // This runs in the background and updates nodes as data becomes available
     prefetchProfilesAndLogos(Array.from(addressesToPrefetch).filter(Boolean))
-  }, [handleAddConnections, prefetchProfilesAndLogos])
+    
+    // Fetch risk scores for all newly added nodes (non-blocking)
+    // This runs in the background and updates nodes with risk scores for graph visualization
+    prefetchRiskScores(Array.from(addressesToPrefetch).filter(Boolean))
+  }, [handleAddConnections, prefetchProfilesAndLogos, prefetchRiskScores])
 
   const isEmptyState = nodes.length === 0 && !isLoading;
 
@@ -1505,7 +1466,7 @@ const FlowTracePage: React.FC = () => {
                   setNodes(prev => prev.map(n => n.id === node.id ? { ...n, label: next.trim() } : n));
                 }
               }}
-              onNodeAdd={(node) => {
+              onNodeAdd={async (node) => {
                 if (node.type === 'custom') {
                   setExpandSourceNode(node);
                   setCustomExpandOpen(true);
@@ -1513,6 +1474,11 @@ const FlowTracePage: React.FC = () => {
                   // Set the source node to the currently selected node (the one we're expanding from)
                   setNodeTxPickerSourceNode(currentAddress || centerNodeId);
                   setCurrentAddress(node.id);
+                  
+                  // Show side panel data for the node being expanded
+                  setLeftPanelData(null); // Clear old data first
+                  await fetchAndSetLeftPanelData(node.id);
+                  
                   setNodeTxPickerOpen(true);
                 }
               }}
