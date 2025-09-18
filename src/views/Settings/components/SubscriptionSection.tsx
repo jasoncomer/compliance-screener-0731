@@ -450,6 +450,10 @@ const SubscriptionSection: React.FC<SubscriptionSectionProps> = ({ theme }) => {
             <Input.TextArea 
               rows={4} 
               placeholder="Tell us about your specific requirements, expected usage, or any questions you have about the Custom plan..."
+              allowClear={false}
+              showCount={false}
+              count={undefined}
+              onClear={undefined}
             />
           </Form.Item>
           

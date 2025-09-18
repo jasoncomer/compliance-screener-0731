@@ -72,7 +72,7 @@ export const DebugPanel: React.FC<DebugPanelProps> = ({
         <Button
           onClick={() => setIsOpen(true)}
           className="rounded-full w-12 h-12 p-0 shadow-lg"
-          title="Debug Panel"
+          title="Connected Node Panel"
         >
           <Bug className="h-5 w-5" />
         </Button>
@@ -87,7 +87,7 @@ export const DebugPanel: React.FC<DebugPanelProps> = ({
           <div className="flex items-center justify-between">
             <CardTitle className="text-lg flex items-center gap-2">
               <Bug className="h-5 w-5" />
-              Debug Panel
+              Connected Node Panel
             </CardTitle>
             <Button
               variant="ghost"
@@ -124,10 +124,10 @@ export const DebugPanel: React.FC<DebugPanelProps> = ({
             </div>
           </div>
 
-          {/* Debug Info Toggle */}
+          {/* Connection Info Toggle */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium">Debug Info</span>
+              <span className="text-sm font-medium">Connection Info</span>
               <Button
                 variant="ghost"
                 size="sm"

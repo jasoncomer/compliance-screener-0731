@@ -28,7 +28,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
         <Input
           placeholder="Enter blockchain address"
           value={address}
-          onChange={(e) => onAddressChange(e.target.value)}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => onAddressChange(e.target.value)}
           style={{ width: '400px' }}
           onPressEnter={onSubmit}
           enterButton="Analyze Risk"

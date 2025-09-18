@@ -225,7 +225,14 @@ const AlertConfig: React.FC = () => {
           label="Alert Summary (optional)"
           name="alertSummary"
         >
-          <Input.TextArea rows={3} placeholder="Enter a friendly summary of the alert" />
+          <Input.TextArea 
+            rows={3} 
+            placeholder="Enter a friendly summary of the alert"
+            allowClear={false}
+            showCount={false}
+            count={undefined}
+            onClear={undefined}
+          />
         </Form.Item>
 
         {previewSentence && (

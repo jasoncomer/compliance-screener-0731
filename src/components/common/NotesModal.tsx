@@ -648,6 +648,10 @@ const NotesModal: React.FC<NotesModalProps> = ({
                                 value={editContent}
                                 onChange={(e) => setEditContent(e.target.value)}
                                 rows={2}
+                                allowClear={false}
+                                showCount={false}
+                                count={undefined}
+                                onClear={undefined}
                                 onKeyDown={(e) => {
                                   if (e.key === 'Enter' && !e.shiftKey) {
                                     e.preventDefault();
@@ -723,8 +727,8 @@ const NotesModal: React.FC<NotesModalProps> = ({
               <StyledInput
                 placeholder="Add a note..."
                 value={newNote}
-                onChange={(e) => setNewNote(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), handleAddNote())}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewNote(e.target.value)}
+                onKeyPress={(e: React.KeyboardEvent<HTMLInputElement>) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), handleAddNote())}
                 disabled={submitting}
               />
               <SendButton

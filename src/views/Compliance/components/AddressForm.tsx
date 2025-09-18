@@ -63,7 +63,13 @@ const AddressForm: React.FC<AddressFormProps> = ({ form, initialValues }) => {
         name="notes"
         label="Notes"
       >
-        <TextArea rows={4} />
+        <TextArea 
+          rows={4}
+          allowClear={false}
+          showCount={false}
+          count={undefined}
+          onClear={undefined}
+        />
       </Form.Item>
 
     </Form>

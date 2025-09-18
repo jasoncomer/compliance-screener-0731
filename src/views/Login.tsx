@@ -276,14 +276,14 @@ const Login = () => {
             <Input
               type="email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
               placeholder='Enter your email'
             />
 
             <Input
               type="password"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
               placeholder='Enter your password'
             />
           </InputGroup>
@@ -335,7 +335,7 @@ const Login = () => {
             <Input
               type="email"
               value={resetEmail}
-              onChange={(e) => setResetEmail(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setResetEmail(e.target.value)}
               placeholder="Enter your email"
             />
           </Form.Item>

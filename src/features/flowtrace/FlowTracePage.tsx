@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { flowtraceService } from '../../services/flowtraceService';
-import { Network } from 'lucide-react';
+import { generateUTXOKey, connectionInvolvesAddress, generateConnectionKey, findConnectionsForAddress, ensureConnectionKeys } from './utils/utxoKeyGeneration';
 import { useAttribution } from '../../context/AttributionContext';
 import { useAppSelector, useAppDispatch } from '../../store/hooks';
 import { fetchSOT } from '../../store/slices/sotSlice';
@@ -22,42 +22,60 @@ import AddressSearchInput from '../../components/common/AddressSearchInput';
 import ViewWrapper from '../../components/ViewWrapper';
 import SaveWorkspaceButton from '@/components/workspace/SaveWorkspaceButton'
 import GitHubWorkspaceManager from '@/components/workspace/GitHubWorkspaceManager'
-import { loadVersion, type Workspace } from '@/lib/workspace-utils'
-import { GitBranch } from 'lucide-react'
+import { loadVersion, saveVersion, type Workspace } from '@/lib/workspace-utils'
+import { GitBranch, Save, Network, Wallet } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import CustomNodeDialog from './components/CustomNodeDialog'
 import CustomNodeExpandDialog from './components/CustomNodeExpandDialog'
 import { WalletClusterPanel } from './components/WalletClusterPanel'
-import { Wallet } from 'lucide-react'
+import { AggregatedNodeDialog } from './components/AggregatedNodeDialog'
+import { WorkspaceInfo } from './components/WorkspaceInfo'
+import SearchConfirmationDialog from './components/SearchConfirmationDialog'
+import DuplicateNodeDialog from './components/DuplicateNodeDialog'
+import StartNewGraphConfirmationDialog from './components/StartNewGraphConfirmationDialog'
+import SaveAndNewDialog from './components/SaveAndNewDialog'
+import { useAutosave } from '../../context/AutosaveContext'
 
-// helper to merge duplicate edges (same from,to,currency,type)
+// helper to merge duplicate edges using the same key format as generateConnectionKey
 const mergeEdges = (existing: FTConnection[], incoming: FTConnection[]) => {
   const map = new Map<string, FTConnection>()
 
-  const edgeKey = (e: FTConnection) => `${e.from}|${e.to}|${e.currency}|${e.type || 'out'}`
+  // Use the same key format as generateConnectionKey: from:to:utxo:amount
+  const edgeKey = (e: FTConnection) => generateConnectionKey(e)
 
   const addEdge = (edge: FTConnection) => {
     const k = edgeKey(edge)
     if (map.has(k)) {
-      const cur = map.get(k)!
-      // sum amounts numerically if possible
-      const total = (parseFloat(cur.amount) || 0) + (parseFloat(edge.amount) || 0)
-      cur.amount = String(total)
-      // concat txHash
-      cur.txHash = `${cur.txHash},${edge.txHash}`
-      cur.date = `${cur.date},${edge.date}`
+      const existingEdge = map.get(k)!
+      
+      // If existing edge is locked, never replace it
+      if (existingEdge.locked) {
+        return;
+      }
+      
+      // If incoming edge is locked, replace the existing one
+      if (edge.locked) {
+        map.set(k, { ...edge });
+        return;
+      }
+      
+      // Neither is locked, keep existing (should not happen with proper keys)
+      return;
     } else {
       map.set(k, { ...edge })
     }
   }
 
+  // Add existing connections first (they may be locked)
   existing.forEach(addEdge)
+  // Then add incoming connections (they may override unlocked existing ones)
   incoming.forEach(addEdge)
 
   return Array.from(map.values())
 }
 
 const FlowTracePage: React.FC = () => {
+  const { autosaveInterval, isAutosaveEnabled } = useAutosave();
   const [address, setAddress] = useState('');
   const [nodes, setNodes] = useState<FTNode[]>([]);
   const [connections, setConnections] = useState<FTConnection[]>([]);
@@ -70,7 +88,7 @@ const FlowTracePage: React.FC = () => {
   const [walletPanelOpen, setWalletPanelOpen] = useState(false)
   const [consolidatedEntities, setConsolidatedEntities] = useState<string[]>([])
   // Store originals so we can undo aggregation
-  const aggregationMap = React.useRef<Record<string, { nodes: FTNode[]; connections: FTConnection[]; addresses: string[] }>>({})
+  const aggregationMap = React.useRef<Record<string, { nodes: FTNode[]; connections: FTConnection[]; allMemberConnections?: FTConnection[]; addresses: string[] }>>({})
   const [customDialogOpen, setCustomDialogOpen] = useState(false);
 
   // Attribution and SOT data hooks (same as Risk Dashboard)
@@ -93,11 +111,68 @@ const FlowTracePage: React.FC = () => {
   const [selectedEdge, setSelectedEdge] = useState<FTConnection | null>(null);
   const [customExpandOpen, setCustomExpandOpen] = useState(false);
   const [expandSourceNode, setExpandSourceNode] = useState<FTNode | null>(null);
+  const [nodeTxPickerSourceNode, setNodeTxPickerSourceNode] = useState<string | null>(null);
   const graphRef = React.useRef<NetworkGraphHandle | null>(null);
+  
+  // Aggregated node dialog state
+  const [aggregatedNodeDialogOpen, setAggregatedNodeDialogOpen] = useState(false);
+  const [selectedAggregatedNode, setSelectedAggregatedNode] = useState<FTNode | null>(null);
 
   const [workspaceMgrOpen, setWorkspaceMgrOpen] = useState(false);
   const [workspaceId, setWorkspaceId] = useState<string | null>(null);
   const [currentVersionId, setCurrentVersionId] = useState<string>('master');
+  const [workspaceName, setWorkspaceName] = useState<string | null>(null);
+  const [versionName, setVersionName] = useState<string | null>(null);
+  const [versionTimestamp, setVersionTimestamp] = useState<string | null>(null);
+
+  // Search confirmation dialog state
+  const [searchConfirmationOpen, setSearchConfirmationOpen] = useState(false);
+  const [pendingAddress, setPendingAddress] = useState<string | null>(null);
+  const [duplicateNodeDialogOpen, setDuplicateNodeDialogOpen] = useState(false);
+  const [duplicateAddress, setDuplicateAddress] = useState<string | null>(null);
+  const [startNewGraphConfirmationOpen, setStartNewGraphConfirmationOpen] = useState(false);
+  const [pendingNewGraphAddress, setPendingNewGraphAddress] = useState<string | null>(null);
+  const [pendingStartNewGraphAfterSave, setPendingStartNewGraphAfterSave] = useState(false);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [saveAndNewDialogOpen, setSaveAndNewDialogOpen] = useState(false);
+
+  // Track unsaved changes
+  useEffect(() => {
+    if (nodes.length > 0 || connections.length > 0) {
+      setHasUnsavedChanges(true);
+    }
+  }, [nodes, connections]);
+
+  // Reset unsaved changes when workspace is loaded
+  useEffect(() => {
+    if (workspaceId) {
+      setHasUnsavedChanges(false);
+    }
+  }, [workspaceId]);
+
+  // Autosave functionality
+  useEffect(() => {
+    if (!isAutosaveEnabled || !workspaceId || !hasUnsavedChanges) {
+      return;
+    }
+
+    const interval = setInterval(async () => {
+      try {
+        await saveVersion(workspaceId, {
+          nodes,
+          edges: connections,
+          zoom: 1,
+          pan: { x: 0, y: 0 },
+          hidePassThrough: false
+        }, 'auto', 'Auto-save', 'Automatic save');
+        setHasUnsavedChanges(false);
+        setVersionTimestamp(new Date().toISOString());
+      } catch (error) {
+      }
+    }, autosaveInterval * 60 * 1000); // Convert minutes to milliseconds
+
+    return () => clearInterval(interval);
+  }, [isAutosaveEnabled, workspaceId, hasUnsavedChanges, nodes, connections, autosaveInterval]);
 
   // Handles loading a workspace/version chosen in the manager
   const handleLoadWorkspaceFromManager = useCallback(async (ws: Workspace, versionId?: string) => {
@@ -107,8 +182,334 @@ const FlowTracePage: React.FC = () => {
       setConnections(version.graphState.edges as any);
       setWorkspaceId(ws.id);
       setCurrentVersionId(version.id);
+      setWorkspaceName(ws.name);
+      setVersionName(version.name);
+      setVersionTimestamp(version.timestamp);
     }
   }, [setNodes, setConnections]);
+
+  // Clear workspace info when starting a new investigation
+  const clearWorkspaceInfo = useCallback(() => {
+    setWorkspaceName(null);
+    setVersionName(null);
+    setVersionTimestamp(null);
+    setWorkspaceId(null);
+    setCurrentVersionId('master');
+  }, []);
+
+  // Handle workspace creation
+  const handleWorkspaceCreated = useCallback(async (workspaceId: string) => {
+    setWorkspaceId(workspaceId);
+    // Note: We'll need to fetch the workspace details to get the name
+    // This will be handled when the workspace is loaded
+    
+    // If there's a pending start new graph action, execute it
+    if (pendingStartNewGraphAfterSave && pendingNewGraphAddress) {
+      try {
+        // Save current work to the new workspace
+        await saveVersion(workspaceId, {
+          nodes,
+          edges: connections,
+          zoom: 1,
+          pan: { x: 0, y: 0 },
+          hidePassThrough: false
+        }, 'auto', 'Auto-saved before starting new graph');
+        setHasUnsavedChanges(false);
+        
+        // Clear workspace info and start new graph
+        clearWorkspaceInfo();
+        setStartNewGraphConfirmationOpen(false);
+        setPendingStartNewGraphAfterSave(false);
+        
+        // Clear the current graph
+        setNodes([]);
+        setConnections([]);
+        setDrawingHistory([]);
+        setHistoryIndex(-1);
+        setCurrentAddress('');
+        setCenterNodeId('');
+        setLeftPanelData(null);
+        
+        // Start fresh with the new address
+        setAddress(pendingNewGraphAddress);
+        setPendingNewGraphAddress(null);
+        
+        // Trigger the trace for the new address
+        await performTrace(pendingNewGraphAddress);
+      } catch (error) {
+        setPendingStartNewGraphAfterSave(false);
+      }
+    }
+  }, [pendingStartNewGraphAfterSave, pendingNewGraphAddress, nodes, connections, saveVersion, clearWorkspaceInfo]);
+
+  // Helper functions for graph state detection
+
+  const findDuplicateNode = useCallback((address: string) => {
+    return nodes.find(node => node.id === address);
+  }, [nodes]);
+
+  // const hasCustomElements = useCallback(() => {
+  //   return nodes.some(node => node.type === 'custom') || 
+  //          connections.some(conn => conn.customColor) ||
+  //          drawingHistory.length > 0;
+  // }, [nodes, connections, drawingHistory.length]);
+
+  // Action handlers for search confirmation dialog
+  const handleAddToGraph = useCallback(async () => {
+    if (!pendingAddress) return;
+    setSearchConfirmationOpen(false);
+    await performTrace(pendingAddress);
+    setPendingAddress(null);
+  }, [pendingAddress]);
+
+  const handleSaveAndNew = useCallback(() => {
+    if (!pendingAddress) return;
+    
+    // Show the save and new dialog instead of directly saving
+    setSearchConfirmationOpen(false);
+    setSaveAndNewDialogOpen(true);
+  }, [pendingAddress]);
+
+  const handleDiscardAndNew = useCallback(async () => {
+    if (!pendingAddress) return;
+    
+    // Clear everything and start new investigation
+    clearWorkspaceInfo();
+    setNodes([]);
+    setConnections([]);
+    setDrawingHistory([]);
+    setHistoryIndex(-1);
+    setSearchConfirmationOpen(false);
+    await performTrace(pendingAddress);
+    setPendingAddress(null);
+  }, [pendingAddress, clearWorkspaceInfo]);
+
+  const handleCancelSearch = useCallback(() => {
+    setSearchConfirmationOpen(false);
+    setPendingAddress(null);
+  }, []);
+
+  // Action handlers for save and new dialog
+  const handleSaveToExisting = useCallback(async (workspaceId: string) => {
+    if (!pendingAddress) return;
+    
+    try {
+      await saveVersion(workspaceId, {
+        nodes,
+        edges: connections,
+        zoom: 1,
+        pan: { x: 0, y: 0 },
+        hidePassThrough: false
+      }, 'auto', 'Auto-save before new investigation');
+      setHasUnsavedChanges(false);
+    } catch (error) {
+    }
+    
+    // Clear workspace info and start new investigation
+    clearWorkspaceInfo();
+    setSaveAndNewDialogOpen(false);
+    await performTrace(pendingAddress);
+    setPendingAddress(null);
+  }, [pendingAddress, nodes, connections, clearWorkspaceInfo]);
+
+  const handleCreateNewWorkspace = useCallback(async (name: string, description: string) => {
+    if (!pendingAddress) return;
+    
+    try {
+      const { createWorkspace } = await import('@/lib/workspace-utils');
+      const newWorkspace = await createWorkspace({
+        nodes,
+        edges: connections,
+        zoom: 1,
+        pan: { x: 0, y: 0 },
+        hidePassThrough: false
+      }, name, description);
+      
+      setWorkspaceId(newWorkspace.id);
+      setCurrentVersionId(newWorkspace.masterVersionId || 'master');
+      setWorkspaceName(newWorkspace.name);
+      setVersionName('Master');
+      setVersionTimestamp(newWorkspace.versions[0]?.timestamp || new Date().toISOString());
+      setHasUnsavedChanges(false);
+    } catch (error) {
+    }
+    
+    setSaveAndNewDialogOpen(false);
+    await performTrace(pendingAddress);
+    setPendingAddress(null);
+  }, [pendingAddress, nodes, connections]);
+
+  const handleCancelSaveAndNew = useCallback(() => {
+    setSaveAndNewDialogOpen(false);
+    setPendingAddress(null);
+  }, []);
+
+  // Action handlers for duplicate node dialog
+  const handleViewExisting = useCallback(() => {
+    if (!duplicateAddress) return;
+    setDuplicateNodeDialogOpen(false);
+    setCenterNodeId(duplicateAddress);
+    setCurrentAddress(duplicateAddress);
+    setDuplicateAddress(null);
+  }, [duplicateAddress]);
+
+  const handleCancelDuplicate = useCallback(() => {
+    setDuplicateNodeDialogOpen(false);
+    setDuplicateAddress(null);
+  }, []);
+
+  const handleStartNewGraph = useCallback(() => {
+    if (!duplicateAddress) return;
+    setDuplicateNodeDialogOpen(false);
+    setPendingNewGraphAddress(duplicateAddress);
+    setStartNewGraphConfirmationOpen(true);
+  }, [duplicateAddress]);
+
+  // Handlers for start new graph confirmation dialog
+  const handleSaveAndStartNewGraph = useCallback(async () => {
+    if (!pendingNewGraphAddress) return;
+    
+    // Auto-save current work if there's a workspace
+    if (workspaceId) {
+      try {
+        await saveVersion(workspaceId, {
+          nodes,
+          edges: connections,
+          zoom: 1,
+          pan: { x: 0, y: 0 },
+          hidePassThrough: false
+        }, 'auto', 'Auto-saved before starting new graph');
+        setHasUnsavedChanges(false);
+      } catch (error) {
+      }
+    } else {
+      // If no workspace, open the workspace manager to create one
+      setPendingStartNewGraphAfterSave(true);
+      setWorkspaceMgrOpen(true);
+      return;
+    }
+    
+    // Clear workspace info and start new graph
+    clearWorkspaceInfo();
+    setStartNewGraphConfirmationOpen(false);
+    
+    // Clear the current graph
+    setNodes([]);
+    setConnections([]);
+    setDrawingHistory([]);
+    setHistoryIndex(-1);
+    setCurrentAddress('');
+    setCenterNodeId('');
+    setLeftPanelData(null);
+    
+    // Start fresh with the new address
+    setAddress(pendingNewGraphAddress);
+    setPendingNewGraphAddress(null);
+    
+    // Trigger the trace for the new address
+    await performTrace(pendingNewGraphAddress);
+  }, [pendingNewGraphAddress, workspaceId, nodes, connections, saveVersion, clearWorkspaceInfo]);
+
+  const handleDiscardAndStartNewGraph = useCallback(async () => {
+    if (!pendingNewGraphAddress) return;
+    
+    // Clear workspace info and start new graph
+    clearWorkspaceInfo();
+    setStartNewGraphConfirmationOpen(false);
+    
+    // Clear the current graph
+    setNodes([]);
+    setConnections([]);
+    setDrawingHistory([]);
+    setHistoryIndex(-1);
+    setCurrentAddress('');
+    setCenterNodeId('');
+    setLeftPanelData(null);
+    
+    // Start fresh with the new address
+    setAddress(pendingNewGraphAddress);
+    setPendingNewGraphAddress(null);
+    
+    // Trigger the trace for the new address
+    await performTrace(pendingNewGraphAddress);
+  }, [pendingNewGraphAddress, clearWorkspaceInfo]);
+
+  const handleCancelStartNewGraph = useCallback(() => {
+    setStartNewGraphConfirmationOpen(false);
+    setPendingNewGraphAddress(null);
+  }, []);
+
+  // Handler for starting new investigation from existing workspace
+  const handleStartNewInvestigation = useCallback(async (workspaceId: string) => {
+    if (!pendingNewGraphAddress) return;
+    
+    try {
+      // Show loading state
+      setIsLoading(true);
+      
+      // Save current work to the selected workspace
+      await saveVersion(workspaceId, {
+        nodes,
+        edges: connections,
+        zoom: 1,
+        pan: { x: 0, y: 0 },
+        hidePassThrough: false
+      }, 'auto', 'Auto-saved before starting new graph');
+      setHasUnsavedChanges(false);
+      
+      // Close workspace manager first
+      setWorkspaceMgrOpen(false);
+      
+      // Brief delay to show save completion
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Clear workspace info and start new graph
+      clearWorkspaceInfo();
+      setStartNewGraphConfirmationOpen(false);
+      setPendingStartNewGraphAfterSave(false);
+      
+      // Clear the current graph
+      setNodes([]);
+      setConnections([]);
+      setDrawingHistory([]);
+      setHistoryIndex(-1);
+      setCurrentAddress('');
+      setCenterNodeId('');
+      setLeftPanelData(null);
+      
+      // Start fresh with the new address
+      setAddress(pendingNewGraphAddress);
+      setPendingNewGraphAddress(null);
+      
+      // Perform trace for the new address
+      await performTrace(pendingNewGraphAddress);
+    } catch (error) {
+      setIsLoading(false);
+    }
+  }, [pendingNewGraphAddress, nodes, connections, saveVersion, clearWorkspaceInfo]);
+
+  // Quick save functionality
+  const handleQuickSave = useCallback(async () => {
+    if (!workspaceId) {
+      // If no workspace, open the workspace manager to create one
+      setWorkspaceMgrOpen(true);
+      return;
+    }
+
+    try {
+      await saveVersion(workspaceId, {
+        nodes,
+        edges: connections,
+        zoom: 1,
+        pan: { x: 0, y: 0 },
+        hidePassThrough: false
+      }, 'quick', 'Quick save');
+      setHasUnsavedChanges(false);
+      setVersionTimestamp(new Date().toISOString());
+    } catch (error) {
+    }
+  }, [workspaceId, nodes, connections]);
+
 
   // Function to fetch and set left panel data for an address
   const fetchAndSetLeftPanelData = async (address: string) => {
@@ -123,24 +524,11 @@ const FlowTracePage: React.FC = () => {
 
 
       // Extract data from optimized response
-      const { transactions, enhancedData, riskScores, summary } = optimizedResponse.data;
+      const { enhancedData, riskScores, summary } = optimizedResponse.data;
       
-      // Convert to legacy format for compatibility
-      const data = {
-        address: optimizedResponse.data.address,
-        balance: '0', // Placeholder - could be calculated from transactions
-        txs: summary.totalTransactions,
-        network: 'bitcoin'
-      };
-
       const summary_data = {
         balance: '0',
         usdValue: 0
-      };
-
-      const txs = {
-        txs: transactions,
-        pagination: { totalTxs: summary.totalTransactions }
       };
 
       // Use client-side resolved entity data if available, fallback to API data
@@ -148,10 +536,9 @@ const FlowTracePage: React.FC = () => {
       let profile;
       
       if (attribution && Object.keys(itemsMap).length > 0) {
-        // Use client-side resolution (same as node visualization)
-        const entitySOT = Object.values(itemsMap).find(sot => sot.entity_id === attribution.entity);
-        const beneficialOwnerSOT = attribution.bo ? 
-          Object.values(itemsMap).find(sot => sot.entity_id === attribution.bo) : undefined;
+        // Use client-side resolution with O(1) hashmap lookup (same as node visualization)
+        const entitySOT = itemsMap[attribution.entity];
+        const beneficialOwnerSOT = attribution.bo ? itemsMap[attribution.bo] : undefined;
         
         const override = applyBeneficialOwnerOverride(
           {
@@ -175,7 +562,6 @@ const FlowTracePage: React.FC = () => {
           custodian: attribution.custodian
         };
         
-        console.log('🔍 Using client-side resolved profile for left panel:', profile);
       } else {
         // Fallback to API data
         profile = {
@@ -188,24 +574,9 @@ const FlowTracePage: React.FC = () => {
           custodian: enhancedData.find((item: any) => item.attribution?.custodian)?.attribution?.custodian
         };
         
-        console.log('🔍 Using API fallback profile for left panel:', profile);
       }
       
-      console.log('API Debug:', {
-        address,
-        data,
-        summary: summary_data,
-        txs,
-        profile
-      });
       
-      // Debug risk score specifically
-      console.log('🔍 Risk Score Debug:', {
-        address,
-        profileRiskScore: profile.riskScore,
-        profileType: typeof profile.riskScore,
-        profileData: profile
-      });
 
       // Use actual transaction count from the optimized response
       const actualTxCount = summary.totalTransactions || 0;
@@ -240,14 +611,121 @@ const FlowTracePage: React.FC = () => {
         usdValue: summary_data.usdValue
       } : n)));
     } catch (error) {
-      console.error('Error fetching left panel data:', error);
     } finally {
       setIsLeftPanelLoading(false);
     }
   };
 
+  // Prefetch attribution profile and logos for a list of addresses (non-blocking)
+  const prefetchProfilesAndLogos = async (addresses: string[]) => {
+    const unique = Array.from(new Set(addresses.filter(Boolean)));
+    if (!unique.length) return;
+    
+    
+    // Ensure SOT data is loaded first
+    if (Object.keys(itemsMap).length === 0) {
+      try {
+        await dispatch(fetchSOT()).unwrap();
+      } catch (error) {
+        return; // Don't proceed if SOT data can't be loaded
+      }
+    }
+    
+    // Fetch attribution data for all addresses at once (same as Risk Dashboard)
+    try {
+      await fetchAttributions(unique);
+    } catch (error) {
+    }
+  };
+
+  // Fetch risk scores for newly added nodes (non-blocking)
+  const prefetchRiskScores = async (addresses: string[]) => {
+    const unique = Array.from(new Set(addresses.filter(Boolean)));
+    if (!unique.length) return;
+    
+    
+    // Fetch risk scores for all addresses in parallel
+    const riskScorePromises = unique.map(async (address) => {
+      try {
+        const response = await flowtraceService.expandNodeOptimized(address, {
+          includeRiskScores: true,
+          includeTransactions: false // We only need risk scores, not transactions
+        });
+        
+        const riskScore = response.data.riskScores?.[address]?.overallRisk;
+        if (riskScore !== undefined) {
+          const normalizedRiskScore = Math.round(riskScore * 100);
+          
+          // Update the node with the risk score
+          setNodes(prev => prev.map(node => 
+            node.id === address 
+              ? { ...node, risk: normalizedRiskScore }
+              : node
+          ));
+          
+          return { address, riskScore: normalizedRiskScore };
+        }
+      } catch (error) {
+      }
+      return null;
+    });
+    
+    try {
+      await Promise.all(riskScorePromises);
+    } catch (error) {
+    }
+  };
+
+  // Core trace function that performs the actual address search and node addition
+  const performTrace = useCallback(async (addressToTrace: string) => {
+    setIsLoading(true);
+    try {
+      // Set both center node and current address to ensure left panel shows correct data
+      setCenterNodeId(addressToTrace);
+      setCurrentAddress(addressToTrace);
+      
+      // Clear any existing left panel data to prevent showing stale information
+      setLeftPanelData(null);
+      
+      // Fetch background data and hydrate once available (includes risk score)
+      await fetchAndSetLeftPanelData(addressToTrace);
+
+      // Add node to graph
+      const newNode: FTNode = {
+        id: addressToTrace,
+        label: addressToTrace, // Will be updated by prefetchProfilesAndLogos
+        x: 300,
+        y: 240,
+        type: 'wallet', // Will be updated by prefetchProfilesAndLogos
+        risk: 0, // Initialize with 0, will be updated by prefetchProfilesAndLogos
+      };
+
+      setNodes(prev => {
+        const exists = prev.find(n => n.id === addressToTrace);
+        if (exists) return prev;
+        return [...prev, newNode];
+      });
+
+      // Fetch entity profile and logo for the new node
+      prefetchProfilesAndLogos([addressToTrace]);
+      
+      // Mark as having unsaved changes
+      setHasUnsavedChanges(true);
+    } catch (error) {
+    } finally {
+      setIsLoading(false);
+    }
+  }, [fetchAndSetLeftPanelData, prefetchProfilesAndLogos]);
+
   // Function to handle node selection and update left panel
   const handleNodeSelection = useCallback(async (node: FTNode) => {
+    // Check if this is an aggregated node (starts with 'agg:')
+    if (node.id.startsWith('agg:')) {
+      setSelectedAggregatedNode(node);
+      setAggregatedNodeDialogOpen(true);
+      return;
+    }
+    
     // Immediately update the current address
     setCurrentAddress(node.id);
     
@@ -320,83 +798,39 @@ const FlowTracePage: React.FC = () => {
     }
   };
 
+
   const handleImportData = (data: any) => {
     try {
       if (data.nodes) setNodes(data.nodes);
       if (data.connections) setConnections(data.connections);
-      console.log('Data imported successfully');
     } catch (error) {
-      console.error('Failed to import data:', error);
     }
   };
 
   const handleTrace = async () => {
     if (!address) return;
-    setIsLoading(true);
     
-    
-    try {
-      // Set both center node and current address to ensure left panel shows correct data
-      setCenterNodeId(address);
-      setCurrentAddress(address);
-      
-      // Clear any existing left panel data to prevent showing stale information
-      setLeftPanelData(null);
-      
-      // Fetch background data and hydrate once available (includes risk score)
-      await fetchAndSetLeftPanelData(address);
-
-      // Add node to graph
-      const newNode: FTNode = {
-        id: address,
-        label: address, // Will be updated by prefetchProfilesAndLogos
-        x: 300,
-        y: 240,
-        type: 'wallet', // Will be updated by prefetchProfilesAndLogos
-      };
-
-      setNodes(prev => {
-        const exists = prev.find(n => n.id === address);
-        if (exists) return prev;
-        return [...prev, newNode];
-      });
-
-      // Fetch entity profile and logo for the new node
-      prefetchProfilesAndLogos([address]);
-      
-      
-    } catch (error) {
-      console.error('Error:', error);
-      
-    } finally {
-      setIsLoading(false);
+    // Check for duplicate node first
+    const duplicateNode = findDuplicateNode(address);
+    if (duplicateNode) {
+      setDuplicateAddress(address);
+      setDuplicateNodeDialogOpen(true);
+      return;
     }
+    
+    // Always show confirmation dialog before adding new nodes
+    setPendingAddress(address);
+    setSearchConfirmationOpen(true);
   };
 
-  // Prefetch attribution profile and logos for a list of addresses (non-blocking)
-  const prefetchProfilesAndLogos = async (addresses: string[]) => {
-    const unique = Array.from(new Set(addresses.filter(Boolean)));
-    if (!unique.length) return;
-    
-    // Fetch attribution data for all addresses at once (same as Risk Dashboard)
-    try {
-      await fetchAttributions(unique);
-      console.log('🔍 FlowTrace: Attribution data fetch initiated for:', unique);
-    } catch (error) {
-      console.warn('Error fetching attributions:', error);
-    }
-  };
 
   // Process attribution data when it becomes available (same pattern as Risk Dashboard)
   useEffect(() => {
+
     if (Object.keys(attributions).length === 0 || Object.keys(itemsMap).length === 0) {
       return; // Wait for both attributions and SOT data to be loaded
     }
 
-    console.log('🔍 FlowTrace: Processing attributions for nodes:', {
-      attributionKeys: Object.keys(attributions),
-      itemsMapKeys: Object.keys(itemsMap).length
-    });
 
     // Process each node that needs entity resolution
     setNodes((prevNodes) => {
@@ -407,17 +841,10 @@ const FlowTracePage: React.FC = () => {
         }
 
         try {
-          // Use client-side entity resolution (same as Risk Dashboard)
-          const entitySOT = Object.values(itemsMap).find(sot => sot.entity_id === attribution.entity);
-          const beneficialOwnerSOT = attribution.bo ? 
-            Object.values(itemsMap).find(sot => sot.entity_id === attribution.bo) : undefined;
+          // Use client-side entity resolution with O(1) hashmap lookup (same as Risk Dashboard)
+          const entitySOT = itemsMap[attribution.entity];
+          const beneficialOwnerSOT = attribution.bo ? itemsMap[attribution.bo] : undefined;
           
-          console.log('🔍 FlowTrace entity resolution for', node.id, ':', {
-            attribution,
-            entitySOT,
-            beneficialOwnerSOT,
-            itemsMapKeys: Object.keys(itemsMap).length
-          });
           
           const override = applyBeneficialOwnerOverride(
             {
@@ -431,7 +858,6 @@ const FlowTracePage: React.FC = () => {
             Object.values(itemsMap)
           );
           
-          console.log('🔍 FlowTrace override result for', node.id, ':', override);
           
           // Update node with client-side resolved profile data
           const resolvedLabel = override.displayTitle || node.id;
@@ -439,12 +865,6 @@ const FlowTracePage: React.FC = () => {
           const resolvedEntityType = override.entityType || 'wallet';
           const logoUrl = override.logo ? `https://storage.googleapis.com/entity-logos/${attribution.entity}.jpg` : null;
           
-          console.log('🔍 FlowTrace resolved data for', node.id, ':', {
-            resolvedLabel,
-            resolvedEntityId,
-            resolvedEntityType,
-            logoUrl
-          });
           
           return {
             ...node,
@@ -456,7 +876,6 @@ const FlowTracePage: React.FC = () => {
             custodian: attribution.custodian ?? node.custodian,
           };
         } catch (error) {
-          console.warn('Error processing attribution for', node.id, ':', error);
           return node;
         }
       });
@@ -465,9 +884,8 @@ const FlowTracePage: React.FC = () => {
     // Update left panel data if the current address has attribution
     if (currentAddress && attributions[currentAddress]) {
       const attribution = attributions[currentAddress];
-      const entitySOT = Object.values(itemsMap).find(sot => sot.entity_id === attribution.entity);
-      const beneficialOwnerSOT = attribution.bo ? 
-        Object.values(itemsMap).find(sot => sot.entity_id === attribution.bo) : undefined;
+      const entitySOT = itemsMap[attribution.entity];
+      const beneficialOwnerSOT = attribution.bo ? itemsMap[attribution.bo] : undefined;
       
       const override = applyBeneficialOwnerOverride(
         {
@@ -481,17 +899,41 @@ const FlowTracePage: React.FC = () => {
         Object.values(itemsMap)
       );
       
-      setLeftPanelData((prev: any) => prev ? {
-        ...prev,
-        selectedEntity: {
-          ...prev.selectedEntity,
-          label: override.displayTitle || currentAddress,
-          logoUrl: override.logo ? `https://storage.googleapis.com/entity-logos/${attribution.entity}.jpg` : prev.selectedEntity?.logoUrl,
-          type: override.entityType || 'wallet',
-          bo: attribution.bo ?? prev.selectedEntity?.bo,
-          custodian: attribution.custodian ?? prev.selectedEntity?.custodian,
+      setLeftPanelData((prev: any) => {
+        if (prev) {
+          // Update existing left panel data
+          return {
+            ...prev,
+            selectedEntity: {
+              ...prev.selectedEntity,
+              label: override.displayTitle || currentAddress,
+              logoUrl: override.logo ? `https://storage.googleapis.com/entity-logos/${attribution.entity}.jpg` : prev.selectedEntity?.logoUrl,
+              type: override.entityType || 'wallet',
+              bo: attribution.bo ?? prev.selectedEntity?.bo,
+              custodian: attribution.custodian ?? prev.selectedEntity?.custodian,
+            }
+          };
+        } else {
+          // Create new left panel data if none exists
+          return {
+            address: currentAddress,
+            network: getBlockchainType(currentAddress) === 'bitcoin' ? 'Bitcoin' : 'Ethereum',
+            balance: '0',
+            txCount: 0,
+            riskScore: undefined,
+            usdValue: '0',
+            selectedEntity: {
+              label: override.displayTitle || currentAddress,
+              address: currentAddress,
+              logoUrl: override.logo ? `https://storage.googleapis.com/entity-logos/${attribution.entity}.jpg` : null,
+              type: override.entityType || 'wallet',
+              riskScore: undefined,
+              bo: attribution.bo,
+              custodian: attribution.custodian
+            }
+          };
         }
-      } : null);
+      });
     }
   }, [attributions, itemsMap, currentAddress]);
 
@@ -501,7 +943,6 @@ const FlowTracePage: React.FC = () => {
 
   // Load SOT data on component mount (same as Risk Dashboard)
   useEffect(() => {
-    console.log('FlowTrace: Loading SOT data on component mount');
     dispatch(fetchSOT());
   }, [dispatch]);
 
@@ -510,14 +951,41 @@ const FlowTracePage: React.FC = () => {
       let updatedConnections = [...prev]
       
       newConnections.forEach(newConnection => {
+        // First check if this exact UTXO already exists (by utxoKey)
+        const existingUtxo = updatedConnections.find(conn => {
+          // Check direct match
+          if (conn.utxoKey === newConnection.utxoKey) return true;
+          
+          // Check if it's in an aggregated connection's originalConnections
+          if (conn.isAggregated && conn.originalConnections) {
+            return conn.originalConnections.some(origConn => origConn.utxoKey === newConnection.utxoKey);
+          }
+          
+          return false;
+        });
+        
+        // Skip if this UTXO already exists
+        if (existingUtxo) {
+          return;
+        }
+        
         // Check if there are existing connections between the same nodes
-        const existingConnections = updatedConnections.filter(conn => 
+        const existingIndividualConnections = updatedConnections.filter(conn => 
           conn.from === newConnection.from && conn.to === newConnection.to && !conn.isAggregated
         )
         
-        if (utxoCollapseMode === 'aggregated' && existingConnections.length > 0) {
-          // There are existing individual connections, create or update an aggregated connection
-          const allConnections = [...existingConnections, newConnection]
+        const existingAggregatedConnection = updatedConnections.find(conn => 
+          conn.from === newConnection.from && conn.to === newConnection.to && conn.isAggregated
+        )
+        
+        if (utxoCollapseMode === 'aggregated' && (existingIndividualConnections.length > 0 || existingAggregatedConnection)) {
+          // There are existing connections, create or update an aggregated connection
+          let allConnections = [...existingIndividualConnections, newConnection]
+          
+          // If there's already an aggregated connection, include its original connections
+          if (existingAggregatedConnection && existingAggregatedConnection.originalConnections) {
+            allConnections = [...existingAggregatedConnection.originalConnections, newConnection]
+          }
           
           // Calculate totals
           const totalAmount = allConnections.reduce((sum, conn) => 
@@ -529,6 +997,7 @@ const FlowTracePage: React.FC = () => {
             ...newConnection,
             amount: totalAmount.toFixed(8),
             txHash: allConnections.map(c => c.txHash).join(","),
+            txid: allConnections.map(c => c.txid).filter(Boolean).join(","),
             isAggregated: true,
             utxoCount: allConnections.length,
             originalConnections: allConnections,
@@ -554,8 +1023,94 @@ const FlowTracePage: React.FC = () => {
     });
   }, [utxoCollapseMode]);
 
+  // Function to process existing connections when UTXO mode changes
+  const processConnectionsForMode = useCallback((mode: "aggregated" | "individual") => {
+    setConnections(prev => {
+      if (mode === "individual") {
+        // Expand aggregated connections back to individual ones
+        const expandedConnections: FTConnection[] = [];
+        
+        prev.forEach(conn => {
+          if (conn.isAggregated && conn.originalConnections) {
+            // Add all original individual connections
+            expandedConnections.push(...conn.originalConnections);
+          } else {
+            // Keep non-aggregated connections as-is
+            expandedConnections.push(conn);
+          }
+        });
+        
+        return expandedConnections;
+      } else {
+        // Aggregate individual connections
+        const connectionGroups = new Map<string, FTConnection[]>();
+        const nonGroupedConnections: FTConnection[] = [];
+        
+        prev.forEach(conn => {
+          if (conn.isAggregated) {
+            // Keep existing aggregated connections
+            nonGroupedConnections.push(conn);
+          } else {
+            // Group individual connections by from-to pair
+            const groupKey = `${conn.from}|${conn.to}`;
+            if (!connectionGroups.has(groupKey)) {
+              connectionGroups.set(groupKey, []);
+            }
+            connectionGroups.get(groupKey)!.push(conn);
+          }
+        });
+        
+        // Process each group
+        const processedConnections: FTConnection[] = [...nonGroupedConnections];
+        
+        connectionGroups.forEach((groupConnections, groupKey) => {
+          if (groupConnections.length > 1) {
+            // Create aggregated connection
+            const firstConn = groupConnections[0];
+            const totalAmount = groupConnections.reduce((sum, conn) => 
+              sum + parseFloat(conn.amount || '0'), 0
+            );
+            
+            const aggregatedConnection: FTConnection = {
+              ...firstConn,
+              amount: totalAmount.toFixed(8),
+              txHash: groupConnections.map(c => c.txHash).join(","),
+              txid: groupConnections.map(c => c.txid).filter(Boolean).join(","),
+              isAggregated: true,
+              utxoCount: groupConnections.length,
+              originalConnections: groupConnections,
+              groupId: groupKey,
+              _aggregatedText: {
+                amount: totalAmount.toFixed(8),
+                count: groupConnections.length,
+                currency: firstConn.currency
+              }
+            };
+            
+            processedConnections.push(aggregatedConnection);
+          } else {
+            // Keep single connections as-is
+            processedConnections.push(...groupConnections);
+          }
+        });
+        
+        return processedConnections;
+      }
+    });
+  }, []);
+
   const onAdd = useCallback((payload: { address: string; selectedTxs: any[] }) => {
     const { selectedTxs, address } = payload
+    
+    // Since selectedTxs only contains NEW connections (filtered by !t.wouldCreateExistingConnection),
+    // we don't need to handle removals here. The removal logic was incorrectly assuming that
+    // all existing connections for the node were being re-selected, but that's not how it works.
+    // We only add new connections, we don't remove existing ones.
+    
+    // Note: If we need to handle removals in the future, we should track which UTXOs were
+    // previously selected in the dialog, not all existing connections for the node.
+    
+    // Handle additions only - no removals needed since selectedTxs only contains NEW connections
     const newConnections: FTConnection[] = []
     const addressesToPrefetch = new Set<string>()
     const addressEntityData = new Map<string, { entityName?: string; entityId?: string; entityType?: string; logoUrl?: string }>()
@@ -566,10 +1121,44 @@ const FlowTracePage: React.FC = () => {
     selectedTxs.forEach((tx: any) => {
       // Each tx is an EnhancedTransaction representing a single UTXO
       // The direction tells us if this is an input or output UTXO
+      
+      // Check if this UTXO is already connected in any direction
+      const counterparty = tx.counterpartyAddress || (tx.direction === 'in' ? tx.inputs?.[0]?.addr : tx.outputs?.[0]?.addr);
+      if (!counterparty) return;
+      
+      // Generate UTXO key to check for existing connections
+      const utxoKey = generateUTXOKey({
+        originalTxHash: tx.originalTxHash,
+        txid: tx.txid,
+        originalInputIndex: tx.originalInputIndex,
+        originalOutputIndex: tx.originalOutputIndex,
+        inputs: tx.inputs,
+        outputs: tx.outputs,
+        sourceAddress: tx.direction === 'in' ? counterparty : address,
+        destinationAddress: tx.direction === 'in' ? address : counterparty,
+        amount: tx.amount
+      });
+      
+      // Check if this UTXO is already connected in any direction
+      const existingConnection = connections.find(conn => {
+        if (conn.utxoKey === utxoKey) return true;
+        
+        // Check if it's in an aggregated connection's originalConnections
+        if (conn.isAggregated && conn.originalConnections) {
+          return conn.originalConnections.some(origConn => origConn.utxoKey === utxoKey);
+        }
+        
+        return false;
+      });
+      
+      if (existingConnection) {
+        return;
+      }
+      
       if (tx.direction === 'in') {
         // This is an input UTXO - the address is receiving money
         // The connection goes from the input address to the current address
-        const inputAddress = tx.inputs?.[0]?.addr
+        const inputAddress = tx.counterpartyAddress || tx.inputs?.[0]?.addr
         if (!inputAddress) return
         
         // Store entity data for the input address - prioritize transaction-level attribution
@@ -586,7 +1175,7 @@ const FlowTracePage: React.FC = () => {
           }
         }
         
-        const utxoKey = `${tx.originalTxHash || tx.txid}::${address}::in`
+        // UTXO key already generated above for deduplication check
         
         const connection: FTConnection = {
           from: inputAddress,
@@ -595,10 +1184,13 @@ const FlowTracePage: React.FC = () => {
           currency: tx.currency || 'BTC',
           date: tx.time ? new Date(tx.time * 1000).toISOString() : new Date().toISOString(),
           txHash: tx.originalTxHash || tx.txid,
+          txid: tx.txid,
           utxoKey,
           type: 'in',
           usdValue: tx.usdValue,
+          locked: true // Mark as locked to prevent any future modifications
         }
+        
         
         // Group connections by counterparty address
         if (!addressConnections.has(inputAddress)) {
@@ -610,7 +1202,7 @@ const FlowTracePage: React.FC = () => {
       } else if (tx.direction === 'out') {
         // This is an output UTXO - the address is spending money
         // The connection goes from the current address to the output address
-        const outputAddress = tx.outputs?.[0]?.addr
+        const outputAddress = tx.counterpartyAddress || tx.outputs?.[0]?.addr
         if (!outputAddress) return
         
         // Store entity data for the output address - prioritize transaction-level attribution
@@ -627,7 +1219,7 @@ const FlowTracePage: React.FC = () => {
           }
         }
         
-        const utxoKey = `${tx.originalTxHash || tx.txid}::${outputAddress}::out`
+        // UTXO key already generated above for deduplication check
         
         const connection: FTConnection = {
           from: address,
@@ -636,10 +1228,13 @@ const FlowTracePage: React.FC = () => {
           currency: tx.currency || 'BTC',
           date: tx.time ? new Date(tx.time * 1000).toISOString() : new Date().toISOString(),
           txHash: tx.originalTxHash || tx.txid,
+          txid: tx.txid,
           utxoKey,
           type: 'out',
           usdValue: tx.usdValue,
+          locked: true // Mark as locked to prevent any future modifications
         }
+        
         
         // Group connections by counterparty address
         if (!addressConnections.has(outputAddress)) {
@@ -701,8 +1296,9 @@ const FlowTracePage: React.FC = () => {
             y,
             type: resolvedEntityType,
             entityId: entityData?.entityId,
-            entityType: resolvedEntityType,
-            logoUrl: entityData?.logoUrl
+            entityType: entityData?.entityType,
+            logoUrl: entityData?.logoUrl,
+            risk: 0 // Initialize with 0, will be updated when profile is fetched
           })
         }
       })
@@ -723,8 +1319,9 @@ const FlowTracePage: React.FC = () => {
             y,
             type: resolvedEntityType,
             entityId: entityData?.entityId,
-            entityType: resolvedEntityType,
-            logoUrl: entityData?.logoUrl
+            entityType: entityData?.entityType,
+            logoUrl: entityData?.logoUrl,
+            risk: 0 // Initialize with 0, will be updated when profile is fetched
           })
         }
       })
@@ -738,7 +1335,11 @@ const FlowTracePage: React.FC = () => {
     // Fetch entity profiles and logos for all involved addresses (non-blocking)
     // This runs in the background and updates nodes as data becomes available
     prefetchProfilesAndLogos(Array.from(addressesToPrefetch).filter(Boolean))
-  }, [handleAddConnections, prefetchProfilesAndLogos])
+    
+    // Fetch risk scores for all newly added nodes (non-blocking)
+    // This runs in the background and updates nodes with risk scores for graph visualization
+    prefetchRiskScores(Array.from(addressesToPrefetch).filter(Boolean))
+  }, [handleAddConnections, prefetchProfilesAndLogos, prefetchRiskScores])
 
   const isEmptyState = nodes.length === 0 && !isLoading;
 
@@ -751,15 +1352,23 @@ const FlowTracePage: React.FC = () => {
       {/* Sticky Search Bar */}
       <div className={`sticky top-[0] z-20 bg-white dark:bg-background border-b border-gray-200 dark:border-gray-700 px-4 ${isEmptyState ? 'pt-2 py-4 mb-2' : 'py-4'}`}>
         <div className="flex justify-between items-center gap-4">
-          <div className="flex-1 max-w-2xl">
-            <AddressSearchInput
-              placeholder="Enter Bitcoin address to trace (e.g., bc1qxy2...)"
-              value={address}
-              onChange={(e) => setAddress(e.target.value)}
-              onSearch={handleTrace}
-              loading={isLoading}
-              disabled={isLoading}
-              showValidation={true}
+          <div className="flex items-center gap-4 flex-1">
+            <div className="max-w-2xl flex-1">
+              <AddressSearchInput
+                placeholder="Enter Bitcoin address to trace (e.g., bc1qxy2...)"
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
+                onSearch={handleTrace}
+                loading={isLoading}
+                disabled={isLoading}
+                showValidation={true}
+              />
+            </div>
+            <WorkspaceInfo 
+              workspaceName={workspaceName || undefined}
+              versionName={versionName || undefined}
+              versionTimestamp={versionTimestamp || undefined}
+              hasUnsavedChanges={hasUnsavedChanges}
             />
           </div>
           <div className="flex items-center gap-2">
@@ -768,9 +1377,19 @@ const FlowTracePage: React.FC = () => {
               <Wallet className="h-4 w-4" />
               Wallet Clusters
             </Button>
+            {hasUnsavedChanges && (
+              <Button variant="outline" size="sm" className="flex gap-1 items-center" onClick={handleQuickSave}>
+                <Save className="h-4 w-4" />
+                Quick Save
+              </Button>
+            )}
             <SaveWorkspaceButton
               workspaceId={workspaceId}
               graphState={{ nodes, edges: connections, zoom: 1, pan: { x: 0, y: 0 }, hidePassThrough: false }}
+              onSaveSuccess={() => {
+                setHasUnsavedChanges(false);
+                setVersionTimestamp(new Date().toISOString());
+              }}
             />
             <Button variant="ghost" size="icon" aria-label="Manage workspaces" onClick={() => setWorkspaceMgrOpen(true)}>
               <GitBranch className="h-4 w-4" />
@@ -795,7 +1414,11 @@ const FlowTracePage: React.FC = () => {
                 setDrawingToolbarVisible(!drawingToolbarVisible);
               }}
               utxoCollapseMode={utxoCollapseMode}
-              onToggleUtxoMode={() => setUtxoCollapseMode(prev => prev === "aggregated" ? "individual" : "aggregated")}
+              onToggleUtxoMode={() => {
+                const newMode = utxoCollapseMode === "aggregated" ? "individual" : "aggregated";
+                setUtxoCollapseMode(newMode);
+                processConnectionsForMode(newMode);
+              }}
             />
           </div>
 
@@ -843,12 +1466,19 @@ const FlowTracePage: React.FC = () => {
                   setNodes(prev => prev.map(n => n.id === node.id ? { ...n, label: next.trim() } : n));
                 }
               }}
-              onNodeAdd={(node) => {
+              onNodeAdd={async (node) => {
                 if (node.type === 'custom') {
                   setExpandSourceNode(node);
                   setCustomExpandOpen(true);
                 } else {
+                  // Set the source node to the currently selected node (the one we're expanding from)
+                  setNodeTxPickerSourceNode(currentAddress || centerNodeId);
                   setCurrentAddress(node.id);
+                  
+                  // Show side panel data for the node being expanded
+                  setLeftPanelData(null); // Clear old data first
+                  await fetchAndSetLeftPanelData(node.id);
+                  
                   setNodeTxPickerOpen(true);
                 }
               }}
@@ -893,11 +1523,17 @@ const FlowTracePage: React.FC = () => {
 
       <NodeTxPicker
         open={nodeTxPickerOpen}
-        onOpenChange={setNodeTxPickerOpen}
+        onOpenChange={(open) => {
+          setNodeTxPickerOpen(open);
+          if (!open) {
+            setNodeTxPickerSourceNode(null);
+          }
+        }}
         address={currentAddress || ''}
         nodeLabel={nodes.find(n => n.id === currentAddress)?.label}
         onAdd={onAdd}
-        existingConnections={connections}
+                existingConnections={currentAddress ? findConnectionsForAddress(ensureConnectionKeys(connections), currentAddress) : []}
+        sourceNode={nodeTxPickerSourceNode}
       />
 
       <EdgeDialog
@@ -922,12 +1558,67 @@ const FlowTracePage: React.FC = () => {
 
       <GitHubWorkspaceManager
         open={workspaceMgrOpen}
-        onOpenChange={setWorkspaceMgrOpen}
+        onOpenChange={(open) => {
+          setWorkspaceMgrOpen(open);
+          // If workspace manager is closed and there was a pending start new graph action, cancel it
+          if (!open && pendingStartNewGraphAfterSave) {
+            setPendingStartNewGraphAfterSave(false);
+            setStartNewGraphConfirmationOpen(false);
+            setPendingNewGraphAddress(null);
+          }
+        }}
         currentState={{ nodes, edges: connections, zoom: 1, pan: { x: 0, y: 0 }, hidePassThrough: false }}
         onLoadWorkspace={handleLoadWorkspaceFromManager}
         currentWorkspaceId={workspaceId || undefined}
         currentVersionId={currentVersionId}
-        onWorkspaceCreated={setWorkspaceId}
+        onWorkspaceCreated={handleWorkspaceCreated}
+        onStartNewInvestigation={handleStartNewInvestigation}
+        isSaveAndNewMode={pendingStartNewGraphAfterSave}
+      />
+
+      {/* Search Confirmation Dialog */}
+      <SearchConfirmationDialog
+        open={searchConfirmationOpen}
+        onOpenChange={setSearchConfirmationOpen}
+        newAddress={pendingAddress || ''}
+        existingNodeCount={nodes.length}
+        existingConnectionCount={connections.length}
+        onAddToGraph={handleAddToGraph}
+        onSaveAndNew={handleSaveAndNew}
+        onDiscardAndNew={handleDiscardAndNew}
+        onCancel={handleCancelSearch}
+      />
+
+      {/* Duplicate Node Dialog */}
+      <DuplicateNodeDialog
+        open={duplicateNodeDialogOpen}
+        onOpenChange={setDuplicateNodeDialogOpen}
+        duplicateAddress={duplicateAddress || ''}
+        existingNodeLabel={findDuplicateNode(duplicateAddress || '')?.label}
+        onViewExisting={handleViewExisting}
+        onStartNewGraph={handleStartNewGraph}
+        onCancel={handleCancelDuplicate}
+      />
+
+      {/* Start New Graph Confirmation Dialog */}
+      <StartNewGraphConfirmationDialog
+        open={startNewGraphConfirmationOpen}
+        onOpenChange={setStartNewGraphConfirmationOpen}
+        newAddress={pendingNewGraphAddress || ''}
+        existingNodeCount={nodes.length}
+        existingConnectionCount={connections.length}
+        onSaveAndNew={handleSaveAndStartNewGraph}
+        onDiscardAndNew={handleDiscardAndStartNewGraph}
+        onCancel={handleCancelStartNewGraph}
+      />
+
+      {/* Save and New Dialog */}
+      <SaveAndNewDialog
+        open={saveAndNewDialogOpen}
+        onOpenChange={setSaveAndNewDialogOpen}
+        onSaveToExisting={handleSaveToExisting}
+        onCreateNew={handleCreateNewWorkspace}
+        onCancel={handleCancelSaveAndNew}
       />
 
       {/* Custom Node Dialog */}
@@ -976,26 +1667,66 @@ const FlowTracePage: React.FC = () => {
           sourceNode={expandSourceNode}
           existingNodes={nodes}
           onCreateEdges={(edges) => {
-            const newEdges: FTConnection[] = edges.map((e, idx) => ({
-              from: e.direction === 'out' ? expandSourceNode.id : e.targetId,
-              to: e.direction === 'out' ? e.targetId : expandSourceNode.id,
-              amount: e.amount,
-              currency: e.currency,
-              date: e.date,
-              txHash: `ce-${Date.now()}-${idx}`,
-              type: e.direction,
-            } as FTConnection));
+            const newEdges: FTConnection[] = edges.map((e, idx) => {
+              const from = e.direction === 'out' ? expandSourceNode.id : e.targetId;
+              const to = e.direction === 'out' ? e.targetId : expandSourceNode.id;
+              const txHash = `ce-${Date.now()}-${idx}`;
+              
+              // Generate utxoKey for the new connection
+              let utxoKey: string | undefined;
+              try {
+                utxoKey = generateUTXOKey({
+                  txid: txHash,
+                  sourceAddress: from, // Source address
+                  destinationAddress: to, // Destination address
+                  amount: e.amount
+                });
+              } catch (error) {
+                console.warn('Failed to generate UTXO key for new connection:', error);
+              }
+              
+              const connection: FTConnection = {
+                from,
+                to,
+                amount: e.amount,
+                currency: e.currency,
+                date: e.date,
+                txHash,
+                type: e.direction,
+                utxoKey
+              };
+              
+              // Generate connection key
+              connection.connectionKey = generateConnectionKey(connection);
+              
+              return connection;
+            });
             setConnections(prev => mergeEdges(prev, newEdges));
           }}
-          existingConnections={connections.filter(c => c.from===expandSourceNode.id || c.to===expandSourceNode.id)}
+                existingConnections={(() => {
+                  // Ensure all connections have connectionKey
+                  const connectionsWithKeys = ensureConnectionKeys(connections);
+                  
+                  // Find connections that involve the source node using connection key approach
+                  const filtered = findConnectionsForAddress(connectionsWithKeys, expandSourceNode.id);
+                  
+                  console.log('🔍 CONNECTION FILTERING (Connection Key Approach):');
+                  console.log('Source node:', expandSourceNode.id);
+                  console.log('Found connections:', filtered.length);
+                  console.log('Connection keys:', filtered.map(c => c.connectionKey));
+                  
+                  return filtered;
+                })()}
           onEditEdges={(edges)=>{
             setConnections(prev => {
               const targetsKept = new Set(edges.map(e=>e.targetId))
               // Remove edges between custom node and nodes that are now unchecked
               const filtered = prev.filter(c => {
-                const isCustomEdge = c.from===expandSourceNode.id || c.to===expandSourceNode.id
+                const isCustomEdge = connectionInvolvesAddress(c, expandSourceNode.id)
                 if (!isCustomEdge) return true
-                const otherId = c.from===expandSourceNode.id ? c.to : c.from
+                // For custom edges, we need to check if the other node is still in targetsKept
+                // This is a bit tricky with utxoKey, so we'll use the from/to fallback for this specific case
+                const otherId = c.from === expandSourceNode.id ? c.to : c.from
                 return targetsKept.has(otherId)
               })
 
@@ -1003,15 +1734,36 @@ const FlowTracePage: React.FC = () => {
               edges.forEach((e, idx) => {
                 const from = e.direction==='out'? expandSourceNode.id : e.targetId
                 const to = e.direction==='out'? e.targetId : expandSourceNode.id
-                updated.push({
+                const txHash = `edit-${Date.now()}-${idx}`;
+                
+                // Generate utxoKey for the edited connection
+                let utxoKey: string | undefined;
+                try {
+                  utxoKey = generateUTXOKey({
+                    txid: txHash,
+                    sourceAddress: from, // Source address
+                    destinationAddress: to, // Destination address
+                    amount: e.amount
+                  });
+                } catch (error) {
+                  console.warn('Failed to generate UTXO key for edited connection:', error);
+                }
+                
+                const connection: FTConnection = {
                   from,
                   to,
                   amount: e.amount,
                   currency: e.currency,
                   date: e.date,
-                  txHash: `edit-${Date.now()}-${idx}`,
+                  txHash,
                   type: e.direction,
-                } as FTConnection)
+                  utxoKey
+                };
+                
+                // Generate connection key
+                connection.connectionKey = generateConnectionKey(connection);
+                
+                updated.push(connection);
               })
               return updated
             })
@@ -1039,7 +1791,12 @@ const FlowTracePage: React.FC = () => {
           setNodes(newState.nodes as any)
           setConnections(newState.edges as any)
 
-          aggregationMap.current[entityKey] = { nodes: undo.nodes as any, connections: undo.edges as any, addresses: memberIdsArr }
+          aggregationMap.current[entityKey] = { 
+            nodes: undo.nodes as any, 
+            connections: undo.edges as any, 
+            allMemberConnections: undo.allMemberConnections as any,
+            addresses: memberIdsArr 
+          }
 
           if (!consolidatedEntities.includes(entityKey))
             setConsolidatedEntities([...consolidatedEntities, entityKey])
@@ -1067,6 +1824,24 @@ const FlowTracePage: React.FC = () => {
           setConsolidatedEntities(prev => prev.filter(e => e !== entityKey))
         }}
       />
+
+      {/* Aggregated Node Dialog */}
+      <AggregatedNodeDialog
+        open={aggregatedNodeDialogOpen}
+        onOpenChange={setAggregatedNodeDialogOpen}
+        aggregatedNode={selectedAggregatedNode}
+        originalNodes={selectedAggregatedNode ? 
+          aggregationMap.current[selectedAggregatedNode.id]?.nodes || [] : []
+        }
+        originalConnections={selectedAggregatedNode ? 
+          aggregationMap.current[selectedAggregatedNode.id]?.connections || [] : []
+        }
+        allMemberConnections={selectedAggregatedNode ? 
+          aggregationMap.current[selectedAggregatedNode.id]?.allMemberConnections || [] : []
+        }
+        allConnections={connections}
+      />
+
     </ViewWrapper>
   );
 };

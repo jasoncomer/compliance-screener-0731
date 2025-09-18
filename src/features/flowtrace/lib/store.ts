@@ -12,6 +12,7 @@ export interface FTConnection {
   direction: 'in' | 'out'
   hideTxId?: boolean
   txHash?: string
+  txid?: string
   id?: string
   customColor?: string
   isAggregated?: boolean

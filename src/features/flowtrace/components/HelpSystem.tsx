@@ -58,8 +58,8 @@ const HELP_STEPS: HelpStep[] = [
   {
     id: 'export',
     title: 'Export & Share',
-    content: 'Use the debug panel (bug icon) to export your analysis as JSON or import previous work. Great for collaboration!',
-    action: 'Explore the debug panel!'
+    content: 'Use the connected node panel (bug icon) to export your analysis as JSON or import previous work. Great for collaboration!',
+    action: 'Explore the connected node panel!'
   }
 ];
 

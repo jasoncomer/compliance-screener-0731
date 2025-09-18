@@ -177,6 +177,10 @@ const Input: React.FC<CustomInputProps> = ({
           rows={rows}
           className={`${className || ''} ${error ? 'error' : ''}`}
           onChange={e => onChange?.(e as any)}
+          allowClear={false}
+          showCount={false}
+          count={undefined}
+          onClear={undefined}
         />
       </TextAreaStyles>
     );

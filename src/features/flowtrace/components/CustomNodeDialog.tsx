@@ -125,6 +125,11 @@ export const CustomNodeDialog: React.FC<CustomNodeDialogProps> = ({ open, onOpen
                       <label className="flex items-center space-x-2">
                         <input type="checkbox" checked={connectedIds.includes(node.id)} onChange={() => handleToggleConnection(node.id)} />
                         <span className="truncate text-sm">{displayName}</span>
+                        {connectedIds.includes(node.id) && (
+                          <span className="text-xs text-green-600 dark:text-green-400 font-medium bg-green-50 dark:bg-green-900/20 px-2 py-1 rounded">
+                            🔗 Connected Node
+                          </span>
+                        )}
                       </label>
                     {connectedIds.includes(node.id) && (
                       <div className="grid grid-cols-8 gap-2 items-center mt-2">

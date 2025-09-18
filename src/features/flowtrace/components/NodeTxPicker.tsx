@@ -10,6 +10,9 @@ import { Button } from '../../../components/ui/button';
 import { Search, Filter, TrendingUp, CheckSquare, Square, Copy } from 'lucide-react';
 import { applyBeneficialOwnerOverride } from '../../../utils/entityUtils';
 import { useCryptoPrices } from '../../../hooks/useCryptoPrices';
+import { generateUTXOKey, connectionInvolvesAddress } from '../utils/utxoKeyGeneration';
+import { useAttribution } from '../../../context/AttributionContext';
+import { useLogo } from '../../../hooks/useLogo';
 
 type Props = {
   open: boolean;
@@ -17,7 +20,8 @@ type Props = {
   onOpenChange: (open: boolean) => void;
   onAdd: (payload: { address: string; selectedTxs: any[] }) => void;
   nodeLabel?: string;
-  existingConnections?: { from: string; to: string; utxoKey?: string }[];
+  existingConnections?: { from?: string; to?: string; utxoKey?: string; isAggregated?: boolean; originalConnections?: any[] }[];
+  sourceNode?: string | null; // The node we're expanding from
 };
 
 // Enhanced transaction type with entity and risk information
@@ -44,7 +48,57 @@ interface EnhancedTransaction {
   cospendId?: string;
   transactionCount?: number;
   originalTxHash?: string; // The original transaction hash
+  counterpartyAddress?: string; // The specific counterparty address for this UTXO
+  originalInputIndex?: number; // Store the original input index for UTXO key generation
+  originalOutputIndex?: number; // Store the original output index for UTXO key generation
+  isAlreadyConnected?: boolean; // Whether this UTXO is already connected in the graph
+  isConnectedToNode?: boolean; // Whether this UTXO is connected to another node (not just in graph)
+  connectedNodeId?: string; // The ID of the node this UTXO is connected to
 }
+
+// Logo component that handles fallback logic
+const EntityLogo: React.FC<{ entityId?: string; entityType?: string; entityName?: string; className?: string }> = ({ 
+  entityId, 
+  entityType, 
+  entityName, 
+  className = "w-6 h-6 rounded-full border border-gray-200 dark:border-gray-600" 
+}) => {
+  const { logoUrl, isLoading } = useLogo({ 
+    entityId, 
+    entityType, 
+    enableFallback: true 
+  });
+
+  if (isLoading) {
+    return (
+      <div className={`${className} bg-gray-100 dark:bg-gray-600 flex items-center justify-center animate-pulse`}>
+        <span className="text-xs text-gray-400">...</span>
+      </div>
+    );
+  }
+
+  if (logoUrl) {
+    return (
+      <img
+        src={logoUrl}
+        alt={entityName || 'Entity'}
+        className={className}
+        onError={(e) => {
+          e.currentTarget.style.display = 'none';
+        }}
+      />
+    );
+  }
+
+  // Fallback to initial letter
+  return (
+    <div className={`${className} bg-gray-100 dark:bg-gray-600 flex items-center justify-center`}>
+      <span className="text-xs font-medium text-gray-600 dark:text-gray-200">
+        {entityName?.charAt(0).toUpperCase() || '?'}
+      </span>
+    </div>
+  );
+};
 
 const NodeTxPicker: React.FC<Props> = ({ open, address, onOpenChange, onAdd, nodeLabel, existingConnections = [] }) => {
   const [loading, setLoading] = useState(false);
@@ -59,6 +113,28 @@ const NodeTxPicker: React.FC<Props> = ({ open, address, onOpenChange, onAdd, nod
 
   // Get crypto prices for USD calculations
   const { getPrice } = useCryptoPrices();
+  
+  // Get SOT data and attributions from Redux store and context
+  const { itemsMap } = useSelector((state: RootState) => state.sot);
+  const { fetchAttributions, attributions } = useAttribution();
+  
+  // Function to resolve entity names using SOT data
+  const resolveEntityName = (entityId: string): { name: string; type: string; logo?: string } => {
+    if (!entityId || !itemsMap || Object.keys(itemsMap).length === 0) {
+      return { name: 'Unknown Entity', type: 'wallet' };
+    }
+    
+    const sotEntry = itemsMap[entityId];
+    if (sotEntry) {
+      return {
+        name: sotEntry.proper_name || entityId,
+        type: sotEntry.entity_type || 'wallet',
+        logo: sotEntry.logo
+      };
+    }
+    
+    return { name: 'Unknown Entity', type: 'wallet' };
+  };
 
   // Build set of already-expanded counterparty addresses for pre-selection
   const { expandedAddresses, expandedUtxoKeys } = useMemo(() => {
@@ -72,8 +148,16 @@ const NodeTxPicker: React.FC<Props> = ({ open, address, onOpenChange, onAdd, nod
     };
 
     existingConnections.forEach((c: any) => {
-      if (c.from === address && c.to) addrSet.add(c.to);
-      if (c.to === address && c.from) addrSet.add(c.from);
+      // Use connection key approach to find connections involving this address
+      if (connectionInvolvesAddress(c, address)) {
+        // Use simple from/to matching to determine counterparty address
+        if (c.from === address && c.to) {
+          addrSet.add(c.to);
+        }
+        if (c.to === address && c.from) {
+          addrSet.add(c.from);
+        }
+      }
 
       collect(c);
       // If aggregated, iterate originals
@@ -85,8 +169,6 @@ const NodeTxPicker: React.FC<Props> = ({ open, address, onOpenChange, onAdd, nod
     return { expandedAddresses: addrSet, expandedUtxoKeys: keySet };
   }, [existingConnections, address]);
 
-  // Get SOT data from Redux store
-  const itemsMap = useSelector((state: RootState) => state.sot.itemsMap);
   const [localSotData] = useState<SOT[]>([]);
 
   // Copy transaction hash to clipboard
@@ -238,9 +320,44 @@ const NodeTxPicker: React.FC<Props> = ({ open, address, onOpenChange, onAdd, nod
 
   // Skip SOT data fetching to avoid memory issues and timeouts
   // SOT data is not essential for NodeTxPicker functionality
+
+  // Update transaction display when attribution data becomes available
   useEffect(() => {
-    console.log('⚠️ Skipping SOT data fetch in NodeTxPicker to avoid memory issues');
-  }, [itemsMap]);
+    if (txs.length === 0) return;
+    
+    // Update transactions with fresh attribution data
+    setTxs(prevTxs => {
+      return prevTxs.map(tx => {
+        const counterparty = tx.counterpartyAddress || (tx.direction === 'in' ? tx.inputs?.[0]?.addr : tx.outputs?.[0]?.addr);
+        if (!counterparty) return tx;
+
+        // Check if we have attribution data for this counterparty
+        const attribution = Object.values(attributions).find(attr => attr.addr === counterparty);
+        if (!attribution) return tx;
+
+        // Update the transaction with proper entity information
+        const updatedTx = { ...tx };
+        
+        // Use the attribution data to get proper entity name
+        if (attribution.entity) {
+          // Try to resolve entity name from SOT data using O(1) hashmap lookup
+          const entitySOT = itemsMap[attribution.entity];
+          if (entitySOT) {
+            updatedTx.entityName = entitySOT.proper_name || attribution.entity;
+            updatedTx.entityType = entitySOT.entity_type || 'wallet';
+            // Logo will be handled by EntityLogo component using useLogo hook
+          } else {
+            // Fallback to entity ID if no SOT data
+            updatedTx.entityName = attribution.entity;
+            updatedTx.entityType = 'wallet';
+          }
+          updatedTx.entityId = attribution.entity;
+        }
+
+        return updatedTx;
+      });
+    });
+  }, [attributions, itemsMap, txs.length]);
 
   // Calculate USD values asynchronously when transactions are loaded
   useEffect(() => {
@@ -257,86 +374,106 @@ const NodeTxPicker: React.FC<Props> = ({ open, address, onOpenChange, onAdd, nod
   // Pre-select already-expanded addresses only on initial load (when nothing is selected yet)
   useEffect(() => {
     if (!open) return;
-    if (selected.size > 0) return; // keep user's manual selection
+    
+    // Only skip if user has manually selected something (not just initial state)
+    if (selected.size > 0) {
+      return; // keep user's manual selection
+    }
 
-    const pre = new Set<string>();
+    // Don't run pre-selection if we don't have transactions yet
+    if (txs.length === 0) {
+      return;
+    }
+
+    // Don't run pre-selection if we don't have expanded sets yet
+    if (expandedAddresses.size === 0 && expandedUtxoKeys.size === 0) {
+      return;
+    }
+
+    // Add a small delay to prevent race conditions
+    const timeoutId = setTimeout(() => {
+      const pre = new Set<string>();
+    
     txs.forEach((tx) => {
-      const counterparty = tx.direction === 'in' ? tx.inputs?.[0]?.addr : tx.outputs?.[0]?.addr;
+      const counterparty = tx.counterpartyAddress || (tx.direction === 'in' ? tx.inputs?.[0]?.addr : tx.outputs?.[0]?.addr);
 
+      // Use centralized UTXO key generation for consistency
       let utxoKey: string | null = null;
-      if (tx.direction === 'in') {
-        // funds to current node, key uses current address
-        utxoKey = `${tx.originalTxHash || tx.txid}::${address}::in`;
-      } else {
-        utxoKey = `${tx.originalTxHash || tx.txid}::${counterparty}::out`;
+      try {
+        if (counterparty && address) {
+          // Generate key the same way FlowTracePage does
+          if (tx.direction === 'in') {
+            // Incoming: sourceAddress = counterparty (where money came from), destinationAddress = address (where money went to)
+            utxoKey = generateUTXOKey({
+              originalTxHash: tx.originalTxHash,
+              txid: tx.txid,
+              originalInputIndex: tx.originalInputIndex,
+              originalOutputIndex: tx.originalOutputIndex,
+              inputs: tx.inputs,
+              outputs: tx.outputs,
+              sourceAddress: counterparty,
+              destinationAddress: address,
+              amount: tx.amount
+            });
+          } else if (tx.direction === 'out') {
+            // Outgoing: sourceAddress = address (where money came from), destinationAddress = counterparty (where money went to)
+            utxoKey = generateUTXOKey({
+              originalTxHash: tx.originalTxHash,
+              txid: tx.txid,
+              originalInputIndex: tx.originalInputIndex,
+              originalOutputIndex: tx.originalOutputIndex,
+              inputs: tx.inputs,
+              outputs: tx.outputs,
+              sourceAddress: address,
+              destinationAddress: counterparty,
+              amount: tx.amount
+            });
+          }
+        }
+      } catch (error) {
+        utxoKey = null;
       }
 
-      if ((counterparty && expandedAddresses.has(counterparty)) || (utxoKey && expandedUtxoKeys.has(utxoKey))) {
+      // Check for exact UTXO key match first
+      if (utxoKey && expandedUtxoKeys.has(utxoKey)) {
+        pre.add(tx.txid);
+      }
+      // Fallback: Check for counterparty address match (more flexible)
+      else if (counterparty && expandedAddresses.has(counterparty)) {
         pre.add(tx.txid);
       }
     });
-    if (pre.size > 0) {
-      setSelected(pre);
-    }
+      if (pre.size > 0) {
+        setSelected(pre);
+      }
+    }, 100); // Small delay to prevent race conditions
+
+    return () => clearTimeout(timeoutId);
   }, [txs, expandedAddresses, expandedUtxoKeys, open, selected.size]);
 
   useEffect(() => {
     const run = async () => {
       if (!open || !address) return;
+      
+      console.log('NodeTxPicker: Dialog opened for address:', address);
+      
+      // Reset all state when dialog opens to ensure fresh start
+      setSelected(new Set());
+      setTxs([]);
+      setTotal(0);
       setLoading(true);
+      
+      // Add a small delay to ensure state is properly reset
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // Fetch attributions for this address to ensure we have entity data
       try {
-        // Debug: Check if SOT data is available
-        console.log('🔍 SOT Data Check:');
-        console.log('Redux itemsMap:', itemsMap);
-        console.log('Redux itemsMap keys:', Object.keys(itemsMap || {}));
-        console.log('Local SOT data:', localSotData);
-
-        // Show sample SOT data for debugging
-        if (localSotData.length > 0) {
-          console.log('📋 Sample SOT data entries:');
-          localSotData.slice(0, 3).forEach((item, index) => {
-            console.log(`  ${index + 1}. Entity ID: ${item.entity_id}, Name: ${item.proper_name}, Type: ${item.entity_type}`);
-          });
-
-          // Search for wrapped bitcoin entries
-          const exactMatch = localSotData.find(e => e.entity_id === 'wrapped_bitcoin');
-          const wbtcEntries = localSotData.filter(e =>
-            e.entity_id?.toLowerCase().includes('wbtc') ||
-            e.proper_name?.toLowerCase().includes('wbtc')
-          );
-          const wrappedEntries = localSotData.filter(e =>
-            e.entity_id?.toLowerCase().startsWith('wrapped') ||
-            e.proper_name?.toLowerCase().startsWith('wrapped')
-          );
-          const bitcoinEntries = localSotData.filter(e =>
-            e.entity_id?.toLowerCase().includes('bitcoin') ||
-            e.proper_name?.toLowerCase().includes('bitcoin')
-          );
-
-          console.warn('🔍 COMPREHENSIVE WRAPPED BITCOIN SEARCH:', {
-            totalSOTEntries: localSotData.length,
-            exactMatch: exactMatch ? {
-              entity_id: exactMatch.entity_id,
-              proper_name: exactMatch.proper_name,
-              entity_type: exactMatch.entity_type
-            } : 'NOT FOUND',
-            wbtcEntries: wbtcEntries.slice(0, 5).map(e => ({
-              entity_id: e.entity_id,
-              proper_name: e.proper_name,
-              entity_type: e.entity_type
-            })),
-            wrappedEntries: wrappedEntries.slice(0, 5).map(e => ({
-              entity_id: e.entity_id,
-              proper_name: e.proper_name,
-              entity_type: e.entity_type
-            })),
-            bitcoinEntries: bitcoinEntries.slice(0, 5).map(e => ({
-              entity_id: e.entity_id,
-              proper_name: e.proper_name,
-              entity_type: e.entity_type
-            }))
-          });
-        }
+        await fetchAttributions([address]);
+      } catch (error) {
+        // Attribution fetch failed, continue without it
+      }
+      
+      try {
 
         // Use optimized endpoint to get transactions for the address
         const optimizedResponse = await flowtraceService.expandNodeOptimized(address, {
@@ -356,9 +493,7 @@ const NodeTxPicker: React.FC<Props> = ({ open, address, onOpenChange, onAdd, nod
               return acc;
             }, {} as Record<string, any>);
             sotDataToUse = sotMap;
-            console.log('✅ Using local SOT data:', localSotData.length, 'entities');
           } else {
-            console.log('⚠️ No local SOT data available, skipping to avoid memory issues');
             // Skip SOT data fetching to avoid memory issues and timeouts
             sotDataToUse = {};
           }
@@ -367,24 +502,32 @@ const NodeTxPicker: React.FC<Props> = ({ open, address, onOpenChange, onAdd, nod
         // Extract data from optimized response (no need for separate API calls!)
         const { enhancedData, riskScores } = optimizedResponse.data;
         
-        // Build address entities and logos from enhanced data
+        // Build address entities from enhanced data
         const addressEntities: Record<string, any> = {};
-        const addressLogos: Record<string, string> = {};
         const addressRiskScores: Record<string, number> = {};
 
         enhancedData.forEach((item: any) => {
           const address = item.address;
-          if (address && item.attribution) {
-            addressEntities[address] = {
-              name: item.attribution.entity_proper_name || item.attribution.entity,
-              entity: item.attribution.entity,
-              bo: item.attribution.bo,
-              cospend_id: item.attribution.cospend_id || address
-            };
-          }
-          
-          if (address && item.entityProfile?.logo) {
-            addressLogos[address] = item.entityProfile.logo;
+          if (address && (item.attribution || item.entityProfile)) {
+            // Get entity ID from attribution data
+            const entityId = item.entityProfile?.entityId || item.attribution?.entity;
+            
+            if (entityId) {
+              // Resolve entity name using SOT data
+              const resolvedEntity = resolveEntityName(entityId);
+              
+              addressEntities[address] = {
+                entityName: resolvedEntity.name,
+                entityId: entityId,
+                entityType: resolvedEntity.type,
+                entity: entityId,
+                bo: item.attribution?.bo,
+                cospend_id: item.attribution?.cospend_id || address
+              };
+              
+              
+              // Logo will be handled by EntityLogo component using useLogo hook
+            }
           }
         });
 
@@ -420,10 +563,8 @@ const NodeTxPicker: React.FC<Props> = ({ open, address, onOpenChange, onAdd, nod
             // If more money flowed OUT than IN, treat as outgoing
             if (inputAmount > outputAmount) {
               transactionDirection = 'out';
-              console.log(`Transaction ${tx.txid}: Node in both inputs/outputs, treating as OUT (input: ${inputAmount}, output: ${outputAmount})`);
             } else {
               transactionDirection = 'in';
-              console.log(`Transaction ${tx.txid}: Node in both inputs/outputs, treating as IN (input: ${inputAmount}, output: ${outputAmount})`);
             }
           } else if (nodeInInputs) {
             transactionDirection = 'out';
@@ -433,14 +574,15 @@ const NodeTxPicker: React.FC<Props> = ({ open, address, onOpenChange, onAdd, nod
 
           // Skip if we couldn't determine direction
           if (!transactionDirection) {
-            console.log(`Transaction ${tx.txid}: Could not determine direction for node ${address}`);
             return;
           }
 
           // Handle incoming transactions (money flowing TO the current node)
           if (transactionDirection === 'in') {
             const inputs = Array.isArray(tx.inputs) ? tx.inputs : [];
-            const externalInputs = inputs.filter((i: any) => i?.addr && i.addr !== address);
+            let externalInputs = inputs.filter((i: any) => i?.addr && i.addr !== address);
+            
+            // Process all external inputs
 
             externalInputs.forEach((i: any, inIndex: number) => {
               const inputAddress = i.addr || 'Unknown';
@@ -453,11 +595,11 @@ const NodeTxPicker: React.FC<Props> = ({ open, address, onOpenChange, onAdd, nod
               let entityName = rawEntityName ? rawEntityName.charAt(0).toUpperCase() + rawEntityName.slice(1) : 'Unknown Entity';
               let entityType = 'wallet' as const;
               let entityTags: string[] = [];
-              let logo = addressLogos[inputAddress];
+              // Logo will be handled by EntityLogo component using useLogo hook
 
               if (sotDataToUse && Object.keys(sotDataToUse).length > 0) {
-                const entitySOT = Object.values(sotDataToUse).find((s: any) => s.entity_id?.toLowerCase() === (entityData?.entity || '').toLowerCase());
-                const boSOT = entityData?.bo ? Object.values(sotDataToUse).find((s: any) => s.entity_id?.toLowerCase() === (entityData.bo || '').toLowerCase()) : undefined;
+                const entitySOT = sotDataToUse[entityData?.entity || ''];
+                const boSOT = entityData?.bo ? sotDataToUse[entityData.bo] : undefined;
 
                 if (entitySOT || boSOT) {
                   const override = applyBeneficialOwnerOverride(
@@ -473,7 +615,7 @@ const NodeTxPicker: React.FC<Props> = ({ open, address, onOpenChange, onAdd, nod
                   entityName = override.displayTitle || override.entityName;
                   entityType = (override.entityType as any) || entityType;
                   entityTags = override.entityTags || [];
-                  logo = override.logo || logo;
+                  // Logo will be handled by EntityLogo component using useLogo hook
                 }
               }
 
@@ -489,7 +631,7 @@ const NodeTxPicker: React.FC<Props> = ({ open, address, onOpenChange, onAdd, nod
                 entityName,
                 entityId,
                 entityType,
-                logo,
+                // logo will be handled by EntityLogo component
                 riskScore: risk,
                 amount: inputAmountBtc.toFixed(8),
                 currency: 'BTC',
@@ -502,8 +644,57 @@ const NodeTxPicker: React.FC<Props> = ({ open, address, onOpenChange, onAdd, nod
                 displayTitle: entityName,
                 cospendId,
                 transactionCount: (tx.inputs?.length || 0) + (tx.outputs?.length || 0), // Total UTXOs in the original transaction
-                originalTxHash: tx.txid // Store the original transaction hash
+                originalTxHash: tx.txid, // Store the original transaction hash
+                counterpartyAddress: inputAddress, // Store the specific counterparty address for this UTXO
+                originalInputIndex: inIndex, // Store the original input index for UTXO key generation
               };
+
+              // Check if this UTXO is already connected in the graph
+              const utxoKey = generateUTXOKey({
+                originalTxHash: transaction.originalTxHash,
+                txid: transaction.txid,
+                originalInputIndex: transaction.originalInputIndex,
+                originalOutputIndex: transaction.originalOutputIndex,
+                inputs: transaction.inputs,
+                outputs: transaction.outputs,
+                sourceAddress: inputAddress,
+                destinationAddress: address,
+                amount: transaction.amount
+              });
+              
+
+              // Check if UTXO is connected to another node (has from/to relationship)
+              let isConnectedToNode = false;
+              let connectedNodeId = '';
+              
+              const connectionInfo = existingConnections.find(conn => {
+                if (conn.utxoKey === utxoKey) return true;
+                
+                // If this is an aggregated connection, check if any of the original connections match
+                if (conn.isAggregated && conn.originalConnections) {
+                  return conn.originalConnections.some(origConn => {
+                    if (origConn.utxoKey === utxoKey) return true;
+                    return false;
+                  });
+                }
+                
+                return false;
+              });
+
+              if (connectionInfo) {
+                // Determine if this UTXO is connected to another node (not just in graph)
+                if (connectionInfo.from && connectionInfo.to) {
+                  // This UTXO is part of a connection between two nodes
+                  isConnectedToNode = true;
+                  // Find which node this UTXO connects to (the other node in the connection)
+                  connectedNodeId = connectionInfo.from === address ? connectionInfo.to : connectionInfo.from;
+                }
+              }
+
+
+              transaction.isAlreadyConnected = !!connectionInfo; // In graph (any connection)
+              transaction.isConnectedToNode = isConnectedToNode; // Connected to another node
+              transaction.connectedNodeId = connectedNodeId;
 
               enhancedTxs.push(transaction);
             });
@@ -512,8 +703,15 @@ const NodeTxPicker: React.FC<Props> = ({ open, address, onOpenChange, onAdd, nod
           // Handle outgoing transactions (money flowing FROM the current node)
           if (transactionDirection === 'out') {
             const outputs = Array.isArray(tx.outputs) ? tx.outputs : [];
-            const externalOutputs = outputs.filter((o: any) => o?.addr && o.addr !== address);
-
+            let externalOutputs = outputs.filter((o: any) => o?.addr && o.addr !== address);
+            
+            // Get the inputs from this specific address - this is the amount this address sent
+            const addressInputs = tx.inputs?.filter((inp: any) => inp.addr === address) || [];
+            const addressInputAmount = addressInputs.reduce((sum: number, inp: any) => 
+              sum + (inp.amt || 0), 0);
+            const addressInputAmountBtc = addressInputAmount / 100000000;
+            
+            // Process all external outputs - each gets the same amount (what this address sent)
             externalOutputs.forEach((o: any, outIndex: number) => {
               const outputAddress = o.addr || 'Unknown';
               const entityData = addressEntities[outputAddress];
@@ -525,11 +723,11 @@ const NodeTxPicker: React.FC<Props> = ({ open, address, onOpenChange, onAdd, nod
               let entityName = rawEntityName ? rawEntityName.charAt(0).toUpperCase() + rawEntityName.slice(1) : 'Unknown Entity';
               let entityType = 'wallet' as const;
               let entityTags: string[] = [];
-              let logo = addressLogos[outputAddress];
+              // Logo will be handled by EntityLogo component using useLogo hook
 
               if (sotDataToUse && Object.keys(sotDataToUse).length > 0) {
-                const entitySOT = Object.values(sotDataToUse).find((s: any) => s.entity_id?.toLowerCase() === (entityData?.entity || '').toLowerCase());
-                const boSOT = entityData?.bo ? Object.values(sotDataToUse).find((s: any) => s.entity_id?.toLowerCase() === (entityData.bo || '').toLowerCase()) : undefined;
+                const entitySOT = sotDataToUse[entityData?.entity || ''];
+                const boSOT = entityData?.bo ? sotDataToUse[entityData.bo] : undefined;
 
                 if (entitySOT || boSOT) {
                   const override = applyBeneficialOwnerOverride(
@@ -545,14 +743,13 @@ const NodeTxPicker: React.FC<Props> = ({ open, address, onOpenChange, onAdd, nod
                   entityName = override.displayTitle || override.entityName;
                   entityType = (override.entityType as any) || entityType;
                   entityTags = override.entityTags || [];
-                  logo = override.logo || logo;
+                  // Logo will be handled by EntityLogo component using useLogo hook
                 }
               }
 
               const risk = addressRiskScores[outputAddress] || 0;
-              const outputAmountBtc = (o.amt || 0) / 100000000;
 
-              // Create one row per output (UTXO)
+              // Create one row per output (UTXO) with the actual amount this address sent
               const transaction: EnhancedTransaction = {
                 txid: `tx_out_${index}_${outIndex}`,
                 time: tx.timestamp || tx.time || 0,
@@ -561,12 +758,12 @@ const NodeTxPicker: React.FC<Props> = ({ open, address, onOpenChange, onAdd, nod
                 entityName,
                 entityId,
                 entityType,
-            logo,
+                // logo will be handled by EntityLogo component
                 riskScore: risk,
-                amount: outputAmountBtc.toFixed(8),
-            currency: 'BTC',
+                amount: addressInputAmountBtc.toFixed(8), // Actual amount this address sent (e.g., 0.32516944 BTC)
+                currency: 'BTC',
                 direction: 'out',
-                            usdValue: calculateUsdValue(outputAmountBtc, 'BTC'),
+                usdValue: calculateUsdValue(addressInputAmountBtc, 'BTC'),
                 date: tx.timestamp ? new Date(tx.timestamp * 1000).toISOString().split('T')[0] : 'Unknown',
                 entityTags,
                 ofac: false, // Placeholder
@@ -574,38 +771,92 @@ const NodeTxPicker: React.FC<Props> = ({ open, address, onOpenChange, onAdd, nod
                 displayTitle: entityName,
                 cospendId,
                 transactionCount: (tx.inputs?.length || 0) + (tx.outputs?.length || 0), // Total UTXOs in the original transaction
-                originalTxHash: tx.txid // Store the original transaction hash
+                originalTxHash: tx.txid, // Store the original transaction hash
+                counterpartyAddress: outputAddress, // Store the specific counterparty address for this UTXO
+                originalOutputIndex: outIndex, // Store the original output index for UTXO key generation
               };
+
+              // Check if this UTXO is already connected in the graph
+              const utxoKey = generateUTXOKey({
+                originalTxHash: transaction.originalTxHash,
+                txid: transaction.txid,
+                originalInputIndex: transaction.originalInputIndex,
+                originalOutputIndex: transaction.originalOutputIndex,
+                inputs: transaction.inputs,
+                outputs: transaction.outputs,
+                sourceAddress: address,
+                destinationAddress: outputAddress,
+                amount: transaction.amount
+              });
+              
+
+              // Check if UTXO is connected to another node (has from/to relationship)
+              let isConnectedToNode = false;
+              let connectedNodeId = '';
+              
+              const connectionInfo = existingConnections.find(conn => {
+                if (conn.utxoKey === utxoKey) return true;
+                
+                // If this is an aggregated connection, check if any of the original connections match
+                if (conn.isAggregated && conn.originalConnections) {
+                  return conn.originalConnections.some(origConn => {
+                    if (origConn.utxoKey === utxoKey) return true;
+                    return false;
+                  });
+                }
+                
+                return false;
+              });
+
+              if (connectionInfo) {
+                // Determine if this UTXO is connected to another node (not just in graph)
+                if (connectionInfo.from && connectionInfo.to) {
+                  // This UTXO is part of a connection between two nodes
+                  isConnectedToNode = true;
+                  // Find which node this UTXO connects to (the other node in the connection)
+                  connectedNodeId = connectionInfo.from === address ? connectionInfo.to : connectionInfo.from;
+                }
+              }
+
+
+              transaction.isAlreadyConnected = !!connectionInfo; // In graph (any connection)
+              transaction.isConnectedToNode = isConnectedToNode; // Connected to another node
+              transaction.connectedNodeId = connectedNodeId;
 
               enhancedTxs.push(transaction);
             });
           }
 
-          console.log(`📝 Enhanced transaction ${tx.txid}: created ${(tx.inputs?.length || 0) + (tx.outputs?.length || 0)} rows`);
         });
 
         setTxs(enhancedTxs);
         setTotal(enhancedTxs.length);
+        
+        console.log('NodeTxPicker: Loaded', enhancedTxs.length, 'UTXOs for address', address);
 
-        console.log(`NodeTxPicker: Found ${enhancedTxs.length} UTXOs for address ${address}`);
-        console.log('Enhanced UTXOs:', enhancedTxs.slice(0, 3)); // Log first 3 for debugging
+        // Fetch attributions for all counterparty addresses to get proper names
+        const counterpartyAddresses = new Set<string>();
+        enhancedTxs.forEach(tx => {
+          const counterparty = tx.counterpartyAddress || (tx.direction === 'in' ? tx.inputs?.[0]?.addr : tx.outputs?.[0]?.addr);
+          if (counterparty && counterparty !== address) {
+            counterpartyAddresses.add(counterparty);
+          }
+        });
 
-        // Log data availability summary
-        const dataSummary = {
-          totalUTXOs: enhancedTxs.length,
-          withEntityName: enhancedTxs.filter((tx: EnhancedTransaction) => tx.entityName && tx.entityName !== 'Unknown Entity').length,
-          withEntityId: enhancedTxs.filter((tx: EnhancedTransaction) => tx.entityId && tx.entityId !== 'Unknown').length,
-          withEntityType: enhancedTxs.filter((tx: EnhancedTransaction) => tx.entityType && tx.entityType !== 'unknown').length,
-          withRiskScore: enhancedTxs.filter((tx: EnhancedTransaction) => tx.riskScore !== undefined).length,
-          withLogo: enhancedTxs.filter((tx: EnhancedTransaction) => tx.logo).length
-        };
-        console.log('Data availability summary:', dataSummary);
+        if (counterpartyAddresses.size > 0) {
+          try {
+            await fetchAttributions(Array.from(counterpartyAddresses));
+          } catch (error) {
+            // Attribution fetch failed, continue without it
+          }
+        }
+
       } finally {
         setLoading(false);
       }
     };
     run();
-  }, [open, address, itemsMap]);
+  }, [open, address]);
 
   const toggle = (txid: string) => {
     setSelected((prev) => {
@@ -632,6 +883,8 @@ const NodeTxPicker: React.FC<Props> = ({ open, address, onOpenChange, onAdd, nod
 
   const confirm = () => {
     if (!address) return;
+    // Only send newly selected transactions, not existing connections
+    // The existing connections are already in the graph and don't need to be re-added
     const rows = txs.filter((t) => selected.has(t.txid));
     onAdd({ address, selectedTxs: rows });
     onOpenChange(false);
@@ -893,7 +1146,7 @@ const NodeTxPicker: React.FC<Props> = ({ open, address, onOpenChange, onAdd, nod
                 onClick={toggleAll}
                 className="flex items-center gap-2"
               >
-                {selected.size === filteredTxs.length ? (
+                {selected.size + filteredTxs.filter(tx => tx.isConnectedToNode).length === filteredTxs.length ? (
                   <>
                     <Square className="h-4 w-4" />
                     Deselect All
@@ -906,7 +1159,9 @@ const NodeTxPicker: React.FC<Props> = ({ open, address, onOpenChange, onAdd, nod
                 )}
               </Button>
               <span className="text-sm text-gray-600 dark:text-gray-400">
-                <span className="font-medium text-orange-600">{selected.size}</span> of{' '}
+                <span className="font-medium text-orange-600">
+                  {selected.size + filteredTxs.filter(tx => tx.isConnectedToNode).length}
+                </span> of{' '}
                 <span className="font-medium">{filteredTxs.length}</span> selected
               </span>
             </div>
@@ -943,19 +1198,12 @@ const NodeTxPicker: React.FC<Props> = ({ open, address, onOpenChange, onAdd, nod
                       }}
                     >
                       <div className="flex items-center gap-3">
-                        {txs[0]?.logo ? (
-                          <img
-                            src={txs[0].logo}
-                            alt={txs[0].entityName}
-                            className="w-8 h-8 rounded-full border border-gray-200 dark:border-gray-700"
-                          />
-                        ) : (
-                          <div className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-600 border border-gray-200 dark:border-gray-500 flex items-center justify-center">
-                            <span className="text-sm font-medium text-gray-600 dark:text-gray-200">
-                              {txs[0]?.entityName?.charAt(0)?.toUpperCase() || '?'}
-                            </span>
-                          </div>
-                        )}
+                        <EntityLogo 
+                          entityId={txs[0]?.entityId}
+                          entityType={txs[0]?.entityType}
+                          entityName={txs[0]?.entityName}
+                          className="w-8 h-8 rounded-full border border-gray-200 dark:border-gray-700"
+                        />
                         <div>
                           <div className="font-medium text-gray-900 dark:text-gray-100 text-lg">
                             {txs[0]?.entityName || 'Unknown Entity'}
@@ -1060,37 +1308,42 @@ const NodeTxPicker: React.FC<Props> = ({ open, address, onOpenChange, onAdd, nod
                               className={`border-b border-gray-100 dark:border-gray-700 hover:opacity-80 transition-colors ${getTxidColor(tx.originalTxHash || tx.txid)}`}
                             >
                               <td className="p-3">
-                                <Checkbox
-                                  checked={selected.has(tx.txid)}
-                                  onCheckedChange={() => toggle(tx.txid)}
-                                  className="h-4 w-4"
-                                />
-                              </td>
-                              <td className="p-3">
-                                <div className="flex items-center gap-3">
-                                  {tx.logo ? (
-                                    <img
-                                      src={tx.logo}
-                                      alt={tx.entityName || 'Entity'}
-                                      className="w-6 h-6 rounded-full border border-gray-200 dark:border-gray-600"
-                                      onError={(e) => {
-                                        e.currentTarget.style.display = 'none';
-                                      }}
-                                    />
-                                  ) : (
-                                    <div className="w-6 h-6 rounded-full border border-gray-200 dark:border-gray-500 bg-gray-100 dark:bg-gray-600 flex items-center justify-center">
-                                      <span className="text-xs font-medium text-gray-600 dark:text-gray-200">
-                                        {tx.entityName?.charAt(0).toUpperCase() || '?'}
+                                <div className="flex items-center gap-2">
+                                  <Checkbox
+                                    checked={tx.isConnectedToNode || selected.has(tx.txid)}
+                                    onCheckedChange={() => toggle(tx.txid)}
+                                    disabled={tx.isConnectedToNode}
+                                    className={`h-4 w-4 ${tx.isConnectedToNode ? 'opacity-50' : ''}`}
+                                  />
+                                  {(tx.isConnectedToNode || selected.has(tx.txid)) && (
+                                    <div className="flex items-center gap-1">
+                                      <span className="text-xs text-green-600 dark:text-green-400 font-medium bg-green-50 dark:bg-green-900/20 px-2 py-1 rounded">
+                                        🔗 Connected Node
                                       </span>
                                     </div>
                                   )}
+                                  {tx.isAlreadyConnected && !tx.isConnectedToNode && (
+                                    <span className="text-xs text-gray-500 dark:text-gray-400 italic bg-gray-50 dark:bg-gray-800 px-2 py-1 rounded">
+                                      In graph
+                                    </span>
+                                  )}
+                                </div>
+                              </td>
+                              <td className="p-3">
+                                <div className="flex items-center gap-3">
+                                  <EntityLogo 
+                                    entityId={tx.entityId}
+                                    entityType={tx.entityType}
+                                    entityName={tx.entityName}
+                                    className="w-6 h-6 rounded-full border border-gray-200 dark:border-gray-600"
+                                  />
                                   <div>
                                     <div className="font-medium text-gray-900 dark:text-gray-100 text-sm">
                                       {tx.entityName || 'Unknown Entity'}
                                     </div>
                                     <div className="text-gray-600 dark:text-gray-300 font-mono text-xs truncate">
                                       {(() => {
-                                        const address = tx.direction === 'in' ? tx.inputs?.[0]?.addr : tx.outputs?.[0]?.addr || 'Unknown Address';
+                                        const address = tx.counterpartyAddress || (tx.direction === 'in' ? tx.inputs?.[0]?.addr : tx.outputs?.[0]?.addr) || 'Unknown Address';
                                         return address.length > 12 ? `${address.slice(0, 6)}...${address.slice(-6)}` : address;
                                       })()}
                                     </div>
@@ -1192,7 +1445,7 @@ const NodeTxPicker: React.FC<Props> = ({ open, address, onOpenChange, onAdd, nod
                         onClick={toggleAll}
                         className="h-8 px-3 text-sm"
                       >
-                        {selected.size === filteredTxs.length && filteredTxs.length > 0 ? 'Deselect All' : 'Select All'}
+                        {selected.size + filteredTxs.filter(tx => tx.isConnectedToNode).length === filteredTxs.length && filteredTxs.length > 0 ? 'Deselect All' : 'Select All'}
                       </Button>
                       <Badge variant="outline" className="text-sm text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-500">
                         {countUniqueTransactions(filteredTxs)} TX · {filteredTxs.length} UTXOs
@@ -1217,7 +1470,7 @@ const NodeTxPicker: React.FC<Props> = ({ open, address, onOpenChange, onAdd, nod
                       className="text-left p-3 w-12 text-gray-700 dark:text-gray-200 font-medium"
                     >
                       <Checkbox
-                        checked={selected.size === filteredTxs.length && filteredTxs.length > 0}
+                        checked={selected.size + filteredTxs.filter(tx => tx.isConnectedToNode).length === filteredTxs.length && filteredTxs.length > 0}
                         onCheckedChange={toggleAll}
                         className="h-4 w-4"
                       />
@@ -1255,30 +1508,33 @@ const NodeTxPicker: React.FC<Props> = ({ open, address, onOpenChange, onAdd, nod
                       className={`border-b border-gray-100 dark:border-gray-700 hover:opacity-80 transition-colors ${getTxidColor(tx.originalTxHash || tx.txid)}`}
                     >
                       <td className="p-3">
-                        <Checkbox
-                          checked={selected.has(tx.txid)}
-                          onCheckedChange={() => toggle(tx.txid)}
-                          className="h-4 w-4"
-                        />
+                        <div className="flex items-center gap-2">
+                          <Checkbox
+                            checked={tx.isConnectedToNode || selected.has(tx.txid)}
+                            onCheckedChange={() => toggle(tx.txid)}
+                            disabled={tx.isConnectedToNode}
+                            className="h-4 w-4"
+                          />
+                          {(tx.isConnectedToNode || selected.has(tx.txid)) && (
+                            <span className="text-xs text-green-600 dark:text-green-400 font-medium bg-green-50 dark:bg-green-900/20 px-2 py-1 rounded">
+                              🔗 Connected Node
+                            </span>
+                          )}
+                          {tx.isAlreadyConnected && !tx.isConnectedToNode && (
+                            <span className="text-xs text-gray-500 dark:text-gray-400 italic">
+                              In graph
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td className="p-3">
                         <div className="flex items-center gap-3">
-                          {tx.logo ? (
-                            <img
-                              src={tx.logo}
-                              alt={tx.entityName || 'Entity'}
-                              className="w-8 h-8 rounded-full border border-gray-200 dark:border-gray-600"
-                              onError={(e) => {
-                                e.currentTarget.style.display = 'none';
-                              }}
-                            />
-                          ) : (
-                            <div className="w-8 h-8 rounded-full border border-gray-200 dark:border-gray-500 bg-gray-100 dark:bg-gray-600 flex items-center justify-center">
-                              <span className="text-sm font-medium text-gray-600 dark:text-gray-200">
-                                {tx.entityName?.charAt(0).toUpperCase() || '?'}
-                              </span>
-                            </div>
-                          )}
+                          <EntityLogo 
+                            entityId={tx.entityId}
+                            entityType={tx.entityType}
+                            entityName={tx.entityName}
+                            className="w-8 h-8 rounded-full border border-gray-200 dark:border-gray-600"
+                          />
                           <div className="min-w-0 flex-1">
                             <div className="font-medium text-gray-900 dark:text-gray-100 truncate">
                               {tx.entityName || 'Unknown Entity'}
@@ -1369,11 +1625,11 @@ const NodeTxPicker: React.FC<Props> = ({ open, address, onOpenChange, onAdd, nod
             </span>
             <Button
               onClick={confirm}
-              disabled={selected.size === 0}
+              disabled={selected.size + filteredTxs.filter(tx => tx.isConnectedToNode).length === 0}
               className="px-6 py-2 bg-orange-600 hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium"
             >
               <TrendingUp className="h-4 w-4 mr-2" />
-              Confirm Expansion ({selected.size})
+                Confirm Expansion ({selected.size + filteredTxs.filter(tx => tx.isConnectedToNode).length})
             </Button>
           </div>
         </div>

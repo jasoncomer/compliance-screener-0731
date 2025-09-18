@@ -12,6 +12,7 @@ type Props = {
     amount?: number | string;
     currency?: string;
     txHash?: string;
+    txid?: string;
     date?: string;
     usdValue?: string;
     note?: string;
@@ -90,6 +91,22 @@ const EdgeDialog: React.FC<Props> = ({ open, onOpenChange, data, onSetColor }) =
                 {dateDisplay}
               </span>
             </div>
+            {data?.txid && (
+              <div className="flex justify-between items-center">
+                <span className="font-medium text-gray-700 dark:text-gray-300">Transaction ID:</span>
+                <span className="text-gray-900 dark:text-gray-100 font-mono text-sm">
+                  {data.txid}
+                </span>
+              </div>
+            )}
+            {data?.txHash && (
+              <div className="flex justify-between items-center">
+                <span className="font-medium text-gray-700 dark:text-gray-300">Tx Hash:</span>
+                <span className="text-gray-900 dark:text-gray-100 font-mono text-sm truncate max-w-[240px]">
+                  {data.txHash}
+                </span>
+              </div>
+            )}
             <div className="space-y-2">
               <div className="flex justify-between items-center">
                 <span className="font-medium text-gray-700 dark:text-gray-300">Note:</span>

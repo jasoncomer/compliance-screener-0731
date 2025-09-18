@@ -7,16 +7,22 @@ import { Button } from '@/components/ui/button';
 interface SaveWorkspaceButtonProps {
   workspaceId: string | null;
   graphState: any; // the latest graph state from NetworkGraph
+  onSaveSuccess?: () => void; // Callback when save is successful
 }
 
-export default function SaveWorkspaceButton({ workspaceId, graphState }: SaveWorkspaceButtonProps) {
+export default function SaveWorkspaceButton({ workspaceId, graphState, onSaveSuccess }: SaveWorkspaceButtonProps) {
   const [saved, setSaved] = useState(false);
 
   async function handleSave() {
     if (!workspaceId) return;
-    await updateMasterVersion(workspaceId, graphState, 'manual');
-    setSaved(true);
-    setTimeout(() => setSaved(false), 1500);
+    try {
+      await updateMasterVersion(workspaceId, graphState, 'manual');
+      setSaved(true);
+      onSaveSuccess?.(); // Notify parent that save was successful
+      setTimeout(() => setSaved(false), 1500);
+    } catch (error) {
+      console.error('Failed to save workspace:', error);
+    }
   }
 
   return (

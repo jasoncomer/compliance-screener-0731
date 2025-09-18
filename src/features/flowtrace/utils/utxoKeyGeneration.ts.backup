@@ -1,0 +1,450 @@
+/**
+ * Centralized UTXO key generation utilities
+ * Ensures consistent UTXO key generation across all components
+ * 
+ * New Format: {txHash}::{index}::{address}::{amount}
+ * - txHash: Transaction hash
+ * - index: Input/output index
+ * - address: Normalized address (lowercase, or 'coinbase' for mining rewards)
+ * - amount: Normalized to 8 decimal places
+ */
+
+export interface UTXOKeyGenerationInput {
+  originalTxHash?: string;
+  txid: string;
+  direction?: 'in' | 'out'; // Optional for backward compatibility
+  originalInputIndex?: number;
+  originalOutputIndex?: number;
+  inputs?: Array<{ intxid_n?: number; addr?: string; amt?: number }>;
+  outputs?: Array<{ n?: number; addr?: string; amt?: number }>;
+  address?: string; // Legacy: single address
+  sourceAddress?: string; // New: source address
+  destinationAddress?: string; // New: destination address
+  amount?: string | number;
+}
+
+/**
+ * Generates a consistent UTXO key for a transaction
+ * This function ensures the same UTXO key is generated regardless of where it's called from
+ * 
+ * @param input - UTXO key generation parameters
+ * @returns Normalized UTXO key in format: {txHash}::{index}::{sourceAddress}::{destAddress}::{amount}
+ */
+export function generateUTXOKey(input: UTXOKeyGenerationInput): string {
+  const { 
+    originalTxHash, 
+    txid, 
+    direction, 
+    originalInputIndex, 
+    originalOutputIndex, 
+    inputs, 
+    outputs, 
+    address,
+    sourceAddress,
+    destinationAddress,
+    amount 
+  } = input;
+  
+  const txHash = originalTxHash || txid;
+  if (!txHash) {
+    throw new Error('Transaction hash is required for UTXO key generation');
+  }
+  
+  // Determine index (input or output)
+  const index = originalInputIndex ?? originalOutputIndex ?? 0;
+  
+  // Determine source and destination addresses
+  let normalizedSourceAddress: string;
+  let normalizedDestinationAddress: string;
+  
+  if (sourceAddress && destinationAddress) {
+    // New format: explicit source and destination
+    normalizedSourceAddress = normalizeAddress(sourceAddress, inputs, outputs, txHash);
+    normalizedDestinationAddress = normalizeAddress(destinationAddress, inputs, outputs, txHash);
+  } else if (address) {
+    // Legacy format: single address (use as both source and destination)
+    const normalizedAddress = normalizeAddress(address, inputs, outputs, txHash);
+    normalizedSourceAddress = normalizedAddress;
+    normalizedDestinationAddress = normalizedAddress;
+  } else {
+    throw new Error('Either address (legacy) or both sourceAddress and destinationAddress are required');
+  }
+  
+  // Normalize amount
+  const normalizedAmount = normalizeAmount(amount, inputs, outputs);
+  
+  return `${txHash}::${index}::${normalizedSourceAddress}::${normalizedDestinationAddress}::${normalizedAmount}`;
+}
+
+/**
+ * Normalizes Bitcoin address for UTXO key generation
+ * Handles mining rewards (coinbase transactions) and address formatting
+ */
+function normalizeAddress(
+  address?: string, 
+  inputs?: Array<{ addr?: string }>, 
+  outputs?: Array<{ addr?: string }>,
+  txHash?: string
+): string {
+  // If address is provided, normalize it
+  if (address) {
+    return address.toLowerCase();
+  }
+  
+  // Try to get address from inputs/outputs
+  const inputAddress = inputs?.[0]?.addr;
+  const outputAddress = outputs?.[0]?.addr;
+  const utxoAddress = inputAddress || outputAddress;
+  
+  if (utxoAddress) {
+    return utxoAddress.toLowerCase();
+  }
+  
+  // Check if this is a mining reward (coinbase transaction)
+  if (isCoinbaseTransaction(inputs, txHash)) {
+    return 'coinbase';
+  }
+  
+  throw new Error('Address is required for UTXO key generation');
+}
+
+/**
+ * Checks if this is a coinbase transaction (mining reward)
+ */
+function isCoinbaseTransaction(inputs?: Array<{ intxid_n?: number }>, txHash?: string): boolean {
+  // Coinbase transactions have no inputs or a special input
+  if (!inputs || inputs.length === 0) {
+    return true;
+  }
+  
+  // Check for the special coinbase input pattern
+  if (inputs.length === 1 && inputs[0].intxid_n === 0xffffffff) {
+    return true;
+  }
+  
+  return false;
+}
+
+/**
+ * Normalizes amount to 8 decimal places (Bitcoin standard)
+ * Handles both BTC and satoshi amounts
+ */
+function normalizeAmount(
+  amount?: string | number, 
+  inputs?: Array<{ amt?: number }>, 
+  outputs?: Array<{ amt?: number }>
+): string {
+  let btcAmount: number;
+  
+  if (amount !== undefined) {
+    btcAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
+  } else {
+    // Try to get amount from inputs/outputs (in satoshis)
+    const inputAmount = inputs?.[0]?.amt;
+    const outputAmount = outputs?.[0]?.amt;
+    const satoshiAmount = inputAmount || outputAmount;
+    
+    if (satoshiAmount !== undefined) {
+      btcAmount = satoshiAmount / 100000000; // Convert satoshis to BTC
+    } else {
+      throw new Error('Amount is required for UTXO key generation');
+    }
+  }
+  
+  // Validate amount
+  if (isNaN(btcAmount) || btcAmount < 0) {
+    throw new Error('Invalid amount for UTXO key generation');
+  }
+  
+  // Normalize to 8 decimal places
+  return btcAmount.toFixed(8);
+}
+
+/**
+ * Robust UTXO key matching with backward compatibility
+ * Handles both new format and legacy formats
+ * 
+ * @param key1 - First UTXO key to compare
+ * @param key2 - Second UTXO key to compare
+ * @returns true if keys match, false otherwise
+ */
+export function matchUTXOKey(key1: string, key2: string): boolean {
+  // Exact match
+  if (key1 === key2) return true;
+  
+  // Handle backward compatibility
+  if (key1.includes('::') && key2.includes('::')) {
+    const parts1 = key1.split('::');
+    const parts2 = key2.split('::');
+    
+    // New format: {txHash}::{index}::{address}::{amount}
+    if (parts1.length === 4 && parts2.length === 4) {
+      return parts1[0] === parts2[0] && 
+             parts1[1] === parts2[1] && 
+             parts1[2] === parts2[2] && 
+             parts1[3] === parts2[3];
+    }
+    
+    // Old format: {txHash}::{index}::{address}
+    if (parts1.length === 3 && parts2.length === 3) {
+      return parts1[0] === parts2[0] && 
+             parts1[1] === parts2[1] && 
+             parts1[2] === parts2[2];
+    }
+    
+    // Mixed format compatibility
+    if (parts1.length === 4 && parts2.length === 3) {
+      return parts1[0] === parts2[0] && 
+             parts1[1] === parts2[1] && 
+             parts1[2] === parts2[2];
+    }
+    
+    if (parts1.length === 3 && parts2.length === 4) {
+      return parts1[0] === parts2[0] && 
+             parts1[1] === parts2[1] && 
+             parts1[2] === parts2[2];
+    }
+  }
+  
+  return false;
+}
+
+/**
+ * Extracts addresses from UTXO key
+ * The new format includes both source and destination: {txHash}::{index}::{sourceAddress}::{destAddress}::{amount}
+ * 
+ * @param utxoKey - UTXO key to extract addresses from
+ * @returns object with source and destination addresses, or null if invalid format
+ */
+export function extractAddressesFromUtxoKey(utxoKey: string): { source: string; destination: string } | null {
+  if (!utxoKey || !utxoKey.includes('::')) {
+    return null;
+  }
+  
+  const parts = utxoKey.split('::');
+  
+  // New format: {txHash}::{index}::{sourceAddress}::{destAddress}::{amount}
+  if (parts.length >= 5) {
+    return {
+      source: parts[2],
+      destination: parts[3]
+    };
+  }
+  
+  // Legacy format: {txHash}::{index}::{address}::{amount}
+  if (parts.length >= 3) {
+    const address = parts[2];
+    return {
+      source: address,
+      destination: address
+    };
+  }
+  
+  return null;
+}
+
+/**
+ * Extracts address from UTXO key (legacy function for backward compatibility)
+ * 
+ * @param utxoKey - UTXO key to extract address from
+ * @returns address string or null if invalid format
+ */
+export function extractAddressFromUtxoKey(utxoKey: string): string | null {
+  const addresses = extractAddressesFromUtxoKey(utxoKey);
+  return addresses ? addresses.destination : null;
+}
+
+/**
+ * Checks if a UTXO key involves a specific address
+ * 
+ * @param utxoKey - UTXO key to check
+ * @param address - Address to check for
+ * @returns true if UTXO involves the address, false otherwise
+ */
+export function utxoKeyInvolvesAddress(utxoKey: string, address: string): boolean {
+  const addresses = extractAddressesFromUtxoKey(utxoKey);
+  if (!addresses) return false;
+  
+  // Check both source and destination addresses
+  return addresses.source === address || addresses.destination === address;
+}
+
+/**
+ * Generates a connection key in format: source:destination:utxo:amount
+ * This is the primary key for identifying connections
+ * 
+ * @param connection - Connection object
+ * @returns connection key string
+ */
+export function generateConnectionKey(connection: { from?: string; to?: string; utxoKey?: string; amount?: string | number }): string {
+  const from = connection.from || '';
+  const to = connection.to || '';
+  const utxo = connection.utxoKey || '';
+  const amount = connection.amount || '0';
+  
+  return `${from}:${to}:${utxo}:${amount}`;
+}
+
+/**
+ * Checks if a connection involves a specific address using connection key
+ * 
+ * @param connection - Connection object
+ * @param address - Address to check for
+ * @returns true if connection involves the address, false otherwise
+ */
+export function connectionInvolvesAddress(connection: { from?: string; to?: string; utxoKey?: string }, address: string): boolean {
+  // Primary method: direct from/to matching (most reliable)
+  if (connection.from && connection.to) {
+    return connection.from === address || connection.to === address;
+  }
+  
+  // Secondary method: utxoKey-based matching only when from/to are not available
+  if (connection.utxoKey && (!connection.from || !connection.to)) {
+    const utxoMatches = utxoKeyInvolvesAddress(connection.utxoKey, address);
+    return utxoMatches;
+  }
+  
+  // Fallback: check if either from or to matches (when only one is available)
+  if (connection.from) {
+    return connection.from === address;
+  }
+  if (connection.to) {
+    return connection.to === address;
+  }
+  
+  return false;
+}
+
+/**
+ * Checks if two connections are the same using connection key
+ * 
+ * @param conn1 - First connection
+ * @param conn2 - Second connection
+ * @returns true if connections are the same, false otherwise
+ */
+export function connectionsAreSame(conn1: { from?: string; to?: string; utxoKey?: string; amount?: string | number }, conn2: { from?: string; to?: string; utxoKey?: string; amount?: string | number }): boolean {
+  const key1 = generateConnectionKey(conn1);
+  const key2 = generateConnectionKey(conn2);
+  return key1 === key2;
+}
+
+/**
+ * Ensures all connections have a connectionKey
+ * 
+ * @param connections - Array of connections
+ * @returns Array of connections with connectionKey populated
+ */
+export function ensureConnectionKeys(connections: Array<{ from?: string; to?: string; utxoKey?: string; amount?: string | number; connectionKey?: string }>): Array<{ from?: string; to?: string; utxoKey?: string; amount?: string | number; connectionKey: string }> {
+  return connections.map(conn => ({
+    ...conn,
+    connectionKey: conn.connectionKey || generateConnectionKey(conn)
+  }));
+}
+
+/**
+ * Finds connections that involve a specific address using connection key
+ * 
+ * @param connections - Array of connections to search
+ * @param address - Address to find connections for
+ * @returns Array of connections that involve the address
+ */
+export function findConnectionsForAddress(connections: Array<{ from?: string; to?: string; utxoKey?: string; connectionKey?: string }>, address: string): Array<{ from?: string; to?: string; utxoKey?: string; connectionKey?: string }> {
+  console.log('🔍 findConnectionsForAddress DEBUG:');
+  console.log('Looking for address:', address);
+  console.log('Total connections to check:', connections.length);
+  
+  const result = connections.filter(conn => {
+    const involves = connectionInvolvesAddress(conn, address);
+    console.log(`Connection ${conn.from} -> ${conn.to}: involves ${address} = ${involves}`);
+    return involves;
+  });
+  
+  console.log('Found connections:', result.length);
+  return result;
+}
+
+/**
+ * Validates UTXO key format
+ * 
+ * @param utxoKey - UTXO key to validate
+ * @returns true if valid format, false otherwise
+ */
+export function validateUTXOKey(utxoKey: string): boolean {
+  if (!utxoKey || typeof utxoKey !== 'string') {
+    return false;
+  }
+  
+  const parts = utxoKey.split('::');
+  
+  // New format: {txHash}::{index}::{address}::{amount}
+  if (parts.length === 4) {
+    const [txHash, index, address, amount] = parts;
+    
+    // Validate transaction hash (should be hex characters, typically 64 chars)
+    if (!/^[a-fA-F0-9]+$/.test(txHash)) {
+      return false;
+    }
+    
+    // Validate index (should be a number)
+    if (isNaN(parseInt(index))) {
+      return false;
+    }
+    
+    // Validate address (should not be empty)
+    if (!address || address.trim() === '') {
+      return false;
+    }
+    
+    // Validate amount (should be a valid decimal number)
+    if (!/^\d+\.\d{8}$/.test(amount)) {
+      return false;
+    }
+    
+    return true;
+  }
+  
+  // Old format: {txHash}::{index}::{address}
+  if (parts.length === 3) {
+    const [txHash, index, address] = parts;
+    
+    // Validate transaction hash (should be hex characters, typically 64 chars)
+    if (!/^[a-fA-F0-9]+$/.test(txHash)) {
+      return false;
+    }
+    
+    // Validate index
+    if (isNaN(parseInt(index))) {
+      return false;
+    }
+    
+    // Validate address
+    if (!address || address.trim() === '') {
+      return false;
+    }
+    
+    return true;
+  }
+  
+  return false;
+}
+
+/**
+ * Generates UTXO key from raw input/output objects (used in NodeTxPicker processing)
+ * @deprecated Use generateUTXOKey instead for consistency
+ */
+export function generateUTXOKeyFromRaw(
+  txHash: string,
+  direction: 'in' | 'out',
+  inputObject?: { intxid_n?: number },
+  outputObject?: { n?: number }
+): string {
+  console.warn('generateUTXOKeyFromRaw is deprecated. Use generateUTXOKey instead.');
+  
+  if (direction === 'in') {
+    const inputIndex = inputObject?.intxid_n ?? 0;
+    return `${txHash}::${inputIndex}`;
+  } else {
+    const outputIndex = outputObject?.n ?? 0;
+    return `${txHash}::${outputIndex}`;
+  }
+}

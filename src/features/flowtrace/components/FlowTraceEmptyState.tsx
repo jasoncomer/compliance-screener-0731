@@ -2,7 +2,9 @@ import React from 'react';
 import { ArrowLeftRight, Network, GitBranch, Zap, Shield, TrendingUp } from 'lucide-react';
 import EmptyState from '../../../components/common/EmptyState';
 
-const FlowTraceEmptyState: React.FC = () => (
+interface FlowTraceEmptyStateProps {}
+
+const FlowTraceEmptyState: React.FC<FlowTraceEmptyStateProps> = () => (
   <EmptyState
     variant="initial"
     icon={<Network className="w-12 h-12" />}
@@ -63,6 +65,7 @@ const FlowTraceEmptyState: React.FC = () => (
             </p>
           </div>
         </div>
+
 
         <div className="p-3 rounded-lg bg-muted/50 border border-border max-w-md">
           <p className="text-sm text-muted-foreground">
