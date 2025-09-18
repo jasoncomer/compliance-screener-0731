@@ -543,67 +543,6 @@ const FlowTracePage: React.FC = () => {
     }
   }, [workspaceId, nodes, connections]);
 
-  // Prefetch attribution profile and logos for a list of addresses (non-blocking)
-  const prefetchProfilesAndLogos = async (addresses: string[]) => {
-    console.log('prefetchProfilesAndLogos called with addresses:', addresses);
-    const unique = Array.from(new Set(addresses.filter(Boolean)));
-    if (!unique.length) return;
-    
-    // Don't await this - let it run in the background
-    Promise.allSettled(
-      unique.map(async (addr) => {
-        try {
-          // Add timeout to prevent hanging
-          const profilePromise = flowtraceService.fetchEntityProfile(addr);
-          const timeoutPromise = new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('Profile fetch timeout')), 8000)
-          );
-          
-          const profile = await Promise.race([profilePromise, timeoutPromise]).catch(() => ({} as any));
-          
-          // The logo URL should come directly from the SOT data in the profile
-          const logoUrl = (profile as any)?.logoUrl || null;
-          
-          setNodes((prev) => prev.map((n) => (n.id === addr ? {
-            ...n,
-            label: ((profile as any)?.properName || (profile as any)?.label) ?? n.label,
-            risk: (profile as any)?.riskScore ?? n.risk,
-            logoUrl: logoUrl ?? n.logoUrl,
-            entityId: (profile as any)?.entityId ?? n.entityId,
-            entityType: (profile as any)?.entityType ?? n.entityType,
-            bo: (profile as any)?.bo ?? n.bo,
-            custodian: (profile as any)?.custodian ?? n.custodian,
-          } : n)));
-          
-          // Debug logging for risk score updates
-          console.log('🔍 Risk score update:', {
-            address: addr,
-            profileRiskScore: (profile as any)?.riskScore,
-            profileType: typeof (profile as any)?.riskScore,
-            profileData: profile
-          });
-          
-          // If this is the currently selected address, also update the left panel data
-          if (addr === currentAddress || addr === centerNodeId) {
-            setLeftPanelData((prev: any) => prev ? {
-              ...prev,
-              selectedEntity: {
-                ...prev.selectedEntity,
-                label: (profile as any)?.properName || (profile as any)?.label || prev.selectedEntity?.label,
-                logoUrl: logoUrl ?? prev.selectedEntity?.logoUrl,
-                type: (profile as any)?.entityType || prev.selectedEntity?.type,
-                riskScore: (profile as any)?.riskScore ?? prev.selectedEntity?.riskScore,
-                bo: (profile as any)?.bo ?? prev.selectedEntity?.bo,
-                custodian: (profile as any)?.custodian ?? prev.selectedEntity?.custodian,
-              }
-            } : null);
-          }
-        } catch (error) {
-          console.warn('Error in prefetchProfilesAndLogos for', addr, ':', error);
-        }
-      })
-    );
-  };
 
   // Function to fetch and set left panel data for an address
   const fetchAndSetLeftPanelData = async (address: string) => {
