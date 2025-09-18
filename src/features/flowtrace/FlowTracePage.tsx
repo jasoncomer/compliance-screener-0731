@@ -680,6 +680,20 @@ const FlowTracePage: React.FC = () => {
     }
   };
 
+  // Prefetch attribution profile and logos for a list of addresses (non-blocking)
+  const prefetchProfilesAndLogos = async (addresses: string[]) => {
+    const unique = Array.from(new Set(addresses.filter(Boolean)));
+    if (!unique.length) return;
+    
+    // Fetch attribution data for all addresses at once (same as Risk Dashboard)
+    try {
+      await fetchAttributions(unique);
+      console.log('🔍 FlowTrace: Attribution data fetch initiated for:', unique);
+    } catch (error) {
+      console.warn('Error fetching attributions:', error);
+    }
+  };
+
   // Core trace function that performs the actual address search and node addition
   const performTrace = useCallback(async (addressToTrace: string) => {
     setIsLoading(true);
@@ -830,19 +844,6 @@ const FlowTracePage: React.FC = () => {
     setSearchConfirmationOpen(true);
   };
 
-  // Prefetch attribution profile and logos for a list of addresses (non-blocking)
-  const prefetchProfilesAndLogos = async (addresses: string[]) => {
-    const unique = Array.from(new Set(addresses.filter(Boolean)));
-    if (!unique.length) return;
-    
-    // Fetch attribution data for all addresses at once (same as Risk Dashboard)
-    try {
-      await fetchAttributions(unique);
-      console.log('🔍 FlowTrace: Attribution data fetch initiated for:', unique);
-    } catch (error) {
-      console.warn('Error fetching attributions:', error);
-    }
-  };
 
   // Process attribution data when it becomes available (same pattern as Risk Dashboard)
   useEffect(() => {
@@ -951,7 +952,6 @@ const FlowTracePage: React.FC = () => {
       } : null);
     }
   }, [attributions, itemsMap, currentAddress]);
->>>>>>> origin/staging
 
   useEffect(() => {
     // initial mount: empty graph
