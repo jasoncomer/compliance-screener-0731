@@ -30,6 +30,7 @@ import { RootState } from '../../store/store';
 import { getEntityTypeLabel } from '../../utils/display-labels';
 import { EEntityType } from '../../typings/SOT';
 import { fetchSOT } from '../../store/slices/sotSlice';
+import { applyBeneficialOwnerOverride } from '../../utils/entityUtils';
 
 const RiskDashboard: React.FC = React.memo(() => {
   const { theme } = useTheme();
@@ -148,6 +149,30 @@ const RiskDashboard: React.FC = React.memo(() => {
     return transformBtcTransactions(counterpartyTransactionData.txs, address, btcPrice);
   }, [counterpartyTransactionData?.txs, address, btcPrice]);
 
+  // Fetch attributions for counterparty addresses when transaction data changes
+  useEffect(() => {
+    if (!transformedTransactions.length || !address) return;
+    
+    // Extract unique counterparty addresses from transactions
+    const counterpartyAddresses = new Set<string>();
+    transformedTransactions.forEach(tx => {
+      if (tx.from && tx.from !== 'Unknown' && tx.from !== address) {
+        counterpartyAddresses.add(tx.from);
+      }
+      if (tx.to && tx.to !== 'Unknown' && tx.to !== address) {
+        counterpartyAddresses.add(tx.to);
+      }
+    });
+    
+    // Fetch attributions for counterparty addresses that don't already have attributions
+    const addressesToFetch = Array.from(counterpartyAddresses).filter(addr => !attributions[addr]);
+    
+    if (addressesToFetch.length > 0) {
+      console.log('RiskDashboard: Fetching attributions for counterparty addresses:', addressesToFetch);
+      fetchAttributions(addressesToFetch);
+    }
+  }, [transformedTransactions, address, attributions, fetchAttributions]);
+
   // Function to truncate addresses for display - memoized
   const truncateAddress = useCallback((address: string, startLength: number = 6, endLength: number = 4) => {
     if (address.length <= startLength + endLength + 3) return address;
@@ -191,7 +216,7 @@ const RiskDashboard: React.FC = React.memo(() => {
         console.log('Processing incoming counterparty:', { address, entityId, itemsMapKeys: Object.keys(itemsMap).length });
         const entity = entityId ? Object.values(itemsMap).find(sot => sot.entity_id === entityId) : null;
         console.log('Found entity:', entity);
-        const entityName = entity?.proper_name || truncateAddress(address);
+        const entityName = entity?.proper_name || address;
         
         return {
           entity: entityName,
@@ -214,7 +239,7 @@ const RiskDashboard: React.FC = React.memo(() => {
       .map(([address, data]) => {
         const entityId = attributions[address]?.entity || attributions[address]?.bo || attributions[address]?.custodian;
         const entity = entityId ? Object.values(itemsMap).find(sot => sot.entity_id === entityId) : null;
-        const entityName = entity?.proper_name || truncateAddress(address);
+        const entityName = entity?.proper_name || address;
         
         return {
           entity: entityName,
@@ -570,6 +595,32 @@ const RiskDashboard: React.FC = React.memo(() => {
 
   const entityTags = useMemo(() => primaryEntityId ? getEntityTags(primaryEntityId) : [], [primaryEntityId, getEntityTags]);
 
+  // Get display name with beneficial owner logic
+  const getDisplayName = useMemo(() => {
+    if (!address || !attributions[address]) {
+      return undefined;
+    }
+
+    const attribution = attributions[address];
+    const entitySOT = Object.values(itemsMap).find(sot => sot.entity_id === attribution.entity);
+    const beneficialOwnerSOT = attribution.bo ? 
+      Object.values(itemsMap).find(sot => sot.entity_id === attribution.bo) : undefined;
+    
+    const override = applyBeneficialOwnerOverride(
+      {
+        entity: attribution.entity,
+        bo: attribution.bo || '',
+        custodian: attribution.custodian || '',
+        script_type: attribution.script_type
+      },
+      entitySOT,
+      beneficialOwnerSOT,
+      Object.values(itemsMap)
+    );
+    
+    return override.displayTitle;
+  }, [address, attributions, itemsMap]);
+
   // Properly handle ResizeObserver cleanup
   useEffect(() => {
     if (!entityDetailsRef.current || !primaryEntityId) return;
@@ -673,7 +724,7 @@ const RiskDashboard: React.FC = React.memo(() => {
             <AddressHeader 
               address={address}
               entityTags={entityTags}
-              entityName={primaryEntityId ? (itemsMap[primaryEntityId]?.proper_name || primaryEntityId) : undefined}
+              entityName={getDisplayName}
             />
           </div>
 
@@ -754,6 +805,7 @@ const RiskDashboard: React.FC = React.memo(() => {
               <SimpleSankeyTest 
                 address={address}
                 maxTransactions={20}
+                addressSummaryData={addressSummaryData}
               />
             </div>
           )}

@@ -5,6 +5,7 @@ import { cn } from '../../lib/utils';
 import ViewWrapper from '../../components/ViewWrapper';
 import SearchInput from '../../components/common/SearchInput';
 import EmptyState from '../../components/common/EmptyState';
+import { useAddress } from '../../hooks/useAddress';
 
 import { determineInputType } from '../../utils/crypto';
 import TransactionView from './TransactionView';
@@ -149,6 +150,10 @@ const BlockExplorer: React.FC = () => {
     id?: string;
   }>({ type: 'general' });
 
+  // Get address data to access cospend_id
+  const { data: addressData } = useAddress(currentContext.type === 'address' ? currentContext.id || '' : '');
+  const cospendId = addressData?.cospend_id;
+
   useEffect(() => {
     // Parse the current URL to determine context
     const path = location.pathname;
@@ -247,6 +252,7 @@ const BlockExplorer: React.FC = () => {
             type={currentContext.type}
             transactionId={currentContext.type === 'transaction' ? currentContext.id : undefined}
             address={currentContext.type === 'address' ? currentContext.id : undefined}
+            cospendId={currentContext.type === 'address' ? cospendId : undefined}
             onNewNotesCountChange={handleNewNotesCountChange}
           />
         )

@@ -44,14 +44,36 @@ axiosInstance.interceptors.request.use((config) => {
   const token = storage.auth.getAccessToken();
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
+  } else {
+    // Log when making requests without auth token
+    console.log('🔐 Making API request without auth token:', config.url);
   }
   return config;
+}, (error) => {
+  console.error('❌ Request interceptor error:', error);
+  return Promise.reject(error);
 });
 
 // Add response interceptor for error handling
 axiosInstance.interceptors.response.use(
   (response) => response,
-  (error) => {
+  async (error) => {
+    // Log connection errors for debugging
+    if (error.code === 'ERR_CONNECTION_REFUSED') {
+      console.error('❌ API Connection Refused:', {
+        url: error.config?.url,
+        baseURL: error.config?.baseURL,
+        message: 'Backend server might not be running or accessible'
+      });
+      
+      // For development, show a helpful message
+      if (process.env.NODE_ENV === 'development') {
+        console.error('💡 Make sure the backend server is running:');
+        console.error('   cd /Users/gerardoacedo/Desktop/blockscout-api');
+        console.error('   npm run dev');
+      }
+    }
+    
     if (error.response?.status === 401) {
       storage.auth.clearAuth();
       window.location.href = '/login';

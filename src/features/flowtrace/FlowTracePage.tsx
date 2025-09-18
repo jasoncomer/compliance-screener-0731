@@ -1,6 +1,11 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { flowtraceService } from '../../services/flowtraceService';
 import { generateUTXOKey, connectionInvolvesAddress, generateConnectionKey, findConnectionsForAddress, ensureConnectionKeys } from './utils/utxoKeyGeneration';
+import { Network } from 'lucide-react';
+import { useAttribution } from '../../context/AttributionContext';
+import { useAppSelector, useAppDispatch } from '../../store/hooks';
+import { fetchSOT } from '../../store/slices/sotSlice';
+import { applyBeneficialOwnerOverride } from '../../utils/entityUtils';
 
 import { getBlockchainType } from '../../utils/addressValidation';
 import { NetworkGraph, FTConnection, FTNode, NetworkGraphHandle } from './components/NetworkGraph';
@@ -112,6 +117,11 @@ const FlowTracePage: React.FC = () => {
   // Store originals so we can undo aggregation
   const aggregationMap = React.useRef<Record<string, { nodes: FTNode[]; connections: FTConnection[]; allMemberConnections?: FTConnection[]; addresses: string[] }>>({})
   const [customDialogOpen, setCustomDialogOpen] = useState(false);
+
+  // Attribution and SOT data hooks (same as Risk Dashboard)
+  const { fetchAttributions, attributions } = useAttribution();
+  const { itemsMap } = useAppSelector((state) => state.sot);
+  const dispatch = useAppDispatch();
   
   // Drawing toolbar state
   const [drawingToolbarVisible, setDrawingToolbarVisible] = useState(false);
@@ -600,38 +610,87 @@ const FlowTracePage: React.FC = () => {
   const fetchAndSetLeftPanelData = async (address: string) => {
     setIsLeftPanelLoading(true);
     try {
-      // Fetch core data first (fast)
-      const [data, summary, txs] = await Promise.all([
-        flowtraceService.fetchAddress(address).catch((error) => {
-          console.error('fetchAddress error:', error);
-          return {} as any;
-        }),
-        flowtraceService.fetchAddressSummary(address).catch((error) => {
-          console.error('fetchAddressSummary error:', error);
-          return {} as any;
-        }),
-        flowtraceService.fetchTransactions(address, 1, 50).catch((error) => {
-          console.error('fetchTransactions error:', error);
-          return { txs: [] } as any;
-        }),
-      ]);
 
-      // Fetch entity profile with timeout (this includes risk score)
-      let profile = {} as any;
-      try {
-        const profilePromise = flowtraceService.fetchEntityProfile(address);
-        const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Profile fetch timeout')), 10000)
+      // Use the new optimized endpoint that replaces 15-20 API calls with 1
+      const optimizedResponse = await flowtraceService.expandNodeOptimized(address, {
+        includeRiskScores: true,
+        includeTransactions: true
+      });
+
+
+      // Extract data from optimized response
+      const { transactions, enhancedData, riskScores, summary } = optimizedResponse.data;
+      
+      // Convert to legacy format for compatibility
+      const data = {
+        address: optimizedResponse.data.address,
+        balance: '0', // Placeholder - could be calculated from transactions
+        txs: summary.totalTransactions,
+        network: 'bitcoin'
+      };
+
+      const summary_data = {
+        balance: '0',
+        usdValue: 0
+      };
+
+      const txs = {
+        txs: transactions,
+        pagination: { totalTxs: summary.totalTransactions }
+      };
+
+      // Use client-side resolved entity data if available, fallback to API data
+      const attribution = attributions[address];
+      let profile;
+      
+      if (attribution && Object.keys(itemsMap).length > 0) {
+        // Use client-side resolution (same as node visualization)
+        const entitySOT = Object.values(itemsMap).find(sot => sot.entity_id === attribution.entity);
+        const beneficialOwnerSOT = attribution.bo ? 
+          Object.values(itemsMap).find(sot => sot.entity_id === attribution.bo) : undefined;
+        
+        const override = applyBeneficialOwnerOverride(
+          {
+            entity: attribution.entity,
+            bo: attribution.bo || '',
+            custodian: attribution.custodian || '',
+            script_type: attribution.script_type
+          },
+          entitySOT,
+          beneficialOwnerSOT,
+          Object.values(itemsMap)
         );
-        profile = await Promise.race([profilePromise, timeoutPromise]);
-      } catch (error) {
-        console.warn('fetchEntityProfile error (continuing without profile):', error);
+        
+        profile = {
+          entityId: attribution.entity,
+          entityType: override.entityType || 'wallet',
+          properName: override.displayTitle || attribution.entity,
+          riskScore: riskScores[address]?.overallRisk ? Math.round(riskScores[address].overallRisk * 100) : undefined,
+          logoUrl: override.logo ? `https://storage.googleapis.com/entity-logos/${attribution.entity}.jpg` : null,
+          bo: attribution.bo,
+          custodian: attribution.custodian
+        };
+        
+        console.log('🔍 Using client-side resolved profile for left panel:', profile);
+      } else {
+        // Fallback to API data
+        profile = {
+          entityId: enhancedData.find((item: any) => item.attribution?.entity)?.attribution?.entity,
+          entityType: enhancedData.find((item: any) => item.entityProfile?.entity_type)?.entityProfile?.entity_type,
+          properName: enhancedData.find((item: any) => item.entityProfile?.proper_name)?.entityProfile?.proper_name,
+          riskScore: riskScores[address]?.overallRisk ? Math.round(riskScores[address].overallRisk * 100) : undefined,
+          logoUrl: enhancedData.find((item: any) => item.entityProfile?.logo)?.entityProfile?.logo,
+          bo: enhancedData.find((item: any) => item.attribution?.bo)?.attribution?.bo,
+          custodian: enhancedData.find((item: any) => item.attribution?.custodian)?.attribution?.custodian
+        };
+        
+        console.log('🔍 Using API fallback profile for left panel:', profile);
       }
       
       console.log('API Debug:', {
         address,
         data,
-        summary,
+        summary: summary_data,
         txs,
         profile
       });
@@ -644,22 +703,22 @@ const FlowTracePage: React.FC = () => {
         profileData: profile
       });
 
-      // Use actual transaction count from the transactions API instead of summary
-      const actualTxCount = txs?.pagination?.totalTxs || txs?.txs?.length || 0;
+      // Use actual transaction count from the optimized response
+      const actualTxCount = summary.totalTransactions || 0;
 
       // Update left panel data
       const leftPanelData = {
         address,
         network: getBlockchainType(address) === 'bitcoin' ? 'Bitcoin' : 'Ethereum',
-        balance: summary.balance,
-        txCount: actualTxCount, // Use actual transaction count
+        balance: summary_data.balance,
+        txCount: actualTxCount,
         riskScore: profile.riskScore,
-        usdValue: summary.usdValue,
+        usdValue: summary_data.usdValue,
         selectedEntity: {
-          label: profile.properName || profile.label || address,
+          label: profile.properName || profile.entityId || address,
           address,
           logoUrl: profile.logoUrl,
-          type: profile.type || 'wallet',
+          type: profile.entityType || 'wallet',
           riskScore: profile.riskScore,
           bo: profile.bo,
           custodian: profile.custodian
@@ -667,6 +726,15 @@ const FlowTracePage: React.FC = () => {
       };
       
       setLeftPanelData(leftPanelData);
+
+      // Also update the node with risk score data for visualization
+      setNodes((prev) => prev.map((n) => (n.id === address ? {
+        ...n,
+        risk: profile.riskScore,
+        balance: summary_data.balance,
+        txCount: actualTxCount,
+        usdValue: summary_data.usdValue
+      } : n)));
     } catch (error) {
       console.error('Error fetching left panel data:', error);
     } finally {
@@ -824,11 +892,138 @@ const FlowTracePage: React.FC = () => {
     setSearchConfirmationOpen(true);
   };
 
+  // Prefetch attribution profile and logos for a list of addresses (non-blocking)
+  const prefetchProfilesAndLogos = async (addresses: string[]) => {
+    const unique = Array.from(new Set(addresses.filter(Boolean)));
+    if (!unique.length) return;
+    
+    // Fetch attribution data for all addresses at once (same as Risk Dashboard)
+    try {
+      await fetchAttributions(unique);
+      console.log('🔍 FlowTrace: Attribution data fetch initiated for:', unique);
+    } catch (error) {
+      console.warn('Error fetching attributions:', error);
+    }
+  };
+
+  // Process attribution data when it becomes available (same pattern as Risk Dashboard)
+  useEffect(() => {
+    if (Object.keys(attributions).length === 0 || Object.keys(itemsMap).length === 0) {
+      return; // Wait for both attributions and SOT data to be loaded
+    }
+
+    console.log('🔍 FlowTrace: Processing attributions for nodes:', {
+      attributionKeys: Object.keys(attributions),
+      itemsMapKeys: Object.keys(itemsMap).length
+    });
+
+    // Process each node that needs entity resolution
+    setNodes((prevNodes) => {
+      return prevNodes.map((node) => {
+        const attribution = attributions[node.id];
+        if (!attribution) {
+          return node; // No attribution data, keep node as is
+        }
+
+        try {
+          // Use client-side entity resolution (same as Risk Dashboard)
+          const entitySOT = Object.values(itemsMap).find(sot => sot.entity_id === attribution.entity);
+          const beneficialOwnerSOT = attribution.bo ? 
+            Object.values(itemsMap).find(sot => sot.entity_id === attribution.bo) : undefined;
+          
+          console.log('🔍 FlowTrace entity resolution for', node.id, ':', {
+            attribution,
+            entitySOT,
+            beneficialOwnerSOT,
+            itemsMapKeys: Object.keys(itemsMap).length
+          });
+          
+          const override = applyBeneficialOwnerOverride(
+            {
+              entity: attribution.entity,
+              bo: attribution.bo || '',
+              custodian: attribution.custodian || '',
+              script_type: attribution.script_type
+            },
+            entitySOT,
+            beneficialOwnerSOT,
+            Object.values(itemsMap)
+          );
+          
+          console.log('🔍 FlowTrace override result for', node.id, ':', override);
+          
+          // Update node with client-side resolved profile data
+          const resolvedLabel = override.displayTitle || node.id;
+          const resolvedEntityId = attribution.entity;
+          const resolvedEntityType = override.entityType || 'wallet';
+          const logoUrl = override.logo ? `https://storage.googleapis.com/entity-logos/${attribution.entity}.jpg` : null;
+          
+          console.log('🔍 FlowTrace resolved data for', node.id, ':', {
+            resolvedLabel,
+            resolvedEntityId,
+            resolvedEntityType,
+            logoUrl
+          });
+          
+          return {
+            ...node,
+            label: resolvedLabel,
+            logoUrl: logoUrl ?? node.logoUrl,
+            entityId: resolvedEntityId ?? node.entityId,
+            entityType: resolvedEntityType,
+            bo: attribution.bo ?? node.bo,
+            custodian: attribution.custodian ?? node.custodian,
+          };
+        } catch (error) {
+          console.warn('Error processing attribution for', node.id, ':', error);
+          return node;
+        }
+      });
+    });
+
+    // Update left panel data if the current address has attribution
+    if (currentAddress && attributions[currentAddress]) {
+      const attribution = attributions[currentAddress];
+      const entitySOT = Object.values(itemsMap).find(sot => sot.entity_id === attribution.entity);
+      const beneficialOwnerSOT = attribution.bo ? 
+        Object.values(itemsMap).find(sot => sot.entity_id === attribution.bo) : undefined;
+      
+      const override = applyBeneficialOwnerOverride(
+        {
+          entity: attribution.entity,
+          bo: attribution.bo || '',
+          custodian: attribution.custodian || '',
+          script_type: attribution.script_type
+        },
+        entitySOT,
+        beneficialOwnerSOT,
+        Object.values(itemsMap)
+      );
+      
+      setLeftPanelData((prev: any) => prev ? {
+        ...prev,
+        selectedEntity: {
+          ...prev.selectedEntity,
+          label: override.displayTitle || currentAddress,
+          logoUrl: override.logo ? `https://storage.googleapis.com/entity-logos/${attribution.entity}.jpg` : prev.selectedEntity?.logoUrl,
+          type: override.entityType || 'wallet',
+          bo: attribution.bo ?? prev.selectedEntity?.bo,
+          custodian: attribution.custodian ?? prev.selectedEntity?.custodian,
+        }
+      } : null);
+    }
+  }, [attributions, itemsMap, currentAddress]);
+>>>>>>> origin/staging
+
   useEffect(() => {
     // initial mount: empty graph
   }, []);
 
-
+  // Load SOT data on component mount (same as Risk Dashboard)
+  useEffect(() => {
+    console.log('FlowTrace: Loading SOT data on component mount');
+    dispatch(fetchSOT());
+  }, [dispatch]);
 
   const handleAddConnections = useCallback((newConnections: FTConnection[]) => {
     setConnections(prev => {
@@ -1055,14 +1250,18 @@ const FlowTracePage: React.FC = () => {
         const inputAddress = tx.counterpartyAddress || tx.inputs?.[0]?.addr
         if (!inputAddress) return
         
-        // Store entity data for the input address
+        // Store entity data for the input address - prioritize transaction-level attribution
         if (tx.entityName || tx.entityId || tx.entityType || tx.logo) {
-          addressEntityData.set(inputAddress, {
-            entityName: tx.entityName,
-            entityId: tx.entityId,
-            entityType: tx.entityType,
-            logoUrl: tx.logo
-          })
+          // Only set if we don't already have data for this address, or if the new data is more specific
+          const existing = addressEntityData.get(inputAddress);
+          if (!existing || (tx.entityId && !existing.entityId)) {
+            addressEntityData.set(inputAddress, {
+              entityName: tx.entityName,
+              entityId: tx.entityId,
+              entityType: tx.entityType,
+              logoUrl: tx.logo
+            })
+          }
         }
         
         // UTXO key already generated above for deduplication check
@@ -1103,14 +1302,18 @@ const FlowTracePage: React.FC = () => {
         const outputAddress = tx.counterpartyAddress || tx.outputs?.[0]?.addr
         if (!outputAddress) return
         
-        // Store entity data for the output address
+        // Store entity data for the output address - prioritize transaction-level attribution
         if (tx.entityName || tx.entityId || tx.entityType || tx.logo) {
-          addressEntityData.set(outputAddress, {
-            entityName: tx.entityName,
-            entityId: tx.entityId,
-            entityType: tx.entityType,
-            logoUrl: tx.logo
-          })
+          // Only set if we don't already have data for this address, or if the new data is more specific
+          const existing = addressEntityData.get(outputAddress);
+          if (!existing || (tx.entityId && !existing.entityId)) {
+            addressEntityData.set(outputAddress, {
+              entityName: tx.entityName,
+              entityId: tx.entityId,
+              entityType: tx.entityType,
+              logoUrl: tx.logo
+            })
+          }
         }
         
         // UTXO key already generated above for deduplication check
@@ -1187,12 +1390,16 @@ const FlowTracePage: React.FC = () => {
         if (!existingIds.has(addr)) {
           const y = baseY + (i - (inputAddresses.length - 1) / 2) * 80
           const entityData = addressEntityData.get(addr)
+          // Use consistent entity resolution - prioritize entityId over entityName
+          const resolvedLabel = entityData?.entityName || addr;
+          const resolvedEntityType = entityData?.entityType || 'wallet';
+          
           newNodes.push({
             id: addr,
-            label: entityData?.entityName || addr,
+            label: resolvedLabel,
             x: baseX - 220, // Left side for inputs
             y,
-            type: 'wallet',
+            type: resolvedEntityType,
             entityId: entityData?.entityId,
             entityType: entityData?.entityType,
             logoUrl: entityData?.logoUrl,
@@ -1206,12 +1413,16 @@ const FlowTracePage: React.FC = () => {
         if (!existingIds.has(addr)) {
           const y = baseY + (i - (outputAddresses.length - 1) / 2) * 80
           const entityData = addressEntityData.get(addr)
+          // Use consistent entity resolution - prioritize entityId over entityName
+          const resolvedLabel = entityData?.entityName || addr;
+          const resolvedEntityType = entityData?.entityType || 'wallet';
+          
           newNodes.push({
             id: addr,
-            label: entityData?.entityName || addr,
+            label: resolvedLabel,
             x: baseX + 220, // Right side for outputs
             y,
-            type: 'wallet',
+            type: resolvedEntityType,
             entityId: entityData?.entityId,
             entityType: entityData?.entityType,
             logoUrl: entityData?.logoUrl,

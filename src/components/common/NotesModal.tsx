@@ -198,6 +198,7 @@ interface NotesModalProps {
   onClose: () => void;
   transactionId?: string;
   address?: string;
+  cospendId?: string;
   type?: 'general' | 'transaction' | 'address';
   onNewNotesCountChange?: (count: number) => void;
 }
@@ -242,6 +243,7 @@ const NotesModal: React.FC<NotesModalProps> = ({
   onClose, 
   transactionId,
   address, 
+  cospendId,
   type = 'general',
   onNewNotesCountChange
 }) => {
@@ -255,6 +257,7 @@ const NotesModal: React.FC<NotesModalProps> = ({
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
   const [editContent, setEditContent] = useState('');
   const [unseenNotesCount, setUnseenNotesCount] = useState(0);
+  const [noteType, setNoteType] = useState<'address' | 'cluster'>('address');
   const currentOrganization = useSelector(selectCurrentOrganization);
   const notesContainerRef = useRef<HTMLDivElement>(null);
 
@@ -330,7 +333,7 @@ const NotesModal: React.FC<NotesModalProps> = ({
   // Load notes when modal opens
   useEffect(() => {
     if (visible && currentOrganization) fetchNotes();
-  }, [visible, currentOrganization, transactionId, address, type]);
+  }, [visible, currentOrganization, transactionId, address, cospendId, type, noteType]);
 
   // Fetch notes from API
   const fetchNotes = async () => {
@@ -343,7 +346,11 @@ const NotesModal: React.FC<NotesModalProps> = ({
       if ((type as string) === 'transaction' && transactionId) {
         response = await notesApi.getTransactionNotes(currentOrganization._id, transactionId);
       } else if ((type as string) === 'address' && address) {
-        response = await notesApi.getAddressNotes(currentOrganization._id, address);
+        if (noteType === 'cluster' && cospendId) {
+          response = await notesApi.getClusterNotes(currentOrganization._id, cospendId);
+        } else {
+          response = await notesApi.getAddressNotes(currentOrganization._id, address);
+        }
       } else {
         response = await notesApi.list(currentOrganization._id);
       }
@@ -365,9 +372,11 @@ const NotesModal: React.FC<NotesModalProps> = ({
       setSubmitting(true);
       const noteData: ICreateNote = { 
         content: newNote.trim(),
-        type,
+        type: noteType === 'cluster' ? 'cluster' : type,
         ...((type as string) === 'transaction' && transactionId ? { transactionId } : {}),
-        ...((type as string) === 'address' && address ? { address } : {})
+        ...((type as string) === 'address' && address ? { 
+          ...(noteType === 'cluster' && cospendId ? { cospendId } : { address })
+        } : {})
       };
 
       await notesApi.create(currentOrganization._id, noteData);
@@ -425,8 +434,19 @@ const NotesModal: React.FC<NotesModalProps> = ({
   
   const getModalTitle = () => {
     if ((type as string) === 'transaction' && transactionId) return `Transaction Notes - ${truncateAddress(transactionId)}`;
-    if ((type as string) === 'address' && address) return `Address Notes - ${truncateAddress(address)}`;
+    if ((type as string) === 'address' && address) {
+      const noteTypeLabel = noteType === 'cluster' ? 'Cluster' : 'Address';
+      const identifier = noteType === 'cluster' && cospendId ? cospendId : address;
+      return `${noteTypeLabel} Notes - ${truncateAddress(identifier)}`;
+    }
     return 'Organization Notes';
+  };
+
+  const handleCopyClusterId = () => {
+    if (cospendId) {
+      navigator.clipboard.writeText(cospendId);
+      message.success('Cluster ID copied to clipboard');
+    }
   };
 
   // Group notes by date for chat headers
@@ -505,7 +525,39 @@ const NotesModal: React.FC<NotesModalProps> = ({
 
   return (
     <Modal
-      title={getModalTitle()}
+      title={
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span>{getModalTitle()}</span>
+          {noteType === 'cluster' && cospendId && (
+            <button
+              onClick={handleCopyClusterId}
+              style={{
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                padding: '4px',
+                display: 'flex',
+                alignItems: 'center',
+                color: theme === 'dark' ? '#ccc' : '#666',
+                borderRadius: '4px',
+                transition: 'background-color 0.2s'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = theme === 'dark' ? '#333' : '#f0f0f0';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'transparent';
+              }}
+              title="Copy cluster ID"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+              </svg>
+            </button>
+          )}
+        </div>
+      }
       open={visible}
       onCancel={onClose}
       footer={null}
@@ -516,6 +568,66 @@ const NotesModal: React.FC<NotesModalProps> = ({
           <Text type="warning">You need to be part of an organization to use notes.</Text>
         ) : (
           <>
+            {/* Note Type Toggle - only show for address type */}
+            {(type as string) === 'address' && cospendId && (
+              <div style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: '8px', 
+                padding: '8px 12px', 
+                backgroundColor: theme === 'dark' ? '#2a2a2a' : '#f5f5f5',
+                borderRadius: '8px',
+                marginBottom: '16px',
+                border: `1px solid ${theme === 'dark' ? '#404040' : '#d9d9d9'}`
+              }}>
+                <span style={{ 
+                  fontSize: '12px', 
+                  fontWeight: '500',
+                  color: theme === 'dark' ? '#ccc' : '#666'
+                }}>
+                  Notes for:
+                </span>
+                <div style={{ 
+                  display: 'flex', 
+                  backgroundColor: theme === 'dark' ? '#1a1a1a' : '#fff',
+                  borderRadius: '6px',
+                  padding: '2px'
+                }}>
+                  <button
+                    onClick={() => setNoteType('address')}
+                    style={{
+                      padding: '4px 8px',
+                      fontSize: '12px',
+                      borderRadius: '4px',
+                      border: 'none',
+                      cursor: 'pointer',
+                      backgroundColor: noteType === 'address' ? '#1890ff' : 'transparent',
+                      color: noteType === 'address' ? '#fff' : (theme === 'dark' ? '#ccc' : '#666'),
+                      transition: 'all 0.2s'
+                    }}
+                  >
+                    Address
+                  </button>
+                  <button
+                    onClick={() => setNoteType('cluster')}
+                    disabled={!cospendId}
+                    style={{
+                      padding: '4px 8px',
+                      fontSize: '12px',
+                      borderRadius: '4px',
+                      border: 'none',
+                      cursor: cospendId ? 'pointer' : 'not-allowed',
+                      backgroundColor: noteType === 'cluster' ? '#1890ff' : 'transparent',
+                      color: noteType === 'cluster' ? '#fff' : (!cospendId ? '#999' : (theme === 'dark' ? '#ccc' : '#666')),
+                      transition: 'all 0.2s'
+                    }}
+                  >
+                    Cluster {!cospendId && '(N/A)'}
+                  </button>
+                </div>
+              </div>
+            )}
+            
             <NotesContainer ref={notesContainerRef}>
               {loading ? (
                 <div style={{ textAlign: 'center', padding: '20px' }}><Spin /></div>

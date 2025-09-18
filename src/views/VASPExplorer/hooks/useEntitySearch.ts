@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useState } from 'react';
-import Sifter from 'sifter';
 import { ConsolidatedEntity } from '../types';
 import { SOT } from '../../../typings/interfaces';
 import { getEntityTags, getAssociateCountries, getSocialMediaProfiles } from '../../../utils/sotUtils';
@@ -13,6 +12,73 @@ interface UseEntitySearchProps {
 export const useEntitySearch = ({ sot, allowCSAM, debouncedSearchValue }: UseEntitySearchProps) => {
   const [searchResults, setSearchResults] = useState<ConsolidatedEntity[]>([]);
   const [loading, setLoading] = useState(false);
+
+  // Enhanced search function (replaces sifter entirely)
+  const performEnhancedSearch = useCallback((data: SOT[], searchText: string, fields: string[]) => {
+    const searchLower = searchText.toLowerCase().trim();
+    const searchTerms = searchLower.split(/\s+/).filter(term => term.length > 0);
+    const matches: Array<{ id: number; score: number; matchedFields: string[] }> = [];
+    
+    data.forEach((item, index) => {
+      let totalScore = 0;
+      const matchedFields: string[] = [];
+      
+      fields.forEach(field => {
+        const value = (item as any)[field];
+        if (value && typeof value === 'string') {
+          const valueLower = value.toLowerCase();
+          
+          // Check for exact match first
+          if (valueLower === searchLower) {
+            totalScore += 10; // Highest score for exact match
+            matchedFields.push(field);
+          }
+          // Check for starts with
+          else if (valueLower.startsWith(searchLower)) {
+            totalScore += 5; // High score for starts with
+            matchedFields.push(field);
+          }
+          // Check for contains
+          else if (valueLower.includes(searchLower)) {
+            const position = valueLower.indexOf(searchLower);
+            const score = 3 - (position / value.length); // Score based on position
+            totalScore += score;
+            matchedFields.push(field);
+          }
+          // Check for individual terms
+          else {
+            let termMatches = 0;
+            searchTerms.forEach(term => {
+              if (valueLower.includes(term)) {
+                termMatches++;
+              }
+            });
+            if (termMatches > 0) {
+              totalScore += (termMatches / searchTerms.length) * 2; // Partial score for term matches
+              matchedFields.push(field);
+            }
+          }
+        }
+      });
+      
+      if (totalScore > 0) {
+        matches.push({ id: index, score: totalScore, matchedFields });
+      }
+    });
+    
+    // Sort by score descending and limit to 50
+    matches.sort((a, b) => b.score - a.score);
+    return {
+      items: matches.slice(0, 50).map(match => ({
+        id: match.id,
+        score: match.score
+      })),
+      total: matches.length,
+      query: searchText,
+      options: { fields },
+      tokens: [{ string: searchText, regex: new RegExp(searchText, 'i') }]
+    };
+  }, []);
 
   const consolidateEntity = useCallback((sotItem: SOT, matchedField: string, searchScore: number): ConsolidatedEntity => {
     return {
@@ -44,7 +110,13 @@ export const useEntitySearch = ({ sot, allowCSAM, debouncedSearchValue }: UseEnt
     setLoading(true);
     
     try {
-      const sifter = new Sifter(sot);
+      // Validate data before searching
+      if (!sot || !Array.isArray(sot) || sot.length === 0) {
+        console.warn('⚠️ VASP Search: Invalid or empty SOT data');
+        setSearchResults([]);
+        return;
+      }
+
       const searchableFields = [
         'entity_id',
         'proper_name',
@@ -69,12 +141,8 @@ export const useEntitySearch = ({ sot, allowCSAM, debouncedSearchValue }: UseEnt
         'associate_country_6',
       ];
 
-      const results = sifter.search(searchText, {
-        fields: searchableFields,
-        conjunction: 'or',
-        sort: [{ field: 'score', direction: 'desc' }],
-        limit: 50
-      });
+      // Use our enhanced search function (no more sifter!)
+      const results = performEnhancedSearch(sot, searchText, searchableFields);
 
       const consolidatedEntities: Record<string, ConsolidatedEntity> = {};
 
@@ -121,29 +189,9 @@ export const useEntitySearch = ({ sot, allowCSAM, debouncedSearchValue }: UseEnt
       const sortedEntities = Object.values(consolidatedEntities)
         .sort((a, b) => b.searchScore - a.searchScore);
 
-      // Debug: Log search results to see if entity_id is missing
-      if (sortedEntities.length > 0) {
-        console.log('🔍 VASP Search Results:', sortedEntities.slice(0, 3).map(entity => ({
-          entity_id: entity.entity_id,
-          proper_name: entity.proper_name,
-          entity_type: entity.entity_type,
-          hasLogo: !!entity.logo
-        })));
-        
-        // Special debugging for Coinbase results
-        const coinbaseResults = sortedEntities.filter(entity => 
-          entity.proper_name?.toLowerCase().includes('coinbase') || 
-          entity.entity_id?.toLowerCase().includes('coinbase')
-        );
-        if (coinbaseResults.length > 0) {
-          console.log('🔍 Coinbase search results:', coinbaseResults.map(entity => ({
-            entity_id: entity.entity_id,
-            proper_name: entity.proper_name,
-            entity_type: entity.entity_type,
-            logo: entity.logo,
-            expectedLogoUrl: `https://storage.googleapis.com/entity-logos/${entity.entity_id}.jpg`
-          })));
-        }
+      // Log search results summary (only in development)
+      if (process.env.NODE_ENV === 'development' && sortedEntities.length > 0) {
+        console.log('🔍 VASP Search Results:', sortedEntities.length, 'entities found');
       }
 
       setSearchResults(sortedEntities);
@@ -153,7 +201,7 @@ export const useEntitySearch = ({ sot, allowCSAM, debouncedSearchValue }: UseEnt
     } finally {
       setLoading(false);
     }
-  }, [allowCSAM, sot, consolidateEntity]);
+  }, [allowCSAM, sot, consolidateEntity, performEnhancedSearch]);
 
   // Trigger search when debounced value changes
   useEffect(() => {

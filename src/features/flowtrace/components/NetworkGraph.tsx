@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState, forwardRef, useImperativeHandle, useMemo } from 'react';
 import { generateConnectionKey } from '../utils/utxoKeyGeneration';
+import { useTheme } from '../../../context/ThemeContext';
 
 export type FTNode = {
   id: string;
@@ -94,6 +95,7 @@ export const NetworkGraph = forwardRef<NetworkGraphHandle, NetworkGraphProps>(({
 
   centerNodeId
 }, ref) => {
+  const { theme } = useTheme();
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
@@ -249,7 +251,7 @@ export const NetworkGraph = forwardRef<NetworkGraphHandle, NetworkGraphProps>(({
       const mx = (x1 + x2) / 2;
       const my = (y1 + y2) / 2;
       ctx.save();
-      ctx.fillStyle = '#9ca3af';
+      ctx.fillStyle = theme === 'dark' ? '#9ca3af' : '#6b7280';
       ctx.font = `${10 / zoom}px Inter, system-ui, sans-serif`;
       ctx.textAlign = 'center';
       ctx.fillText(label, mx, my - 4);
@@ -1138,7 +1140,7 @@ export const NetworkGraph = forwardRef<NetworkGraphHandle, NetworkGraphProps>(({
             const displayText = (n.label && n.label !== n.id) ? n.label.charAt(0).toUpperCase() : 
                                n.entityId ? n.entityId.charAt(0).toUpperCase() :
                                n.entityType ? n.entityType.charAt(0).toUpperCase() : '?';
-            ctx.fillStyle = '#374151'; // Dark gray text
+            ctx.fillStyle = theme === 'dark' ? '#f9fafb' : '#374151'; // Theme-aware text
             ctx.font = `bold ${14 / zoom}px Inter, system-ui, sans-serif`;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
@@ -1160,7 +1162,7 @@ export const NetworkGraph = forwardRef<NetworkGraphHandle, NetworkGraphProps>(({
           const displayText = (n.label && n.label !== n.id) ? n.label.charAt(0).toUpperCase() : 
                              n.entityId ? n.entityId.charAt(0).toUpperCase() :
                              n.entityType ? n.entityType.charAt(0).toUpperCase() : '?';
-          ctx.fillStyle = '#374151'; // Dark gray text
+          ctx.fillStyle = theme === 'dark' ? '#f9fafb' : '#374151'; // Theme-aware text
           ctx.font = `bold ${14 / zoom}px Inter, system-ui, sans-serif`;
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
@@ -1180,7 +1182,7 @@ export const NetworkGraph = forwardRef<NetworkGraphHandle, NetworkGraphProps>(({
         const displayText = (n.label && n.label !== n.id) ? n.label.charAt(0).toUpperCase() : 
                            n.entityId ? n.entityId.charAt(0).toUpperCase() :
                            n.entityType ? n.entityType.charAt(0).toUpperCase() : '?';
-        ctx.fillStyle = '#374151'; // Dark gray text
+        ctx.fillStyle = theme === 'dark' ? '#f9fafb' : '#374151'; // Theme-aware text
         ctx.font = `bold ${14 / zoom}px Inter, system-ui, sans-serif`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
@@ -1211,7 +1213,7 @@ export const NetworkGraph = forwardRef<NetworkGraphHandle, NetworkGraphProps>(({
                          n.entityType ? n.entityType : null;
       
       if (displayName) {
-        const labelColor = n.type === 'custom' ? '#9ca3af' : '#ffffff';
+        const labelColor = n.type === 'custom' ? '#9ca3af' : (theme === 'dark' ? '#ffffff' : '#000000');
         ctx.fillStyle = labelColor;
         ctx.font = `bold ${12 / zoom}px Inter, system-ui, sans-serif`;
         ctx.textAlign = 'center';
@@ -1222,7 +1224,7 @@ export const NetworkGraph = forwardRef<NetworkGraphHandle, NetworkGraphProps>(({
       // Address (truncated) - only show for non-custom nodes and when we have a proper entity name
       if (n.type !== 'custom' && displayName) {
         const addressText = n.id.length > 12 ? `${n.id.slice(0, 6)}...${n.id.slice(-6)}` : n.id;
-        ctx.fillStyle = '#9ca3af';
+        ctx.fillStyle = theme === 'dark' ? '#9ca3af' : '#6b7280';
         ctx.font = `${10 / zoom}px Inter, system-ui, sans-serif`;
         ctx.textAlign = 'center';
         ctx.fillText(addressText, n.x, n.y + yOffset);
@@ -1270,14 +1272,6 @@ export const NetworkGraph = forwardRef<NetworkGraphHandle, NetworkGraphProps>(({
       }
       
       
-      // USD Value
-      if (n.usdValue !== undefined) {
-        const usdText = typeof n.usdValue === 'number' ? `$${n.usdValue.toLocaleString()}` : String(n.usdValue);
-        ctx.fillStyle = '#3b82f6';
-        ctx.font = `${10 / zoom}px Inter, system-ui, sans-serif`;
-        ctx.textAlign = 'center';
-        ctx.fillText(usdText, n.x, n.y + yOffset);
-      }
 
       // add (+) button at top-left of node
       const addR = 5; // icon radius
@@ -1397,7 +1391,7 @@ export const NetworkGraph = forwardRef<NetworkGraphHandle, NetworkGraphProps>(({
     }
 
     ctx.restore();
-  }, [dpi, drawArrow, nodes, connections, pan.x, pan.y, zoom, hoverNodeId, renderTick, utxoCollapseMode, activeTool, activeColor, drawingLine, drawingShape, textInput, drawingHistory, getNodeLogoUrl]);
+  }, [dpi, drawArrow, nodes, connections, pan.x, pan.y, zoom, hoverNodeId, renderTick, utxoCollapseMode, activeTool, activeColor, drawingLine, drawingShape, textInput, drawingHistory, getNodeLogoUrl, theme]);
 
   useEffect(() => {
     drawConnections();

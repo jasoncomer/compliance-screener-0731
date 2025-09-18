@@ -15,7 +15,7 @@ export const StyledCard: React.FC<StyledCardProps> = ({ children, className, for
       formView && "max-w-[600px] w-full",
       className
     )}
-    bodyStyle={{ padding: '32px', width: '100%' }}
+    styles={{ body: { padding: '32px', width: '100%' } }}
   >
     {children}
   </Card>
