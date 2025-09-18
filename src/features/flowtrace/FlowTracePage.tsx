@@ -1,7 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { flowtraceService } from '../../services/flowtraceService';
 import { generateUTXOKey, connectionInvolvesAddress, generateConnectionKey, findConnectionsForAddress, ensureConnectionKeys } from './utils/utxoKeyGeneration';
-import { Network } from 'lucide-react';
 import { useAttribution } from '../../context/AttributionContext';
 import { useAppSelector, useAppDispatch } from '../../store/hooks';
 import { fetchSOT } from '../../store/slices/sotSlice';
