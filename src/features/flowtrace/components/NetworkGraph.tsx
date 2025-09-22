@@ -454,11 +454,11 @@ export const NetworkGraph = forwardRef<NetworkGraphHandle, NetworkGraphProps>(({
           // Group by node pair to handle bidirectional connections
           // Use a consistent key that preserves direction information
           const nodePair = `${connection.from}|${connection.to}`
-          
-          if (!connectionGroups.has(nodePair)) {
-            connectionGroups.set(nodePair, [])
-          }
-          connectionGroups.get(nodePair)!.push(connection)
+        
+        if (!connectionGroups.has(nodePair)) {
+          connectionGroups.set(nodePair, [])
+        }
+        connectionGroups.get(nodePair)!.push(connection)
         }
       })
       
@@ -535,7 +535,7 @@ export const NetworkGraph = forwardRef<NetworkGraphHandle, NetworkGraphProps>(({
           hasMultipleIncoming,
           hasBidirectional
         });
-        
+
         // Draw outgoing connections (from first node to second node)
         if (outgoingConnections.length > 0) {
           const edgeColor = outgoingConnections[0]?.customColor || (isDark ? "#6b7280" : "#9ca3af")
@@ -701,38 +701,38 @@ export const NetworkGraph = forwardRef<NetworkGraphHandle, NetworkGraphProps>(({
             }
           } else {
             // Draw straight line for unidirectional connections
-            ctx.strokeStyle = edgeColor
-            ctx.lineWidth = 2
-            ctx.beginPath()
-            ctx.moveTo(fromNode.x, fromNode.y)
-            ctx.lineTo(toNode.x, toNode.y)
-            ctx.stroke()
+          ctx.strokeStyle = edgeColor
+          ctx.lineWidth = 2
+          ctx.beginPath()
+          ctx.moveTo(fromNode.x, fromNode.y)
+          ctx.lineTo(toNode.x, toNode.y)
+          ctx.stroke()
 
-            // Draw arrow
-            const dx = toNode.x - fromNode.x;
-            const dy = toNode.y - fromNode.y;
-            drawArrow(ctx, fromNode.x, fromNode.y, toNode.x, toNode.y, undefined, edgeColor)
+          // Draw arrow
+          const dx = toNode.x - fromNode.x;
+          const dy = toNode.y - fromNode.y;
+          drawArrow(ctx, fromNode.x, fromNode.y, toNode.x, toNode.y, undefined, edgeColor)
 
-            // Draw amount text
-            const isCustomNode = fromNode.type === 'custom' || toNode.type === 'custom'
-            const amountText = isCustomNode 
-              ? `${totalFormatted} ${currency}`
-              : utxoCount > 1 
-                ? `${totalFormatted} ${currency} (${utxoCount} UTXOs)`
-                : `${totalFormatted} ${currency}`
+          // Draw amount text
+          const isCustomNode = fromNode.type === 'custom' || toNode.type === 'custom'
+          const amountText = isCustomNode 
+            ? `${totalFormatted} ${currency}`
+            : utxoCount > 1 
+              ? `${totalFormatted} ${currency} (${utxoCount} UTXOs)`
+              : `${totalFormatted} ${currency}`
 
-            const textAngle = Math.atan2(dy, dx);
-            const textX = (fromNode.x + toNode.x) / 2 + Math.cos(textAngle) * 20;
-            const textY = (fromNode.y + toNode.y) / 2 + Math.sin(textAngle) * 20;
+          const textAngle = Math.atan2(dy, dx);
+          const textX = (fromNode.x + toNode.x) / 2 + Math.cos(textAngle) * 20;
+          const textY = (fromNode.y + toNode.y) / 2 + Math.sin(textAngle) * 20;
 
-            ctx.save();
-            ctx.translate(textX, textY);
-            ctx.rotate(textAngle);
-            ctx.fillStyle = isDark ? "#ffffff" : "#000000";
-            ctx.font = "12px sans-serif";
-            ctx.textAlign = "center";
-            ctx.fillText(amountText, 0, 0);
-            ctx.restore();
+          ctx.save();
+          ctx.translate(textX, textY);
+          ctx.rotate(textAngle);
+          ctx.fillStyle = isDark ? "#ffffff" : "#000000";
+          ctx.font = "12px sans-serif";
+          ctx.textAlign = "center";
+          ctx.fillText(amountText, 0, 0);
+          ctx.restore();
           }
         }
 
@@ -894,38 +894,38 @@ export const NetworkGraph = forwardRef<NetworkGraphHandle, NetworkGraphProps>(({
             }
           } else {
             // Draw straight line for unidirectional connections
-            ctx.strokeStyle = edgeColor
-            ctx.lineWidth = 2
-            ctx.beginPath()
-            ctx.moveTo(toNode.x, toNode.y)
-            ctx.lineTo(fromNode.x, fromNode.y)
-            ctx.stroke()
+          ctx.strokeStyle = edgeColor
+          ctx.lineWidth = 2
+          ctx.beginPath()
+          ctx.moveTo(toNode.x, toNode.y)
+          ctx.lineTo(fromNode.x, fromNode.y)
+          ctx.stroke()
 
-            // Draw arrow
-            const dx = fromNode.x - toNode.x;
-            const dy = fromNode.y - toNode.y;
-            drawArrow(ctx, toNode.x, toNode.y, fromNode.x, fromNode.y, undefined, edgeColor)
+          // Draw arrow
+          const dx = fromNode.x - toNode.x;
+          const dy = fromNode.y - toNode.y;
+          drawArrow(ctx, toNode.x, toNode.y, fromNode.x, fromNode.y, undefined, edgeColor)
 
             // Draw amount text
-            const isCustomNode = fromNode.type === 'custom' || toNode.type === 'custom'
-            const amountText = isCustomNode 
-              ? `${totalFormatted} ${currency}`
-              : utxoCount > 1 
-                ? `${totalFormatted} ${currency} (${utxoCount} UTXOs)`
-                : `${totalFormatted} ${currency}`
+          const isCustomNode = fromNode.type === 'custom' || toNode.type === 'custom'
+          const amountText = isCustomNode 
+            ? `${totalFormatted} ${currency}`
+            : utxoCount > 1 
+              ? `${totalFormatted} ${currency} (${utxoCount} UTXOs)`
+              : `${totalFormatted} ${currency}`
 
-            const textAngle = Math.atan2(dy, dx);
-            const textX = (fromNode.x + toNode.x) / 2 - Math.cos(textAngle) * 20;
-            const textY = (fromNode.y + toNode.y) / 2 - Math.sin(textAngle) * 20;
+          const textAngle = Math.atan2(dy, dx);
+          const textX = (fromNode.x + toNode.x) / 2 - Math.cos(textAngle) * 20;
+          const textY = (fromNode.y + toNode.y) / 2 - Math.sin(textAngle) * 20;
 
-            ctx.save();
-            ctx.translate(textX, textY);
-            ctx.rotate(textAngle);
-            ctx.fillStyle = isDark ? "#ffffff" : "#000000";
-            ctx.font = "12px sans-serif";
-            ctx.textAlign = "center";
-            ctx.fillText(amountText, 0, 0);
-            ctx.restore();
+          ctx.save();
+          ctx.translate(textX, textY);
+          ctx.rotate(textAngle);
+          ctx.fillStyle = isDark ? "#ffffff" : "#000000";
+          ctx.font = "12px sans-serif";
+          ctx.textAlign = "center";
+          ctx.fillText(amountText, 0, 0);
+          ctx.restore();
           }
         }
       })
@@ -937,15 +937,15 @@ export const NetworkGraph = forwardRef<NetworkGraphHandle, NetworkGraphProps>(({
       // Filter out self-loops (from === to) in individual mode as well
       const drawable = connections.filter((c) => c.from !== c.to)
 
-        const OFFSET_STEP = 80;
-        drawable.forEach((connection) => {
+      const OFFSET_STEP = 80;
+      drawable.forEach((connection) => {
           // Group by node pair to enable multiple edge spreading
           const key = `${connection.from}|${connection.to}`;
-          if (!connectionGroups.has(key)) {
-            connectionGroups.set(key, [])
-          }
-          connectionGroups.get(key)!.push(connection)
-        })
+        if (!connectionGroups.has(key)) {
+          connectionGroups.set(key, [])
+        }
+        connectionGroups.get(key)!.push(connection)
+      })
 
       connectionGroups.forEach((connections) => {
         // Since we're using node pairs as keys, we need to get from/to from the first connection

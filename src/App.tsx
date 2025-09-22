@@ -23,7 +23,7 @@ import BlockExplorer from './views/blockexplorer/BlockExplorer';
 
 import RiskDashboard from './views/RiskDashboard/index';
 import Settings from './views/Settings';
-import FlowTrace from './views/FlowTrace';
+import FlowTrace from './features/flowtrace/FlowTracePage';
 import ProtectedRoute from './components/ProtectedRoute';
 import Welcome from './views/Welcome/index';
 import { useAppDispatch } from './store/hooks';

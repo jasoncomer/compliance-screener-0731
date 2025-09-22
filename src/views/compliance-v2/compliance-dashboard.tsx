@@ -2,7 +2,7 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import ActiveCases from "./compliance-dashboard/active-cases-tab"
 import ArchivedCasesTab from "./compliance-dashboard/archived-cases-tab"
-// import ComplianceHeader from "./compliance-dashboard/components/ComplianceHeader"
+import ComplianceHeader from "./compliance-dashboard/components/ComplianceHeader"
 import MonitoredAddresses from "./compliance-dashboard/monitored-addresses-tab"
 import UnassignedTransactionsTab from "./compliance-dashboard/unassigned-transactions-tab"
 
@@ -17,7 +17,7 @@ export function ComplianceDashboard() {
 
   return (
     <div className="min-h-screen bg-gray-950 text-white">
-      {/* <ComplianceHeader /> */}
+      <ComplianceHeader />
 
       <div className="p-6">
         <Tabs defaultValue="monitoring" className="space-y-6">

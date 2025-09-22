@@ -10,7 +10,8 @@ import {
   TopCounterparties, 
   TransactionHistory, 
   EntityDetails,
-  RiskScoreModal
+  RiskScoreModal,
+  GeographicPresence
 } from './components';
 // import { EnhancedD3SankeyDiagram } from './components/EnhancedD3SankeyDiagram';
 import { SimpleSankeyTest } from './components/SimpleSankeyTest';
@@ -853,6 +854,15 @@ const RiskDashboard: React.FC = React.memo(() => {
               />
             </div>
           </div>
+
+      {/* Geographic Presence - Full Width */}
+      {primaryEntityId && getEntityCountries(primaryEntityId).length > 0 && (
+        <div className="rounded-2xl border p-6 bg-gray-50 dark:bg-background border-gray-200 dark:border-gray-700">
+          <GeographicPresence
+            countries={getEntityCountries(primaryEntityId)}
+          />
+        </div>
+      )}
         </div>
       )}
 

@@ -913,7 +913,7 @@ const FlowTracePage: React.FC = () => {
               custodian: attribution.custodian ?? prev.selectedEntity?.custodian,
             }
           };
-        } else {
+          } else {
           // Create new left panel data if none exists
           return {
             address: currentAddress,
@@ -1166,12 +1166,12 @@ const FlowTracePage: React.FC = () => {
           // Only set if we don't already have data for this address, or if the new data is more specific
           const existing = addressEntityData.get(inputAddress);
           if (!existing || (tx.entityId && !existing.entityId)) {
-            addressEntityData.set(inputAddress, {
-              entityName: tx.entityName,
-              entityId: tx.entityId,
-              entityType: tx.entityType,
-              logoUrl: tx.logo
-            })
+          addressEntityData.set(inputAddress, {
+            entityName: tx.entityName,
+            entityId: tx.entityId,
+            entityType: tx.entityType,
+            logoUrl: tx.logo
+          })
           }
         }
         
@@ -1210,12 +1210,12 @@ const FlowTracePage: React.FC = () => {
           // Only set if we don't already have data for this address, or if the new data is more specific
           const existing = addressEntityData.get(outputAddress);
           if (!existing || (tx.entityId && !existing.entityId)) {
-            addressEntityData.set(outputAddress, {
-              entityName: tx.entityName,
-              entityId: tx.entityId,
-              entityType: tx.entityType,
-              logoUrl: tx.logo
-            })
+          addressEntityData.set(outputAddress, {
+            entityName: tx.entityName,
+            entityId: tx.entityId,
+            entityType: tx.entityType,
+            logoUrl: tx.logo
+          })
           }
         }
         
@@ -1354,14 +1354,14 @@ const FlowTracePage: React.FC = () => {
         <div className="flex justify-between items-center gap-4">
           <div className="flex items-center gap-4 flex-1">
             <div className="max-w-2xl flex-1">
-              <AddressSearchInput
-                placeholder="Enter Bitcoin address to trace (e.g., bc1qxy2...)"
-                value={address}
-                onChange={(e) => setAddress(e.target.value)}
-                onSearch={handleTrace}
-                loading={isLoading}
-                disabled={isLoading}
-                showValidation={true}
+            <AddressSearchInput
+              placeholder="Enter Bitcoin address to trace (e.g., bc1qxy2...)"
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
+              onSearch={handleTrace}
+              loading={isLoading}
+              disabled={isLoading}
+              showValidation={true}
               />
             </div>
             <WorkspaceInfo 
@@ -1688,11 +1688,11 @@ const FlowTracePage: React.FC = () => {
               const connection: FTConnection = {
                 from,
                 to,
-                amount: e.amount,
-                currency: e.currency,
-                date: e.date,
+              amount: e.amount,
+              currency: e.currency,
+              date: e.date,
                 txHash,
-                type: e.direction,
+              type: e.direction,
                 utxoKey
               };
               

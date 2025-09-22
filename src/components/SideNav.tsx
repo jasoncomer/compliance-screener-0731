@@ -8,7 +8,8 @@ import {
   BarChart3,
   Globe,
   Database,
-  GitBranch
+  GitBranch,
+  Search
 } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { cn } from '../lib/utils';
@@ -64,11 +65,11 @@ const SideNav: React.FC<SideNavProps> = ({ theme, collapsed, onCollapse }) => {
   };
 
   const navigationItems = [
-    // {
-    //   key: 'compliance-screener',
-    //   icon: <Search />,
-    //   label: 'Compliance Screener',
-    // },
+    {
+      key: 'compliance-screener',
+      icon: <Search />,
+      label: 'Compliance Screener',
+    },
     // {
     //   key: 'compliance-dashboard',
     //   icon: <BarChart3 />,
