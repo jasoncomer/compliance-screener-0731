@@ -9,12 +9,12 @@ import Login from './views/Login';
 import Register from "./views/Register";
 import ResetPassword from "./views/ResetPassword";
 import Home from "./views/Home";
-import { ConfigProvider, Spin, message } from "antd";
 import { useAppContext } from "./context/AppContext";
 import { config } from "./config/config";
 import { setAuthToken } from "./api/api";
 import { useTheme } from "./context/ThemeContext";
-import { lightTheme, darkTheme } from "./styles/theme";
+import { PageSpinner } from "./components/ui/spinner";
+import { MessageContainer, NotificationContainer, message } from "./components/ui/message";
 import ComplianceScreener from './views/Compliance/ComplianceScreener';
 import Admin from './views/Admin';
 import Alerts from './views/Alerts';
@@ -39,11 +39,8 @@ function App() {
   const { user, setUser } = useAppContext();
   const { theme } = useTheme();
   const [isLoading, setIsLoading] = useState(true);
-  const [messageApi, contextHolder] = message.useMessage();
   const location = useLocation();
   const { trackUser, trackPageView, clearUser } = useAnalytics();
-
-  const currentTheme = theme === 'light' ? lightTheme : darkTheme;
 
   useEffect(() => {
     // Set data-theme attribute on body
@@ -93,29 +90,26 @@ function App() {
           localStorage.removeItem(accessToken);
           localStorage.removeItem(userKey);
           clearUser();
-          messageApi.error('Session data corrupted. Please login again.');
+          message.error('Session data corrupted. Please login again.');
         }
       } catch (error) {
-        messageApi.error('Error loading user session');
+        message.error('Error loading user session');
       } finally {
         setIsLoading(false);
       }
     };
 
     loadUser();
-  }, [setUser, messageApi, dispatch, trackUser, clearUser]);
+  }, [setUser, dispatch, trackUser, clearUser]);
 
   if (isLoading) {
-    return (
-      <div style={{ height: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-        <Spin size="large" />
-      </div>
-    );
+    return <PageSpinner tip="Loading..." />;
   }
 
   return (
-    <ConfigProvider theme={currentTheme}>
-      {contextHolder}
+    <>
+      <MessageContainer />
+      <NotificationContainer />
       <Toaster />
       <AutosaveProvider>
         <Routes>
@@ -149,7 +143,7 @@ function App() {
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </AutosaveProvider>
-    </ConfigProvider>
+    </>
   )
 }
 

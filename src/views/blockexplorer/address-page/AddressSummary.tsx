@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 import { Tag } from 'antd';
 import { satsToBTC } from '../../../utils/crypto';
-import { colors } from '../../../styles/variables';
+import { colors } from '@/design-system/tokens'
 import { RiskScoringResponse } from '../../../typings/riskScoring';
 import AddressAttributionEntities from './AddressAttributionEntities';
 import { getEntityTypeLabel } from '../../../utils/display-labels';
@@ -68,9 +68,9 @@ const AddressSummary: React.FC<AddressSummaryProps> = ({
   itemsMap
 }) => {
   const getRiskColor = (score: number) => {
-    if (score > 70) return colors.danger;
-    if (score > 40) return colors.warning;
-    return colors.success;
+    if (score > 70) return colors.semantic.danger;
+    if (score > 40) return colors.semantic.warning;
+    return colors.semantic.success;
   };
 
   const getRiskIcon = (score: number) => {

@@ -1,7 +1,7 @@
 import { FC } from 'react';
 import { Button, Modal } from 'antd';
 import { ExclamationCircleOutlined } from '@ant-design/icons';
-import { colors } from '../../../styles/variables';
+import { colors } from '@/design-system/tokens'
 
 interface ApproveTransactionModalProps {
   isVisible: boolean;
@@ -36,7 +36,7 @@ export const ApproveTransactionModal: FC<ApproveTransactionModalProps> = ({
           alignItems: 'center'
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <ExclamationCircleOutlined style={{ color: colors.warning, fontSize: '18px' }} />
+            <ExclamationCircleOutlined style={{ color: colors.semantic.warning, fontSize: '18px' }} />
             <h3 style={{ margin: 0, fontWeight: 600 }}>Approve Transaction</h3>
           </div>
         </div>
@@ -69,7 +69,7 @@ export const ApproveTransactionModal: FC<ApproveTransactionModalProps> = ({
             type="primary"
             loading={loading}
             onClick={onApprove}
-            style={{ backgroundColor: colors.success, borderColor: colors.success }}
+            style={{ backgroundColor: colors.semantic.success, borderColor: colors.semantic.success }}
           >
             Confirm Approve
           </Button>

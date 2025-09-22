@@ -4,34 +4,34 @@
 
 @layer base {
   :root {
-    /* Shadcn/ui design system colors */
+    /* Light Theme Colors */
     --background: 0 0% 100%;
-    --foreground: 0 0% 3.9%;
+    --foreground: 220 9% 11%;
 
     --card: 0 0% 100%;
-    --card-foreground: 0 0% 3.9%;
+    --card-foreground: 220 9% 11%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 3.9%;
+    --popover-foreground: 220 9% 11%;
 
-    --primary: 0 0% 9%;
-    --primary-foreground: 0 0% 98%;
+    --primary: 17 82% 61%;  /* Blockscout Orange */
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 0 0% 96.1%;
-    --secondary-foreground: 0 0% 9%;
+    --secondary: 220 14% 96%;
+    --secondary-foreground: 220 9% 11%;
 
-    --muted: 0 0% 96.1%;
-    --muted-foreground: 0 0% 45.1%;
+    --muted: 220 14% 96%;
+    --muted-foreground: 220 9% 46%;
 
-    --accent: 0 0% 96.1%;
-    --accent-foreground: 0 0% 9%;
+    --accent: 220 14% 96%;
+    --accent-foreground: 220 9% 11%;
 
-    --destructive: 0 84.2% 60.2%;
+    --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 0 0% 89.8%;
-    --input: 0 0% 89.8%;
-    --ring: 0 0% 3.9%;
+    --border: 220 14% 91%;
+    --input: 220 14% 91%;
+    --ring: 17 82% 61%;  /* Blockscout Orange */
 
     --radius: 0.5rem;
 
@@ -41,124 +41,47 @@
     --chart-3: 197 37% 24%;
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;
-    
-    /* Blockscout brand colors */
-    --bs-primary: #e87e4f;
-    --bs-primary-dark: #b6420f;
-    --bs-secondary: #f0f2f5;
-    
-    /* Semantic colors */
-    --bs-success: #52c41a;
-    --bs-success-dark: #327a0e;
-    --bs-warning: #faad14;
-    --bs-warning-dark: #d48806;
-    --bs-danger: #ff4d4f;
-    --bs-danger-dark: #d43838;
-    --bs-info: #1890ff;
-    --bs-info-dark: #1352ff;
-    
-    /* Gray scale */
-    --bs-gray-50: #f9f9f9;
-    --bs-gray-100: #f5f5f5;
-    --bs-gray-200: #f0f0f0;
-    --bs-gray-300: #e0e0e0;
-    --bs-gray-400: #ccc;
-    --bs-gray-500: #999;
-    --bs-gray-600: #666;
-    --bs-gray-700: #4a5568;
-    --bs-gray-800: #1f1f1f;
-    --bs-gray-900: #141414;
-    
-    /* Attribution colors */
-    --bs-attribution: #e87d4f;
-    --bs-attribution-light: #a34015;
-    --bs-attribution-hover: #c74d1a;
-    --bs-attribution-reference: #8d23b1;
-    --bs-attribution-reference-hover: #cf45fe;
   }
 
   .dark,
   body[data-theme="dark"] {
-    /* Shadcn/ui dark mode colors */
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
+    /* Dark Theme Colors */
+    --background: 220 15% 10%;
+    --foreground: 0 0% 98%;
 
-    --card: 0 0% 3.9%;
+    --card: 220 15% 13%;
     --card-foreground: 0 0% 98%;
 
-    --popover: 0 0% 3.9%;
+    --popover: 220 15% 13%;
     --popover-foreground: 0 0% 98%;
 
-    --primary: 0 0% 98%;
-    --primary-foreground: 0 0% 9%;
+    --primary: 17 82% 61%;  /* Blockscout Orange - same in dark */
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 0 0% 14.9%;
+    --secondary: 220 15% 17%;
     --secondary-foreground: 0 0% 98%;
 
-    --muted: 0 0% 14.9%;
-    --muted-foreground: 0 0% 63.9%;
+    --muted: 220 15% 21%;
+    --muted-foreground: 220 9% 64%;
 
-    --accent: 0 0% 14.9%;
+    --accent: 220 15% 17%;
     --accent-foreground: 0 0% 98%;
 
-    --destructive: 0 62.8% 30.6%;
+    --destructive: 0 63% 31%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-    
+    --border: 220 15% 21%;
+    --input: 220 15% 21%;
+    --ring: 17 82% 61%;  /* Blockscout Orange */
+
     /* Chart colors for Risk Dashboard - dark mode */
     --chart-1: 220 70% 50%;
     --chart-2: 160 60% 45%;
     --chart-3: 30 80% 55%;
     --chart-4: 280 65% 60%;
     --chart-5: 340 75% 55%;
-    
-    /* Blockscout dark mode overrides - keeping same colors as they work in both modes */
-    --bs-primary: #e87e4f;
-    --bs-primary-dark: #b6420f;
-    --bs-secondary: #1f1f1f;
-    
-    /* Semantic colors - slightly adjusted for dark mode */
-    --bs-success: #52c41a;
-    --bs-success-dark: #327a0e;
-    --bs-warning: #faad14;
-    --bs-warning-dark: #d48806;
-    --bs-danger: #ff4d4f;
-    --bs-danger-dark: #d43838;
-    --bs-info: #1890ff;
-    --bs-info-dark: #1352ff;
-    
-    /* Gray scale - same as light mode as they're absolute values */
-    --bs-gray-50: #f9f9f9;
-    --bs-gray-100: #f5f5f5;
-    --bs-gray-200: #f0f0f0;
-    --bs-gray-300: #e0e0e0;
-    --bs-gray-400: #ccc;
-    --bs-gray-500: #999;
-    --bs-gray-600: #666;
-    --bs-gray-700: #4a5568;
-    --bs-gray-800: #1f1f1f;
-    --bs-gray-900: #141414;
-    
-    /* Attribution colors - same in both modes */
-    --bs-attribution: #e87d4f;
-    --bs-attribution-light: #a34015;
-    --bs-attribution-hover: #c74d1a;
-    --bs-attribution-reference: #8d23b1;
-    --bs-attribution-reference-hover: #cf45fe;
   }
   
-  /* Ensure light mode is explicitly defined */
-  body[data-theme="light"] {
-    /* Override dark mode variables back to light mode if needed */
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-    --bs-secondary: #f0f2f5;
-  }
 }
 
 @layer base {
@@ -179,8 +102,8 @@
 }
 
 body {
-  margin: 0 !important;
-  padding: 0 !important;
+  margin: 0;
+  padding: 0;
   display: flex;
   min-width: 320px;
   min-height: 100vh;
@@ -232,9 +155,6 @@ body[data-theme="dark"] ::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.3);
 }
 
-.ant-layout {
-  background: transparent !important;
-}
 
 h1 {
   font-size: 2rem;
@@ -251,31 +171,6 @@ h1 {
   text-transform: capitalize;
 }
 
-.ant-input:focus,
-.ant-input-focused {
-  border-color: var(--bs-primary) !important;
-  box-shadow: 0 0 0 2px rgba(232, 126, 79, 0.2) !important;
-}
-
-.ant-input-affix-wrapper:focus,
-.ant-input-affix-wrapper-focused {
-  border-color: var(--bs-primary) !important;
-  box-shadow: 0 0 0 2px rgba(232, 126, 79, 0.2) !important;
-}
-
-.ant-select-focused .ant-select-selector,
-.ant-select:focus .ant-select-selector {
-  border-color: var(--bs-primary) !important;
-  box-shadow: 0 0 0 2px rgba(232, 126, 79, 0.2) !important;
-}
-
-.ant-input:focus,
-.ant-input-focused,
-.ant-input-affix-wrapper:focus,
-.ant-input-affix-wrapper-focused {
-  border-color: var(--bs-primary) !important;
-  box-shadow: 0 0 0 2px rgba(232, 126, 79, 0.2) !important;
-}
 
 pre {
   background-color: #f6f8fa;
@@ -289,236 +184,10 @@ pre {
   border: 1px solid #e1e4e8;
 }
 
-.custom-modal-dark .ant-modal-content {
-  background-color: #1f1f1f !important;
-  border: 1px solid #333 !important;
-}
 
-.custom-modal-dark .ant-modal-header {
-  background-color: #1f1f1f !important;
-  border-bottom: 1px solid #333 !important;
-}
+/* Dark mode input styling - simplified approach using Tailwind utilities */
+/* Input components should use Tailwind dark: modifiers directly in their classes */
 
-.custom-modal-dark .ant-modal-body {
-  background-color: #1f1f1f !important;
-  color: #fff !important;
-}
-
-.custom-modal-dark .ant-modal-footer {
-  background-color: #1f1f1f !important;
-  border-top: 1px solid #333 !important;
-}
-
-.custom-modal-dark .ant-modal-title,
-.custom-modal-dark .ant-modal-close {
-  color: #fff !important;
-}
-
-.custom-modal-dark .ant-modal-confirm-content {
-  color: #fff !important;
-}
-
-.custom-modal-dark .ant-btn-default {
-  background-color: #333 !important;
-  border-color: #555 !important;
-  color: #fff !important;
-}
-
-.custom-modal-dark .ant-btn-default:hover,
-.custom-modal-dark .ant-btn-default:focus {
-  background-color: #444 !important;
-  border-color: #666 !important;
-  color: #fff !important;
-}
-
-.custom-modal-dark .ant-input {
-  background-color: #333 !important;
-  border-color: #555 !important;
-  color: #fff !important;
-}
-
-.custom-modal-dark .ant-input:hover,
-.custom-modal-dark .ant-input:focus {
-  border-color: var(--bs-primary) !important;
-}
-
-.custom-modal-dark .ant-input::placeholder {
-  color: #999 !important;
-}
-
-/* Ensure search input components have proper dark mode styling */
-.dark input[type="text"] {
-  background-color: #1f2937 !important; /* gray-800 */
-  color: #ffffff !important;
-  border-color: #374151 !important; /* gray-700 */
-}
-
-.dark input[type="text"]::placeholder {
-  color: #9ca3af !important; /* gray-400 */
-}
-
-.dark input[type="text"]:focus {
-  background-color: #1f2937 !important; /* gray-800 */
-  border-color: #f97316 !important; /* orange-500 */
-  box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.2) !important;
-}
-
-/* Additional specificity for search input containers */
-.dark .sticky input[type="text"] {
-  background-color: #1f2937 !important; /* gray-800 */
-  color: #ffffff !important;
-  border-color: #374151 !important; /* gray-700 */
-}
-
-.dark .sticky input[type="text"]::placeholder {
-  color: #9ca3af !important; /* gray-400 */
-}
-
-.dark .sticky input[type="text"]:focus {
-  background-color: #1f2937 !important; /* gray-800 */
-  border-color: #f97316 !important; /* orange-500 */
-  box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.2) !important;
-}
-
-/* Even more specific selectors for search inputs */
-.dark .sticky.top-\[0\] input[type="text"],
-.dark .sticky.top-0 input[type="text"],
-.dark .z-20 input[type="text"] {
-  background-color: #1f2937 !important; /* gray-800 */
-  color: #ffffff !important;
-  border-color: #374151 !important; /* gray-700 */
-}
-
-.dark .sticky.top-\[0\] input[type="text"]::placeholder,
-.dark .sticky.top-0 input[type="text"]::placeholder,
-.dark .z-20 input[type="text"]::placeholder {
-  color: #9ca3af !important; /* gray-400 */
-}
-
-.dark .sticky.top-\[0\] input[type="text"]:focus,
-.dark .sticky.top-0 input[type="text"]:focus,
-.dark .z-20 input[type="text"]:focus {
-  background-color: #1f2937 !important; /* gray-800 */
-  border-color: #f97316 !important; /* orange-500 */
-  box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.2) !important;
-}
-
-/* Target the specific search input class */
-.dark .search-input-dark-mode {
-  background-color: #1f2937 !important; /* gray-800 */
-  color: #ffffff !important;
-  border-color: #374151 !important; /* gray-700 */
-}
-
-.dark .search-input-dark-mode::placeholder {
-  color: #9ca3af !important; /* gray-400 */
-}
-
-.dark .search-input-dark-mode:focus {
-  background-color: #1f2937 !important; /* gray-800 */
-  border-color: #f97316 !important; /* orange-500 */
-  box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.2) !important;
-}
-
-/* Ultra-specific selectors for VASP Explorer and other search bars */
-.dark .sticky.top-\[0\].z-20.bg-white.dark\:bg-gray-900 input[type="text"],
-.dark .sticky.top-0.z-20.bg-white.dark\:bg-gray-900 input[type="text"],
-.dark .sticky.z-20.bg-white.dark\:bg-gray-900 input[type="text"] {
-  background-color: #1f2937 !important; /* gray-800 */
-  color: #ffffff !important;
-  border-color: #374151 !important; /* gray-700 */
-}
-
-.dark .sticky.top-\[0\].z-20.bg-white.dark\:bg-gray-900 input[type="text"]::placeholder,
-.dark .sticky.top-0.z-20.bg-white.dark\:bg-gray-900 input[type="text"]::placeholder,
-.dark .sticky.z-20.bg-white.dark\:bg-gray-900 input[type="text"]::placeholder {
-  color: #9ca3af !important; /* gray-400 */
-}
-
-.dark .sticky.top-\[0\].z-20.bg-white.dark\:bg-gray-900 input[type="text"]:focus,
-.dark .sticky.top-0.z-20.bg-white.dark\:bg-gray-900 input[type="text"]:focus,
-.dark .sticky.z-20.bg-white.dark\:bg-gray-900 input[type="text"]:focus {
-  background-color: #1f2937 !important; /* gray-800 */
-  border-color: #f97316 !important; /* orange-500 */
-  box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.2) !important;
-}
-
-/* Nuclear option - target all inputs in dark mode with maximum specificity */
-html.dark input[type="text"],
-html.dark input[type="search"],
-html.dark input[type="email"],
-html.dark input[type="password"] {
-  background-color: #1f2937 !important; /* gray-800 */
-  color: #ffffff !important;
-  border-color: #374151 !important; /* gray-700 */
-}
-
-html.dark input[type="text"]::placeholder,
-html.dark input[type="search"]::placeholder,
-html.dark input[type="email"]::placeholder,
-html.dark input[type="password"]::placeholder {
-  color: #9ca3af !important; /* gray-400 */
-}
-
-html.dark input[type="text"]:focus,
-html.dark input[type="search"]:focus,
-html.dark input[type="email"]:focus,
-html.dark input[type="password"]:focus {
-  background-color: #1f2937 !important; /* gray-800 */
-  border-color: #f97316 !important; /* orange-500 */
-  box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.2) !important;
-}
-
-/* Final override - this should be the last rule */
-html.dark input {
-  background-color: #1f2937 !important; /* gray-800 */
-  color: #ffffff !important;
-  border-color: #374151 !important; /* gray-700 */
-}
-
-html.dark input::placeholder {
-  color: #9ca3af !important; /* gray-400 */
-}
-
-html.dark input:focus {
-  background-color: #1f2937 !important; /* gray-800 */
-  border-color: #f97316 !important; /* orange-500 */
-  box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.2) !important;
-}
-
-/* Force dark mode class - highest priority */
-.force-dark-mode {
-  background-color: #1f2937 !important; /* gray-800 */
-  color: #ffffff !important;
-  border-color: #374151 !important; /* gray-700 */
-}
-
-.force-dark-mode::placeholder {
-  color: #9ca3af !important; /* gray-400 */
-}
-
-.force-dark-mode:focus {
-  background-color: #1f2937 !important; /* gray-800 */
-  border-color: #f97316 !important; /* orange-500 */
-  box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.2) !important;
-}
-
-.custom-modal-dark .ant-modal-confirm-btns .ant-btn-primary[disabled] {
-  background-color: #555 !important;
-  border-color: #555 !important;
-  color: #999 !important;
-}
-
-.custom-modal-dark .ant-btn-primary:hover,
-.custom-modal-dark .ant-btn-primary:focus {
-  background-color: var(--bs-primary-dark) !important;
-  border-color: var(--bs-primary-dark) !important;
-}
-
-.custom-modal-dark .ant-btn-primary {
-  background-color: var(--bs-primary) !important;
-  border-color: var(--bs-primary) !important;
-}
 
 @media (prefers-color-scheme: light) {
   pre {

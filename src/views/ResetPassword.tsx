@@ -6,7 +6,7 @@ import { api } from '../api/api';
 import { useAnalytics } from '../hooks/useAnalytics';
 import { useTheme } from '../context/ThemeContext';
 import styled from 'styled-components';
-import { colors } from '../styles/variables';
+import { colors } from '@/design-system/tokens'
 import { Theme } from '../context/ThemeContext';
 
 interface StyledFormWrapperProps {
@@ -60,7 +60,7 @@ const ModalFormWrapper = styled(FormWrapper)<StyledFormWrapperProps>`
   }
 
   .ant-form-item-label > label {
-    color: ${colors.primary};
+    color: ${colors.brand.primary};
     font-weight: 500;
     font-family: 'Inter', 'Roboto', 'system-ui', 'sans-serif';
     letter-spacing: 0.01em;
@@ -71,7 +71,7 @@ const ModalFormWrapper = styled(FormWrapper)<StyledFormWrapperProps>`
     border-color: ${props => props.$theme === 'dark' ? '#434343' : '#d9d9d9'};
     
     &:hover, &:focus {
-      border-color: ${colors.primary};
+      border-color: ${colors.brand.primary};
     }
   }
 
@@ -90,7 +90,7 @@ const ModalFormWrapper = styled(FormWrapper)<StyledFormWrapperProps>`
     font-size: 17px;
     font-weight: 600;
     border-radius: 8px;
-    background: ${colors.primary};
+    background: ${colors.brand.primary};
     border: none;
     box-shadow: 0 2px 8px 0 rgba(232, 126, 79, 0.18);
     transition: transform 0.12s cubic-bezier(0.4,0,0.2,1), box-shadow 0.12s cubic-bezier(0.4,0,0.2,1);
@@ -99,12 +99,12 @@ const ModalFormWrapper = styled(FormWrapper)<StyledFormWrapperProps>`
     &:hover, &:focus {
       box-shadow: 0 4px 16px 0 rgba(232, 126, 79, 0.28);
       transform: translateY(-2px) scale(1.03);
-      background: ${colors.primaryDark || colors.primary};
+      background: ${colors.brand.primaryDark || colors.brand.primary};
     }
     &:active {
       box-shadow: 0 1px 4px 0 rgba(232, 126, 79, 0.12);
       transform: translateY(2px) scale(0.98);
-      background: ${colors.primary};
+      background: ${colors.brand.primary};
     }
   }
 `;

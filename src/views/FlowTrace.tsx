@@ -4,7 +4,7 @@
 // import ViewWrapper from '../components/ViewWrapper';
 // import { FundOutlined } from '@ant-design/icons';
 // import { useTheme } from '../context/ThemeContext';
-// import { colors } from '../styles/variables';
+// import { colors } from '@/design-system/tokens'
 
 // const FlowTrace: React.FC = () => {
 //   const { theme } = useTheme();
@@ -38,7 +38,7 @@
 //   };
 
 //   return (
-//     <ViewWrapper title="Flow Trace" icon={<FundOutlined style={{ fontSize: '28px', color: colors.attributionHover, fontWeight: 'bold' }} />}>
+//     <ViewWrapper title="Flow Trace" icon={<FundOutlined style={{ fontSize: '28px', color: colors.attribution.hover, fontWeight: 'bold' }} />}>
 //       <div style={{ marginBottom: 20, display: 'flex', alignItems: 'center' }}>
 //         <Select
 //           value={blockchain}

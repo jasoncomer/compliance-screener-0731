@@ -1,10 +1,10 @@
-import { colors } from '../../../styles/variables';
+import { colors } from '@/design-system/tokens'
 import { EComplianceTransactionStatus } from '../../../typings/compliance';
 
 export const getRiskScoreColor = (score: number): string => {
-  if (score > 70) return colors.danger;
-  if (score > 30) return colors.warning;
-  return colors.successDark;
+  if (score > 70) return colors.semantic.danger;
+  if (score > 30) return colors.semantic.warning;
+  return colors.semantic.successDark;
 };
 
 export const getComplianceReportStatusColor = (status: EComplianceTransactionStatus) => {

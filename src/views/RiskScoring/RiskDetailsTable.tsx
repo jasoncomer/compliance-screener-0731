@@ -5,7 +5,7 @@ import { RiskScoringResponse, RiskFactor } from '../../typings/riskScoring';
 import { getRiskIcon } from './utils';
 import JurisdictionMap from './JurisdictionMap';
 import EntityDetails from './EntityDetails';
-import { colors } from '../../styles/variables';
+import { colors } from '@/design-system/tokens'
 // import TransactionDetails from './TransactionDetails';
 
 const { TabPane } = Tabs;
@@ -64,25 +64,25 @@ const RiskDetailsTable: React.FC<RiskDetailsTableProps> = ({ riskScores }) => {
   // Custom empty state components
   const customTransactionEmptyState = () => (
     <Empty
-      image={<TransactionOutlined style={{ fontSize: 40, color: colors.primary }} />}
+      image={<TransactionOutlined style={{ fontSize: 40, color: colors.brand.primary }} />}
       imageStyle={{ height: 40 }}
-      description={<Text style={{ color: colors.primary }}>No transaction risk factors were found for this address</Text>}
+      description={<Text style={{ color: colors.brand.primary }}>No transaction risk factors were found for this address</Text>}
     />
   );
 
   const customEntityEmptyState = () => (
     <Empty
-      image={<UserOutlined style={{ fontSize: 40, color: colors.primary }} />}
+      image={<UserOutlined style={{ fontSize: 40, color: colors.brand.primary }} />}
       imageStyle={{ height: 40 }}
-      description={<Text style={{ color: colors.primary }}>No entity information was found for this address</Text>}
+      description={<Text style={{ color: colors.brand.primary }}>No entity information was found for this address</Text>}
     />
   );
 
   const customJurisdictionEmptyState = () => (
     <Empty
-      image={<GlobalOutlined style={{ fontSize: 40, color: colors.primary }} />}
+      image={<GlobalOutlined style={{ fontSize: 40, color: colors.brand.primary }} />}
       imageStyle={{ height: 40 }}
-      description={<Text style={{ color: colors.primary }}>No jurisdiction risk data available for this address</Text>}
+      description={<Text style={{ color: colors.brand.primary }}>No jurisdiction risk data available for this address</Text>}
     />
   );
 

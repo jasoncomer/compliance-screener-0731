@@ -4,7 +4,7 @@ import { Card, Typography, Tag } from 'antd';
 import { UserOutlined, GlobalOutlined, TwitterOutlined, SendOutlined, GithubOutlined, LinkedinOutlined, FacebookOutlined, InstagramOutlined, YoutubeOutlined, RedditOutlined, WarningOutlined } from '@ant-design/icons';
 import styled from 'styled-components';
 import { SOTV2 } from '../../typings/interfaces';
-import { colors } from '../../styles/variables';
+import { colors } from '@/design-system/tokens'
 import { SimpleLogo } from '../../components/common/Logo';
 
 const { Title, Text } = Typography;
@@ -85,7 +85,7 @@ const HeaderInfo = styled.div`
 const SanctionedPill = styled.div`
   display: inline-flex;
   align-items: center;
-  background-color: ${colors.danger};
+  background-color: ${colors.semantic.danger};
   color: white;
   padding: 6px 12px;
   border-radius: 16px;
@@ -151,21 +151,21 @@ const EntityDetails: React.FC<EntityDetailsProps> = ({ sot }) => {
           <div style={{ marginTop: '4px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
             {sot.dead && (
               <span>
-                <Text strong style={{ color: colors.danger }}>
+                <Text strong style={{ color: colors.semantic.danger }}>
                   Entity likely inactive or does not support Crypto
                 </Text>
               </span>
             )}
             {sot.centralized === false && (
               <span>
-                <Text strong style={{ color: colors.secondary, marginBottom: '0' }}>
+                <Text strong style={{ color: colors.brand.secondary, marginBottom: '0' }}>
                   Decentralized Entity
                 </Text>
               </span>
             )}
             {sot.no_kyc_req && (
               <span>
-                <Text strong style={{ color: colors.primary, marginTop: '0' }}>
+                <Text strong style={{ color: colors.brand.primary, marginTop: '0' }}>
                   NO KYC REQUIRED
                 </Text>
               </span>

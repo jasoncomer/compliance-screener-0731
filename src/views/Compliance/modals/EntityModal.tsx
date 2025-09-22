@@ -1,7 +1,7 @@
 import React from 'react';
 import { Modal } from 'antd';
 import { useTheme } from '../../../context/ThemeContext';
-import { colors } from '../../../styles/variables';
+import { colors } from '@/design-system/tokens'
 import { IComplianceTransaction } from '../../../typings/compliance';
 
 interface EntityModalProps {

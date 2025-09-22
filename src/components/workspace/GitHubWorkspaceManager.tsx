@@ -81,12 +81,12 @@ export default function GitHubWorkspaceManager(props: GitHubWorkspaceManagerProp
 
   useEffect(() => {
     if (open) loadWorkspaces()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [open])
 
   useEffect(() => {
     loadWorkspaces()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [refreshTrigger])
 
   const loadWorkspaces = async () => {

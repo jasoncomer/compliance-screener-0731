@@ -9,7 +9,7 @@ import { getEntityTypeLabel } from '../utils/display-labels';
 import { EEntityType } from '../typings/SOT';
 import { Card } from './ui/card';
 
-import { colors } from '../styles/variables';
+import { colors } from '@/design-system/tokens'
 
 const AssociatedSOTsWrapper = styled.div`
   text-align: left;

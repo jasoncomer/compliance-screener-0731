@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
-import { colors } from '../../../../styles/variables';
+import { colors } from '@/design-system/tokens'
 import { IComplianceTransaction } from '../../../../typings/compliance';
 import { getRiskScoreColor, getComplianceReportStatusColor } from '../../utils/compliance.utils';
 import { Tag } from 'antd';
@@ -49,7 +49,7 @@ const Field = {
 
   Link: styled.a`
     cursor: pointer;
-    color: ${colors.attributionHover};
+    color: ${colors.attribution.hover};
     font-weight: bold;
   `,
 

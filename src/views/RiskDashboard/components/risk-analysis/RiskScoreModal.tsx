@@ -2,7 +2,7 @@ import React from 'react';
 import { Modal, Card, Statistic, Progress, Table, Tabs, Space, Typography, Empty } from 'antd';
 import { UserOutlined, TransactionOutlined, GlobalOutlined, SafetyOutlined } from '@ant-design/icons';
 import { RiskScoringResponse, RiskFactor } from '../../../../typings/riskScoring';
-import { colors } from '../../../../styles/variables';
+import { colors } from '@/design-system/tokens'
 import { useTheme } from '../../../../context/ThemeContext';
 import './RiskScoreModal.css';
 
@@ -173,8 +173,8 @@ const RiskScoreModal: React.FC<RiskScoreModalProps> = ({
   const customEmptyState = (icon: React.ReactNode, description: string) => (
     <Empty
       image={icon}
-      imageStyle={{ height: 40, color: colors.primary }}
-      description={<Text style={{ color: colors.primary }}>{description}</Text>}
+      imageStyle={{ height: 40, color: colors.brand.primary }}
+      description={<Text style={{ color: colors.brand.primary }}>{description}</Text>}
     />
   );
 
@@ -182,7 +182,7 @@ const RiskScoreModal: React.FC<RiskScoreModalProps> = ({
     <Modal
       title={
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <SafetyOutlined style={{ color: colors.attributionHover }} />
+          <SafetyOutlined style={{ color: colors.attribution.hover }} />
           <span style={{ color: theme === 'light' ? '#374151' : '#e5e7eb' }}>Risk Score Details</span>
         </div>
       }

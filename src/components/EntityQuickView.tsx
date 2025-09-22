@@ -6,7 +6,7 @@ import { SimpleLogo } from './common/Logo';
 import { SOT } from '../typings/interfaces';
 import { EEntityType } from '../typings/SOT';
 import { getEntityTypeLabel } from '../utils/display-labels';
-import { colors } from '../styles/variables';
+import { colors } from '@/design-system/tokens'
 
 const { Text } = Typography;
 
@@ -37,7 +37,7 @@ const ViewIconWrapper = styled.div`
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  color: ${colors.primary};
+  color: ${colors.brand.primary};
   padding: 4px;
   transition: all 0.3s;
   z-index: 1;
@@ -45,7 +45,7 @@ const ViewIconWrapper = styled.div`
   
   &:hover {
     transform: scale(1.2);
-    color: ${colors.attributionHover};
+    color: ${colors.attribution.hover};
   }
 `;
 
@@ -184,7 +184,7 @@ const CompactSOTView: React.FC<{
       )}
       
       <div style={{ textAlign: 'center', marginTop: 16, borderTop: '1px solid #f0f0f0', paddingTop: 12 }}>
-        <a onClick={() => onViewFull(sot)} style={{ cursor: 'pointer', color: colors.primary }}>
+        <a onClick={() => onViewFull(sot)} style={{ cursor: 'pointer', color: colors.brand.primary }}>
           View Full Profile
         </a>
       </div>

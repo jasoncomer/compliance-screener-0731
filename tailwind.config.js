@@ -1,4 +1,5 @@
 import tailwindcssAnimate from "tailwindcss-animate";
+import * as tokens from "./src/design-system/tokens";
 
 /** @type {import('tailwindcss').Config} */
 export default {
@@ -9,8 +10,12 @@ export default {
   ],
   theme: {
     extend: {
+      fontFamily: tokens.typography.fontFamily,
+      fontSize: tokens.typography.fontSize,
+      fontWeight: tokens.typography.fontWeight,
+      spacing: tokens.spacing,
       colors: {
-        // Shadcn/ui design system colors
+        // Shadcn/ui design system colors (CSS variables for theme switching)
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
@@ -44,10 +49,10 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
-        
+
         // Table header color
         'table-header': '#282828',
-        
+
         // Chart colors for Risk Dashboard
         chart: {
           '1': 'hsl(var(--chart-1))',
@@ -56,68 +61,51 @@ export default {
           '4': 'hsl(var(--chart-4))',
           '5': 'hsl(var(--chart-5))'
         },
-        
-        // Blockscout brand colors (from Ant Design variables)
-        brand: {
-          primary: "var(--bs-primary)",
-          "primary-dark": "var(--bs-primary-dark)",
-          secondary: "var(--bs-secondary)",
-        },
-        
+
+        // Brand colors from design tokens
+        brand: tokens.colors.brand,
+
         // Blockscout orange for Risk Dashboard
         blockscout: {
           orange: '#F58B2C',
         },
-        
-        // Semantic colors matching Ant Design
+
+        // Semantic colors from design tokens
         success: {
-          DEFAULT: "var(--bs-success)",
-          dark: "var(--bs-success-dark)",
+          DEFAULT: tokens.colors.semantic.success,
+          dark: tokens.colors.semantic.successDark,
+          light: tokens.colors.semantic.successLight,
         },
         warning: {
-          DEFAULT: "var(--bs-warning)",
-          dark: "var(--bs-warning-dark)",
+          DEFAULT: tokens.colors.semantic.warning,
+          dark: tokens.colors.semantic.warningDark,
+          light: tokens.colors.semantic.warningLight,
         },
         danger: {
-          DEFAULT: "var(--bs-danger)",
-          dark: "var(--bs-danger-dark)",
+          DEFAULT: tokens.colors.semantic.danger,
+          dark: tokens.colors.semantic.dangerDark,
+          light: tokens.colors.semantic.dangerLight,
         },
         info: {
-          DEFAULT: "var(--bs-info)",
-          dark: "var(--bs-info-dark)",
+          DEFAULT: tokens.colors.semantic.info,
+          dark: tokens.colors.semantic.infoDark,
+          light: tokens.colors.semantic.infoLight,
         },
-        
-        // Extended gray scale to match Ant Design
-        gray: {
-          50: "var(--bs-gray-50)",
-          100: "var(--bs-gray-100)",
-          200: "var(--bs-gray-200)",
-          300: "var(--bs-gray-300)",
-          400: "var(--bs-gray-400)",
-          500: "var(--bs-gray-500)",
-          600: "var(--bs-gray-600)",
-          700: "var(--bs-gray-700)",
-          800: "var(--bs-gray-800)",
-          900: "var(--bs-gray-900)",
-        },
-        
-        // Attribution specific colors
-        attribution: {
-          DEFAULT: "var(--bs-attribution)",
-          light: "var(--bs-attribution-light)",
-          hover: "var(--bs-attribution-hover)",
-          reference: "var(--bs-attribution-reference)",
-          "reference-hover": "var(--bs-attribution-reference-hover)",
-        },
+
+        // Gray scale from design tokens
+        gray: tokens.colors.gray,
+
+        // Attribution colors from design tokens
+        attribution: tokens.colors.attribution,
       },
-      borderRadius: {
-        lg: "var(--radius)",
-        md: "calc(var(--radius) - 2px)",
-        sm: "calc(var(--radius) - 4px)",
-      },
+      borderRadius: tokens.borderRadius,
+      boxShadow: tokens.shadows,
+      zIndex: tokens.zIndex,
       animation: {
         fadeIn: 'fadeIn 0.5s cubic-bezier(0.3, 0, 0.7, 1) forwards',
         fadeOut: 'fadeOut 0.5s cubic-bezier(0.3, 0, 0.7, 1) forwards',
+        'slide-in': 'slideIn 0.3s ease-out',
+        'spin': 'spin 0.8s linear infinite',
       },
       keyframes: {
         fadeIn: {
@@ -138,6 +126,21 @@ export default {
           to: {
             opacity: '0',
             transform: 'translateY(-10px)',
+          },
+        },
+        slideIn: {
+          from: {
+            transform: 'translateX(100%)',
+            opacity: '0',
+          },
+          to: {
+            transform: 'translateX(0)',
+            opacity: '1',
+          },
+        },
+        spin: {
+          to: {
+            transform: 'rotate(360deg)',
           },
         },
       },

@@ -7,7 +7,7 @@ import { api } from '../api/api';
 import { getEntityTypeLabel } from '../utils/display-labels';
 import { EEntityType } from '../typings/SOT';
 import Input from './common/Input';
-import { colors } from '../styles/variables';
+import { colors } from '@/design-system/tokens'
 import { useSelector } from 'react-redux';
 import { RootState } from '../store/store';
 import EntitySidebar from './EntitySidebar/index';
@@ -433,21 +433,21 @@ const SOTEditor: React.FC<SOTEditorProps> = ({ sot, onSelectAssociatedSot }) => 
             <div style={{ marginTop: '4px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
               {sot.dead && (
                 <span>
-                  <Text strong style={{ color: colors.danger }}>
+                  <Text strong style={{ color: colors.semantic.danger }}>
                     Entity likely inactive or does not support Crypto
                   </Text>
                 </span>
               )}
               {sot.centralized === false && (
                 <span>
-                  <Text strong style={{ color: colors.secondary, marginBottom: '0' }}>
+                  <Text strong style={{ color: colors.brand.secondary, marginBottom: '0' }}>
                     Decentralized Entity
                   </Text>
                 </span>
               )}
               {sot.no_kyc_req && (
                 <span>
-                  <Text strong style={{ color: colors.primary, marginTop: '0' }}>
+                  <Text strong style={{ color: colors.brand.primary, marginTop: '0' }}>
                     NO KYC REQUIRED
                   </Text>
                 </span>

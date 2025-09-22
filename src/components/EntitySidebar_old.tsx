@@ -8,7 +8,7 @@ import { useSelector } from 'react-redux';
 import { RootState } from '../store/store';
 import { getEntityTypeLabel } from '../utils/display-labels';
 import { EEntityType } from '../typings/SOT';
-import { colors } from '../styles/variables';
+import { colors } from '@/design-system/tokens'
 import { api } from '../api/api';
 
 const { Title } = Typography;

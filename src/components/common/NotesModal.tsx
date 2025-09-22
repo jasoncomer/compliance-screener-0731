@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Modal, Button, Input, Typography, Spin, message as antMessage, Popconfirm } from 'antd';
 import styled from 'styled-components';
 import { useTheme } from '../../context/ThemeContext';
-import { colors } from '../../styles/variables';
+import { colors } from '@/design-system/tokens'
 import { INote, ICreateNote, notesApi } from '../../api/notes';
 import { useSelector } from 'react-redux';
 import { selectCurrentOrganization } from '../../store/slices/organizationsSlice';

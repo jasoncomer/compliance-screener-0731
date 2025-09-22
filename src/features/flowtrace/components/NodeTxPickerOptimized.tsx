@@ -283,7 +283,7 @@ const NodeTxPickerOptimized: React.FC<Props> = ({
 
   // Filter and sort transactions
   const filteredTxs = useMemo(() => {
-    let filtered = txs.filter(tx => {
+    const filtered = txs.filter(tx => {
       const searchLower = search.toLowerCase();
       return (
         tx.txid.toLowerCase().includes(searchLower) ||

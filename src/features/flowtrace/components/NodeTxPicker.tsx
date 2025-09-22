@@ -580,7 +580,7 @@ const NodeTxPicker: React.FC<Props> = ({ open, address, onOpenChange, onAdd, nod
           // Handle incoming transactions (money flowing TO the current node)
           if (transactionDirection === 'in') {
             const inputs = Array.isArray(tx.inputs) ? tx.inputs : [];
-            let externalInputs = inputs.filter((i: any) => i?.addr && i.addr !== address);
+            const externalInputs = inputs.filter((i: any) => i?.addr && i.addr !== address);
             
             // Process all external inputs
 
@@ -703,7 +703,7 @@ const NodeTxPicker: React.FC<Props> = ({ open, address, onOpenChange, onAdd, nod
           // Handle outgoing transactions (money flowing FROM the current node)
           if (transactionDirection === 'out') {
             const outputs = Array.isArray(tx.outputs) ? tx.outputs : [];
-            let externalOutputs = outputs.filter((o: any) => o?.addr && o.addr !== address);
+            const externalOutputs = outputs.filter((o: any) => o?.addr && o.addr !== address);
             
             // Get the inputs from this specific address - this is the amount this address sent
             const addressInputs = tx.inputs?.filter((inp: any) => inp.addr === address) || [];
@@ -902,7 +902,7 @@ const NodeTxPicker: React.FC<Props> = ({ open, address, onOpenChange, onAdd, nod
 
   // Filter and sort transactions
   const filteredTxs = useMemo(() => {
-    let filtered = txs.filter(tx => {
+    const filtered = txs.filter(tx => {
       const searchLower = search.toLowerCase();
       return (
         tx.txid.toLowerCase().includes(searchLower) ||

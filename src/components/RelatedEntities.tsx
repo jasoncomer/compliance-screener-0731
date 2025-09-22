@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { Typography, Card, Avatar } from 'antd';
 import { UserOutlined } from '@ant-design/icons';
-import { colors } from '../styles/variables';
+import { colors } from '@/design-system/tokens'
 import { api } from '../api/api';
 
 const { Title } = Typography;

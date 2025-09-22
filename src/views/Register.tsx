@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { api } from '../api/api';
 import Input from '../components/common/Input';
 import { useTheme } from '../context/ThemeContext';
-import { colors } from '../styles/variables';
+import { colors } from '@/design-system/tokens'
 import { useAnalytics } from '../hooks/useAnalytics';
 import PageTransition from '../components/PageTransition';
 import styled from 'styled-components';
@@ -126,7 +126,7 @@ const StyledButton = styled(Button)<{ variant: 'primary' | 'secondary'; $theme?:
     ? `2px solid ${$theme === 'dark' ? '#4a5568' : '#e2e8f0'}` 
     : 'none'};
   background: ${({ variant }) => variant === 'primary' 
-    ? colors.primary 
+    ? colors.brand.primary 
     : 'transparent'};
   color: ${({ variant, $theme }) => variant === 'primary' 
     ? '#ffffff' 
@@ -134,7 +134,7 @@ const StyledButton = styled(Button)<{ variant: 'primary' | 'secondary'; $theme?:
   
   &:hover {
     background: ${({ variant, $theme }) => variant === 'primary' 
-      ? colors.primaryDark 
+      ? colors.brand.primaryDark 
       : $theme === 'dark' ? '#4a5568' : '#f7fafc'};
     border-color: ${({ variant, $theme }) => variant === 'secondary' 
       ? $theme === 'dark' ? '#718096' : '#cbd5e0' 
@@ -142,7 +142,7 @@ const StyledButton = styled(Button)<{ variant: 'primary' | 'secondary'; $theme?:
   }
   
   &:focus {
-    box-shadow: 0 0 0 2px ${colors.primary}40;
+    box-shadow: 0 0 0 2px ${colors.brand.primary}40;
   }
 `;
 

@@ -3,7 +3,7 @@ import { AlertOutlined } from '@ant-design/icons';
 import ViewWrapper from '../components/ViewWrapper';
 import { Typography, Table, Tag, Input, Select, Space, Button, Collapse } from 'antd';
 import AlertConfig from './AlertConfig';
-import { colors } from '../styles/variables';
+import { colors } from '@/design-system/tokens'
 import { useTheme } from '../context/ThemeContext';
 
 const { Paragraph } = Typography;
@@ -136,7 +136,7 @@ const Alerts: React.FC = () => {
 
   return (
     <ViewWrapper
-      icon={<AlertOutlined style={{ fontSize: '28px', color: colors.attributionHover, fontWeight: 'bold' }} />}
+      icon={<AlertOutlined style={{ fontSize: '28px', color: colors.attribution.hover, fontWeight: 'bold' }} />}
       title="Alerts"
       className={theme === 'light' ? 'light-theme-view' : ''}
     >
@@ -152,7 +152,7 @@ const Alerts: React.FC = () => {
             header="Alert Configuration" 
             key="1" 
             style={{ 
-              border: `1px solid ${colors.attributionHover}`, 
+              border: `1px solid ${colors.attribution.hover}`, 
               backgroundColor: theme === 'dark' ? colors.gray[900] : colors.white, 
               color: theme === 'dark' ? colors.gray[50] : colors.gray[800] 
             }} 

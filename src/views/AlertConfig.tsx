@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Form, InputNumber, Button, Typography, message, Radio, Input, Select, AutoComplete } from 'antd';
 import { useTheme } from '../context/ThemeContext';
-import { colors } from '../styles/variables';
+import { colors } from '@/design-system/tokens'
 
 const { Title, Paragraph } = Typography;
 const { Option } = Select;

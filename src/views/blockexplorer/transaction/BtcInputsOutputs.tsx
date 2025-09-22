@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import styled from 'styled-components';
-import { colors } from '../../../styles/variables';
+import { colors } from '@/design-system/tokens'
 import { useSelector } from 'react-redux';
 import { selectCurrentOrganization } from '../../../store/slices/organizationsSlice';
 
@@ -47,19 +47,19 @@ const Wrapper = styled.div`
     color: ${colors.attribution};
     font-weight: bold;
     &:hover {
-      color: ${colors.attributionHover};
+      color: ${colors.attribution.hover};
     }
   }
   .address {
     font-family: monospace;
-    color: ${colors.primary};
+    color: ${colors.brand.primary};
     text-decoration: none;
     text-align: left;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
     &:hover {
-      color: ${colors.link};
+      color: ${colors.semantic.info};
       text-decoration: underline;
     }
   }
@@ -89,7 +89,7 @@ const Wrapper = styled.div`
     align-items: center;
     flex-shrink: 0;
     &:hover {
-      color: ${colors.primary};
+      color: ${colors.brand.primary};
     }
   }
   .copy-alert {
@@ -97,7 +97,7 @@ const Wrapper = styled.div`
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    background-color: ${colors.primary};
+    background-color: ${colors.brand.primary};
     color: #ffffff;
     padding: 15px 30px;
     border-radius: 6px;
@@ -149,7 +149,7 @@ const Wrapper = styled.div`
     margin: 0;
     transition: color 0.2s ease;
     &:hover {
-      color: ${colors.primary};
+      color: ${colors.brand.primary};
     }
     &:active {
       transform: scale(0.95);
@@ -167,7 +167,7 @@ const Wrapper = styled.div`
   .cospend-id {
     min-width: 150px;
     font-family: monospace;
-    color: ${colors.attributionReference};
+    color: ${colors.attribution.reference};
     text-align: left;
     margin-right: 50px;
   }

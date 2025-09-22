@@ -1,247 +1,298 @@
-# Blockscout Design System
+# Blockscout App Design System
 
 ## Overview
 
-The Blockscout app uses a multi-layered design system that combines modern design principles with blockchain-specific UI patterns. This document serves as the central reference for design tokens, components, and theming guidelines.
+This document outlines the design system for the Blockscout App, providing guidelines for consistent UI implementation across the application.
 
-## Design Systems Stack
+## 🎨 Core Principles
 
-### 1. Ant Design (Primary UI Library)
-- **Purpose**: Core component library for forms, tables, navigation
-- **Theme**: Custom light/dark themes with Blockscout brand colors
-- **Configuration**: `src/styles/theme.ts`
+1. **Consistency** - Use standardized tokens and patterns
+2. **Accessibility** - Ensure proper contrast and keyboard navigation
+3. **Performance** - Leverage Tailwind utilities over custom CSS
+4. **Maintainability** - Single source of truth for design values
 
-### 2. Shadcn/UI (Modern Components)
-- **Purpose**: Accessible, customizable components built on Radix primitives
-- **Styling**: Tailwind CSS with CSS custom properties
-- **Components**: Dialog, Button, Card, Input, Select variants
-
-### 3. Styled Components (Custom Styling)
-- **Purpose**: CSS-in-JS for complex, dynamic styling
-- **Theme Integration**: Via ThemeProvider with light/dark mode support
-- **Usage**: Layout components, animations, custom designs
-
-### 4. Tailwind CSS (Utility Framework)
-- **Purpose**: Utility-first styling with extended custom colors
-- **Configuration**: `tailwind.config.js`
-- **Custom Classes**: Blockscout brand colors, charts, animations
-
-## Color System
-
-### Brand Colors
-```css
-/* Primary Brand */
---bs-primary: #e87e4f;           /* Blockscout Orange */
---bs-primary-dark: #b6420f;      /* Darker Orange */
---bs-secondary: #f0f2f5;         /* Light Gray */
-```
-
-### Semantic Colors
-```css
-/* Status Colors */
---bs-success: #52c41a;
---bs-warning: #faad14;
---bs-danger: #ff4d4f;
---bs-info: #1890ff;
-```
-
-### Neutral Palette
-```css
-/* Gray Scale (50-900) */
---bs-gray-50: #f9f9f9;
---bs-gray-100: #f5f5f5;
---bs-gray-200: #f0f0f0;
---bs-gray-300: #e0e0e0;
---bs-gray-400: #ccc;
---bs-gray-500: #999;
---bs-gray-600: #666;
---bs-gray-700: #4a5568;
---bs-gray-800: #1f1f1f;
---bs-gray-900: #141414;
-```
-
-### Attribution Colors (Blockchain-specific)
-```css
---bs-attribution: #e87d4f;
---bs-attribution-reference: #8d23b1;
---bs-attribution-reference-hover: #cf45fe;
-```
-
-## Theme System
-
-### Light Theme
-- **Background**: White (`#ffffff`)
-- **Text**: Black (`#000000`)
-- **Cards**: White with subtle shadows
-- **Borders**: Light gray (`#d9d9d9`)
-
-### Dark Theme
-- **Background**: Deep gray (`#141414`)
-- **Text**: White (`#ffffff`)
-- **Cards**: Dark gray (`#1f1f1f`)
-- **Borders**: Dark gray (`#434343`)
-
-### Theme Implementation
-```typescript
-// Theme Context Usage
-const { theme, toggleTheme } = useTheme();
-
-// Styled Components
-const Container = styled.div<{ theme: { theme: 'light' | 'dark' } }>`
-  background: ${props => props.theme.theme === 'dark' ? '#141414' : '#fff'};
-`;
-
-// Tailwind Classes
-<div className={cn(
-  "p-4 rounded-lg",
-  theme === 'light' ? "bg-white text-black" : "bg-gray-800 text-white"
-)}>
-```
-
-## Typography
-
-### Font Stack
-```css
-font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-  'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
-```
-
-### Hierarchy
-- **H1**: 2rem (32px), font-weight: 600
-- **Body**: 14px, line-height: 1.45
-- **Code**: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace
-
-## Spacing System
-
-### Scale (4px base)
-- **xs**: 4px
-- **sm**: 8px
-- **md**: 16px
-- **lg**: 24px
-- **xl**: 32px
-- **2xl**: 48px
-
-## Border Radius
-
-### System
-- **sm**: 4px
-- **md**: 6px
-- **lg**: 8px
-- **xl**: 12px
-- **2xl**: 16px
-
-## Shadows & Elevation
-
-### Light Theme
-```css
-box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-```
-
-### Dark Theme
-```css
-box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
-```
-
-## Component Patterns
-
-### Cards
-- **Light**: White background with subtle shadow
-- **Dark**: Dark gray background with darker shadow
-- **Padding**: 16px-24px
-- **Border Radius**: 8px
-
-### Buttons
-- **Primary**: Blockscout orange (`#e87e4f`)
-- **Height**: 40px
-- **Border Radius**: 6px
-- **Hover**: Darker shade
-
-### Forms
-- **Focus State**: Orange border with orange shadow
-- **Error State**: Red border and text
-- **Disabled State**: 50% opacity
-
-## Blockchain-Specific Components
-
-### Transaction Hash
-- **Font**: Monospace
-- **Color**: Theme-aware text color
-- **Truncation**: Middle truncation for long hashes
-
-### Address Display
-- **Font**: Monospace
-- **Attribution Colors**: Special colors for tagged addresses
-- **Hover States**: Subtle background change
-
-### Risk Indicators
-- **Colors**: Red (high), Yellow (medium), Green (low)
-- **Format**: Badges with rounded corners
-
-## Accessibility
-
-### Color Contrast
-- **Light Theme**: Minimum 4.5:1 contrast ratio
-- **Dark Theme**: Minimum 4.5:1 contrast ratio
-- **Focus States**: Visible focus indicators
-
-### Keyboard Navigation
-- **Tab Order**: Logical flow
-- **Focus Indicators**: Orange outline matching brand
-- **Skip Links**: For screen readers
-
-## Animation & Transitions
-
-### Durations
-- **Fast**: 150ms
-- **Normal**: 300ms
-- **Slow**: 500ms
-
-### Easing
-- **Standard**: cubic-bezier(0.3, 0, 0.7, 1)
-- **Enter**: cubic-bezier(0, 0, 0.2, 1)
-- **Exit**: cubic-bezier(0.4, 0, 1, 1)
-
-## Usage Guidelines
-
-### Do's
-✅ Use semantic color tokens instead of hardcoded colors
-✅ Implement theme switching for all components
-✅ Follow spacing system for consistent layout
-✅ Use appropriate typography hierarchy
-✅ Maintain accessibility standards
-
-### Don'ts
-❌ Mix different styling approaches within single components
-❌ Hardcode colors outside of design tokens
-❌ Ignore theme context in custom components
-❌ Use inconsistent spacing values
-❌ Skip accessibility considerations
-
-## File Structure
+## 📁 File Structure
 
 ```
 src/
-├── styles/
-│   ├── theme.ts           # Ant Design theme configuration
-│   ├── variables.tsx      # Color tokens and theme variables
-│   ├── globals.css        # Global styles and Tailwind imports
-│   └── theme-overrides.css # Ant Design component overrides
-├── context/
-│   └── ThemeContext.tsx   # Theme state management
-├── components/ui/         # Shadcn/UI components
-└── components/           # Custom components
+├── design-system/
+│   ├── tokens.ts        # Core design tokens (colors, spacing, typography)
+│   ├── constants.ts     # UI constants and standards
+│   └── utils.ts         # Helper functions
+├── components/ui/       # Reusable UI components
+│   ├── button.tsx
+│   ├── input.tsx
+│   ├── card.tsx
+│   └── ...
+└── index.css           # Global styles and CSS variables
 ```
 
-## Migration Notes
+## 🎨 Color System
 
-### Current Issues Being Addressed
-1. **Inconsistent theme prop patterns** - Standardizing to single `theme` prop
-2. **Hardcoded dark mode** - Converting to dynamic theme switching
-3. **Color mismatches** - Aligning all color systems
-4. **Missing TypeScript types** - Adding proper theme typing
+### Brand Colors
 
-### Future Improvements
-- Implement design tokens system
-- Add more animation presets
-- Expand accessibility features
-- Create component showcase/Storybook
+- **Primary**: `#e87e4f` - Blockscout Orange
+- **Primary Dark**: `#b6420f` - Darker orange for hover states
+- **Secondary**: `#f0f2f5` - Light gray background
+
+### Semantic Colors
+
+```typescript
+// Success
+success: '#52c41a'
+successDark: '#327a0e'
+
+// Warning
+warning: '#faad14'
+warningDark: '#d48806'
+
+// Danger
+danger: '#ff4d4f'
+dangerDark: '#d43838'
+
+// Info
+info: '#1890ff'
+infoDark: '#1352ff'
+```
+
+### Gray Scale
+
+A comprehensive gray scale from `gray-50` to `gray-950` for text, borders, and backgrounds.
+
+## 📏 Spacing System
+
+Based on a 4px grid for consistent spacing:
+
+```typescript
+// Common spacing values
+spacing: {
+  0: '0px',
+  1: '4px',
+  2: '8px',
+  3: '12px',
+  4: '16px',   // Default for most components
+  6: '24px',   // Card padding
+  8: '32px',   // Section spacing
+}
+```
+
+### Component Spacing Standards
+
+```typescript
+// Card padding
+card.default: 'p-6'     // 24px
+card.compact: 'p-4'     // 16px
+
+// Button padding
+button.sm: 'px-3 py-1.5'
+button.md: 'px-4 py-2'
+button.lg: 'px-6 py-3'
+
+// Section padding
+section.default: 'py-8 px-6'
+```
+
+## 🔤 Typography
+
+### Font Stack
+
+```css
+font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', ...
+```
+
+### Type Scale
+
+```typescript
+// Headings
+h1: 'text-4xl font-semibold'
+h2: 'text-3xl font-semibold'
+h3: 'text-2xl font-semibold'
+
+// Body
+body.base: 'text-base'  // 16px
+body.sm: 'text-sm'      // 14px
+body.xs: 'text-xs'      // 12px
+```
+
+## 🎯 Icon Sizes
+
+Standardized icon sizes for consistency:
+
+```typescript
+xs: 'h-3 w-3'   // 12px - badges
+sm: 'h-4 w-4'   // 16px - inline icons
+md: 'h-5 w-5'   // 20px - buttons (DEFAULT)
+lg: 'h-6 w-6'   // 24px - headers
+xl: 'h-8 w-8'   // 32px - features
+```
+
+## 🌓 Dark Mode
+
+Dark mode is implemented using:
+1. Tailwind's `dark:` modifier
+2. CSS variables that switch based on theme
+3. The `dark` class on `<html>` element
+
+### Implementation Example
+
+```tsx
+// Component with dark mode support
+<div className="bg-white dark:bg-gray-900 text-gray-900 dark:text-white">
+  Content
+</div>
+```
+
+### CSS Variables
+
+Light and dark themes use CSS variables that automatically switch:
+
+```css
+/* Light theme */
+--background: 0 0% 100%;
+--foreground: 220 9% 11%;
+
+/* Dark theme */
+.dark {
+  --background: 220 15% 10%;
+  --foreground: 0 0% 98%;
+}
+```
+
+## 🧩 Components
+
+### Input Component
+
+Enhanced input with variants and dark mode support:
+
+```tsx
+import { Input } from '@/components/ui/input'
+
+// Basic usage
+<Input placeholder="Enter text..." />
+
+// With size variant
+<Input size="lg" placeholder="Large input" />
+
+// With form field wrapper
+<FormField
+  label="Email"
+  error="Invalid email"
+  required
+>
+  <Input type="email" />
+</FormField>
+```
+
+### Button Component
+
+```tsx
+import { Button } from '@/components/ui/button'
+
+// Variants
+<Button variant="default">Primary</Button>
+<Button variant="outline">Outline</Button>
+<Button variant="ghost">Ghost</Button>
+
+// Sizes
+<Button size="sm">Small</Button>
+<Button size="lg">Large</Button>
+```
+
+### Card Component
+
+```tsx
+import { Card, CardHeader, CardContent } from '@/components/ui/card'
+
+<Card>
+  <CardHeader>
+    <CardTitle>Title</CardTitle>
+  </CardHeader>
+  <CardContent>
+    Content
+  </CardContent>
+</Card>
+```
+
+## 🛠 Utility Functions
+
+### cn() - Class Name Merger
+
+```tsx
+import { cn } from '@/lib/utils'
+
+// Merge classes with conflict resolution
+className={cn(
+  "base-classes",
+  condition && "conditional-classes",
+  className // User provided classes
+)}
+```
+
+### Design System Utils
+
+```tsx
+import {
+  getIconSize,
+  getSpacing,
+  getCardClasses
+} from '@/design-system/utils'
+
+// Get standardized icon size
+<Icon className={getIconSize('md')} />
+
+// Get card classes with variant
+<div className={getCardClasses('compact')}>
+```
+
+## 📋 Migration Guide
+
+### From Ant Design
+
+```tsx
+// Before (Ant Design)
+import { Input, Button } from 'antd'
+<Input placeholder="..." />
+<Button type="primary">Click</Button>
+
+// After (Native/Shadcn)
+import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
+<Input placeholder="..." />
+<Button variant="default">Click</Button>
+```
+
+### Dark Mode Inputs
+
+```tsx
+// Before (with forced CSS)
+<input className="force-dark-mode" />
+
+// After (with Tailwind)
+<Input className="dark:bg-gray-800 dark:text-white" />
+// Or just use the Input component which handles it
+<Input />
+```
+
+## ✅ Best Practices
+
+1. **Use design tokens** - Import from `design-system/tokens.ts`
+2. **Use utility functions** - For consistent spacing, sizing, etc.
+3. **Use Tailwind utilities** - Avoid custom CSS where possible
+4. **Follow naming conventions** - PascalCase for components, camelCase for utilities
+5. **Test dark mode** - Always verify components in both themes
+6. **Maintain consistency** - Use standard spacing and sizing
+
+## 🚫 Anti-patterns to Avoid
+
+1. ❌ Using `!important` in CSS
+2. ❌ Hardcoding colors instead of using tokens
+3. ❌ Creating custom CSS for existing utilities
+4. ❌ Mixing spacing systems (use 4px grid)
+5. ❌ Using Ant Design components in new code
+
+## 📚 Resources
+
+- [Tailwind CSS Documentation](https://tailwindcss.com/docs)
+- [Shadcn/UI Components](https://ui.shadcn.com)
+- [Design Tokens](./src/design-system/tokens.ts)
+- [Constants](./src/design-system/constants.ts)
