@@ -2,16 +2,25 @@ import React, { useState } from 'react';
 import { Copy, Check, Building2 } from 'lucide-react';
 import { getTagColor } from '../../../../utils/tag-colors';
 import { useTheme } from '../../../../context/ThemeContext';
+import { useLogo } from '../../../../hooks/useLogo';
 
 interface AddressHeaderProps {
   address: string;
   entityTags: string[];
   entityName?: string;
+  entityId?: string;
+  entityType?: string;
 }
 
-const AddressHeader: React.FC<AddressHeaderProps> = ({ address, entityTags, entityName }) => {
+const AddressHeader: React.FC<AddressHeaderProps> = ({ address, entityTags, entityName, entityId, entityType }) => {
   const [copySuccess, setCopySuccess] = useState(false);
   const { theme } = useTheme();
+  
+  // Fetch entity logo
+  const { logoUrl, isLoading } = useLogo({ 
+    entityId, 
+    enableFallback: true 
+  });
 
   const copyToClipboard = async () => {
     try {
@@ -44,12 +53,29 @@ const AddressHeader: React.FC<AddressHeaderProps> = ({ address, entityTags, enti
     <div className="space-y-6">
       {entityName && (
         <div className="flex items-center gap-3">
-          <div className={`p-2 rounded-lg ${
-            theme === 'dark' 
-              ? 'bg-blue-600/20 text-blue-400' 
-              : 'bg-blue-100 text-blue-600'
-          }`}>
-            <Building2 className="w-5 h-5" />
+          <div className="p-2 rounded-lg">
+            {isLoading ? (
+              <div className="w-10 h-10 animate-pulse bg-gray-300 rounded"></div>
+            ) : logoUrl ? (
+              <img 
+                src={logoUrl} 
+                alt={`${entityName} logo`}
+                className="w-10 h-10 object-cover rounded"
+                onError={(e) => {
+                  // Fallback to Building2 icon if logo fails to load
+                  const target = e.target as HTMLImageElement;
+                  target.style.display = 'none';
+                  const parent = target.parentElement;
+                  if (parent) {
+                    const iconElement = document.createElement('div');
+                    iconElement.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-building2"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"></path><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"></path><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"></path><path d="M10 6h4"></path><path d="M10 10h4"></path><path d="M10 14h4"></path><path d="M10 18h4"></path></svg>';
+                    parent.appendChild(iconElement);
+                  }
+                }}
+              />
+            ) : (
+              <Building2 className="w-10 h-10" />
+            )}
           </div>
           <div>
             <h3 className={`text-2xl font-bold ${
@@ -60,7 +86,7 @@ const AddressHeader: React.FC<AddressHeaderProps> = ({ address, entityTags, enti
             <p className={`text-sm ${
               theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
             }`}>
-            Entity
+            {entityType || 'Entity'}
             </p>
           </div>
         </div>

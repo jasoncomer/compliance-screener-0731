@@ -2,6 +2,7 @@ import React from 'react';
 import { UserOutlined, GlobalOutlined, TwitterOutlined, SendOutlined, MailOutlined, PhoneOutlined, EnvironmentOutlined, WarningOutlined, TagOutlined, TeamOutlined, CalendarOutlined, LinkOutlined, DatabaseOutlined, CompassOutlined, FileTextOutlined } from '@ant-design/icons';
 import { useTheme } from '../../../../context/ThemeContext';
 import { SimpleLogo } from '../../../../components/common/Logo';
+import EntityToggle from '../../../../components/EntityToggle';
 
 interface EntityDetailsProps {
   name: string;
@@ -34,6 +35,12 @@ interface EntityDetailsProps {
   lastUpdated?: string;
   lastModifiedBy?: string;
   revisitSite?: boolean;
+  // Toggle functionality
+  showToggle?: boolean;
+  isBeneficialOwner?: boolean;
+  onToggle?: (isBeneficialOwner: boolean) => void;
+  custodialEntityName?: string;
+  beneficialOwnerName?: string;
 }
 
 const EntityDetails: React.FC<EntityDetailsProps> = ({
@@ -62,7 +69,12 @@ const EntityDetails: React.FC<EntityDetailsProps> = ({
   note,
   lastUpdated,
   lastModifiedBy,
-  revisitSite
+  revisitSite,
+  showToggle = false,
+  isBeneficialOwner = false,
+  onToggle,
+  custodialEntityName,
+  beneficialOwnerName
 }) => {
   const { theme } = useTheme();
 
@@ -137,6 +149,19 @@ const EntityDetails: React.FC<EntityDetailsProps> = ({
           </button>
         )}
       </div>
+      
+      {/* Entity Toggle - Show when both custodial entity and beneficial owner exist */}
+      {showToggle && onToggle && (
+        <div className="mb-6">
+          <EntityToggle
+            isBeneficialOwner={isBeneficialOwner}
+            onToggle={onToggle}
+            custodialEntityName={custodialEntityName}
+            beneficialOwnerName={beneficialOwnerName}
+          />
+        </div>
+      )}
+      
       {/* Status Indicators */}
       {(isOfacSanctioned || isDead || isCentralized !== undefined || noKycRequired) && (
         <div className="mb-1 p-1">

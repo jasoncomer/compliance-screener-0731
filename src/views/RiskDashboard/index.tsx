@@ -32,6 +32,7 @@ import { getEntityTypeLabel } from '../../utils/display-labels';
 import { EEntityType } from '../../typings/SOT';
 import { fetchSOT } from '../../store/slices/sotSlice';
 import { applyBeneficialOwnerOverride } from '../../utils/entityUtils';
+import EntityHeightMeasurer from '../../components/EntityHeightMeasurer';
 
 const RiskDashboard: React.FC = React.memo(() => {
   const { theme } = useTheme();
@@ -49,11 +50,18 @@ const RiskDashboard: React.FC = React.memo(() => {
     return new Date().getFullYear();
   });
   const hasSetInitialYear = useRef(false);
+  
+  // Entity toggle state
+  const [isBeneficialOwner, setIsBeneficialOwner] = useState(false);
+  
+  // Height management for both entities
+  const [maxEntityHeight, setMaxEntityHeight] = useState<number>(600); // Start with a reasonable default
+  const heightMeasurerRef = useRef<HTMLDivElement>(null);
 
-  // Debug: Log when address changes and reset year selection flag
   useEffect(() => {
-    console.log('Address changed to:', address);
     hasSetInitialYear.current = false; // Reset flag when address changes
+    setIsBeneficialOwner(false); // Reset toggle state when address changes
+    setMaxEntityHeight(600); // Reset height to default when address changes
   }, [address]);
 
   // React Query hooks - Fetch more transactions for activity analysis
@@ -75,24 +83,8 @@ const RiskDashboard: React.FC = React.memo(() => {
 
   // Load SOT data on component mount
   useEffect(() => {
-    console.log('Loading SOT data on component mount');
     dispatch(fetchSOT());
   }, [dispatch]);
-
-  // Debug: Log itemsMap and attributions changes
-  useEffect(() => {
-    console.log('itemsMap updated:', { 
-      itemsMapKeys: Object.keys(itemsMap).length,
-      sampleItems: Object.values(itemsMap).slice(0, 3).map(item => ({ entity_id: item.entity_id, proper_name: item.proper_name }))
-    });
-  }, [itemsMap]);
-
-  useEffect(() => {
-    console.log('attributions updated:', { 
-      attributionKeys: Object.keys(attributions).length,
-      sampleAttributions: Object.entries(attributions).slice(0, 3)
-    });
-  }, [attributions]);
 
   // Loading state - memoized to prevent unnecessary recalculations
   const isLoadingAnyData = useMemo(() => 
@@ -110,34 +102,23 @@ const RiskDashboard: React.FC = React.memo(() => {
     const counts: Record<number, number> = {};
     
     const txData = activityTransactionData?.txs || counterpartyTransactionData?.txs || [];
-    
-    console.log('Calculating yearTransactionCounts - txData length:', txData.length);
-    console.log('Calculating yearTransactionCounts - sample txData:', txData.slice(0, 3));
-    
     txData.forEach(tx => {
       const txYear = new Date(tx.timestamp * 1000).getFullYear();
       counts[txYear] = (counts[txYear] || 0) + 1;
     });
     
-    console.log('Calculating yearTransactionCounts - final counts:', counts);
     return counts;
   }, [activityTransactionData?.txs, counterpartyTransactionData?.txs]);
 
   // Set default year to the year with most transactions
   useEffect(() => {
-    console.log('Year selection effect - yearTransactionCounts:', yearTransactionCounts);
-    console.log('Year selection effect - hasSetInitialYear.current:', hasSetInitialYear.current);
-    console.log('Year selection effect - current selectedYear:', selectedYear);
-    
     if (Object.keys(yearTransactionCounts).length > 0 && !hasSetInitialYear.current) {
       const yearWithMostTransactions = Object.entries(yearTransactionCounts)
         .reduce((max, [year, count]) => count > max.count ? { year: parseInt(year), count } : max, 
           { year: new Date().getFullYear(), count: 0 });
       
-      console.log('Year selection effect - yearWithMostTransactions:', yearWithMostTransactions);
       
       if (yearWithMostTransactions.count > 0) {
-        console.log('Setting selected year to:', yearWithMostTransactions.year);
         setSelectedYear(yearWithMostTransactions.year);
         hasSetInitialYear.current = true;
       }
@@ -169,7 +150,6 @@ const RiskDashboard: React.FC = React.memo(() => {
     const addressesToFetch = Array.from(counterpartyAddresses).filter(addr => !attributions[addr]);
     
     if (addressesToFetch.length > 0) {
-      console.log('RiskDashboard: Fetching attributions for counterparty addresses:', addressesToFetch);
       fetchAttributions(addressesToFetch);
     }
   }, [transformedTransactions, address, attributions, fetchAttributions]);
@@ -214,9 +194,7 @@ const RiskDashboard: React.FC = React.memo(() => {
     const incomingCounterparties = Object.entries(incomingByAddress)
       .map(([address, data]) => {
         const entityId = attributions[address]?.entity || attributions[address]?.bo || attributions[address]?.custodian;
-        console.log('Processing incoming counterparty:', { address, entityId, itemsMapKeys: Object.keys(itemsMap).length });
         const entity = entityId ? Object.values(itemsMap).find(sot => sot.entity_id === entityId) : null;
-        console.log('Found entity:', entity);
         const entityName = entity?.proper_name || address;
         
         return {
@@ -596,6 +574,173 @@ const RiskDashboard: React.FC = React.memo(() => {
 
   const entityTags = useMemo(() => primaryEntityId ? getEntityTags(primaryEntityId) : [], [primaryEntityId, getEntityTags]);
 
+  // Toggle logic - determine if we should show toggle and get current entity data
+  const attribution = attributions[address];
+  const showToggle = useMemo(() => {
+    if (!attribution) return false;
+    // Show toggle if both entity and beneficial owner exist and are different
+    return !!(attribution.entity && attribution.bo && attribution.entity !== attribution.bo);
+  }, [attribution]);
+
+  // Get current entity data based on toggle state
+  const currentEntityId = useMemo(() => {
+    if (!attribution) return primaryEntityId;
+    return isBeneficialOwner ? attribution.bo : attribution.entity;
+  }, [attribution, isBeneficialOwner, primaryEntityId]);
+
+  // Get entity names for toggle display
+  const custodialEntityName = useMemo(() => {
+    if (!attribution?.entity) return "Custodial Entity";
+    const entity = Object.values(itemsMap).find(sot => sot.entity_id === attribution.entity);
+    return entity?.proper_name || attribution.entity;
+  }, [attribution?.entity, itemsMap]);
+
+  const beneficialOwnerName = useMemo(() => {
+    if (!attribution?.bo) return "Beneficial Owner";
+    const entity = Object.values(itemsMap).find(sot => sot.entity_id === attribution.bo);
+    return entity?.proper_name || attribution.bo;
+  }, [attribution?.bo, itemsMap]);
+
+  // Get entity data for both custodial and beneficial owner
+  const custodialEntityData = useMemo(() => {
+    if (!attribution?.entity) return null;
+    const entityId = attribution.entity;
+    return {
+      name: items.find(item => item.entity_id === entityId)?.proper_name || entityId,
+      type: getEntityType(entityId),
+      description: getEntityDescription(entityId),
+      website: getEntityWebsite(entityId),
+      phone: getEntityPhone(entityId),
+      address: getEntityAddress(entityId),
+      founded: getEntityFounded(entityId),
+      logo: getEntityLogo(entityId) || "",
+      countries: getEntityCountries(entityId),
+      entityId: entityId,
+      email: getEntityEmail(entityId),
+      twitter: getEntityTwitter(entityId),
+      telegram: getEntityTelegram(entityId),
+      ensAddress: getEntityEnsAddress(entityId),
+      legalInfoUrl: getEntityLegalInfoUrl(entityId),
+      ceo: getEntityCeo(entityId),
+      keyPersonnel: getEntityKeyPersonnel(entityId),
+      ticker: getEntityTicker(entityId),
+      parentId: getEntityParentId(entityId),
+      entityTags: getEntityTags(entityId),
+      socialMediaProfiles: getEntitySocialMediaProfiles(entityId),
+      isCentralized: getEntityIsCentralized(entityId),
+      noKycRequired: getEntityNoKycRequired(entityId),
+      isDead: getEntityIsDead(entityId),
+      isOfacSanctioned: getEntityIsOfacSanctioned(entityId),
+      note: getEntityNote(entityId),
+      lastUpdated: getEntityLastUpdated(entityId),
+      lastModifiedBy: getEntityLastModifiedBy(entityId),
+      revisitSite: getEntityRevisitSite(entityId)
+    };
+  }, [attribution?.entity, items, getEntityType, getEntityDescription, getEntityWebsite, getEntityPhone, getEntityAddress, getEntityFounded, getEntityLogo, getEntityCountries, getEntityEmail, getEntityTwitter, getEntityTelegram, getEntityEnsAddress, getEntityLegalInfoUrl, getEntityCeo, getEntityKeyPersonnel, getEntityTicker, getEntityParentId, getEntityTags, getEntitySocialMediaProfiles, getEntityIsCentralized, getEntityNoKycRequired, getEntityIsDead, getEntityIsOfacSanctioned, getEntityNote, getEntityLastUpdated, getEntityLastModifiedBy, getEntityRevisitSite]);
+
+  const beneficialOwnerEntityData = useMemo(() => {
+    if (!attribution?.bo) return null;
+    const entityId = attribution.bo;
+    return {
+      name: items.find(item => item.entity_id === entityId)?.proper_name || entityId,
+      type: getEntityType(entityId),
+      description: getEntityDescription(entityId),
+      website: getEntityWebsite(entityId),
+      phone: getEntityPhone(entityId),
+      address: getEntityAddress(entityId),
+      founded: getEntityFounded(entityId),
+      logo: getEntityLogo(entityId) || "",
+      countries: getEntityCountries(entityId),
+      entityId: entityId,
+      email: getEntityEmail(entityId),
+      twitter: getEntityTwitter(entityId),
+      telegram: getEntityTelegram(entityId),
+      ensAddress: getEntityEnsAddress(entityId),
+      legalInfoUrl: getEntityLegalInfoUrl(entityId),
+      ceo: getEntityCeo(entityId),
+      keyPersonnel: getEntityKeyPersonnel(entityId),
+      ticker: getEntityTicker(entityId),
+      parentId: getEntityParentId(entityId),
+      entityTags: getEntityTags(entityId),
+      socialMediaProfiles: getEntitySocialMediaProfiles(entityId),
+      isCentralized: getEntityIsCentralized(entityId),
+      noKycRequired: getEntityNoKycRequired(entityId),
+      isDead: getEntityIsDead(entityId),
+      isOfacSanctioned: getEntityIsOfacSanctioned(entityId),
+      note: getEntityNote(entityId),
+      lastUpdated: getEntityLastUpdated(entityId),
+      lastModifiedBy: getEntityLastModifiedBy(entityId),
+      revisitSite: getEntityRevisitSite(entityId)
+    };
+  }, [attribution?.bo, items, getEntityType, getEntityDescription, getEntityWebsite, getEntityPhone, getEntityAddress, getEntityFounded, getEntityLogo, getEntityCountries, getEntityEmail, getEntityTwitter, getEntityTelegram, getEntityEnsAddress, getEntityLegalInfoUrl, getEntityCeo, getEntityKeyPersonnel, getEntityTicker, getEntityParentId, getEntityTags, getEntitySocialMediaProfiles, getEntityIsCentralized, getEntityNoKycRequired, getEntityIsDead, getEntityIsOfacSanctioned, getEntityNote, getEntityLastUpdated, getEntityLastModifiedBy, getEntityRevisitSite]);
+
+  // Measure both entity heights and set maximum
+  const measureEntityHeights = useCallback(() => {
+    if (!showToggle || !attribution || !heightMeasurerRef.current) return;
+    
+    const measurer = heightMeasurerRef.current;
+    const custodialElement = measurer.querySelector('.custodial-entity');
+    const beneficialElement = measurer.querySelector('.beneficial-owner');
+    
+    if (custodialElement && beneficialElement) {
+      // Cast to HTMLElement to access offsetHeight and scrollHeight
+      const custodialHTMLElement = custodialElement as HTMLElement;
+      const beneficialHTMLElement = beneficialElement as HTMLElement;
+      
+      // Use multiple measurement methods for accuracy
+      const custodialOffsetHeight = custodialHTMLElement.offsetHeight;
+      const custodialScrollHeight = custodialHTMLElement.scrollHeight;
+      const beneficialOffsetHeight = beneficialHTMLElement.offsetHeight;
+      const beneficialScrollHeight = beneficialHTMLElement.scrollHeight;
+      
+      // Use the maximum of offsetHeight and scrollHeight for each element
+      const custodialHeight = Math.max(custodialOffsetHeight, custodialScrollHeight);
+      const beneficialHeight = Math.max(beneficialOffsetHeight, beneficialScrollHeight);
+      
+      // Add padding to ensure content doesn't get cut off
+      const padding = 40; // Increased padding
+      const custodialHeightWithPadding = custodialHeight + padding;
+      const beneficialHeightWithPadding = beneficialHeight + padding;
+      
+      // Set the maximum height with a minimum of 500px to ensure content fits
+      const maxHeight = Math.max(custodialHeightWithPadding, beneficialHeightWithPadding, 500);
+      setMaxEntityHeight(maxHeight);
+    }
+  }, [showToggle, attribution]);
+
+  // Measure heights when entity data changes
+  useEffect(() => {
+    if (showToggle && attribution) {
+      // Use a longer delay to ensure DOM has fully updated
+      const timeoutId = setTimeout(measureEntityHeights, 200);
+      return () => clearTimeout(timeoutId);
+    }
+  }, [showToggle, attribution, currentEntityId, measureEntityHeights]);
+
+  // Also measure heights when the height measurer component mounts
+  useEffect(() => {
+    if (showToggle && attribution && heightMeasurerRef.current) {
+      // Measure immediately when component is available
+      const timeoutId = setTimeout(measureEntityHeights, 50);
+      return () => clearTimeout(timeoutId);
+    }
+  }, [showToggle, attribution, measureEntityHeights]);
+
+  // Set up ResizeObserver for height measurer
+  useEffect(() => {
+    if (!heightMeasurerRef.current || !showToggle) return;
+
+    const resizeObserver = new ResizeObserver(() => {
+      measureEntityHeights();
+    });
+
+    resizeObserver.observe(heightMeasurerRef.current);
+
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, [showToggle, measureEntityHeights]);
+
   // Get display name with beneficial owner logic
   const getDisplayName = useMemo(() => {
     if (!address || !attributions[address]) {
@@ -726,6 +871,8 @@ const RiskDashboard: React.FC = React.memo(() => {
               address={address}
               entityTags={entityTags}
               entityName={getDisplayName}
+              entityId={primaryEntityId}
+              entityType={primaryEntityId ? getEntityType(primaryEntityId) : undefined}
             />
           </div>
 
@@ -811,43 +958,69 @@ const RiskDashboard: React.FC = React.memo(() => {
             </div>
           )}
 
+          {/* Height Measurer - Hidden component to measure both entity heights */}
+          {showToggle && custodialEntityData && beneficialOwnerEntityData && (
+            <EntityHeightMeasurer
+              ref={heightMeasurerRef}
+              custodialProps={custodialEntityData}
+              beneficialOwnerProps={beneficialOwnerEntityData}
+              showToggle={showToggle}
+              isBeneficialOwner={isBeneficialOwner}
+              onToggle={setIsBeneficialOwner}
+              custodialEntityName={custodialEntityName}
+              beneficialOwnerName={beneficialOwnerName}
+            />
+          )}
+
           {/* Entity Details and Twitter Timeline - Two Columns */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-            <div ref={entityDetailsRef} className="rounded-2xl border p-6 bg-gray-50 dark:bg-background border-gray-200 dark:border-gray-700">
+            <div 
+              ref={entityDetailsRef} 
+              className="rounded-2xl border p-6 bg-gray-50 dark:bg-background border-gray-200 dark:border-gray-700 overflow-y-auto"
+              style={maxEntityHeight > 0 ? { height: maxEntityHeight } : {}}
+            >
               <EntityDetails 
-                name={primaryEntityId ? (items.find(item => item.entity_id === primaryEntityId)?.proper_name || primaryEntityId) : "Unknown Entity"}
-                type={primaryEntityId ? getEntityType(primaryEntityId) : "Unknown"}
-                description={primaryEntityId ? getEntityDescription(primaryEntityId) : "No description available"}
-                website={primaryEntityId ? getEntityWebsite(primaryEntityId) : ""}
-                phone={primaryEntityId ? getEntityPhone(primaryEntityId) : ""}
-                address={primaryEntityId ? getEntityAddress(primaryEntityId) : ""}
-                founded={primaryEntityId ? getEntityFounded(primaryEntityId) : 0}
-                logo={primaryEntityId ? getEntityLogo(primaryEntityId) || "" : ""}
-                countries={primaryEntityId ? getEntityCountries(primaryEntityId) : []}
-                entityId={primaryEntityId || ""}
-                email={primaryEntityId ? getEntityEmail(primaryEntityId) : ""}
-                twitter={primaryEntityId ? getEntityTwitter(primaryEntityId) : ""}
-                telegram={primaryEntityId ? getEntityTelegram(primaryEntityId) : ""}
-                ensAddress={primaryEntityId ? getEntityEnsAddress(primaryEntityId) : ""}
-                legalInfoUrl={primaryEntityId ? getEntityLegalInfoUrl(primaryEntityId) : ""}
-                ceo={primaryEntityId ? getEntityCeo(primaryEntityId) : ""}
-                keyPersonnel={primaryEntityId ? getEntityKeyPersonnel(primaryEntityId) : ""}
-                ticker={primaryEntityId ? getEntityTicker(primaryEntityId) : ""}
-                parentId={primaryEntityId ? getEntityParentId(primaryEntityId) : ""}
-                entityTags={primaryEntityId ? getEntityTags(primaryEntityId) : []}
-                socialMediaProfiles={primaryEntityId ? getEntitySocialMediaProfiles(primaryEntityId) : []}
-                isCentralized={primaryEntityId ? getEntityIsCentralized(primaryEntityId) : undefined}
-                noKycRequired={primaryEntityId ? getEntityNoKycRequired(primaryEntityId) : false}
-                isDead={primaryEntityId ? getEntityIsDead(primaryEntityId) : false}
-                isOfacSanctioned={primaryEntityId ? getEntityIsOfacSanctioned(primaryEntityId) : false}
-                note={primaryEntityId ? getEntityNote(primaryEntityId) : ""}
-                lastUpdated={primaryEntityId ? getEntityLastUpdated(primaryEntityId) : ""}
-                lastModifiedBy={primaryEntityId ? getEntityLastModifiedBy(primaryEntityId) : ""}
-                revisitSite={primaryEntityId ? getEntityRevisitSite(primaryEntityId) : false}
+                name={currentEntityId ? (items.find(item => item.entity_id === currentEntityId)?.proper_name || currentEntityId) : "Unknown Entity"}
+                type={currentEntityId ? getEntityType(currentEntityId) : "Unknown"}
+                description={currentEntityId ? getEntityDescription(currentEntityId) : "No description available"}
+                website={currentEntityId ? getEntityWebsite(currentEntityId) : ""}
+                phone={currentEntityId ? getEntityPhone(currentEntityId) : ""}
+                address={currentEntityId ? getEntityAddress(currentEntityId) : ""}
+                founded={currentEntityId ? getEntityFounded(currentEntityId) : 0}
+                logo={currentEntityId ? getEntityLogo(currentEntityId) || "" : ""}
+                countries={currentEntityId ? getEntityCountries(currentEntityId) : []}
+                entityId={currentEntityId || ""}
+                email={currentEntityId ? getEntityEmail(currentEntityId) : ""}
+                twitter={currentEntityId ? getEntityTwitter(currentEntityId) : ""}
+                telegram={currentEntityId ? getEntityTelegram(currentEntityId) : ""}
+                ensAddress={currentEntityId ? getEntityEnsAddress(currentEntityId) : ""}
+                legalInfoUrl={currentEntityId ? getEntityLegalInfoUrl(currentEntityId) : ""}
+                ceo={currentEntityId ? getEntityCeo(currentEntityId) : ""}
+                keyPersonnel={currentEntityId ? getEntityKeyPersonnel(currentEntityId) : ""}
+                ticker={currentEntityId ? getEntityTicker(currentEntityId) : ""}
+                parentId={currentEntityId ? getEntityParentId(currentEntityId) : ""}
+                entityTags={currentEntityId ? getEntityTags(currentEntityId) : []}
+                socialMediaProfiles={currentEntityId ? getEntitySocialMediaProfiles(currentEntityId) : []}
+                isCentralized={currentEntityId ? getEntityIsCentralized(currentEntityId) : undefined}
+                noKycRequired={currentEntityId ? getEntityNoKycRequired(currentEntityId) : false}
+                isDead={currentEntityId ? getEntityIsDead(currentEntityId) : false}
+                isOfacSanctioned={currentEntityId ? getEntityIsOfacSanctioned(currentEntityId) : false}
+                note={currentEntityId ? getEntityNote(currentEntityId) : ""}
+                lastUpdated={currentEntityId ? getEntityLastUpdated(currentEntityId) : ""}
+                lastModifiedBy={currentEntityId ? getEntityLastModifiedBy(currentEntityId) : ""}
+                revisitSite={currentEntityId ? getEntityRevisitSite(currentEntityId) : false}
+                showToggle={showToggle}
+                isBeneficialOwner={isBeneficialOwner}
+                onToggle={setIsBeneficialOwner}
+                custodialEntityName={custodialEntityName}
+                beneficialOwnerName={beneficialOwnerName}
               />
             </div>
             
-            <div className="rounded-2xl border p-6 bg-gray-50 dark:bg-background border-gray-200 dark:border-gray-700" style={entityDetailsHeight ? { height: Math.max(entityDetailsHeight, 300) } : { minHeight: '300px' }}>
+            <div 
+              className="rounded-2xl border p-6 bg-gray-50 dark:bg-background border-gray-200 dark:border-gray-700" 
+              style={maxEntityHeight > 0 ? { height: maxEntityHeight } : (entityDetailsHeight ? { height: Math.max(entityDetailsHeight, 500) } : { minHeight: '500px' })}
+            >
               <SocialMediaFeed 
                 address={address}
                 title="Social Media & News Feed"
@@ -856,10 +1029,10 @@ const RiskDashboard: React.FC = React.memo(() => {
           </div>
 
       {/* Geographic Presence - Full Width */}
-      {primaryEntityId && getEntityCountries(primaryEntityId).length > 0 && (
+      {currentEntityId && getEntityCountries(currentEntityId).length > 0 && (
         <div className="rounded-2xl border p-6 bg-gray-50 dark:bg-background border-gray-200 dark:border-gray-700">
           <GeographicPresence
-            countries={getEntityCountries(primaryEntityId)}
+            countries={getEntityCountries(currentEntityId)}
           />
         </div>
       )}
