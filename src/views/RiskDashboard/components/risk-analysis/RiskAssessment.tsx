@@ -1,5 +1,6 @@
 import React from 'react';
 import { Shield, Eye, Loader2, Info } from 'lucide-react';
+import { Tag } from 'antd';
 import { useTheme } from "../../../../context/ThemeContext";
 
 interface RiskAssessmentProps {
@@ -8,6 +9,13 @@ interface RiskAssessmentProps {
   description: string;
   isLoading?: boolean;
   onSeeDetails?: () => void;
+  boInfo?: {
+    entityName: string;
+    entityType: string;
+    entityTags: string[];
+    ofac: boolean;
+    isBeneficialOwnerOverride: boolean;
+  };
 }
 
 const RiskAssessment: React.FC<RiskAssessmentProps> = ({ 
@@ -15,7 +23,8 @@ const RiskAssessment: React.FC<RiskAssessmentProps> = ({
   level, 
   description, 
   isLoading = false,
-  onSeeDetails 
+  onSeeDetails,
+  boInfo
 }) => {
   const { theme } = useTheme();
 
@@ -90,6 +99,25 @@ const RiskAssessment: React.FC<RiskAssessmentProps> = ({
           </div>
         </div>
       </div>
+
+      {/* BO Override Information */}
+      {boInfo?.isBeneficialOwnerOverride && (
+        <div className="mb-4 p-3 rounded-lg border border-orange-200 dark:border-orange-800 bg-orange-50 dark:bg-orange-900/20">
+          <div className="text-center">
+            <div className="text-xs text-orange-600 dark:text-orange-400 mb-1 font-medium">
+              Risk from Beneficial Owner:
+            </div>
+            <div className="text-sm font-semibold text-orange-700 dark:text-orange-300 mb-2">
+              {boInfo.entityName}
+            </div>
+            {boInfo.ofac && (
+              <div className="flex justify-center">
+                <Tag color="red" className="text-xs">OFAC SANCTIONED</Tag>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
       
       <button 
         className={`w-full rounded-lg font-semibold transition-colors duration-200 flex items-center justify-center gap-2 py-1.5 px-3 ${

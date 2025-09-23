@@ -12,7 +12,10 @@ import { getTagColor } from '../../../utils/tag-colors';
 import { calculateRiskScore } from '../../../api/riskScoring';
 import { RiskScoringResponse } from '../../../typings/riskScoring';
 import AddressSummary from './AddressSummary';
+import AddressNotFound from './AddressNotFound';
+import AddressLoading from './AddressLoading';
 import { useToast } from '../../../hooks/use-toast';
+import RiskScoreModal from '../../RiskDashboard/components/risk-analysis/RiskScoreModal';
 
 import { useAppSelector, useAppDispatch } from '../../../store/hooks';
 import { RootState } from '../../../store/store';
@@ -28,9 +31,12 @@ const Address: React.FC = () => {
   const [totalTxs, setTotalTxs] = React.useState<number>(0);
   const [currentPage, setCurrentPage] = React.useState<number>(1);
   const [isLoading, setIsLoading] = React.useState<boolean>(false);
+  const [isLoadingAddressData, setIsLoadingAddressData] = React.useState<boolean>(false);
+  const [isLoadingRiskScore, setIsLoadingRiskScore] = React.useState<boolean>(false);
   const [copySuccess, setCopySuccess] = React.useState<boolean>(false);
   const [riskScore, setRiskScore] = React.useState<RiskScoringResponse | null>(null);
-  const [isLoadingRiskScore, setIsLoadingRiskScore] = React.useState<boolean>(false);
+  const [isRiskModalVisible, setIsRiskModalVisible] = React.useState<boolean>(false);
+  const [addressNotFound, setAddressNotFound] = React.useState<boolean>(false);
   
   // Get date filter from URL parameters
   const dateFilter = searchParams.get('date');
@@ -83,7 +89,27 @@ const Address: React.FC = () => {
       try {
         if (!address) return;
         setIsLoading(true);
-        await getAddressStats();
+        setIsLoadingAddressData(true);
+        setAddressNotFound(false);
+        
+        // First try to get address data to check if address exists
+        const { data } = await api.blockchain.getAddress(address);
+        
+        // Check if we got valid address data
+        if (!data || !data.addr) {
+          setAddressNotFound(true);
+          return;
+        }
+        
+        setAddrData(data);
+        
+        // Try to get address stats, but don't fail if it doesn't exist
+        try {
+          await getAddressStats();
+        } catch (statsError) {
+          console.error('Error fetching address stats:', statsError);
+          // Don't throw here, just log the error and continue
+        }
         
         let txs: BtcTransaction[] = [];
         let pagination: { totalTxs: number; totalPages: number; currentPage: number; limit: number };
@@ -107,9 +133,6 @@ const Address: React.FC = () => {
           txs = response.txs;
           pagination = response.pagination;
         }
-        
-        const { data } = await api.blockchain.getAddress(address);
-        setAddrData(data);
         
         // Filter transactions by date if date filter is provided
         let filteredTxs = txs;
@@ -141,16 +164,37 @@ const Address: React.FC = () => {
         fetchAttributions(Array.from(uniqueAddresses));
 
         // get total received and spent and balance
-        const tmpSummary = await api.blockchain.getAddressSummary(address);
-        setSummary({
-          balance: tmpSummary.balance,
-          total_received: tmpSummary.total_received,
-          total_spent: tmpSummary.total_spent
-        });
-      } catch (error) {
-        console.error('Error fetching transactions:', error);
+        try {
+          const tmpSummary = await api.blockchain.getAddressSummary(address);
+          if (tmpSummary) {
+            setSummary({
+              balance: tmpSummary.balance || 0,
+              total_received: tmpSummary.total_received || 0,
+              total_spent: tmpSummary.total_spent || 0
+            });
+          }
+        } catch (summaryError) {
+          console.error('Error fetching address summary:', summaryError);
+          // Set default values if summary fails
+          setSummary({
+            balance: 0,
+            total_received: 0,
+            total_spent: 0
+          });
+        }
+      } catch (error: any) {
+        console.error('Error fetching address data:', error);
+        
+        // Check if it's a 404 or address not found error
+        if (error?.response?.status === 404 || 
+            error?.response?.data?.message?.toLowerCase().includes('not found') ||
+            error?.response?.data?.message?.toLowerCase().includes('address not found') ||
+            error?.message?.toLowerCase().includes('cannot read properties of undefined') ||
+            error?.message?.toLowerCase().includes('balance')) {
+          setAddressNotFound(true);
+        }
       } finally {
-        setIsLoading(false);
+        setIsLoadingAddressData(false);
       }
     };
 
@@ -163,16 +207,76 @@ const Address: React.FC = () => {
       try {
         setIsLoadingRiskScore(true);
         const scores = await calculateRiskScore(address, 'address');
+        
+        // Apply BO override logic if attribution data is available
+        if (attributions[address] && Object.keys(itemsMap).length > 0) {
+          const attribution = attributions[address];
+          
+          if (attribution.bo && attribution.bo !== attribution.entity) {
+            const entitySOT = itemsMap[attribution.entity];
+            const beneficialOwnerSOT = itemsMap[attribution.bo];
+            
+            if (beneficialOwnerSOT) {
+              // Import the BO override function
+              const { applyBeneficialOwnerOverride } = await import('../../../utils/entityUtils');
+              
+              // Apply BO override logic
+              const override = applyBeneficialOwnerOverride(
+                {
+                  entity: attribution.entity,
+                  bo: attribution.bo || '',
+                  custodian: attribution.custodian || '',
+                  script_type: attribution.script_type
+                },
+                entitySOT,
+                beneficialOwnerSOT,
+                scores.riskScores,
+                address
+              );
+              
+              // Update the risk score with BO override
+              if (override.riskScore !== undefined) {
+                scores.overallRisk = override.riskScore / 100; // Convert back to 0-1 range
+              }
+              
+              // Add BO information to the response for display
+              scores.boInfo = {
+                entityName: override.entityName,
+                entityType: override.entityType,
+                entityTags: override.entityTags,
+                ofac: override.ofac,
+                isBeneficialOwnerOverride: override.isBeneficialOwnerOverride
+              };
+            }
+          }
+        }
+        
         setRiskScore(scores);
       } catch (error) {
         console.error('Error fetching risk score:', error);
       } finally {
         setIsLoadingRiskScore(false);
+        // Only set main loading to false when both address data and risk score are complete
+        setIsLoading(false);
       }
     };
 
-    fetchRiskScore();
-  }, [address]);
+    // Only fetch risk score when address, attributions, and itemsMap are available
+    if (address && Object.keys(attributions).length > 0 && Object.keys(itemsMap).length > 0) {
+      fetchRiskScore();
+    } else if (address && !isLoadingAddressData) {
+      // If we can't fetch risk score but address data is loaded, set loading to false
+      setIsLoading(false);
+    }
+  }, [address, attributions, itemsMap]);
+
+  // Handle case where address data is loaded but risk score can't be fetched
+  useEffect(() => {
+    if (address && !isLoadingAddressData && !isLoadingRiskScore && 
+        (Object.keys(attributions).length === 0 || Object.keys(itemsMap).length === 0)) {
+      setIsLoading(false);
+    }
+  }, [address, isLoadingAddressData, isLoadingRiskScore, attributions, itemsMap]);
 
   const handlePageChange = (newPage: number) => {
     if (newPage >= 1 && newPage <= totalPages) {
@@ -181,7 +285,7 @@ const Address: React.FC = () => {
   };
 
   const handleRiskScoreClick = () => {
-    window.open(`/home/risk-dashboard?address=${address}`, '_blank');
+    setIsRiskModalVisible(true);
   };
 
   // Function to get entity tags
@@ -266,6 +370,16 @@ const Address: React.FC = () => {
     );
   };
 
+  // Show loading state while fetching data
+  if (isLoading) {
+    return <AddressLoading address={address || ''} />;
+  }
+
+  // Show not found state if address was not found
+  if (addressNotFound) {
+    return <AddressNotFound address={address || ''} />;
+  }
+
   return (
     <div className="flex flex-col w-full">
       <AddressSummary
@@ -299,20 +413,23 @@ const Address: React.FC = () => {
             )}
           </h3>
           <hr />
-          {isLoading ? (
-            <div style={{ textAlign: 'center', padding: '2rem' }}>Loading...</div>
-          ) : (
-            <>
-              {txs.map(tx => <BtcTransactionTable key={tx._id} transaction={tx} />)}
-              <Pagination
-                currentPage={currentPage}
-                totalPages={totalPages}
-                onPageChange={handlePageChange}
-              />
-            </>
-          )}
+          {txs.map(tx => <BtcTransactionTable key={tx._id} transaction={tx} />)}
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={handlePageChange}
+          />
         </BsBlock>
       </div>
+      
+      {/* Risk Score Modal */}
+      <RiskScoreModal
+        visible={isRiskModalVisible}
+        onClose={() => setIsRiskModalVisible(false)}
+        riskScores={riskScore}
+        address={address || ''}
+        loading={isLoadingRiskScore}
+      />
     </div>
   );
 };

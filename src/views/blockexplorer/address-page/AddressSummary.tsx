@@ -18,6 +18,7 @@ import AddressAttributionEntities from './AddressAttributionEntities';
 import { getEntityTypeLabel } from '../../../utils/display-labels';
 import { EEntityType } from '../../../typings/SOT';
 import { SimpleLogo } from '../../../components/common/Logo';
+import { Tag } from 'antd';
 
 interface AddressSummaryProps {
   address: string | undefined;
@@ -231,6 +232,23 @@ const AddressSummary: React.FC<AddressSummaryProps> = ({
                       <span className="text-xl font-extrabold" style={{ color: getRiskColor(riskScore.overallRisk * 100) }}>{Math.round(riskScore.overallRisk * 100)}%</span>
                     </div>
                     <span className="text-xs text-gray-600 dark:text-gray-400 underline cursor-pointer hover:text-orange-600 dark:hover:text-orange-400">View Details</span>
+                    
+                    {/* BO Override Information */}
+                    {riskScore.boInfo?.isBeneficialOwnerOverride && (
+                      <div className="mt-2 text-center">
+                        <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">
+                          Risk from Beneficial Owner:
+                        </div>
+                        <div className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                          {riskScore.boInfo.entityName}
+                        </div>
+                        {riskScore.boInfo.ofac && (
+                          <div className="mt-1">
+                            <Tag color="red" className="text-xs">OFAC SANCTIONED</Tag>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <div className="text-gray-500 font-semibold text-sm">N/A</div>

@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import { BarChart3, AlertCircle, Loader2 } from 'lucide-react';
+import { BarChart3, AlertCircle } from 'lucide-react';
 import AddressSearchInput from '../../components/common/AddressSearchInput';
 import EmptyState from '../../components/common/EmptyState';
 import ViewWrapper from '../../components/ViewWrapper';
@@ -13,6 +13,7 @@ import {
   RiskScoreModal,
   GeographicPresence
 } from './components';
+import AddressNotFound from '../blockexplorer/address-page/AddressNotFound';
 // import { EnhancedD3SankeyDiagram } from './components/EnhancedD3SankeyDiagram';
 import { SimpleSankeyTest } from './components/SimpleSankeyTest';
 import SocialMediaFeed from './components/entity-intelligence/SocialMediaFeed';
@@ -42,6 +43,7 @@ const RiskDashboard: React.FC = React.memo(() => {
   const [address, setAddress] = useState('');
   const [searchValue, setSearchValue] = useState('');
   const [riskScoreModalVisible, setRiskScoreModalVisible] = useState(false);
+  const [addressNotFound, setAddressNotFound] = useState<boolean>(false);
   const [entityDetailsHeight, setEntityDetailsHeight] = useState<number | undefined>(undefined);
   const entityDetailsRef = useRef<HTMLDivElement>(null);
   const resizeObserverRef = useRef<ResizeObserver | null>(null);
@@ -62,6 +64,7 @@ const RiskDashboard: React.FC = React.memo(() => {
     hasSetInitialYear.current = false; // Reset flag when address changes
     setIsBeneficialOwner(false); // Reset toggle state when address changes
     setMaxEntityHeight(600); // Reset height to default when address changes
+    setAddressNotFound(false); // Reset address not found state when address changes
   }, [address]);
 
   // React Query hooks - Fetch more transactions for activity analysis
@@ -69,17 +72,115 @@ const RiskDashboard: React.FC = React.memo(() => {
   const { data: activityTransactionData, isLoading: isLoadingActivityTransactions } = useAddressTransactions(address, 1, 1000);
   const { data: addressSummaryData, isLoading: isLoadingAddressSummary } = useAddressSummary(address);
   const { data: addressBlockStatsData, isLoading: isLoadingAddressBlockStats } = useAddressBlockStats(address);
-  const { isLoading: isLoadingAddress, error: addressError } = useAddress(address);
+  const { data: addressData, isLoading: isLoadingAddress, error: addressError } = useAddress(address);
   const { getPrice } = useCryptoPrices();
   const { riskScore, isLoading: isLoadingRiskScore, error: riskScoreError } = useRiskScore(address);
   
   // Memoize BTC price to prevent unnecessary recalculations
   const btcPrice = useMemo(() => getPrice('BTC') || 35000, [getPrice]);
 
+  // Monitor addressError and address data to detect address not found
+  useEffect(() => {
+    if (addressError && address) {
+      // Check if it's a 404 or address not found error
+      // Type guard to check if error has response property (AxiosError)
+      const isAxiosError = (error: unknown): error is { response?: { status?: number; data?: { message?: string } } } => {
+        return typeof error === 'object' && error !== null && 'response' in error;
+      };
+
+      if (isAxiosError(addressError)) {
+        // Handle AxiosError with response
+        if (addressError.response?.status === 404 || 
+            addressError.response?.data?.message?.toLowerCase().includes('not found') ||
+            addressError.response?.data?.message?.toLowerCase().includes('address not found')) {
+          setAddressNotFound(true);
+        } else {
+          setAddressNotFound(false);
+        }
+      } else if (addressError instanceof Error) {
+        // Handle generic Error
+        if (addressError.message?.toLowerCase().includes('cannot read properties of undefined') ||
+            addressError.message?.toLowerCase().includes('balance')) {
+          setAddressNotFound(true);
+        } else {
+          setAddressNotFound(false);
+        }
+      } else {
+        setAddressNotFound(false);
+      }
+    } else if (address && !isLoadingAddress && !addressError) {
+      // If we have an address but no data and no error, and we're not loading, 
+      // check if the address data is valid
+      if (!addressData || !addressData.addr) {
+        setAddressNotFound(true);
+      } else {
+        setAddressNotFound(false);
+      }
+    } else if (!address) {
+      setAddressNotFound(false);
+    }
+  }, [addressError, address, isLoadingAddress, addressData]);
+
   // Attribution and SOT data hooks
   const { fetchAttributions, attributions } = useAttribution();
   const { itemsMap, items } = useAppSelector((state: RootState) => state.sot);
   const dispatch = useAppDispatch();
+
+  // Apply BO override logic to risk score
+  const enhancedRiskScore = useMemo(() => {
+    if (!riskScore || !address || !attributions[address] || Object.keys(itemsMap).length === 0) {
+      return riskScore;
+    }
+
+    const attribution = attributions[address];
+    
+    // Apply BO override if beneficial owner exists and is different from entity
+    if (attribution.bo && attribution.bo !== attribution.entity) {
+      const entitySOT = itemsMap[attribution.entity];
+      const beneficialOwnerSOT = itemsMap[attribution.bo];
+      
+      if (beneficialOwnerSOT) {
+        // Apply BO override logic
+        const override = applyBeneficialOwnerOverride(
+          {
+            entity: attribution.entity,
+            bo: attribution.bo || '',
+            custodian: attribution.custodian || '',
+            script_type: attribution.script_type
+          },
+          entitySOT,
+          beneficialOwnerSOT,
+          riskScore.riskScores,
+          address
+        );
+        
+        // Create enhanced risk score with BO override applied
+        const enhancedScore = {
+          ...riskScore,
+          overallRisk: override.riskScore ? override.riskScore / 100 : riskScore.overallRisk, // Convert back to 0-1 range
+          boInfo: {
+            entityName: override.entityName,
+            entityType: override.entityType,
+            entityTags: override.entityTags,
+            ofac: override.ofac,
+            isBeneficialOwnerOverride: override.isBeneficialOwnerOverride
+          }
+        };
+        
+        console.log('🔍 Risk Dashboard BO Override Applied:', {
+          address,
+          originalRiskScore: Math.round(riskScore.overallRisk * 100),
+          boRiskScore: override.riskScore,
+          boName: override.entityName,
+          boOfac: override.ofac
+        });
+        
+        return enhancedScore;
+      }
+    }
+    
+    return riskScore;
+  }, [riskScore, address, attributions, itemsMap]);
 
   // Load SOT data on component mount
   useEffect(() => {
@@ -761,7 +862,8 @@ const RiskDashboard: React.FC = React.memo(() => {
       },
       entitySOT,
       beneficialOwnerSOT,
-      Object.values(itemsMap)
+      undefined, // no riskScores needed here
+      address
     );
     
     return override.displayTitle;
@@ -830,7 +932,29 @@ const RiskDashboard: React.FC = React.memo(() => {
     }
   }, [handleAddressSearch]);
 
+  // Handle clearing address for new search - memoized
+  const handleClearAddress = useCallback(() => {
+    setAddress('');
+    setSearchValue('');
+    setAddressNotFound(false);
+    setError(null);
+    setHasData(false);
+  }, []);
+
   const isEmptyState = !shouldShowData && !loading && !isLoadingAnyData;
+
+  // Show not found state if address was not found
+  if (addressNotFound) {
+    return (
+      <ViewWrapper
+        icon={<BarChart3 className="w-8 h-8 text-orange-500" />}
+        title="Risk Dashboard"
+        fullWidth={true}
+      >
+        <AddressNotFound address={address} redirectTo="risk-dashboard" onClearAddress={handleClearAddress} />
+      </ViewWrapper>
+    );
+  }
 
   return (
     <ViewWrapper
@@ -863,6 +987,90 @@ const RiskDashboard: React.FC = React.memo(() => {
           title="Welcome to Risk Dashboard"
           description="Analyze blockchain addresses for risk assessment, transaction patterns, and entity intelligence. Get comprehensive insights into address behavior, counterparty analysis, and risk scoring."
         />
+      ) : (loading || isLoadingAnyData) ? (
+        <div className="space-y-6">
+          {/* Address Header Skeleton */}
+          <div className="rounded-2xl border p-6 bg-gray-50 dark:bg-background border-gray-200 dark:border-gray-700 mt-8">
+            <div className="animate-pulse">
+              <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-20 mb-2"></div>
+              <div className="h-8 bg-gray-300 dark:bg-gray-600 rounded w-full"></div>
+            </div>
+          </div>
+
+          {/* Summary Stats and Risk Assessment Skeleton - Two Columns */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="rounded-2xl border p-6 bg-gray-50 dark:bg-background border-gray-200 dark:border-gray-700">
+              <div className="animate-pulse">
+                <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-24 mb-4"></div>
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-24"></div>
+                    <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-24"></div>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-26"></div>
+                    <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-24"></div>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-28"></div>
+                    <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-24"></div>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-20"></div>
+                    <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-24"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-2xl border p-6 bg-gray-50 dark:bg-background border-gray-200 dark:border-gray-700">
+              <div className="animate-pulse">
+                <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-20 mb-4"></div>
+                <div className="flex items-center justify-center h-32">
+                  <div className="w-24 h-24 bg-gray-300 dark:bg-gray-600 rounded-full"></div>
+                </div>
+                <div className="mt-4 text-center">
+                  <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-16 mx-auto mb-2"></div>
+                  <div className="h-3 bg-gray-300 dark:bg-gray-600 rounded w-24 mx-auto"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Transaction Activity Skeleton */}
+          <div className="rounded-2xl border p-6 bg-gray-50 dark:bg-background border-gray-200 dark:border-gray-700">
+            <div className="animate-pulse">
+              <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-32 mb-4"></div>
+              <div className="h-48 bg-gray-300 dark:bg-gray-600 rounded w-full"></div>
+            </div>
+          </div>
+
+          {/* Top Counterparties Skeleton */}
+          <div className="rounded-2xl border p-6 bg-gray-50 dark:bg-background border-gray-200 dark:border-gray-700">
+            <div className="animate-pulse">
+              <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-28 mb-4"></div>
+              <div className="space-y-3">
+                {[...Array(5)].map((_, index) => (
+                  <div key={index} className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 bg-gray-300 dark:bg-gray-600 rounded-full"></div>
+                      <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-24"></div>
+                    </div>
+                    <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-16"></div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Sankey Diagram Skeleton */}
+          <div className="rounded-2xl border p-6 bg-gray-50 dark:bg-background border-gray-200 dark:border-gray-700">
+            <div className="animate-pulse">
+              <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-20 mb-4"></div>
+              <div className="h-48 bg-gray-300 dark:bg-gray-600 rounded w-full"></div>
+            </div>
+          </div>
+        </div>
       ) : (
         <div className="space-y-6">
           {/* Address Header - Full Width */}
@@ -880,11 +1088,12 @@ const RiskDashboard: React.FC = React.memo(() => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <AddressSummary {...addressSummaryProps} />
             <RiskAssessment 
-              score={riskScore ? Math.round(riskScore.overallRisk * 100) : 0}
-              level={riskScore ? getRiskLevel(riskScore.overallRisk * 100) : 'Unknown'}
-              description={riskScore ? getRiskDescription(riskScore.overallRisk * 100) : 'No risk data available'}
+              score={enhancedRiskScore ? Math.round(enhancedRiskScore.overallRisk * 100) : 0}
+              level={enhancedRiskScore ? getRiskLevel(enhancedRiskScore.overallRisk * 100) : 'Unknown'}
+              description={enhancedRiskScore ? getRiskDescription(enhancedRiskScore.overallRisk * 100) : 'No risk data available'}
               isLoading={isLoadingRiskScore || loading}
               onSeeDetails={handleRiskScoreClick}
+              boInfo={enhancedRiskScore?.boInfo}
             />
           </div>
 
@@ -1039,7 +1248,7 @@ const RiskDashboard: React.FC = React.memo(() => {
         </div>
       )}
 
-      {(loading || isLoadingAnyData) && (
+      {false && (loading || isLoadingAnyData) && (
         <div className="space-y-6">
           {/* Address Header Skeleton */}
           <div className="rounded-2xl border p-6 bg-gray-50 dark:bg-background border-gray-200 dark:border-gray-700">
@@ -1132,14 +1341,6 @@ const RiskDashboard: React.FC = React.memo(() => {
               </div>
             </div>
           </div>
-          
-          {/* Loading indicator */}
-          <div className="text-center py-5 mt-4">
-            <Loader2 className="w-8 h-8 animate-spin mx-auto mb-3 text-brand-primary" />
-            <div className="text-sm text-gray-500 dark:text-gray-400">
-              Analyzing blockchain address and gathering risk intelligence...
-            </div>
-          </div>
         </div>
       )}
 
@@ -1177,7 +1378,7 @@ const RiskDashboard: React.FC = React.memo(() => {
         <RiskScoreModal
           visible={riskScoreModalVisible}
           onClose={() => setRiskScoreModalVisible(false)}
-          riskScores={riskScore}
+          riskScores={enhancedRiskScore}
           address={address}
           loading={isLoadingRiskScore}
         />

@@ -4,29 +4,15 @@ import { api } from '../../api/api';
 import { BsBlock } from '../../styles/Table';
 import BtcTransactionTable from './transaction/BtcTransactionTable';
 import { BtcTransaction } from '../../typings/BtcTransaction';
-import { useTheme } from '../../context/ThemeContext';
 import { useAttribution } from '../../context/AttributionContext';
 import Pagination from '../../components/common/Pagination';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { IBtcBlock } from '../../typings/Block';
-import {
-  BlockLayout,
-  ScrollableContent,
-  ErrorMessage,
-  BlockSummaryCard,
-  Row,
-  Label,
-  Value,
-  CopyButton,
-  CopyAlert,
-  StickyBlockHashCard,
-  styles
-} from './styles/BlockView.styles';
-import { truncateStringMiddle } from '../../utils/generic';
+import BlockSummary from './BlockSummary';
+import { useToast } from '../../hooks/use-toast';
 
 const BlockView: React.FC = () => {
   const { block } = useParams();
-  const { theme } = useTheme();
+  const { toast } = useToast();
   const [blockData, setBlockData] = useState<IBtcBlock | null>(null);
   const [transactions, setTransactions] = useState<BtcTransaction[]>([]);
   const [totalTxs, setTotalTxs] = useState<number>(0);
@@ -35,7 +21,7 @@ const BlockView: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { fetchAttributions } = useAttribution();
-  const [copied, setCopied] = useState(false);
+  const [copySuccess, setCopySuccess] = useState(false);
 
   useEffect(() => {
     const fetchBlock = async () => {
@@ -98,78 +84,51 @@ const BlockView: React.FC = () => {
   const totalPages = Math.ceil(totalTxs / itemsPerPage);
   const handlePageChange = (page: number) => setCurrentPage(page);
 
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+  const copyToClipboard = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!blockData?.hash) return;
+    
+    navigator.clipboard.writeText(blockData.hash)
+      .then(() => {
+        setCopySuccess(true);
+        toast({
+          title: "Block hash copied",
+          description: "The block hash has been copied to your clipboard.",
+        });
+        setTimeout(() => setCopySuccess(false), 2000);
+      })
+      .catch(err => {
+        console.error('Failed to copy block hash: ', err);
+        toast({
+          title: "Copy failed",
+          description: "Failed to copy block hash to clipboard.",
+          variant: "destructive",
+        });
+      });
   };
 
   if (isLoading) return <div>Loading...</div>;
-  if (error) return <ErrorMessage theme={{ theme }}>{error}</ErrorMessage>;
-  if (!blockData) return <ErrorMessage theme={{ theme }}>Block not found</ErrorMessage>;
+  if (error) return <div className="text-red-500 p-4 text-center">{error}</div>;
+  if (!blockData) return <div className="text-red-500 p-4 text-center">Block not found</div>;
 
   return (
-    <BlockLayout>
-      <StickyBlockHashCard theme={{ theme }}>
-        <h2 style={styles.blockHashTitle}>Block Hash</h2>
-        <div style={styles.blockHashContainer}>
-          <CopyButton onClick={() => copyToClipboard(blockData.hash)} title="Copy block hash">
-            {copied ? '✓' : '⧉'}
-          </CopyButton>
-          <Value style={styles.blockHashValue}>
-            <span style={{ fontFamily: 'monospace', color: '#fff' }}>{blockData.hash}</span>
-          </Value>
-          {copied && <CopyAlert theme={{ theme }}>Block hash copied</CopyAlert>}
-        </div>
-      </StickyBlockHashCard>
-      <ScrollableContent>
-        <BlockSummaryCard theme={{ theme }}>
-          <h2 style={styles.summaryTitle}>Summary</h2>
-          <hr style={styles.summaryDivider} />
-          <div style={styles.summaryGrid}>
-            {/* Left column */}
-            <div style={styles.column}>
-              <Row><Label>Block Height</Label><Value>{blockData.number}</Value></Row>
-              <Row><Label>Block Size</Label><Value>{blockData.size} bytes</Value></Row>
-              <Row><Label>Stripped Size</Label><Value>{blockData.stripped_size}</Value></Row>
-              <Row><Label>Weight</Label><Value>{blockData.weight}</Value></Row>
-              <Row><Label>Time</Label><Value>{new Date((blockData.timestamp)).toLocaleString()}</Value></Row>
-              <Row><Label>Txn Count</Label><Value>{blockData.transaction_count}</Value></Row>
-            </div>
-            {/* Right column */}
-            <div style={styles.columnRight}>
-              <Row><Label>Version</Label><Value>{blockData.version}</Value></Row>
-              <Row><Label>Bits</Label><Value>{blockData.bits}</Value></Row>
-              <Row><Label>Nonce</Label><Value>{blockData.nonce}</Value></Row>
-              <Row>
-                <Label>Coinbase Param</Label>
-                <Value>
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <span>{truncateStringMiddle(blockData.coinbase_param || '', 18)}</span>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>{blockData.coinbase_param}</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                </Value>
-              </Row>
-              <Row><Label>Merkle Root</Label><Value><span style={{ fontFamily: 'monospace', color: '#fff' }}>{blockData.merkle_root}</span></Value></Row>
-            </div>
-          </div>
-        </BlockSummaryCard>
+    <div className="flex flex-col w-full">
+      <BlockSummary
+        block={blockData}
+        copySuccess={copySuccess}
+        onCopyClick={copyToClipboard}
+      />
+      
+      <div className="w-full">
         <BsBlock className="font-mono">
-          <h3>Transactions ({totalTxs})</h3>
+          <h3>Transactions ({totalTxs.toLocaleString()})</h3>
           <hr />
-        </BsBlock>
-        <div>
           {isLoading ? (
-            <div style={styles.loadingContainer}>Loading...</div>
+            <div className="text-center p-8">Loading...</div>
           ) : (
             <>
-              {transactions.map(tx => <BtcTransactionTable key={tx._id} transaction={tx} theme={{ theme }} />)}
+              {transactions.map(tx => <BtcTransactionTable key={tx._id} transaction={tx} />)}
               <Pagination
                 currentPage={currentPage}
                 totalPages={totalPages}
@@ -177,9 +136,9 @@ const BlockView: React.FC = () => {
               />
             </>
           )}
-        </div>
-      </ScrollableContent>
-    </BlockLayout>
+        </BsBlock>
+      </div>
+    </div>
   );
 };
 

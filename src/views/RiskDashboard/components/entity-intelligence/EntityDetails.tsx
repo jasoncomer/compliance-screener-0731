@@ -78,6 +78,12 @@ const EntityDetails: React.FC<EntityDetailsProps> = ({
 }) => {
   const { theme } = useTheme();
 
+  // Utility function to truncate long text
+  const truncateText = (text: string, maxLength: number = 50): string => {
+    if (text.length <= maxLength) return text;
+    return text.substring(0, maxLength) + '...';
+  };
+
   // Check if we have meaningful entity data
   const hasEntityData = name && name !== "Unknown Entity";
 
@@ -287,44 +293,52 @@ const EntityDetails: React.FC<EntityDetailsProps> = ({
                 <div className="ml-4 mt-1 space-y-1">
                   {website && (
                     <div className="flex items-center">
-                      <GlobalOutlined className="mr-2" />
+                      <GlobalOutlined className="mr-2 flex-shrink-0" />
                       <a 
                         href={`https://${website}`} 
                         target="_blank" 
                         rel="noopener noreferrer"
-                        className="text-brand-primary hover:text-brand-primary/80 transition-colors"
+                        className="text-brand-primary hover:text-brand-primary/80 transition-colors break-all"
+                        title={website}
                       >
-                        {website}
+                        {truncateText(website, 30)}
                       </a>
                     </div>
                   )}
                   {email && (
                     <div className="flex items-center">
-                      <MailOutlined className="mr-2" />
+                      <MailOutlined className="mr-2 flex-shrink-0" />
                       <a 
                         href={`mailto:${email}`}
-                        className="text-brand-primary hover:text-brand-primary/80 transition-colors"
+                        className="text-brand-primary hover:text-brand-primary/80 transition-colors break-all"
+                        title={email}
                       >
-                        {email}
+                        {truncateText(email, 40)}
                       </a>
                     </div>
                   )}
                   {phone && (
                     <div className="flex items-center">
-                      <PhoneOutlined className="mr-2" />
-                      {phone}
+                      <PhoneOutlined className="mr-2 flex-shrink-0" />
+                      <span className="break-all" title={phone}>
+                        {truncateText(phone, 30)}
+                      </span>
                     </div>
                   )}
                   {address && (
                     <div className="flex items-center">
-                      <EnvironmentOutlined className="mr-2" />
-                      {address}
+                      <EnvironmentOutlined className="mr-2 flex-shrink-0" />
+                      <span className="break-all" title={address}>
+                        {truncateText(address, 50)}
+                      </span>
                     </div>
                   )}
                   {ensAddress && (
                     <div className="flex items-center">
-                      <LinkOutlined className="mr-2" />
-                      ENS: {ensAddress}
+                      <LinkOutlined className="mr-2 flex-shrink-0" />
+                      <span className="break-all" title={ensAddress}>
+                        ENS: {truncateText(ensAddress, 35)}
+                      </span>
                     </div>
                   )}
                 </div>
@@ -342,40 +356,43 @@ const EntityDetails: React.FC<EntityDetailsProps> = ({
                 <div className="ml-4 mt-1 space-y-1">
                   {twitter && (
                     <div className="flex items-center">
-                      <TwitterOutlined className="mr-2" />
+                      <TwitterOutlined className="mr-2 flex-shrink-0" />
                       <a 
                         href={`https://twitter.com/${twitter.replace('@', '')}`}
                         target="_blank" 
                         rel="noopener noreferrer"
-                        className="text-brand-primary hover:text-brand-primary/80 transition-colors"
+                        className="text-brand-primary hover:text-brand-primary/80 transition-colors break-all"
+                        title={twitter}
                       >
-                        {twitter}
+                        {truncateText(twitter, 30)}
                       </a>
                     </div>
                   )}
                   {telegram && (
                     <div className="flex items-center">
-                      <SendOutlined className="mr-2" />
+                      <SendOutlined className="mr-2 flex-shrink-0" />
                       <a 
                         href={`https://t.me/${telegram.replace('@', '')}`}
                         target="_blank" 
                         rel="noopener noreferrer"
-                        className="text-brand-primary hover:text-brand-primary/80 transition-colors"
+                        className="text-brand-primary hover:text-brand-primary/80 transition-colors break-all"
+                        title={telegram}
                       >
-                        {telegram}
+                        {truncateText(telegram, 30)}
                       </a>
                     </div>
                   )}
                   {socialMediaProfiles.map((profile, index) => (
                     <div key={index} className="flex items-center">
-                      {getSocialMediaIcon(profile)}
+                      <span className="flex-shrink-0">{getSocialMediaIcon(profile)}</span>
                       <a 
                         href={profile.startsWith('http') ? profile : `https://${profile}`}
                         target="_blank" 
                         rel="noopener noreferrer"
-                        className="text-brand-primary hover:text-brand-primary/80 transition-colors ml-2"
+                        className="text-brand-primary hover:text-brand-primary/80 transition-colors ml-2 break-all"
+                        title={profile}
                       >
-                        {profile}
+                        {truncateText(profile, 40)}
                       </a>
                     </div>
                   ))}

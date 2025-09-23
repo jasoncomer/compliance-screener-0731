@@ -6,6 +6,7 @@ import { SidebarCard, ScrollableContent } from './styles';
 import { EntityListSection } from './EntityListSection';
 import { SOT } from '../../typings/interfaces';
 import { api } from '../../api/api';
+import { SimpleLogo } from '../common/Logo';
 
 // Explicitly declare the props matching the interface
 interface Props {
@@ -143,17 +144,12 @@ const EntitySidebar: React.FC<Props> = ({ currentEntityId, onSelectSot }) => {
                       title={isClickable ? `Click to view ${entityName} profile` : `${entityName} not found in database`}
                     >
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center overflow-hidden">
-                          {entity?.logo ? (
-                            <img 
-                              src={entity.logo} 
-                              alt={entityName}
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <User className="w-5 h-5 text-gray-500 dark:text-gray-400" />
-                          )}
-                        </div>
+                        <SimpleLogo
+                          entityId={entity?.entity_id}
+                          entityType={entity?.entity_type}
+                          size="default"
+                          fallbackIcon={<User className="w-5 h-5 text-gray-500 dark:text-gray-400" />}
+                        />
                         <div className="flex-1 min-w-0">
                           <div className="font-medium text-sm truncate">{entityName}</div>
                           <div className="text-xs text-gray-600 dark:text-gray-400">
@@ -196,17 +192,12 @@ const EntitySidebar: React.FC<Props> = ({ currentEntityId, onSelectSot }) => {
                       title={isClickable ? `Click to view ${entityName} profile` : `${entityName} not found in database`}
                     >
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center overflow-hidden">
-                          {entity?.logo ? (
-                            <img 
-                              src={entity.logo} 
-                              alt={entityName}
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <User className="w-5 h-5 text-gray-500 dark:text-gray-400" />
-                          )}
-                        </div>
+                        <SimpleLogo
+                          entityId={entity?.entity_id}
+                          entityType={entity?.entity_type}
+                          size="default"
+                          fallbackIcon={<User className="w-5 h-5 text-gray-500 dark:text-gray-400" />}
+                        />
                         <div className="flex-1 min-w-0">
                           <div className="font-medium text-sm truncate">{entityName}</div>
                           <div className="text-xs text-gray-600 dark:text-gray-400">

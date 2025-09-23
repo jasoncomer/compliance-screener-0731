@@ -1,23 +1,21 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { BtcTransaction } from '../../typings/BtcTransaction';
 import { BsBlock } from '../../styles/Table';
-import BtcTransactionSummary from './transaction/BtcTransactionSummary';
+import TransactionSummary from './transaction/TransactionSummary';
 import BtcTransactionTable from './transaction/BtcTransactionTable';
-import { BsWrapper } from '../../styles/ocmmon';
 import { api } from '../../api/api';
 import { useTheme } from '../../context/ThemeContext';
 import { useAttribution } from '../../context/AttributionContext';
-import { truncateAddress } from '../../utils/crypto';
-import useWindowSize from '../../hooks/useWindowSize';
+import { useToast } from '../../hooks/use-toast';
 
 const TransactionView: React.FC = () => {
   const { txid } = useParams();
   const { theme } = useTheme();
+  const { toast } = useToast();
   const [transaction, setTransaction] = React.useState<BtcTransaction>();
+  const [copySuccess, setCopySuccess] = useState<boolean>(false);
   const { fetchAttributions } = useAttribution();
-  const { width } = useWindowSize();
-  const isSmallScreen = width < 1080;
 
   useEffect(() => {
     const fetchTransaction = async () => {
@@ -43,23 +41,48 @@ const TransactionView: React.FC = () => {
     fetchAttributions(Array.from(uniqueAddresses));
   }, [transaction, fetchAttributions]);
 
+  const copyToClipboard = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!txid) return;
+    
+    navigator.clipboard.writeText(txid)
+      .then(() => {
+        setCopySuccess(true);
+        toast({
+          title: "Transaction hash copied",
+          description: "The transaction hash has been copied to your clipboard.",
+        });
+        setTimeout(() => setCopySuccess(false), 2000);
+      })
+      .catch(err => {
+        console.error('Failed to copy transaction hash: ', err);
+        toast({
+          title: "Copy failed",
+          description: "Failed to copy transaction hash to clipboard.",
+          variant: "destructive",
+        });
+      });
+  };
+
   if (!transaction) return <div>Loading...</div>;
 
   return (
-    <BsWrapper style={{ fontFamily: 'monospace' }}>
-
-      <BsBlock>
-        <h3>Transaction Hash</h3>
-        <hr />
-        <div>
-          {isSmallScreen ? truncateAddress(transaction.txid) : transaction.txid}
-        </div>
-      </BsBlock>
-
-      <BtcTransactionSummary transaction={transaction} />
+    <div className="flex flex-col w-full">
+      <TransactionSummary
+        transaction={transaction}
+        copySuccess={copySuccess}
+        onCopyClick={copyToClipboard}
+      />
       
-      <BtcTransactionTable transaction={transaction} theme={{ theme }} />
-    </BsWrapper>
+      <div className="w-full">
+        <BsBlock>
+          <h3>Transaction Details</h3>
+          <hr />
+          <BtcTransactionTable transaction={transaction} theme={{ theme }} />
+        </BsBlock>
+      </div>
+    </div>
   );
 };
 

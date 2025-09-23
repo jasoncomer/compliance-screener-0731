@@ -585,11 +585,11 @@ const NodeTxPicker: React.FC<Props> = ({ open, address, onOpenChange, onAdd, nod
             // Process all external inputs
 
             externalInputs.forEach((i: any, inIndex: number) => {
-              const inputAddress = i.addr || 'Unknown';
-              const entityData = addressEntities[inputAddress];
+              const outputAddress = i.addr || 'Unknown';
+              const entityData = addressEntities[outputAddress];
               const rawEntityName = entityData?.name || 'Unknown Entity';
               const entityId = rawEntityName.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
-              const cospendId = entityData?.cospend_id || inputAddress;
+              const cospendId = entityData?.cospend_id || outputAddress;
 
               // Use SOT data if available, otherwise fallback to basic formatting
               let entityName = rawEntityName ? rawEntityName.charAt(0).toUpperCase() + rawEntityName.slice(1) : 'Unknown Entity';
@@ -610,7 +610,9 @@ const NodeTxPicker: React.FC<Props> = ({ open, address, onOpenChange, onAdd, nod
                       cospend_id: cospendId
                     },
                     entitySOT,
-                    boSOT
+                    boSOT,
+                    riskScores,
+                    outputAddress
                   );
                   entityName = override.displayTitle || override.entityName;
                   entityType = (override.entityType as any) || entityType;
@@ -619,7 +621,7 @@ const NodeTxPicker: React.FC<Props> = ({ open, address, onOpenChange, onAdd, nod
                 }
               }
 
-              const risk = addressRiskScores[inputAddress] || 0;
+              const risk = addressRiskScores[outputAddress] || 0;
               const inputAmountBtc = (i.amt || 0) / 100000000;
 
               // Create one row per input (UTXO)
@@ -645,7 +647,7 @@ const NodeTxPicker: React.FC<Props> = ({ open, address, onOpenChange, onAdd, nod
                 cospendId,
                 transactionCount: (tx.inputs?.length || 0) + (tx.outputs?.length || 0), // Total UTXOs in the original transaction
                 originalTxHash: tx.txid, // Store the original transaction hash
-                counterpartyAddress: inputAddress, // Store the specific counterparty address for this UTXO
+                counterpartyAddress: outputAddress, // Store the specific counterparty address for this UTXO
                 originalInputIndex: inIndex, // Store the original input index for UTXO key generation
               };
 
@@ -657,7 +659,7 @@ const NodeTxPicker: React.FC<Props> = ({ open, address, onOpenChange, onAdd, nod
                 originalOutputIndex: transaction.originalOutputIndex,
                 inputs: transaction.inputs,
                 outputs: transaction.outputs,
-                sourceAddress: inputAddress,
+                sourceAddress: outputAddress,
                 destinationAddress: address,
                 amount: transaction.amount
               });
@@ -738,7 +740,9 @@ const NodeTxPicker: React.FC<Props> = ({ open, address, onOpenChange, onAdd, nod
                       cospend_id: cospendId
                     },
                     entitySOT,
-                    boSOT
+                    boSOT,
+                    riskScores,
+                    outputAddress
                   );
                   entityName = override.displayTitle || override.entityName;
                   entityType = (override.entityType as any) || entityType;

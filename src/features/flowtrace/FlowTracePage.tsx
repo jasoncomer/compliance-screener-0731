@@ -112,6 +112,11 @@ const FlowTracePage: React.FC = () => {
   const { fetchAttributions, attributions } = useAttribution();
   const { itemsMap } = useAppSelector((state) => state.sot);
   const dispatch = useAppDispatch();
+
+  // Load SOT data on component mount (same as Risk Dashboard)
+  useEffect(() => {
+    dispatch(fetchSOT());
+  }, [dispatch]);
   
   // Drawing toolbar state
   const [drawingToolbarVisible, setDrawingToolbarVisible] = useState(false);
@@ -159,28 +164,6 @@ const FlowTracePage: React.FC = () => {
       setHasUnsavedChanges(true);
     }
   }, [nodes, connections]);
-
-  // Prefetch attribution profile and logos for a list of addresses (non-blocking)
-  const prefetchProfilesAndLogos = async (addresses: string[]) => {
-    const unique = Array.from(new Set(addresses.filter(Boolean)));
-    if (!unique.length) return;
-    
-    
-    // Ensure SOT data is loaded first
-    if (Object.keys(itemsMap).length === 0) {
-      try {
-        await dispatch(fetchSOT()).unwrap();
-      } catch (error) {
-        return; // Don't proceed if SOT data can't be loaded
-      }
-    }
-    
-    // Fetch attribution data for all addresses at once (same as Risk Dashboard)
-    try {
-      await fetchAttributions(unique);
-    } catch (error) {
-    }
-  };
   
   // Function to fetch and set left panel data for an address
   const fetchAndSetLeftPanelData = async (address: string) => {
@@ -326,7 +309,7 @@ const FlowTracePage: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [fetchAndSetLeftPanelData, prefetchProfilesAndLogos]);
+  }, [fetchAndSetLeftPanelData]);
 
   // Handle initial addresses from context
   useEffect(() => {
@@ -731,6 +714,28 @@ const FlowTracePage: React.FC = () => {
     }
   }, [workspaceId, nodes, connections]);
 
+  // Prefetch attribution profile and logos for a list of addresses (non-blocking)
+  const prefetchProfilesAndLogos = async (addresses: string[]) => {
+    const unique = Array.from(new Set(addresses.filter(Boolean)));
+    if (!unique.length) return;
+    
+    
+    // Ensure SOT data is loaded first
+    if (Object.keys(itemsMap).length === 0) {
+      try {
+        await dispatch(fetchSOT()).unwrap();
+      } catch (error) {
+        return; // Don't proceed if SOT data can't be loaded
+      }
+    }
+    
+    // Fetch attribution data for all addresses at once (same as Risk Dashboard)
+    try {
+      await fetchAttributions(unique);
+    } catch (error) {
+    }
+  };
+
   // Fetch risk scores for newly added nodes (non-blocking)
   const prefetchRiskScores = async (addresses: string[]) => {
     const unique = Array.from(new Set(addresses.filter(Boolean)));
@@ -746,19 +751,52 @@ const FlowTracePage: React.FC = () => {
         });
         
         const riskScore = response.data.riskScores?.[address]?.overallRisk;
+        
         if (riskScore !== undefined) {
           const normalizedRiskScore = Math.round(riskScore * 100);
           
-          // Update the node with the risk score
+          // Apply BO override logic for risk score
+          let finalRiskScore = normalizedRiskScore;
+          
+          // Check if this address has attribution data and BO override
+          const attribution = attributions[address];
+          
+          // Only apply BO override if we have attribution data and SOT data
+          if (attribution && attribution.bo && attribution.bo !== attribution.entity && Object.keys(itemsMap).length > 0) {
+            const entitySOT = itemsMap[attribution.entity];
+            const beneficialOwnerSOT = itemsMap[attribution.bo];
+            
+            
+            if (beneficialOwnerSOT) {
+              // Apply BO override logic
+              const override = applyBeneficialOwnerOverride(
+                {
+                  entity: attribution.entity,
+                  bo: attribution.bo || '',
+                  custodian: attribution.custodian || '',
+                  script_type: attribution.script_type
+                },
+                entitySOT,
+                beneficialOwnerSOT,
+                response.data.riskScores,
+                address
+              );
+              
+              finalRiskScore = override.riskScore || normalizedRiskScore;
+            }
+          }
+          
+          // Update the node with the risk score (BO override applied)
           setNodes(prev => prev.map(node => 
             node.id === address 
-              ? { ...node, risk: normalizedRiskScore }
+              ? { ...node, risk: finalRiskScore }
               : node
           ));
           
-          return { address, riskScore: normalizedRiskScore };
+          return { address, riskScore: finalRiskScore };
         }
       } catch (error) {
+        console.error(`🔍 Error fetching risk score for ${address}:`, error);
       }
       return null;
     });
@@ -942,7 +980,8 @@ const FlowTracePage: React.FC = () => {
             },
             entitySOT,
             beneficialOwnerSOT,
-            Object.values(itemsMap)
+            undefined, // no riskScores needed here
+            node.id
           );
           
           
@@ -959,6 +998,9 @@ const FlowTracePage: React.FC = () => {
             logoUrl: logoUrl ?? node.logoUrl,
             entityId: resolvedEntityId ?? node.entityId,
             entityType: resolvedEntityType,
+            // Preserve existing risk score (set by fetchAndSetLeftPanelData with BO override)
+            // Don't override it with entity risk score from attribution processing
+            risk: node.risk,
             bo: attribution.bo ?? node.bo,
             custodian: attribution.custodian ?? node.custodian,
           };
@@ -983,7 +1025,8 @@ const FlowTracePage: React.FC = () => {
         },
         entitySOT,
         beneficialOwnerSOT,
-        Object.values(itemsMap)
+        undefined, // no riskScores needed here
+        currentAddress
       );
       
       setLeftPanelData((prev: any) => {
@@ -991,13 +1034,20 @@ const FlowTracePage: React.FC = () => {
           // Update existing left panel data
           return {
             ...prev,
+            // Preserve existing risk score (set by fetchAndSetLeftPanelData with BO override)
+            // Don't override it with entity risk score from attribution processing
+            riskScore: prev.riskScore,
             selectedEntity: {
               ...prev.selectedEntity,
               label: override.displayTitle || currentAddress,
               logoUrl: override.logo ? `https://storage.googleapis.com/entity-logos/${attribution.entity}.jpg` : prev.selectedEntity?.logoUrl,
               type: override.entityType || 'wallet',
+              // Preserve existing risk score (set by fetchAndSetLeftPanelData with BO override)
+              riskScore: prev.selectedEntity?.riskScore,
               bo: attribution.bo ?? prev.selectedEntity?.bo,
               custodian: attribution.custodian ?? prev.selectedEntity?.custodian,
+              ofac: override.ofac ?? prev.selectedEntity?.ofac,
+              entityTags: override.entityTags ?? prev.selectedEntity?.entityTags
             }
           };
           } else {
@@ -1007,6 +1057,8 @@ const FlowTracePage: React.FC = () => {
             network: getBlockchainType(currentAddress) === 'bitcoin' ? 'Bitcoin' : 'Ethereum',
             balance: '0',
             txCount: 0,
+            // Only set risk score if we have proper risk score data (from fetchAndSetLeftPanelData)
+            // Otherwise, leave it undefined and let fetchAndSetLeftPanelData set it
             riskScore: undefined,
             usdValue: '0',
             selectedEntity: {
@@ -1014,9 +1066,12 @@ const FlowTracePage: React.FC = () => {
               address: currentAddress,
               logoUrl: override.logo ? `https://storage.googleapis.com/entity-logos/${attribution.entity}.jpg` : null,
               type: override.entityType || 'wallet',
+              // Only set risk score if we have proper risk score data (from fetchAndSetLeftPanelData)
               riskScore: undefined,
               bo: attribution.bo,
-              custodian: attribution.custodian
+              custodian: attribution.custodian,
+              ofac: override.ofac,
+              entityTags: override.entityTags
             }
           };
         }
@@ -1726,7 +1781,6 @@ const FlowTracePage: React.FC = () => {
             logoUrl: logo, // This should be the currency logo path
             notes: notes ? [{ id: `note-${Date.now()}`, userId: 'current_user', userName: 'Current User', content: notes, timestamp: new Date().toISOString() }] : undefined,
           };
-          console.log('🎯 Creating custom node with logoUrl:', logo, 'for node:', nodeId);
           setNodes(prev => [...prev, newNode]);
           if (edges && edges.length) {
             const newEdges: FTConnection[] = edges.map((e, idx) => ({
@@ -1738,10 +1792,8 @@ const FlowTracePage: React.FC = () => {
               txHash: `cn-${Date.now()}-${idx}`,
               type: e.direction,
             } as FTConnection));
-            console.log('🔗 Creating edges for custom node:', { nodeId, edges: newEdges });
             setConnections(prev => {
               const merged = mergeEdges(prev, newEdges);
-              console.log('🔗 Merged connections:', { before: prev.length, after: merged.length, newEdges: newEdges.length });
               return merged;
             });
           }
@@ -1799,10 +1851,6 @@ const FlowTracePage: React.FC = () => {
                   // Find connections that involve the source node using connection key approach
                   const filtered = findConnectionsForAddress(connectionsWithKeys, expandSourceNode.id);
                   
-                  console.log('🔍 CONNECTION FILTERING (Connection Key Approach):');
-                  console.log('Source node:', expandSourceNode.id);
-                  console.log('Found connections:', filtered.length);
-                  console.log('Connection keys:', filtered.map(c => c.connectionKey));
                   
                   return filtered;
                 })()}

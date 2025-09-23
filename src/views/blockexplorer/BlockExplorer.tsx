@@ -146,7 +146,7 @@ const BlockExplorer: React.FC = () => {
   const [notesModalVisible, setNotesModalVisible] = useState(false);
   const [newNotesCount, setNewNotesCount] = useState(0);
   const [currentContext, setCurrentContext] = useState<{
-    type: 'general' | 'transaction' | 'address';
+    type: 'general' | 'transaction' | 'address' | 'block';
     id?: string;
   }>({ type: 'general' });
 
@@ -166,6 +166,9 @@ const BlockExplorer: React.FC = () => {
     } else if (pathParts.includes('address') && pathParts.length > 4) {
       const address = pathParts[pathParts.length - 1];
       setCurrentContext({ type: 'address', id: address });
+    } else if (pathParts.includes('block') && pathParts.length > 4) {
+      const blockNumber = pathParts[pathParts.length - 1];
+      setCurrentContext({ type: 'block', id: blockNumber });
     } else {
       setCurrentContext({ type: 'general' });
     }
@@ -219,7 +222,7 @@ const BlockExplorer: React.FC = () => {
               onSearch={onSearch}
             />
           </div>
-          {(currentContext.type === 'transaction' || currentContext.type === 'address') && (
+          {(currentContext.type === 'transaction' || currentContext.type === 'address' || currentContext.type === 'block') && (
             <NotesButton
               onClick={showNotesModal}
               title="View Notes"
@@ -245,13 +248,14 @@ const BlockExplorer: React.FC = () => {
       }
 
       {
-        (currentContext.type === 'transaction' || currentContext.type === 'address') && (
+        (currentContext.type === 'transaction' || currentContext.type === 'address' || currentContext.type === 'block') && (
           <NotesModal
             visible={notesModalVisible}
             onClose={hideNotesModal}
             type={currentContext.type}
             transactionId={currentContext.type === 'transaction' ? currentContext.id : undefined}
             address={currentContext.type === 'address' ? currentContext.id : undefined}
+            blockNumber={currentContext.type === 'block' ? currentContext.id : undefined}
             cospendId={currentContext.type === 'address' ? cospendId : undefined}
             onNewNotesCountChange={handleNewNotesCountChange}
           />

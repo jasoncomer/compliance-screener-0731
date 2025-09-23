@@ -6,6 +6,7 @@ interface RiskFactor {
   score: number;
   severity: 'high' | 'medium' | 'low';
   description: string;
+  impact?: string;  // Alternative description for the risk factor
   details?: Record<string, any>;
 }
 
@@ -97,8 +98,18 @@ interface RiskScoringResponse {
 
   overallRisk: number;
   analysisType: 'address' | 'transaction';
+  riskScores?: Record<string, { overallRisk: number }>;
 
   sot?: SOTV2;
+  
+  // Beneficial Owner override information
+  boInfo?: {
+    entityName: string;
+    entityType: string;
+    entityTags: string[];
+    ofac: boolean;
+    isBeneficialOwnerOverride: boolean;
+  };
 }
 
 // Configuration for risk scoring

@@ -15,6 +15,7 @@ const HeaderWrapper = styled.div<{ theme?: { theme: Theme } }>`
   padding: 10px;
   border-radius: 4px;
   margin-bottom: 10px;
+  background-color: ${props => props.theme?.theme === 'dark' ? 'transparent' : '#f5f5f5'};
 `;
 
 const HeaderItem = styled.div<{ theme?: { theme: Theme } }>`

@@ -198,8 +198,9 @@ interface NotesModalProps {
   onClose: () => void;
   transactionId?: string;
   address?: string;
+  blockNumber?: string;
   cospendId?: string;
-  type?: 'general' | 'transaction' | 'address';
+  type?: 'general' | 'transaction' | 'address' | 'block';
   onNewNotesCountChange?: (count: number) => void;
 }
 
@@ -278,7 +279,7 @@ const NotesModal: React.FC<NotesModalProps> = ({
         if (contextId) {
           try {
             await notesApi.markAsViewed(currentOrganization._id, {
-              contextType: type,
+              contextType: type as 'general' | 'transaction' | 'address' | 'cluster',
               contextId
             });
             
@@ -313,8 +314,11 @@ const NotesModal: React.FC<NotesModalProps> = ({
         );
         
         setUnseenNotesCount(response.data.count);
-      } catch (error) {
-        if (process.env.NODE_ENV === 'development') console.error('Failed to calculate unseen count:', error);
+      } catch (error: any) {
+        // Only log non-404 errors in development
+        if (process.env.NODE_ENV === 'development' && error?.response?.status !== 404) {
+          console.error('Failed to calculate unseen count:', error);
+        }
         // Fallback: set count to 0 if API fails
         setUnseenNotesCount(0);
       }
@@ -372,11 +376,9 @@ const NotesModal: React.FC<NotesModalProps> = ({
       setSubmitting(true);
       const noteData: ICreateNote = { 
         content: newNote.trim(),
-        type: noteType === 'cluster' ? 'cluster' : type,
+        type: type as 'general' | 'transaction' | 'address' | 'cluster',
         ...((type as string) === 'transaction' && transactionId ? { transactionId } : {}),
-        ...((type as string) === 'address' && address ? { 
-          ...(noteType === 'cluster' && cospendId ? { cospendId } : { address })
-        } : {})
+        ...((type as string) === 'address' && address ? { address } : {})
       };
 
       await notesApi.create(currentOrganization._id, noteData);

@@ -1,10 +1,9 @@
 import React from 'react';
 import { Modal, Card, Statistic, Progress, Table, Tabs, Space, Typography, Empty } from 'antd';
-import { UserOutlined, TransactionOutlined, GlobalOutlined, SafetyOutlined } from '@ant-design/icons';
+import { User, CreditCard, Globe, AlertTriangle, CheckCircle, XCircle, Shield } from 'lucide-react';
 import { RiskScoringResponse, RiskFactor } from '../../../../typings/riskScoring';
 import { colors } from '@/design-system/tokens'
 import { useTheme } from '../../../../context/ThemeContext';
-import './RiskScoreModal.css';
 
 const { Text } = Typography;
 
@@ -16,25 +15,19 @@ interface RiskScoreModalProps {
   loading?: boolean;
 }
 
-const RiskScoreModal: React.FC<RiskScoreModalProps> = ({ 
-  visible, 
-  onClose, 
-  riskScores, 
-  address,
-  loading = false 
-}) => {
-  const { theme } = useTheme();
+const RiskScoreModal: React.FC<RiskScoreModalProps> = ({ riskScores, visible, onClose, address, loading }) => {
+  useTheme(); // Used for theme context
 
   const getRiskColor = (score: number): string => {
-    if (score > 70) return '#cf1322';
-    if (score > 40) return '#faad14';
-    return '#3f8600';
+    if (score > 70) return colors.semantic.danger;
+    if (score > 40) return colors.semantic.warning;
+    return colors.semantic.success;
   };
 
   const getRiskIcon = (severity: string) => {
-    if (severity === 'high') return <SafetyOutlined style={{ color: '#cf1322' }} />;
-    if (severity === 'medium') return <SafetyOutlined style={{ color: '#faad14' }} />;
-    return <SafetyOutlined style={{ color: '#3f8600' }} />;
+    if (severity === 'high') return <XCircle className="w-4 h-4" style={{ color: colors.semantic.danger }} />;
+    if (severity === 'medium') return <AlertTriangle className="w-4 h-4" style={{ color: colors.semantic.warning }} />;
+    return <CheckCircle className="w-4 h-4" style={{ color: colors.semantic.success }} />;
   };
 
   const columns = [
@@ -45,7 +38,7 @@ const RiskScoreModal: React.FC<RiskScoreModalProps> = ({
       render: (text: string, record: RiskFactor) => (
         <Space>
           {getRiskIcon(record.severity)}
-          <Text style={{ color: theme === 'light' ? '#374151' : '#e5e7eb' }}>{text}</Text>
+          <Text style={{ color: colors.gray[800] }}>{text}</Text>
         </Space>
       ),
     },
@@ -64,7 +57,7 @@ const RiskScoreModal: React.FC<RiskScoreModalProps> = ({
             percent={Number((score * 100).toFixed(2))} 
             size="small" 
             status={score * 100 > 70 ? 'exception' : 'normal'} 
-            strokeColor={score * 100 > 70 ? '#cf1322' : score * 100 > 40 ? '#faad14' : '#3f8600'}
+            strokeColor={getRiskColor(score * 100)}
             format={formatPercent}
           />
         );
@@ -74,7 +67,7 @@ const RiskScoreModal: React.FC<RiskScoreModalProps> = ({
       title: 'Description',
       dataIndex: 'description',
       key: 'description',
-      render: (text: string) => <Text style={{ color: theme === 'light' ? '#6b7280' : '#9ca3af' }}>{text}</Text>,
+      render: (text: string) => <Text style={{ color: colors.gray[600] }}>{text}</Text>,
     },
   ];
 
@@ -98,74 +91,74 @@ const RiskScoreModal: React.FC<RiskScoreModalProps> = ({
 
 
     return (
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '24px' }}>
-        <Card className={`${theme === 'light' ? 'bg-white border-gray-200' : 'bg-gray-800 border-gray-700'}`}>
-          <Statistic
-            title={<Text style={{ color: theme === 'light' ? '#374151' : '#e5e7eb' }}>Overall Risk Score</Text>}
-            value={overallRiskScore}
-            suffix="/100"
-            valueStyle={{
-              color: getRiskColor(overallRiskScore)
-            }}
-          />
-          <Progress 
-            percent={overallRiskScore}
-            status={overallRiskScore > 70 ? 'exception' : 'normal'} 
-            strokeColor={getRiskColor(overallRiskScore)}
-            format={(percent) => `${percent}%`}
-          />
-        </Card>
-        
-        <Card className={`${theme === 'light' ? 'bg-white border-gray-200' : 'bg-gray-800 border-gray-700'}`}>
-          <Statistic
-            title={<Text style={{ color: theme === 'light' ? '#374151' : '#e5e7eb' }}>Transaction Risk</Text>}
-            value={transactionRiskScore}
-            suffix="/100"
-            valueStyle={{
-              color: getRiskColor(transactionRiskScore)
-            }}
-          />
-          <Progress 
-            percent={transactionRiskScore}
-            status={transactionRiskScore > 70 ? 'exception' : 'normal'} 
-            strokeColor={getRiskColor(transactionRiskScore)}
-            format={(percent) => `${percent}%`}
-          />
-        </Card>
-        
-        <Card className={`${theme === 'light' ? 'bg-white border-gray-200' : 'bg-gray-800 border-gray-700'}`}>
-          <Statistic
-            title={<Text style={{ color: theme === 'light' ? '#374151' : '#e5e7eb' }}>Entity Risk</Text>}
-            value={entityRiskScore}
-            suffix="/100"
-            valueStyle={{
-              color: getRiskColor(entityRiskScore)
-            }}
-          />
-          <Progress 
-            percent={entityRiskScore}
-            status={entityRiskScore > 70 ? 'exception' : 'normal'} 
-            strokeColor={getRiskColor(entityRiskScore)}
-            format={(percent) => `${percent}%`}
-          />
-        </Card>
-        
-        <Card className={`${theme === 'light' ? 'bg-white border-gray-200' : 'bg-gray-800 border-gray-700'}`}>
-          <Statistic
-            title={<Text style={{ color: theme === 'light' ? '#374151' : '#e5e7eb' }}>Jurisdiction Risk</Text>}
-            value={jurisdictionRiskScore}
-            suffix="/100"
-            valueStyle={{
-              color: getRiskColor(jurisdictionRiskScore)
-            }}
-          />
-          <Progress 
-            percent={jurisdictionRiskScore}
-            status={jurisdictionRiskScore > 70 ? 'exception' : 'normal'} 
-            strokeColor={getRiskColor(jurisdictionRiskScore)}
-            format={(percent) => `${percent}%`}
-          />
-        </Card>
+       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '24px' }}>
+         <Card style={{ backgroundColor: colors.white, borderColor: colors.gray[200] }}>
+           <Statistic
+             title={<Text style={{ color: colors.gray[800] }}>Overall Risk Score</Text>}
+             value={overallRiskScore}
+             suffix="/100"
+             valueStyle={{
+               color: getRiskColor(overallRiskScore)
+             }}
+           />
+           <Progress 
+             percent={overallRiskScore}
+             status={overallRiskScore > 70 ? 'exception' : 'normal'} 
+             strokeColor={getRiskColor(overallRiskScore)}
+             format={(percent) => `${percent}%`}
+           />
+         </Card>
+         
+         <Card style={{ backgroundColor: colors.white, borderColor: colors.gray[200] }}>
+           <Statistic
+             title={<Text style={{ color: colors.gray[800] }}>Transaction Risk</Text>}
+             value={transactionRiskScore}
+             suffix="/100"
+             valueStyle={{
+               color: getRiskColor(transactionRiskScore)
+             }}
+           />
+           <Progress 
+             percent={transactionRiskScore}
+             status={transactionRiskScore > 70 ? 'exception' : 'normal'} 
+             strokeColor={getRiskColor(transactionRiskScore)}
+             format={(percent) => `${percent}%`}
+           />
+         </Card>
+         
+         <Card style={{ backgroundColor: colors.white, borderColor: colors.gray[200] }}>
+           <Statistic
+             title={<Text style={{ color: colors.gray[800] }}>Entity Risk</Text>}
+             value={entityRiskScore}
+             suffix="/100"
+             valueStyle={{
+               color: getRiskColor(entityRiskScore)
+             }}
+           />
+           <Progress 
+             percent={entityRiskScore}
+             status={entityRiskScore > 70 ? 'exception' : 'normal'} 
+             strokeColor={getRiskColor(entityRiskScore)}
+             format={(percent) => `${percent}%`}
+           />
+         </Card>
+         
+         <Card style={{ backgroundColor: colors.white, borderColor: colors.gray[200] }}>
+           <Statistic
+             title={<Text style={{ color: colors.gray[800] }}>Jurisdiction Risk</Text>}
+             value={jurisdictionRiskScore}
+             suffix="/100"
+             valueStyle={{
+               color: getRiskColor(jurisdictionRiskScore)
+             }}
+           />
+           <Progress 
+             percent={jurisdictionRiskScore}
+             status={jurisdictionRiskScore > 70 ? 'exception' : 'normal'} 
+             strokeColor={getRiskColor(jurisdictionRiskScore)}
+             format={(percent) => `${percent}%`}
+           />
+         </Card>
       </div>
     );
   };
@@ -182,8 +175,8 @@ const RiskScoreModal: React.FC<RiskScoreModalProps> = ({
     <Modal
       title={
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <SafetyOutlined style={{ color: colors.attribution.hover }} />
-          <span style={{ color: theme === 'light' ? '#374151' : '#e5e7eb' }}>Risk Score Details</span>
+          <Shield className="w-5 h-5" style={{ color: colors.brand.primary }} />
+          <span style={{ color: colors.gray[800] }}>Risk Score Details</span>
         </div>
       }
       open={visible}
@@ -192,16 +185,15 @@ const RiskScoreModal: React.FC<RiskScoreModalProps> = ({
       width={1000}
       style={{ top: 20 }}
       bodyStyle={{ 
-        backgroundColor: theme === 'light' ? '#ffffff' : '#111827', 
-        color: theme === 'light' ? '#374151' : '#e5e7eb',
+        backgroundColor: colors.white, 
+        color: colors.gray[800],
         maxHeight: '80vh',
         overflowY: 'auto'
       }}
-      className={`risk-score-modal ${theme === 'light' ? 'light-theme' : 'dark-theme'}`}
     >
       <div style={{ marginBottom: '16px' }}>
-        <Text style={{ color: theme === 'light' ? '#6b7280' : '#9ca3af' }}>Address: </Text>
-        <Text code style={{ color: theme === 'light' ? '#374151' : '#e5e7eb' }}>{address}</Text>
+        <Text style={{ color: colors.gray[600] }}>Address: </Text>
+        <Text code style={{ color: colors.gray[800] }}>{address}</Text>
       </div>
 
       {loading ? (
@@ -214,22 +206,22 @@ const RiskScoreModal: React.FC<RiskScoreModalProps> = ({
               <i className="ant-spin-dot-item"></i>
             </span>
           </div>
-          <div style={{ marginTop: '16px', color: theme === 'light' ? '#6b7280' : '#9ca3af' }}>Loading risk analysis...</div>
+          <div style={{ marginTop: '16px', color: colors.gray[600] }}>Loading risk analysis...</div>
         </div>
       ) : riskScores ? (
         <div>
           {renderRiskScoreCards()}
           
-          <Card className={`${theme === 'light' ? 'bg-white border-gray-200' : 'bg-gray-800 border-gray-700'}`}>
+          <Card style={{ backgroundColor: colors.white, borderColor: colors.gray[200] }}>
             <Tabs 
               defaultActiveKey="entity"
-              style={{ color: theme === 'light' ? '#374151' : '#e5e7eb' }}
+              style={{ color: colors.gray[800] }}
               items={[
                 {
                   key: 'entity',
                   label: (
-                    <span style={{ color: theme === 'light' ? '#374151' : '#e5e7eb' }}>
-                      <UserOutlined style={{ marginRight: '8px' }} />
+                    <span style={{ color: colors.gray[800] }}>
+                      <User className="w-4 h-4 inline mr-2" />
                       Entity Risk Factors
                     </span>
                   ),
@@ -238,7 +230,7 @@ const RiskScoreModal: React.FC<RiskScoreModalProps> = ({
                       dataSource={riskScores.entityRisk?.factors || []}
                       columns={columns}
                       pagination={false}
-                      locale={{ emptyText: customEmptyState(<UserOutlined />, 'No entity risk factors were found for this address') }}
+                       locale={{ emptyText: customEmptyState(<User className="w-8 h-8" />, 'No entity risk factors were found for this address') }}
                       rowKey="id"
                       style={{ width: '100%' }}
                       className="risk-table"
@@ -248,8 +240,8 @@ const RiskScoreModal: React.FC<RiskScoreModalProps> = ({
                 {
                   key: 'transaction',
                   label: (
-                    <span style={{ color: theme === 'light' ? '#374151' : '#e5e7eb' }}>
-                      <TransactionOutlined style={{ marginRight: '8px' }} />
+                    <span style={{ color: colors.gray[800] }}>
+                      <CreditCard className="w-4 h-4 inline mr-2" />
                       Transaction Risk Factors
                     </span>
                   ),
@@ -259,7 +251,7 @@ const RiskScoreModal: React.FC<RiskScoreModalProps> = ({
                       columns={columns}
                       pagination={false}
                       rowKey="id"
-                      locale={{ emptyText: customEmptyState(<TransactionOutlined />, 'No transaction risk factors were found for this address') }}
+                       locale={{ emptyText: customEmptyState(<CreditCard className="w-8 h-8" />, 'No transaction risk factors were found for this address') }}
                       style={{ width: '100%' }}
                       className="risk-table"
                     />
@@ -268,8 +260,8 @@ const RiskScoreModal: React.FC<RiskScoreModalProps> = ({
                 {
                   key: 'jurisdiction',
                   label: (
-                    <span style={{ color: theme === 'light' ? '#374151' : '#e5e7eb' }}>
-                      <GlobalOutlined style={{ marginRight: '8px' }} />
+                    <span style={{ color: colors.gray[800] }}>
+                      <Globe className="w-4 h-4 inline mr-2" />
                       Jurisdiction Risk Factors
                     </span>
                   ),
@@ -279,7 +271,7 @@ const RiskScoreModal: React.FC<RiskScoreModalProps> = ({
                       columns={columns}
                       pagination={false}
                       rowKey="id"
-                      locale={{ emptyText: customEmptyState(<GlobalOutlined />, 'No jurisdiction risk data available for this address') }}
+                       locale={{ emptyText: customEmptyState(<Globe className="w-8 h-8" />, 'No jurisdiction risk data available for this address') }}
                       style={{ width: '100%' }}
                       className="risk-table"
                     />
@@ -290,10 +282,10 @@ const RiskScoreModal: React.FC<RiskScoreModalProps> = ({
           </Card>
         </div>
       ) : (
-        <div style={{ textAlign: 'center', padding: '40px', color: theme === 'light' ? '#6b7280' : '#9ca3af' }}>
-          No risk score data available for this address.
-        </div>
-      )}
+         <div style={{ textAlign: 'center', padding: '40px', color: colors.gray[600] }}>
+           No risk score data available for this address.
+            </div>
+          )}
     </Modal>
   );
 };

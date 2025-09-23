@@ -190,6 +190,8 @@ type Props = {
     riskScore?: number;
     bo?: string;
     custodian?: string;
+    ofac?: boolean;
+    entityTags?: string[];
   };
   // Add node data to get logo directly from the same source as NetworkGraph
   nodeData?: {
@@ -443,6 +445,16 @@ const LeftPanel: React.FC<Props> = ({
                     <span className={`px-3 py-1 text-xs font-medium rounded-full border ${getRiskBadgeColor((selectedEntity.riskScore ?? riskScore) as number)}`}>
                       {((selectedEntity.riskScore ?? riskScore) as number) >= 70 ? 'HIGH RISK' : 
                        ((selectedEntity.riskScore ?? riskScore) as number) >= 40 ? 'MEDIUM RISK' : 'LOW RISK'}
+                    </span>
+                  )}
+                  {selectedEntity.ofac && (
+                    <span className="px-3 py-1 text-xs font-medium rounded-full bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-400 border border-red-200 dark:border-red-800">
+                      OFAC SANCTIONED
+                    </span>
+                  )}
+                  {selectedEntity.entityTags?.includes('ofac sanctioned') && (
+                    <span className="px-3 py-1 text-xs font-medium rounded-full bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-400 border border-red-200 dark:border-red-800">
+                      OFAC SANCTIONED
                     </span>
                   )}
                 </div>
