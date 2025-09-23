@@ -1,6 +1,7 @@
 import React from 'react';
 
-import { Button, Space,Table } from 'antd';
+import { Button } from '@/components/ui/button';
+import { DataTable, Column } from '@/components/ui/data-table';
 
 import { MonitoredAddress } from '../../../../typings/compliance';
 
@@ -19,7 +20,7 @@ const MonitoredAddressesTable: React.FC<MonitoredAddressTableProps> = ({
   onDelete,
   onViewHistory,
 }) => {
-  const columns = [
+  const columns: Column<MonitoredAddress>[] = [
     {
       title: 'Address',
       dataIndex: 'address',
@@ -46,17 +47,38 @@ const MonitoredAddressesTable: React.FC<MonitoredAddressTableProps> = ({
       title: 'Action',
       key: 'action',
       render: (_: any, record: MonitoredAddress) => (
-        <Space size="small">
-          <Button type="link" size='small' onClick={() => onEdit(record)}>Edit</Button>
-          <Button type="link" size='small' onClick={() => onViewHistory(record._id)}>History</Button>
-          <Button type="link" size='small' danger onClick={() => onDelete(record._id)}>Delete</Button>
-        </Space>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="link"
+            size="sm"
+            className="h-auto p-0 text-primary"
+            onClick={() => onEdit(record)}
+          >
+            Edit
+          </Button>
+          <Button
+            variant="link"
+            size="sm"
+            className="h-auto p-0 text-primary"
+            onClick={() => onViewHistory(record._id)}
+          >
+            History
+          </Button>
+          <Button
+            variant="link"
+            size="sm"
+            className="h-auto p-0 text-destructive"
+            onClick={() => onDelete(record._id)}
+          >
+            Delete
+          </Button>
+        </div>
       ),
     },
   ];
 
   return (
-    <Table
+    <DataTable
       dataSource={Array.isArray(addresses) ? addresses : []}
       columns={columns}
       rowKey="_id"

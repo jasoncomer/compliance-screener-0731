@@ -1,8 +1,7 @@
-import React, { useCallback, useEffect, useMemo,useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
-import { DatabaseOutlined, FileSearchOutlined, HistoryOutlined,TableOutlined } from '@ant-design/icons';
-import { Tabs } from 'antd';
-import { Search } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Database, FileSearch, History, Search, Table } from 'lucide-react';
 
 import ViewWrapper from '../../components/ViewWrapper';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
@@ -55,31 +54,25 @@ const ComplianceScreener: React.FC = () => {
     }
   };
 
-  const createTabHeader = (icon: React.ReactNode, label: string) => (
-    <span className="flex items-center gap-2">
-      {icon}
-      {label}
-    </span>
-  );
 
   // Memoize tabConfig to prevent recreation on every render
   const tabConfig: TabConfig[] = useMemo(() => [
     {
       key: 'transactions',
       label: 'Unassigned Transactions',
-      icon: <TableOutlined />,
+      icon: <Table className="w-4 h-4" />,
       component: <UnassignedTransactionsTab initialStatusFilter="UNASSIGNED" />,
     },
     {
       key: 'active-cases',
       label: 'Active Cases',
-      icon: <FileSearchOutlined />,
+      icon: <FileSearch className="w-4 h-4" />,
       component: <ActiveCasesTab isActive={activeTab === 'active-cases'} />,
     },
     {
       key: 'addresses',
       label: 'Monitored Addresses',
-      icon: <DatabaseOutlined />,
+      icon: <Database className="w-4 h-4" />,
       component: (
         <MonitoredAddressesTab
           addresses={monitoredAddresses}
@@ -90,7 +83,7 @@ const ComplianceScreener: React.FC = () => {
     {
       key: 'archived-cases',
       label: 'Archived Cases',
-      icon: <HistoryOutlined />,
+      icon: <History className="w-4 h-4" />,
       component: <ArchivedCasesTab isActive={activeTab === 'archived-cases'} />,
     },
   ], [monitoredAddresses, activeTab, handleAddressesChange]);
@@ -102,16 +95,25 @@ const ComplianceScreener: React.FC = () => {
       description={getTabDescription(activeTab)}
       fullWidth={true}
     >
-      <Tabs
-        activeKey={activeTab}
-        onChange={handleTabChange}
-        type="card"
-        items={tabConfig.map(({ key, label, icon, component }) => ({
-          key,
-          label: createTabHeader(icon, label),
-          children: component
-        }))}
-      />
+      <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
+        <TabsList className="grid w-full grid-cols-4 h-auto">
+          {tabConfig.map(({ key, label, icon }) => (
+            <TabsTrigger
+              key={key}
+              value={key}
+              className="flex items-center gap-2 px-4 py-2.5 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
+            >
+              {icon}
+              <span className="text-sm font-medium">{label}</span>
+            </TabsTrigger>
+          ))}
+        </TabsList>
+        {tabConfig.map(({ key, component }) => (
+          <TabsContent key={key} value={key} className="mt-4">
+            {component}
+          </TabsContent>
+        ))}
+      </Tabs>
     </ViewWrapper>
   );
 };

@@ -1,7 +1,8 @@
 import React, { useEffect,useState } from 'react';
 
-import { Form,message, Modal } from 'antd';
-import type { UploadFile } from 'antd/es/upload/interface';
+import { Form,message } from 'antd';
+
+import { ConfirmModal, Modal as CustomModal } from '@/components/ui/modal';
 
 import { api } from '../../../../api/api';
 import type { 
@@ -36,7 +37,7 @@ const MonitoredAddressManagement: React.FC<MonitoredAddressManagementProps> = ({
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [editingAddress, setEditingAddress] = useState<MonitoredAddress | null>(null);
   const [uploadModalVisible, setUploadModalVisible] = useState(false);
-  const [fileList, setFileList] = useState<UploadFile[]>([]);
+  const [fileList, setFileList] = useState<any[]>([]);
   const [form] = Form.useForm();
   const [filters, setFilters] = useState<IAddressFilters>({});
   const [loading, setLoading] = useState(false);
@@ -45,6 +46,8 @@ const MonitoredAddressManagement: React.FC<MonitoredAddressManagementProps> = ({
   const [filteredAddresses, setFilteredAddresses] = useState<MonitoredAddress[]>(addresses);
   const [historyRefreshKey, setHistoryRefreshKey] = useState<number>(0);
   const [submitLoading, setSubmitLoading] = useState(false);
+  const [deleteConfirmVisible, setDeleteConfirmVisible] = useState(false);
+  const [addressToDelete, setAddressToDelete] = useState<string | null>(null);
 
   // Determine if component is being used as a modal or embedded in a tab
   const isEmbedded = visible === undefined;
@@ -77,27 +80,26 @@ const MonitoredAddressManagement: React.FC<MonitoredAddressManagementProps> = ({
   };
 
   const handleDeleteAddress = (id: string) => {
-    Modal.confirm({
-      title: 'Are you sure you want to delete this address?',
-      content: 'This action cannot be undone.',
-      okText: 'Yes, Delete',
-      okType: 'danger',
-      cancelText: 'Cancel',
-      
-      onOk: async () => {
-        try {
-          setLoading(true);
-          await api.compliance.deleteAddress(id);
-          onAddressesChange(addresses.filter(addr => addr._id !== id));
-          message.success('Address deleted successfully');
-        } catch (error) {
-          console.error('Failed to delete address:', error);
-          message.error('Failed to delete address');
-        } finally {
-          setLoading(false);
-        }
-      }
-    });
+    setAddressToDelete(id);
+    setDeleteConfirmVisible(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!addressToDelete) return;
+
+    try {
+      setLoading(true);
+      await api.compliance.deleteAddress(addressToDelete);
+      onAddressesChange(addresses.filter(addr => addr._id !== addressToDelete));
+      message.success('Address deleted successfully');
+      setDeleteConfirmVisible(false);
+      setAddressToDelete(null);
+    } catch (error) {
+      console.error('Failed to delete address:', error);
+      message.error('Failed to delete address');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleModalOk = async () => {
@@ -266,21 +268,39 @@ const MonitoredAddressManagement: React.FC<MonitoredAddressManagementProps> = ({
         organizationId={organizationId}
         refreshKey={historyRefreshKey}
       />
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmModal
+        open={deleteConfirmVisible}
+        onClose={() => {
+          setDeleteConfirmVisible(false);
+          setAddressToDelete(null);
+        }}
+        title="Delete Address"
+        content="Are you sure you want to delete this address? This action cannot be undone."
+        confirmText="Yes, Delete"
+        cancelText="Cancel"
+        type="danger"
+        onConfirm={confirmDelete}
+        onCancel={() => {
+          setDeleteConfirmVisible(false);
+          setAddressToDelete(null);
+        }}
+      />
     </>
   );
 
   // If used as a modal, wrap in Modal component, otherwise render directly
   if (!isEmbedded) {
     return (
-      <Modal
+      <CustomModal
         title="Monitored Addresses"
         open={visible}
-        onCancel={onClose}
-        footer={null}
-        width={1000}
+        onClose={onClose}
+        size="xl"
       >
         {renderContent()}
-      </Modal>
+      </CustomModal>
     );
   }
 

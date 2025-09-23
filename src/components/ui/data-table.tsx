@@ -287,8 +287,8 @@ export function DataTable<T extends Record<string, any>>({
     <div className={cn("w-full", className)}>
       {title && <div className="mb-4">{title()}</div>}
 
-      <div className={cn("w-full overflow-auto", scroll?.x && "overflow-x-auto")}>
-        <Table className={cn(bordered && "border")}>
+      <div className={cn("w-full overflow-auto rounded-lg border border-gray-200 dark:border-gray-700", scroll?.x && "overflow-x-auto")}>
+        <Table className={cn(bordered && "border border-gray-200 dark:border-gray-700")}>
           {showHeader && (
             <TableHeader>
               <TableRow>

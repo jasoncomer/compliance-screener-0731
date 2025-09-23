@@ -1,11 +1,18 @@
 import React, { useEffect } from 'react';
 
-import { Col,Form, Input, Row, Select } from 'antd';
+import { Col,Form, Row } from 'antd';
+
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 import { MonitoredAddress } from '../../../typings/compliance';
-
-const { Option } = Select;
-const { TextArea } = Input;
 
 interface AddressFormProps {
   form: any;
@@ -24,10 +31,11 @@ const AddressForm: React.FC<AddressFormProps> = ({ form, initialValues }) => {
       form={form}
       layout="vertical"
       initialValues={initialValues}
+      className="space-y-4"
     >
       <Form.Item
         name="address"
-        label="Address"
+        label={<span className="text-gray-700 dark:text-gray-300">Address</span>}
         rules={[{ required: true, message: 'Please input the address' }]}
       >
         <Input />
@@ -38,13 +46,25 @@ const AddressForm: React.FC<AddressFormProps> = ({ form, initialValues }) => {
         <Col xs={12} md={12}>
           <Form.Item
             name="blockchain"
-            label="Blockchain"
+            label={<span className="text-gray-700 dark:text-gray-300">Blockchain</span>}
             rules={[{ required: true, message: 'Please select the blockchain' }]}
+            getValueFromEvent={(value) => value}
+            getValueProps={(value) => ({ value })}
           >
-            <Select style={{ width: '225px' }}>
-              <Option value="bitcoin">Bitcoin</Option>
-              <Option value="ethereum">Ethereum</Option>
-              {/* Add more blockchains as needed */}
+            <Select
+              onValueChange={(value) => {
+                form.setFieldsValue({ blockchain: value });
+                form.validateFields(['blockchain']);
+              }}
+            >
+              <SelectTrigger className="w-[225px]">
+                <SelectValue placeholder="Select a blockchain" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="bitcoin">Bitcoin</SelectItem>
+                <SelectItem value="ethereum">Ethereum</SelectItem>
+                {/* Add more blockchains as needed */}
+              </SelectContent>
             </Select>
           </Form.Item>
         </Col>
@@ -53,24 +73,24 @@ const AddressForm: React.FC<AddressFormProps> = ({ form, initialValues }) => {
         <Col xs={12} md={12}>
           <Form.Item
             name="clientId"
-            label="Client ID"
+            label={<span className="text-gray-700 dark:text-gray-300">Client ID</span>}
             style={{ width: '225px' }}
           >
-            <Input type="text" defaultValue={initialValues?.clientId} />
+            <Input
+              type="text"
+              defaultValue={initialValues?.clientId}
+            />
           </Form.Item>
         </Col>
       </Row>
 
       <Form.Item
         name="notes"
-        label="Notes"
+        label={<span className="text-gray-700 dark:text-gray-300">Notes</span>}
       >
-        <TextArea 
+        <Textarea
           rows={4}
-          allowClear={false}
-          showCount={false}
-          count={undefined}
-          onClear={undefined}
+          className="min-h-[100px]"
         />
       </Form.Item>
 

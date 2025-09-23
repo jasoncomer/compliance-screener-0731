@@ -25,8 +25,8 @@ const MonitoredAddressesTab: React.FC<MonitoredAddressesTabProps> = ({
   return (
     <div className={cn("w-full", className)}>
       <div className="flex justify-between items-center mb-4">
-        <h3 className="m-0 text-black dark:text-white">
-          <DatabaseOutlined className="mr-2" />
+        <h3 className="m-0 text-gray-900 dark:text-gray-100">
+          <DatabaseOutlined className="mr-2 text-gray-700 dark:text-gray-300" />
           Monitored Addresses Management
         </h3>
       </div>

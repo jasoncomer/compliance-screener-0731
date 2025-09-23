@@ -1,21 +1,27 @@
-import React, { useCallback, useEffect,useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
-import { CheckOutlined,EyeOutlined } from '@ant-design/icons';
-import { Button, Checkbox, Modal, Select,Space, Spin, Table, Tag, Tooltip } from 'antd';
+import { Check, Eye } from 'lucide-react';
 
 import { blockchain } from '../../../../api/blockchain';
+import { Badge } from '../../../../components/ui/badge';
+import { Button } from '../../../../components/ui/button';
+import { Checkbox } from '../../../../components/ui/checkbox';
+import { Column,DataTable } from '../../../../components/ui/data-table';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../../../../components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../../components/ui/select';
+import { Spinner } from '../../../../components/ui/spinner';
 import { useAttribution } from '../../../../context/AttributionContext';
 import { useCryptoPrices } from '../../../../hooks/useCryptoPrices';
 import { calculateDetailedRiskAnalysis, calculateSimpleRiskScore, InputTransactionRiskData } from '../../../../services/inputTransactionRiskService';
-import { useAppDispatch,useAppSelector } from '../../../../store/hooks';
+import { useAppDispatch, useAppSelector } from '../../../../store/hooks';
 import { updateTransactionAssignee, updateTransactionStatus } from '../../../../store/slices/complianceTransactionsSlice';
 import { EComplianceTransactionStatus, IComplianceTransaction } from '../../../../typings/compliance';
 import { IUser } from '../../../../typings/interfaces';
 import { truncateAddress } from '../../../../utils/crypto';
 import { getBlockchainLabel } from '../../../../utils/display-labels';
 import AssignedTransactionDetailsModal from '../../modals/TransactionDetails/AssignedTransactionDetailsModal';
-import { getComplianceReportStatusColor } from '../../utils/compliance.utils';
-import { conversionRates, currencySymbols } from '../CurrencySelector';
+import { getComplianceReportStatusClassName } from '../../utils/compliance.utils';
+import { currencySymbols } from '../CurrencySelector';
 import TransactionRiskModal from '../modals/TransactionRiskModal';
 
 import '../../../../styles/transactionGrouping.css';
@@ -61,9 +67,9 @@ const ActiveCasesTable: React.FC<ActiveCasesTableProps> = React.memo(({
   const dispatch = useAppDispatch();
   const { users } = useAppSelector(state => state.organizations);
   const { getPrice } = useCryptoPrices();
-  
+
   const btcPrice = getPrice('BTC') || 0;
-  
+
   // State for calculated risk scores
   const [calculatedRiskScores, setCalculatedRiskScores] = useState<Record<string, InputTransactionRiskData>>({});
   const [riskCalculationLoading, setRiskCalculationLoading] = useState<Record<string, boolean>>({});
@@ -85,8 +91,6 @@ const ActiveCasesTable: React.FC<ActiveCasesTableProps> = React.memo(({
     });
     return assignees;
   }, [selectedRowKeys, transactions]);
-
-  // Debug users data (removed excessive logging)
 
   // Function to handle row click to show transaction details
   const handleViewDetails = useCallback((record: IComplianceTransaction) => {
@@ -113,8 +117,6 @@ const ActiveCasesTable: React.FC<ActiveCasesTableProps> = React.memo(({
   const getReviewerName = useCallback((users: { [id: string]: IUser }, reviewerId?: string) => {
     if (!reviewerId) return 'Unassigned';
 
-    // For demo purposes. In a real app, you'd fetch this from your users list
-    // This is just a placeholder - you should replace with actual user data
     const user = users[reviewerId];
     if (user) {
       return `${user.name} ${user.surname}`;
@@ -126,20 +128,20 @@ const ActiveCasesTable: React.FC<ActiveCasesTableProps> = React.memo(({
   // Bulk action handlers
   const handleBulkApprove = useCallback(async () => {
     if (selectedRowKeys.length === 0) return;
-    
+
     setBulkActionLoading(true);
     try {
       // Update each selected transaction to APPROVED status
-      const updatePromises = selectedRowKeys.map(transactionId => 
+      const updatePromises = selectedRowKeys.map(transactionId =>
         dispatch(updateTransactionStatus({
           transactionId: transactionId as string,
           status: EComplianceTransactionStatus.APPROVED
         })).unwrap()
       );
-      
+
       await Promise.all(updatePromises);
       console.log('Successfully approved transactions:', selectedRowKeys);
-      
+
       // Clear selection after successful update
       setSelectedRowKeys([]);
     } catch (error) {
@@ -151,20 +153,20 @@ const ActiveCasesTable: React.FC<ActiveCasesTableProps> = React.memo(({
 
   const handleBulkInReview = useCallback(async () => {
     if (selectedRowKeys.length === 0) return;
-    
+
     setBulkActionLoading(true);
     try {
       // Update each selected transaction to IN_REVIEW status
-      const updatePromises = selectedRowKeys.map(transactionId => 
+      const updatePromises = selectedRowKeys.map(transactionId =>
         dispatch(updateTransactionStatus({
           transactionId: transactionId as string,
           status: EComplianceTransactionStatus.IN_REVIEW
         })).unwrap()
       );
-      
+
       await Promise.all(updatePromises);
       console.log('Successfully set transactions to in review:', selectedRowKeys);
-      
+
       // Clear selection after successful update
       setSelectedRowKeys([]);
     } catch (error) {
@@ -181,20 +183,20 @@ const ActiveCasesTable: React.FC<ActiveCasesTableProps> = React.memo(({
 
   const handleConfirmReassign = useCallback(async () => {
     if (selectedRowKeys.length === 0 || !selectedAssignee) return;
-    
+
     setBulkActionLoading(true);
     try {
       // Update each selected transaction's assignee
-      const updatePromises = selectedRowKeys.map(transactionId => 
+      const updatePromises = selectedRowKeys.map(transactionId =>
         dispatch(updateTransactionAssignee({
           transactionId: transactionId as string,
           assignee: selectedAssignee
         })).unwrap()
       );
-      
+
       await Promise.all(updatePromises);
       console.log('Successfully reassigned transactions:', selectedRowKeys, 'to:', selectedAssignee);
-      
+
       // Clear selection and close modal after successful update
       setSelectedRowKeys([]);
       setIsReassignModalVisible(false);
@@ -208,121 +210,15 @@ const ActiveCasesTable: React.FC<ActiveCasesTableProps> = React.memo(({
 
   const rowSelection = {
     selectedRowKeys,
-    onChange: (newSelectedRowKeys: React.Key[]) => {
-      setSelectedRowKeys(newSelectedRowKeys);
+    onChange: (keys: React.Key[]) => {
+      setSelectedRowKeys(keys);
     },
-    getCheckboxProps: (record: IComplianceTransaction) => ({
-      name: record._id,
-    }),
-  };
-
-  // Safe render functions with error handling
-  const renderStatus = (status: EComplianceTransactionStatus) => {
-    try {
-      return (
-        <div style={{ display: 'flex', justifyContent: 'right' }}>
-          <Tag color={getComplianceReportStatusColor(status)} style={{ fontWeight: 'bold' }}>
-            {getStatusDisplayLabel(status) || 'Unknown'}
-          </Tag>
-        </div>
-      );
-    } catch (error) {
-      console.error('Error rendering status:', error);
-      return <div>Error</div>;
-    }
-  };
-
-  const renderTransactionId = (txId: string) => {
-    try {
-      if (!txId) return null;
-      return (
-        <div style={{ display: 'flex', justifyContent: 'right' }}>
-          <a 
-            href={`/home/block-explorer/transaction/${txId}`} 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400"
-          >
-            {truncateAddress(txId)}
-          </a>
-        </div>
-      );
-    } catch (error) {
-      console.error('Error rendering transaction ID:', error);
-      return <div className="text-gray-900 dark:text-white">Error</div>;
-    }
-  };
-
-  const renderBlockchain = (blockchain: string) => {
-    try {
-      if (!blockchain) return <span className="text-gray-600 dark:text-gray-400">Unknown</span>;
-      return <span className="text-gray-900 dark:text-white">{getBlockchainLabel(blockchain)}</span>;
-    } catch (error) {
-      console.error('Error rendering blockchain:', error);
-      return <span className="text-gray-900 dark:text-white">Error</span>;
-    }
-  };
-
-  const renderTransactionTimestamp = (timestamp: string | Date) => {
-    try {
-      if (!timestamp) return <span className="text-gray-600 dark:text-gray-400">N/A</span>;
-      const date = new Date(timestamp);
-      if (isNaN(date.getTime())) return <span className="text-gray-600 dark:text-gray-400">Invalid Date</span>;
-      
-      return (
-        <div style={{ display: 'flex', justifyContent: 'right' }} className="text-gray-900 dark:text-white">
-          <span className="text-sm">
-            {date.toLocaleString('en-US', {
-              year: 'numeric',
-              month: '2-digit',
-              day: '2-digit',
-              hour: '2-digit',
-              minute: '2-digit',
-              second: '2-digit',
-              hour12: false
-            })}
-          </span>
-        </div>
-      );
-    } catch (error) {
-      console.error('Error rendering transaction timestamp:', error);
-      return <div className="text-gray-900 dark:text-white">Error</div>;
-    }
-  };
-
-  const renderAmount = (amount: number) => {
-    try {
-      if (typeof amount !== 'number' || isNaN(amount)) return <span className="text-gray-600 dark:text-gray-400">N/A</span>;
-      const convertedAmount = ((amount / 100000000) * btcPrice);
-      return (
-        <div className="flex flex-col text-right">
-          <span className="text-gray-900 dark:text-white">{(amount / 100000000).toFixed(8)} BTC</span>
-          <span className="text-sm text-gray-600 dark:text-gray-400">
-            {currencySymbols[denom]}
-            {convertedAmount.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
-          </span>
-        </div>
-      );
-    } catch (error) {
-      console.error('Error rendering amount:', error);
-      return <div className="text-gray-900 dark:text-white">Error</div>;
-    }
-  };
-
-
-  const renderReviewer = (reviewerId?: string) => {
-    try {
-      return <span className="capitalize text-gray-900 dark:text-white">{getReviewerName(users, reviewerId)}</span>;
-    } catch (error) {
-      console.error('Error rendering reviewer:', error);
-      return <span className="text-gray-900 dark:text-white">Error</span>;
-    }
   };
 
   // Calculate risk scores for transactions
   const calculateRiskForTransaction = async (transaction: IComplianceTransaction) => {
     const txId = transaction._id;
-    
+
     // Skip if already calculated or currently calculating
     if (calculatedRiskScores[txId] || riskCalculationLoading[txId]) {
       return;
@@ -334,7 +230,7 @@ const ActiveCasesTable: React.FC<ActiveCasesTableProps> = React.memo(({
       // Fetch transaction details to get input addresses
       const txData = await blockchain.getTransaction(transaction.txId);
       const inputAddresses = txData.inputs.map(input => input.addr).filter(Boolean);
-      
+
       if (inputAddresses.length === 0) {
         console.warn(`No input addresses found for transaction ${transaction.txId}`);
         return;
@@ -363,111 +259,78 @@ const ActiveCasesTable: React.FC<ActiveCasesTableProps> = React.memo(({
     }
   }, [transactions, calculatedRiskScores, riskCalculationLoading, attributions]);
 
-  const renderRiskScore = (scores: number[], record: IComplianceTransaction) => {
-    try {
-      const txId = record._id;
-      const calculatedRisk = calculatedRiskScores[txId];
-      const isLoading = riskCalculationLoading[txId];
-      
-      // Show loading spinner if calculating
-      if (isLoading) {
-        return (
-          <div className="flex items-center justify-center">
-            <Spin size="small" />
-          </div>
-        );
-      }
-      
-      // Use calculated risk score if available, otherwise fall back to stored scores
-      if (calculatedRisk) {
-        const riskData = calculateSimpleRiskScore([calculatedRisk.overallRisk]);
-        return (
-          <Space>
-            <Tag color={riskData.color} style={{ fontWeight: 'bold' }}>
-              {calculatedRisk.overallRisk}
-            </Tag>
-            <Tooltip title="View detailed risk analysis">
-              <Button
-                type="text"
-                size="small"
-                icon={<EyeOutlined />}
-                onClick={(e) => handleViewRisk(record, e)}
-                style={{ padding: '0 4px' }}
-              />
-            </Tooltip>
-          </Space>
-        );
-      }
-      
-      // Fallback to stored risk scores
-      if (!scores || !Array.isArray(scores) || scores.length === 0) return 'N/A';
-      const overallScore = scores[0] || 0;
-      const riskData = calculateSimpleRiskScore([overallScore]);
-      if (isNaN(riskData.score)) return 'N/A';
-      return (
-        <Space>
-          <Tag color={riskData.color} style={{ fontWeight: 'bold' }}>
-            {overallScore}
-          </Tag>
-          <Tooltip title="View detailed risk analysis">
-            <Button
-              type="text"
-              size="small"
-              icon={<EyeOutlined />}
-              onClick={(e) => handleViewRisk(record, e)}
-              style={{ padding: '0 4px' }}
-            />
-          </Tooltip>
-        </Space>
-      );
-    } catch (error) {
-      console.error('Error rendering risk score:', error);
-      return <div>Error</div>;
-    }
-  };
-
-  const renderLastUpdated = (reviewTimestamp?: Date) => {
-    try {
-      if (!reviewTimestamp) return <span className="text-gray-600 dark:text-gray-400">Not reviewed yet</span>;
-      return <span className="text-gray-900 dark:text-white">{new Date(reviewTimestamp).toLocaleString()}</span>;
-    } catch (error) {
-      console.error('Error rendering last updated:', error);
-      return <span className="text-gray-900 dark:text-white">Error</span>;
-    }
-  };
-
   // Ensure transactions is an array and filter out invalid entries
   const validTransactions = useMemo(() => {
-    return Array.isArray(transactions) 
-      ? transactions.filter(tx => tx && tx._id) 
+    return Array.isArray(transactions)
+      ? transactions.filter(tx => tx && tx._id)
       : [];
   }, [transactions]);
 
-  // Memoize columns to prevent unnecessary re-renders
-  const columns = useMemo(() => [
+  // Define columns for DataTable
+  const columns: Column<IComplianceTransaction>[] = useMemo(() => [
     {
       title: 'Status',
       dataIndex: 'status',
       key: 'status',
       width: 100,
-      align: 'right' as const,
-      render: renderStatus,
+      align: 'right',
+      render: (status: EComplianceTransactionStatus) => (
+        <div className="flex justify-end">
+          <Badge className={getComplianceReportStatusClassName(status)}>
+            {getStatusDisplayLabel(status) || 'Unknown'}
+          </Badge>
+        </div>
+      ),
     },
     {
       title: 'Transaction ID',
       dataIndex: 'txId',
       key: 'txId',
       width: 180,
-      align: 'right' as const,
-      render: renderTransactionId,
+      align: 'right',
+      render: (txId: string) => {
+        if (!txId) return null;
+        return (
+          <div className="flex justify-end">
+            <a
+              href={`/home/block-explorer/transaction/${txId}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-foreground hover:text-primary"
+            >
+              {truncateAddress(txId)}
+            </a>
+          </div>
+        );
+      },
     },
     {
       title: 'Transaction Timestamp',
       dataIndex: 'timestamp',
       key: 'timestamp',
       width: 180,
-      align: 'right' as const,
-      render: renderTransactionTimestamp,
+      align: 'right',
+      render: (timestamp: string | Date) => {
+        if (!timestamp) return <span className="text-muted-foreground">N/A</span>;
+        const date = new Date(timestamp);
+        if (isNaN(date.getTime())) return <span className="text-muted-foreground">Invalid Date</span>;
+
+        return (
+          <div className="flex justify-end text-foreground">
+            <span className="text-sm">
+              {date.toLocaleString('en-US', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: false
+              })}
+            </span>
+          </div>
+        );
+      },
       sorter: (a: IComplianceTransaction, b: IComplianceTransaction) => {
         if (!a.timestamp) return -1;
         if (!b.timestamp) return 1;
@@ -479,30 +342,45 @@ const ActiveCasesTable: React.FC<ActiveCasesTableProps> = React.memo(({
       dataIndex: 'blockchain',
       key: 'blockchain',
       width: 100,
-      align: 'right' as const,
-      render: renderBlockchain,
+      align: 'right',
+      render: (blockchain: string) => {
+        if (!blockchain) return <span className="text-muted-foreground">Unknown</span>;
+        return <span className="text-foreground">{getBlockchainLabel(blockchain)}</span>;
+      },
     },
     {
       title: 'Amount',
       dataIndex: 'amount',
       key: 'amount',
       width: 120,
-      align: 'right' as const,
+      align: 'right',
       sorter: (a: IComplianceTransaction, b: IComplianceTransaction) => {
         const aAmount = typeof a.amount === 'number' ? a.amount : 0;
         const bAmount = typeof b.amount === 'number' ? b.amount : 0;
         return aAmount - bAmount;
       },
-      render: renderAmount,
+      render: (amount: number) => {
+        if (typeof amount !== 'number' || isNaN(amount)) return <span className="text-muted-foreground">N/A</span>;
+        const convertedAmount = ((amount / 100000000) * btcPrice);
+        return (
+          <div className="flex flex-col text-right">
+            <span className="text-foreground">{(amount / 100000000).toFixed(8)} BTC</span>
+            <span className="text-sm text-muted-foreground">
+              {currencySymbols[denom]}
+              {convertedAmount.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
+            </span>
+          </div>
+        );
+      },
     },
     {
       title: 'Client ID',
       dataIndex: 'clientId',
       key: 'clientId',
       width: 120,
-      align: 'right' as const,
+      align: 'right',
       render: (clientId: string) => (
-        <span className="text-gray-900 dark:text-white">{clientId || 'N/A'}</span>
+        <span className="text-foreground">{clientId || 'N/A'}</span>
       ),
     },
     {
@@ -510,24 +388,83 @@ const ActiveCasesTable: React.FC<ActiveCasesTableProps> = React.memo(({
       dataIndex: 'reviewerId',
       key: 'reviewerId',
       width: 90,
-      align: 'right' as const,
-      render: renderReviewer,
+      align: 'right',
+      render: (reviewerId?: string) => (
+        <span className="capitalize text-foreground">{getReviewerName(users, reviewerId)}</span>
+      ),
     },
     {
       title: 'Risk Score',
       dataIndex: 'riskScores',
       key: 'riskScores',
-      width: 72,
-      align: 'right' as const,
-      render: (scores: number[], record: IComplianceTransaction) => renderRiskScore(scores, record),
+      width: 120,
+      align: 'right',
+      render: (scores: number[], record: IComplianceTransaction) => {
+        const txId = record._id;
+        const calculatedRisk = calculatedRiskScores[txId];
+        const isLoading = riskCalculationLoading[txId];
+
+        // Show loading spinner if calculating
+        if (isLoading) {
+          return (
+            <div className="flex items-center justify-center">
+              <Spinner size="small" />
+            </div>
+          );
+        }
+
+        // Use calculated risk score if available, otherwise fall back to stored scores
+        if (calculatedRisk) {
+          const riskData = calculateSimpleRiskScore([calculatedRisk.overallRisk]);
+          return (
+            <div className="flex items-center justify-end gap-2">
+              <Badge className={riskData.className}>
+                {calculatedRisk.overallRisk}
+              </Badge>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 w-6 p-0"
+                onClick={(e) => handleViewRisk(record, e)}
+              >
+                <Eye className="h-3 w-3" />
+              </Button>
+            </div>
+          );
+        }
+
+        // Fallback to stored risk scores
+        if (!scores || !Array.isArray(scores) || scores.length === 0) return 'N/A';
+        const overallScore = scores[0] || 0;
+        const riskData = calculateSimpleRiskScore([overallScore]);
+        if (isNaN(riskData.score)) return 'N/A';
+        return (
+          <div className="flex items-center justify-end gap-2">
+            <Badge className={riskData.className}>
+              {overallScore}
+            </Badge>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 w-6 p-0"
+              onClick={(e) => handleViewRisk(record, e)}
+            >
+              <Eye className="h-3 w-3" />
+            </Button>
+          </div>
+        );
+      },
     },
     {
       title: 'Last Updated',
       dataIndex: 'reviewTimestamp',
       key: 'reviewTimestamp',
       width: 150,
-      align: 'right' as const,
-      render: renderLastUpdated,
+      align: 'right',
+      render: (reviewTimestamp?: Date) => {
+        if (!reviewTimestamp) return <span className="text-muted-foreground">Not reviewed yet</span>;
+        return <span className="text-foreground">{new Date(reviewTimestamp).toLocaleString()}</span>;
+      },
       sorter: (a: IComplianceTransaction, b: IComplianceTransaction) => {
         if (!a.reviewTimestamp) return -1;
         if (!b.reviewTimestamp) return 1;
@@ -538,98 +475,88 @@ const ActiveCasesTable: React.FC<ActiveCasesTableProps> = React.memo(({
       title: 'Actions',
       key: 'actions',
       width: 90,
-      align: 'right' as const,
+      align: 'right',
       render: (_: any, record: IComplianceTransaction) => {
-        try {
-          if (!record || !record._id) return null;
-          return (
-            <Space size="small">
-              <Tooltip title="View Details">
-                <Button
-                  type="primary"
-                  size="small"
-                  icon={<EyeOutlined />}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleViewDetails(record);
-                  }}
-                />
-              </Tooltip>
-              <Tooltip title="Approve">
-                <Button
-                  type="primary"
-                  size="small"
-                  style={{ backgroundColor: '#52c41a', borderColor: '#52c41a' }}
-                  icon={<CheckOutlined />}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    // Handle approve action
-                  }}
-                />
-              </Tooltip>
-            </Space>
-          );
-        } catch (error) {
-          console.error('Error rendering actions:', error);
-          return <div>Error</div>;
-        }
+        if (!record || !record._id) return null;
+        return (
+          <div className="flex items-center justify-end gap-1">
+            <Button
+              variant="default"
+              size="sm"
+              className="h-7 w-7 p-0"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleViewDetails(record);
+              }}
+            >
+              <Eye className="h-3 w-3" />
+            </Button>
+            <Button
+              variant="default"
+              size="sm"
+              className="h-7 w-7 p-0 bg-green-600 hover:bg-green-700"
+              onClick={(e) => {
+                e.stopPropagation();
+                // Handle approve action
+                dispatch(updateTransactionStatus({
+                  transactionId: record._id,
+                  status: EComplianceTransactionStatus.APPROVED
+                }));
+              }}
+            >
+              <Check className="h-3 w-3" />
+            </Button>
+          </div>
+        );
       },
     },
-  ], [renderStatus, renderTransactionId, renderBlockchain, renderAmount, renderReviewer, renderRiskScore, renderLastUpdated, handleViewDetails, denom, conversionRates]);
+  ], [btcPrice, users, getReviewerName, handleViewDetails, handleViewRisk, calculatedRiskScores, riskCalculationLoading, dispatch, denom]);
 
   try {
     return (
       <>
         {/* Bulk Actions Bar */}
         {selectedRowKeys.length > 0 && (
-          <div style={{ 
-            marginBottom: '16px', 
-            padding: '12px 16px', 
-            backgroundColor: '#f0f9ff', 
-            border: '1px solid #0ea5e9', 
-            borderRadius: '6px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between'
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div className="mb-4 p-3 bg-primary/10 border border-primary rounded-md flex items-center justify-between">
+            <div className="flex items-center gap-2">
               <Checkbox
                 checked={selectedRowKeys.length === validTransactions.length}
-                indeterminate={selectedRowKeys.length > 0 && selectedRowKeys.length < validTransactions.length}
-                onChange={(e) => {
-                  if (e.target.checked) {
+                onCheckedChange={(checked) => {
+                  if (checked) {
                     setSelectedRowKeys(validTransactions.map(tx => tx._id));
                   } else {
                     setSelectedRowKeys([]);
                   }
                 }}
               />
-              <span style={{ fontWeight: '500', color: '#0c4a6e' }}>
+              <span className="font-medium text-primary">
                 {selectedRowKeys.length} transaction{selectedRowKeys.length !== 1 ? 's' : ''} selected
               </span>
             </div>
-            <div style={{ display: 'flex', gap: '8px' }}>
+            <div className="flex gap-2">
               <Button
-                type="primary"
-                size="small"
-                style={{ backgroundColor: '#52c41a', borderColor: '#52c41a' }}
-                icon={<CheckOutlined />}
+                variant="default"
+                size="sm"
+                className="bg-green-600 hover:bg-green-700"
                 onClick={handleBulkApprove}
-                loading={bulkActionLoading}
+                disabled={bulkActionLoading}
               >
+                <Check className="mr-2 h-3 w-3" />
                 Approve Selected
               </Button>
               <Button
-                size="small"
+                variant="outline"
+                size="sm"
                 onClick={handleBulkInReview}
-                loading={bulkActionLoading}
+                disabled={bulkActionLoading}
               >
                 In Review
               </Button>
               <Button
-                size="small"
+                variant="outline"
+                size="sm"
                 onClick={handleBulkReassign}
-                loading={bulkActionLoading}
+                disabled={bulkActionLoading}
               >
                 Reassign Selected
               </Button>
@@ -637,49 +564,35 @@ const ActiveCasesTable: React.FC<ActiveCasesTableProps> = React.memo(({
           </div>
         )}
 
-        <Table
+        <DataTable
           className="compliance-table active-cases-table"
           dataSource={validTransactions}
           columns={columns}
           rowKey="_id"
           rowSelection={rowSelection}
-          rowClassName={(_record, index) => {
-            // Use index-based alternating row colors instead of txId-based grouping
-            return index % 2 === 0 ? 'table-row-even' : 'table-row-odd';
-          }}
-          sticky={{
-            offsetHeader: 0,
-            offsetScroll: 0,
-            getContainer: () => document.body
-          }}
           pagination={{
             current: currentPage,
             pageSize: pageSize,
             total: totalTransactions,
             showSizeChanger: true,
-            pageSizeOptions: ['10', '20', '50', '100'],
+            pageSizeOptions: [10, 20, 50, 100],
+            onChange: (page, size) => onTableChange({ current: page, pageSize: size })
           }}
           loading={loading}
-          onChange={onTableChange}
-          style={{ 
-            width: '100%',
-            // Disable any potential animations
-            transition: 'none',
-            animation: 'none'
-          }}
-          scroll={{ x: 1000 }} // Reduced width from 1200px to 1000px
-          footer={() => !isArchivedTab ? (
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          onChange={(pagination, sorter) => onTableChange({ ...pagination, sorter })}
+          scroll={{ x: 1000 }}
+          footer={!isArchivedTab ? () => (
+            <div className="flex justify-between items-center">
               <div>
                 <strong>{totalTransactions}</strong> active cases requiring review
               </div>
               <div>
-                <Button type="link" size="small">
+                <Button variant="link" size="sm">
                   Export Cases
                 </Button>
               </div>
             </div>
-          ) : null}
+          ) : undefined}
         />
 
         <AssignedTransactionDetailsModal
@@ -695,7 +608,7 @@ const ActiveCasesTable: React.FC<ActiveCasesTableProps> = React.memo(({
 
             try {
               console.log('Reassigning transaction:', selectedTransactionId, 'to:', reviewerId, 'notes:', notes);
-              
+
               // Dispatch the reassignment action
               await dispatch(updateTransactionAssignee({
                 transactionId: selectedTransactionId,
@@ -705,11 +618,10 @@ const ActiveCasesTable: React.FC<ActiveCasesTableProps> = React.memo(({
               // Close the modal after successful reassignment
               setIsDetailsModalVisible(false);
               setSelectedTransactionId(null);
-              
+
               console.log('Transaction reassigned successfully');
             } catch (error) {
               console.error('Failed to reassign transaction:', error);
-              // You might want to show a toast notification here
             }
           }}
         />
@@ -724,74 +636,78 @@ const ActiveCasesTable: React.FC<ActiveCasesTableProps> = React.memo(({
         />
 
         {/* Bulk Reassign Modal */}
-        <Modal
-          title="Reassign Transactions"
-          open={isReassignModalVisible}
-          onCancel={() => {
-            setIsReassignModalVisible(false);
-            setSelectedAssignee('');
-          }}
-          onOk={handleConfirmReassign}
-          confirmLoading={bulkActionLoading}
-          okText="Reassign"
-          cancelText="Cancel"
-          okButtonProps={{ disabled: !selectedAssignee || selectedAssignee === '' }}
-        >
-          <div style={{ marginBottom: '16px' }}>
-            <p>You are about to reassign <strong>{selectedRowKeys.length}</strong> transaction{selectedRowKeys.length !== 1 ? 's' : ''}.</p>
-            <p style={{ fontSize: '12px', color: '#666' }}>Selected assignee: {selectedAssignee || 'None'}</p>
-            {currentAssignees.size > 0 && (
-              <p style={{ fontSize: '12px', color: '#999' }}>
-                Current assignees are excluded from the list below.
-              </p>
-            )}
-          </div>
-            <div>
-              <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>
-                Assign to:
-              </label>
-              <Select
-                placeholder="Select assignee..."
-                value={selectedAssignee}
-                onChange={(value) => {
-                  console.log('Selected assignee:', value);
-                  setSelectedAssignee(value);
-                }}
-                style={{ width: '100%' }}
-                showSearch
-                optionFilterProp="children"
-                filterOption={(input, option) => {
-                  const text = String(option?.children || '');
-                  return text.toLowerCase().includes(input.toLowerCase());
-                }}
-                allowClear={false}
-                notFoundContent="No users found"
-              >
-                {users && Object.values(users)
-                  .filter(user => {
-                    const userId = user._id;
-                    return userId && !currentAssignees.has(userId);
-                  })
-                  .map((user, index) => {
-                    const userId = user._id;
-                    return (
-                      <Select.Option 
-                        key={`user-${userId}-${index}`} 
-                        value={userId}
-                      >
-                        {`${user.name} ${user.surname}`}
-                      </Select.Option>
-                    );
-                  })}
-              </Select>
+        <Dialog open={isReassignModalVisible} onOpenChange={setIsReassignModalVisible}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Reassign Transactions</DialogTitle>
+              <DialogDescription>
+                You are about to reassign <strong>{selectedRowKeys.length}</strong> transaction{selectedRowKeys.length !== 1 ? 's' : ''}.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="my-4">
+              <p className="text-xs text-muted-foreground mb-2">Selected assignee: {selectedAssignee || 'None'}</p>
+              {currentAssignees.size > 0 && (
+                <p className="text-xs text-muted-foreground/70 mb-4">
+                  Current assignees are excluded from the list below.
+                </p>
+              )}
+              <div>
+                <label className="block mb-2 font-medium">
+                  Assign to:
+                </label>
+                <Select
+                  value={selectedAssignee}
+                  onValueChange={(value) => {
+                    console.log('Selected assignee:', value);
+                    setSelectedAssignee(value);
+                  }}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select assignee..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {users && Object.values(users)
+                      .filter(user => {
+                        const userId = user._id;
+                        return userId && !currentAssignees.has(userId);
+                      })
+                      .map((user, index) => {
+                        const userId = user._id;
+                        return (
+                          <SelectItem
+                            key={`user-${userId}-${index}`}
+                            value={userId || ''}
+                          >
+                            {`${user.name} ${user.surname}`}
+                          </SelectItem>
+                        );
+                      })}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
-        </Modal>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => {
+                setIsReassignModalVisible(false);
+                setSelectedAssignee('');
+              }}>
+                Cancel
+              </Button>
+              <Button
+                onClick={handleConfirmReassign}
+                disabled={!selectedAssignee || selectedAssignee === '' || bulkActionLoading}
+              >
+                {bulkActionLoading ? <Spinner size="small" /> : 'Reassign'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </>
     );
   } catch (error) {
     console.error('Error rendering ActiveCasesTable:', error);
     return (
-      <div style={{ padding: '20px', textAlign: 'center' }}>
+      <div className="p-5 text-center">
         <p>Error loading table data. Please try refreshing the page.</p>
         <Button onClick={() => window.location.reload()}>Refresh Page</Button>
       </div>

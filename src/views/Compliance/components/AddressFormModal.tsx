@@ -1,6 +1,7 @@
 import React from 'react';
 
-import { Modal } from 'antd';
+import { Modal } from '@/components/ui/modal';
+import { Button } from '@/components/ui/button';
 
 import { MonitoredAddress } from '../../../typings/compliance';
 
@@ -27,12 +28,30 @@ const AddressFormModal: React.FC<AddressFormModalProps> = ({
     <Modal
       title={editingAddress ? 'Edit Address' : 'Add Address'}
       open={visible}
-      onOk={onOk}
-      onCancel={() => {
+      onClose={() => {
         onCancel();
         form.resetFields();
       }}
-      confirmLoading={confirmLoading}
+      footer={
+        <>
+          <Button
+            variant="outline"
+            onClick={() => {
+              onCancel();
+              form.resetFields();
+            }}
+            disabled={confirmLoading}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={onOk}
+            disabled={confirmLoading}
+          >
+            {confirmLoading ? 'Loading...' : editingAddress ? 'Update' : 'Add'}
+          </Button>
+        </>
+      }
     >
       <AddressForm form={form} initialValues={editingAddress || undefined} />
     </Modal>

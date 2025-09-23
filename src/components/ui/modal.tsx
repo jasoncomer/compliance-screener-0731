@@ -136,7 +136,7 @@ export const Modal: React.FC<ModalProps> = ({
               isVisible
                 ? "translate-y-0 opacity-100 scale-100"
                 : "translate-y-4 opacity-0 scale-95",
-              "bg-background border shadow-lg",
+              "bg-background border border-gray-200 dark:border-gray-700 shadow-lg",
               BORDER_RADIUS.lg,
               className
             )}
@@ -148,7 +148,7 @@ export const Modal: React.FC<ModalProps> = ({
             {(title || closable) && (
               <div
                 className={cn(
-                  "flex items-center justify-between border-b",
+                  "flex items-center justify-between border-b border-gray-200 dark:border-gray-700",
                   SPACING_STANDARDS.modal.header
                 )}
               >
@@ -189,7 +189,7 @@ export const Modal: React.FC<ModalProps> = ({
             {footer && (
               <div
                 className={cn(
-                  "flex items-center justify-end gap-2 border-t",
+                  "flex items-center justify-end gap-2 border-t border-gray-200 dark:border-gray-700",
                   SPACING_STANDARDS.modal.footer
                 )}
               >

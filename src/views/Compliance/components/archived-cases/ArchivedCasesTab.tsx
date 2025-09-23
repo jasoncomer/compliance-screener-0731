@@ -1,25 +1,22 @@
-import React, { useEffect,useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
-import { ClearOutlined, FileSearchOutlined,FilterOutlined } from '@ant-design/icons';
-import { Button, Card,DatePicker, Form, Input, Select } from 'antd';
+import { FileSearch } from 'lucide-react';
 
 import { cn } from '../../../../lib/utils';
 import { useAppDispatch, useAppSelector } from '../../../../store/hooks';
-import { 
-  fetchComplianceTransactions, 
+import {
+  fetchComplianceTransactions,
   selectCompletedTransactions,
   selectComplianceFilters,
   selectIsLoading,
-  selectPagination, 
+  selectPagination,
   setFilters,
   setLimit,
   setPage} from '../../../../store/slices/complianceTransactionsSlice';
-import { selectActiveOrgMembers,selectCurrentOrganization } from '../../../../store/slices/organizationsSlice';
+import { selectCurrentOrganization } from '../../../../store/slices/organizationsSlice';
 import { EComplianceTransactionStatus, TransactionFilters } from '../../../../typings/compliance';
-import { getUserDisplayName } from '../../../../utils/display-labels';
 import ActiveCasesTable from '../active-cases/ActiveCasesTable';
-
-const { RangePicker } = DatePicker;
+import ComplianceFilterPanel from '../ComplianceFilterPanel';
 
 interface ArchivedCasesTabProps {
   isActive: boolean;
@@ -34,17 +31,14 @@ const ARCHIVED_STATUSES = [
 
 const ArchivedCasesTab: React.FC<ArchivedCasesTabProps> = ({ isActive, className }) => {
   const organization = useAppSelector(selectCurrentOrganization);
-  const organizationMembers = useAppSelector(selectActiveOrgMembers);
   const dispatch = useAppDispatch();
-  
+
   // Use Redux store data
   const transactions = useAppSelector(selectCompletedTransactions);
   const { total: totalTransactions, page: currentPage, limit: pageSize } = useAppSelector(selectPagination);
   const loading = useAppSelector(selectIsLoading);
   const filters = useAppSelector(selectComplianceFilters);
-  
-  const [form] = Form.useForm();
-  
+
   // Track available filter options
   const [availableBlockchains, setAvailableBlockchains] = useState<string[]>([]);
   const [availableClientIds, setAvailableClientIds] = useState<string[]>([]);
@@ -53,7 +47,7 @@ const ArchivedCasesTab: React.FC<ArchivedCasesTabProps> = ({ isActive, className
   useEffect(() => {
     if (!isActive) return;
 
-    const mergedFilters = { 
+    const mergedFilters = {
       ...filters,
       page: currentPage,
       limit: pageSize,
@@ -68,7 +62,7 @@ const ArchivedCasesTab: React.FC<ArchivedCasesTabProps> = ({ isActive, className
       // Extract unique blockchains
       const blockchains = [...new Set(transactions.map(tx => tx.blockchain))];
       setAvailableBlockchains(blockchains);
-      
+
       // Extract unique client IDs
       const clientIds = [...new Set(transactions.map(tx => tx.clientId))];
       setAvailableClientIds(clientIds);
@@ -81,9 +75,24 @@ const ArchivedCasesTab: React.FC<ArchivedCasesTabProps> = ({ isActive, className
     dispatch(setLimit(pagination.pageSize));
   };
 
+  // Handle filter changes from the filter panel
+  const handleFilterChange = (newFilters: TransactionFilters) => {
+    const mergedFilters = {
+      ...newFilters,
+      page: 1,
+      limit: pageSize
+    };
+
+    // If no specific status is selected, show all archived statuses
+    if (!newFilters.status) {
+      mergedFilters.status = ARCHIVED_STATUSES.join(',');
+    }
+
+    dispatch(setFilters(mergedFilters));
+  };
+
   // Clear all filters
   const handleClearFilters = () => {
-    form.resetFields();
     dispatch(setFilters({
       page: 1,
       limit: pageSize,
@@ -91,195 +100,36 @@ const ArchivedCasesTab: React.FC<ArchivedCasesTabProps> = ({ isActive, className
     }));
   };
 
-  // Handle filter submit
-  const handleFilterSubmit = (values: any) => {
-    const { dateRange, minAmount, maxAmount, ...rest } = values;
-    const newFilters: TransactionFilters = {
-      ...filters,
-      ...rest,
-      page: 1,
-      limit: pageSize
-    };
-
-    // If no specific status is selected, show all archived statuses
-    if (!values.status) {
-      newFilters.status = ARCHIVED_STATUSES.join(',');
-    }
-
-    // Date range filter
-    if (dateRange && dateRange.length === 2 && dateRange[0] && dateRange[1]) {
-      const startDate = dateRange[0].startOf('day');
-      const endDate = dateRange[1].endOf('day');
-      
-      newFilters.timestamp = {
-        from: startDate.toISOString(),
-        to: endDate.toISOString()
-      };
-    } else {
-      delete newFilters.timestamp;
-    }
-
-    // Amount filters
-    if (minAmount) {
-      newFilters.minAmount = parseFloat(minAmount) * 100000000; // Convert to satoshis
-    } else {
-      delete newFilters.minAmount;
-    }
-    
-    if (maxAmount) {
-      newFilters.maxAmount = parseFloat(maxAmount) * 100000000; // Convert to satoshis
-    } else {
-      delete newFilters.maxAmount;
-    }
-
-    // Assigned To filter
-    if (values.assignedTo) {
-      newFilters.assignedTo = values.assignedTo;
-    } else {
-      delete newFilters.assignedTo;
-    }
-
-    // Clean up undefined values
-    Object.keys(newFilters).forEach(key => {
-      if (newFilters[key as keyof TransactionFilters] === undefined) {
-        delete newFilters[key as keyof TransactionFilters];
-      }
-    });
-
-    dispatch(setFilters(newFilters));
-  };
-
   return (
     <div className={cn("w-full", className)}>
       <div className="flex justify-between items-center mb-4">
-        <h3 className="m-0 text-black dark:text-white">
-          <FileSearchOutlined className="mr-2" />
+        <h3 className="m-0 text-foreground flex items-center">
+          <FileSearch className="mr-2 h-5 w-5" />
           Archived Cases Management ({totalTransactions})
         </h3>
         <div>
-          <span className="mr-2.5 text-brand-primary-dark dark:text-white">
+          <span className="mr-2.5 text-primary">
             Total Archived Cases: <strong>{totalTransactions}</strong>
           </span>
         </div>
       </div>
-      
-      {/* Filter Panel */}
-      <Card 
-        title={<><FilterOutlined /> Filters</>}
-        style={{ marginBottom: 16 }}
-        size="small"
-        extra={
-          <Button 
-            icon={<ClearOutlined />} 
-            onClick={handleClearFilters}
-            size="small"
-          >
-            Clear Filters
-          </Button>
-        }
-      >
-        <Form
-          form={form}
-          layout="inline"
-          onFinish={handleFilterSubmit}
-          style={{ display: 'flex', flexWrap: 'wrap' }}
-        >
-          <Form.Item name="status" style={{ minWidth: 120, marginBottom: 8 }}>
-            <Select 
-              placeholder="Status"
-              allowClear
-              size="small"
-              style={{ width: 150 }}
-              onChange={(value) => handleFilterSubmit({ status: value })}
-            >
-              <Select.Option value={EComplianceTransactionStatus.APPROVED}>Approved</Select.Option>
-                <Select.Option value={EComplianceTransactionStatus.CLOSED_WITH_NOTE}>Approved with Note</Select.Option>
-              <Select.Option value={EComplianceTransactionStatus.CLOSED_WITH_SAR}>Closed with SAR</Select.Option>
-            </Select>
-          </Form.Item>
 
-          <Form.Item name="blockchain" style={{ minWidth: 120, marginBottom: 8 }}>
-            <Select 
-              placeholder="Blockchain"
-              allowClear
-              size="small"
-            >
-              {availableBlockchains.map(blockchain => (
-                <Select.Option key={blockchain} value={blockchain}>
-                  {blockchain.charAt(0).toUpperCase() + blockchain.slice(1)}
-                </Select.Option>
-              ))}
-            </Select>
-          </Form.Item>
-          
-          <Form.Item name="clientId" style={{ minWidth: 110, marginBottom: 8 }}>
-            <Select 
-              placeholder="Client ID"
-              allowClear
-              size="small"
-            >
-              {availableClientIds.map(clientId => (
-                <Select.Option key={clientId} value={clientId}>
-                  {clientId}
-                </Select.Option>
-              ))}
-            </Select>
-          </Form.Item>
-          
-          <Form.Item name="assignedTo" style={{ minWidth: 120, marginBottom: 8 }}>
-            <Select 
-              placeholder="Assigned To"
-              allowClear
-              size="small"
-            >
-              {organizationMembers.map(member => (
-                <Select.Option key={member.userId} value={member.userId}>
-                  {getUserDisplayName(member)}
-                </Select.Option>
-              ))}
-            </Select>
-          </Form.Item>
-          
-          <Form.Item name="dateRange" style={{ marginBottom: 8 }}>
-            <RangePicker 
-              size="small" 
-              placeholder={['From date', 'To date']} 
-              onChange={(dates) => {
-                const values = form.getFieldsValue();
-                values.dateRange = dates;
-                handleFilterSubmit(values);
-              }}
-            />
-          </Form.Item>
-          
-          <Form.Item name="riskLevel" style={{ minWidth: 120, marginBottom: 8 }}>
-            <Select 
-              placeholder="Risk level"
-              allowClear
-              size="small"
-            >
-              <Select.Option value="high">High ({'>'}70)</Select.Option>
-              <Select.Option value="medium">Medium (41-70)</Select.Option>
-              <Select.Option value="low">Low ({'≤'}40)</Select.Option>
-            </Select>
-          </Form.Item>
-          
-          <Form.Item name="minAmount" style={{ width: 100, marginBottom: 8 }}>
-            <Input type="number" placeholder="Min BTC" step="0.0001" min="0" size="small" />
-          </Form.Item>
-          
-          <Form.Item name="maxAmount" style={{ width: 100, marginBottom: 8 }}>
-            <Input type="number" placeholder="Max BTC" step="0.0001" min="0" size="small" />
-          </Form.Item>
-          
-          <Form.Item style={{ marginBottom: 8 }}>
-            <Button type="primary" htmlType="submit" size="small">
-              Apply
-            </Button>
-          </Form.Item>
-        </Form>
-      </Card>
-      
+      {/* Filter Panel */}
+      <ComplianceFilterPanel
+        className="mb-4"
+        statusOptions={[
+          { value: EComplianceTransactionStatus.APPROVED, label: 'Approved' },
+          { value: EComplianceTransactionStatus.CLOSED_WITH_NOTE, label: 'Approved with Note' },
+          { value: EComplianceTransactionStatus.CLOSED_WITH_SAR, label: 'Closed with SAR' }
+        ]}
+        availableBlockchains={availableBlockchains}
+        availableClientIds={availableClientIds}
+        defaultStatus={ARCHIVED_STATUSES}
+        onFilterChange={handleFilterChange}
+        onClearFilters={handleClearFilters}
+        applyOnChange={true}
+      />
+
       <ActiveCasesTable
         transactions={transactions}
         totalTransactions={totalTransactions}
@@ -293,4 +143,4 @@ const ArchivedCasesTab: React.FC<ArchivedCasesTabProps> = ({ isActive, className
   );
 };
 
-export default ArchivedCasesTab; 
+export default ArchivedCasesTab;

@@ -1,21 +1,23 @@
 import React from 'react';
 
-import { 
+import {
   BarChart3,
   Database,
   GitBranch,
   Globe,
-  LogOut, 
+  LogOut,
   Menu,
+  Moon,
   Search,
-  Settings, 
-  User, 
+  Settings,
+  Sun,
+  User,
   Users} from 'lucide-react';
 import { useLocation,useNavigate } from 'react-router-dom';
 
 import BSLogo from '../assets/darkmode_logo.png';
 import { useAppContext } from '../context/AppContext';
-import { Theme } from '../context/ThemeContext';
+import { Theme, useTheme } from '../context/ThemeContext';
 import { cn } from '../lib/utils';
 
 import { Button } from './ui/button';
@@ -37,6 +39,7 @@ const SideNav: React.FC<SideNavProps> = ({ theme, collapsed, onCollapse }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, clearAppData } = useAppContext();
+  const { toggleTheme } = useTheme();
 
   const getActiveKey = () => {
     const parts = location.pathname.split('/');
@@ -221,6 +224,56 @@ const SideNav: React.FC<SideNavProps> = ({ theme, collapsed, onCollapse }) => {
               );
             })}
           </nav>
+        </div>
+
+        {/* Theme Toggle */}
+        <div className="px-4 pb-4">
+          {collapsed ? (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={toggleTheme}
+                  className={cn(
+                    "w-10 h-10 mx-auto flex items-center justify-center",
+                    theme === 'light'
+                      ? "text-gray-600 hover:bg-gray-100 hover:text-orange-600"
+                      : "text-gray-400 hover:bg-gray-800 hover:text-orange-400"
+                  )}
+                >
+                  {theme === 'dark' ? (
+                    <Sun className="h-5 w-5" />
+                  ) : (
+                    <Moon className="h-5 w-5" />
+                  )}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="right">
+                <p>Switch to {theme === 'dark' ? 'light' : 'dark'} mode</p>
+              </TooltipContent>
+            </Tooltip>
+          ) : (
+            <Button
+              variant="ghost"
+              onClick={toggleTheme}
+              className={cn(
+                "w-full justify-start gap-3 h-10 px-3",
+                theme === 'light'
+                  ? "text-gray-600 hover:bg-gray-100 hover:text-orange-600"
+                  : "text-gray-400 hover:bg-gray-800 hover:text-orange-400"
+              )}
+            >
+              {theme === 'dark' ? (
+                <Sun className="h-5 w-5" />
+              ) : (
+                <Moon className="h-5 w-5" />
+              )}
+              <span className="font-medium">
+                {theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
+              </span>
+            </Button>
+          )}
         </div>
 
         {/* User Menu */}

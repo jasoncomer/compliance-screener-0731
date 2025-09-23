@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo,useState } from 'react';
 
-import { Spin,Table } from 'antd';
-import type { ColumnType, TableRowSelection } from 'antd/es/table/interface';
+import { DataTable, Column } from '@/components/ui/data-table';
+import { Spinner } from '@/components/ui/spinner';
 
 import { Badge } from '@/components/ui/badge';
 
@@ -52,8 +52,8 @@ const UnassignedTransactionsTable: React.FC<TransactionsTableProps> = ({
   onTableChange,
   selectedRowKeys,
   onSelectChange,
-  sortBy = 'timestamp',
-  sortOrder = 'desc',
+  sortBy: _sortBy = 'timestamp',
+  sortOrder: _sortOrder = 'desc',
   onTransactionUpdate,
 }) => {
   const denom = 'USD';
@@ -213,17 +213,12 @@ const UnassignedTransactionsTable: React.FC<TransactionsTableProps> = ({
   };
 
   // Configure row selection
-  const rowSelection: TableRowSelection<IComplianceTransaction> = {
+  const rowSelection = {
     selectedRowKeys,
-    onChange: onSelectChange,
-    selections: [
-      Table.SELECTION_ALL,
-      Table.SELECTION_INVERT,
-      Table.SELECTION_NONE,
-    ],
+    onChange: (keys: React.Key[]) => onSelectChange(keys),
   };
 
-  const columns = [
+  const columns: Column<IComplianceTransaction>[] = [
     {
       title: 'Status',
       dataIndex: 'status',
@@ -290,7 +285,6 @@ const UnassignedTransactionsTable: React.FC<TransactionsTableProps> = ({
       key: 'amount',
       width: 150,
       sorter: true,
-      sortOrder: sortBy === 'amount' ? (sortOrder === 'asc' ? 'ascend' : 'descend') : null,
       render: (amount: number) => (
         <div className="flex flex-col">
           <span className="text-gray-900 dark:text-white">BTC {(amount / 100000000)}</span>
@@ -311,7 +305,6 @@ const UnassignedTransactionsTable: React.FC<TransactionsTableProps> = ({
         <span className="text-gray-600 dark:text-gray-400">{new Date(timestamp).toLocaleString()}</span>
       ),
       sorter: true,
-      sortOrder: sortBy === 'timestamp' ? (sortOrder === 'asc' ? 'ascend' : 'descend') : null,
     },
     {
       title: 'Risk Score',
@@ -319,7 +312,6 @@ const UnassignedTransactionsTable: React.FC<TransactionsTableProps> = ({
       key: 'riskScores',
       width: 80,
       sorter: true,
-      sortOrder: sortBy === 'riskScores' ? (sortOrder === 'asc' ? 'ascend' : 'descend') : null,
       render: (scores: number[], record: IComplianceTransaction) => {
         const txId = record._id;
         const calculatedRisk = calculatedRiskScores[txId];
@@ -329,7 +321,7 @@ const UnassignedTransactionsTable: React.FC<TransactionsTableProps> = ({
         if (isLoading) {
           return (
             <div className="flex items-center justify-center">
-              <Spin size="small" />
+              <Spinner size="small" />
             </div>
           );
         }
@@ -362,39 +354,36 @@ const UnassignedTransactionsTable: React.FC<TransactionsTableProps> = ({
   try {
     return (
       <div className="w-full h-full flex flex-col overflow-hidden">
-        <Table
-        className="compliance-table w-full flex-1"
-        dataSource={transactions}
-        columns={columns as ColumnType<IComplianceTransaction>[]}
-        rowKey="_id"
-        rowSelection={rowSelection}
-        size="small"
-        pagination={{
-          current: currentPage,
-          pageSize: pageSize,
-          total: totalTransactions,
-          showSizeChanger: true,
-          pageSizeOptions: ['10', '20', '50', '100'],
-        }}
-        loading={loading}
-        onChange={onTableChange}
-        rowClassName={(_, index) => `table-row-${index % 2 === 0 ? 'even' : 'odd'}`}
-        onRow={(record) => ({
-          onClick: (event) => {
-            const target = event.target as HTMLElement;
-            if (target.tagName.toLowerCase() !== 'input' && target.className.indexOf('ant-checkbox') === -1) {
-              handleRowClick(record);
-            }
-          },
-        })}
-        scroll={{ 
-          x: 1000,
-          y: 'calc(100vh - 600px)'
-        }}
-        style={{
-          minHeight: '400px'
-        }}
-      />
+        <DataTable
+          className="compliance-table w-full flex-1"
+          dataSource={transactions}
+          columns={columns}
+          rowKey="_id"
+          rowSelection={rowSelection}
+          size="small"
+          pagination={{
+            current: currentPage,
+            pageSize: pageSize,
+            total: totalTransactions,
+            showSizeChanger: true,
+            pageSizeOptions: [10, 20, 50, 100],
+            onChange: (page, size) => onTableChange({ current: page, pageSize: size }, {}, {})
+          }}
+          loading={loading}
+          onChange={(pagination, sorter) => onTableChange(pagination, {}, sorter)}
+          onRow={(record) => ({
+            onClick: (event: React.MouseEvent) => {
+              const target = event.target as HTMLElement;
+              if (target.tagName.toLowerCase() !== 'input' && !target.closest('[role="checkbox"]')) {
+                handleRowClick(record);
+              }
+            },
+          })}
+          scroll={{
+            x: 1000,
+            y: 'calc(100vh - 600px)'
+          }}
+        />
 
       {/* <TransactionDetailsModal
         isVisible={isDetailsModalVisible}
