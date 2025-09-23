@@ -1,214 +1,180 @@
-import React from 'react';
-import { Input as AntInput, InputProps as AntInputProps } from 'antd';
-import { useTheme } from '../../context/ThemeContext';
-import styled from 'styled-components';
+import React, { forwardRef, useState } from 'react';
+import { cn } from '@/lib/utils';
+import { EyeIcon, EyeOffIcon, SearchIcon, LoaderIcon } from 'lucide-react';
 
-export interface CustomInputProps extends Omit<AntInputProps, 'size'> {
+export interface CustomInputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement | HTMLTextAreaElement>, 'size' | 'type'> {
   error?: boolean;
   multiline?: boolean;
   rows?: number;
   onSearch?: (value: string) => void;
   loading?: boolean;
   enterButton?: boolean | React.ReactNode;
+  type?: 'text' | 'email' | 'password' | 'number' | 'tel' | 'url' | 'search';
 }
 
-const StyledInput = styled(AntInput)<{ $theme: string; error?: boolean }>`
-  height: 48px;
-  border-radius: 12px;
-  border: 2px solid ${({ $theme, error }) => 
-    error 
-      ? '#ef4444' 
-      : $theme === 'dark' ? '#4a5568' : '#e2e8f0'};
-  background: ${({ $theme }) => $theme === 'dark' ? '#2d3748' : '#ffffff'};
-  color: ${({ $theme }) => $theme === 'dark' ? '#ffffff' : '#1a202c'};
-  font-size: 14px;
-  font-weight: 400;
-  transition: all 0.2s ease;
-  
-  &:hover {
-    border-color: ${({ $theme, error }) => 
-      error 
-        ? '#ef4444' 
-        : $theme === 'dark' ? '#718096' : '#cbd5e0'};
-  }
-  
-  &:focus,
-  &.ant-input-focused {
-    border-color: #e87e4f;
-    box-shadow: 0 0 0 3px rgba(232, 126, 79, 0.1);
-    outline: none;
-  }
-  
-  &::placeholder {
-    color: ${({ $theme }) => $theme === 'dark' ? '#a0aec0' : '#718096'};
-  }
-  
-  &.ant-input-password {
-    .ant-input-password-icon {
-      color: ${({ $theme }) => $theme === 'dark' ? '#a0aec0' : '#718096'};
-    }
-  }
-`;
+const Input = forwardRef<HTMLInputElement | HTMLTextAreaElement, CustomInputProps>(
+  ({
+    error,
+    type = 'text',
+    multiline = false,
+    rows = 4,
+    className,
+    onSearch,
+    loading,
+    enterButton,
+    onChange,
+    onKeyDown,
+    value,
+    ...props
+  }, ref) => {
+    const [showPassword, setShowPassword] = useState(false);
+    const [searchValue, setSearchValue] = useState(value || '');
 
-const TextAreaStyles = styled.div<{ $theme: string; error?: boolean }>`
-  .ant-input {
-    border-radius: 12px;
-    border: 2px solid ${({ $theme, error }) => 
-      error 
-        ? '#ef4444' 
-        : $theme === 'dark' ? '#4a5568' : '#e2e8f0'};
-    background: ${({ $theme }) => $theme === 'dark' ? '#2d3748' : '#ffffff'};
-    color: ${({ $theme }) => $theme === 'dark' ? '#ffffff' : '#1a202c'};
-    font-size: 14px;
-    font-weight: 400;
-    transition: all 0.2s ease;
-    
-    &:hover {
-      border-color: ${({ $theme, error }) => 
-        error 
-          ? '#ef4444' 
-          : $theme === 'dark' ? '#718096' : '#cbd5e0'};
-    }
-    
-    &:focus,
-    &.ant-input-focused {
-      border-color: #e87e4f;
-      box-shadow: 0 0 0 3px rgba(232, 126, 79, 0.1);
-      outline: none;
-    }
-    
-    &::placeholder {
-      color: ${({ $theme }) => $theme === 'dark' ? '#a0aec0' : '#718096'};
-    }
-  }
-`;
-
-const StyledSearchInput = styled(AntInput.Search)<{ $theme: string; error?: boolean }>`
-  .ant-input {
-    height: 48px;
-    border-radius: 12px 0 0 12px;
-    border: 2px solid ${({ $theme, error }) => 
-      error 
-        ? '#ef4444' 
-        : $theme === 'dark' ? '#4a5568' : '#e2e8f0'};
-    border-right: none;
-    background: ${({ $theme }) => $theme === 'dark' ? '#2d3748' : '#ffffff'};
-    color: ${({ $theme }) => $theme === 'dark' ? '#ffffff' : '#1a202c'};
-    font-size: 14px;
-    font-weight: 400;
-    transition: all 0.2s ease;
-    
-    &:hover {
-      border-color: ${({ $theme, error }) => 
-        error 
-          ? '#ef4444' 
-          : $theme === 'dark' ? '#718096' : '#cbd5e0'};
-    }
-    
-    &:focus,
-    &.ant-input-focused {
-      border-color: #e87e4f;
-      box-shadow: 0 0 0 3px rgba(232, 126, 79, 0.1);
-      outline: none;
-    }
-    
-    &::placeholder {
-      color: ${({ $theme }) => $theme === 'dark' ? '#a0aec0' : '#718096'};
-    }
-  }
-  
-  .ant-input-search-button {
-    height: 48px;
-    border-radius: 0 12px 12px 0;
-    border: 2px solid ${({ $theme, error }) => 
-      error 
-        ? '#ef4444' 
-        : $theme === 'dark' ? '#4a5568' : '#e2e8f0'};
-    border-left: none;
-    background: ${({ $theme }) => $theme === 'dark' ? '#4a5568' : '#f7fafc'};
-    color: ${({ $theme }) => $theme === 'dark' ? '#ffffff' : '#1a202c'};
-    font-weight: 600;
-    transition: all 0.2s ease;
-    
-    &:hover {
-      background: ${({ $theme }) => $theme === 'dark' ? '#718096' : '#edf2f7'};
-      border-color: ${({ $theme, error }) => 
-        error 
-          ? '#ef4444' 
-          : $theme === 'dark' ? '#718096' : '#cbd5e0'};
-    }
-  }
-`;
-
-const Input: React.FC<CustomInputProps> = ({
-  error,
-  type = 'text',
-  multiline = false,
-  rows = 4,
-  className,
-  onSearch,
-  loading,
-  enterButton,
-  prefix: _prefix,
-  onChange,
-  ...props
-}) => {
-  const { theme } = useTheme();
-
-  if (onSearch) {
-    return (
-      <StyledSearchInput
-        $theme={theme}
-        error={error}
-        {...props}
-        onSearch={onSearch}
-        loading={loading}
-        enterButton={enterButton}
-        className={`${className || ''} ${error ? 'error' : ''}`}
-        onChange={onChange}
-      />
+    const baseInputClasses = cn(
+      "w-full h-12 px-4 rounded-xl text-sm font-normal transition-all duration-200",
+      "border-2 border-gray-200 dark:border-gray-700",
+      "bg-white dark:bg-gray-800",
+      "text-gray-900 dark:text-gray-50",
+      "placeholder:text-gray-500 dark:placeholder:text-gray-400",
+      "hover:border-gray-300 dark:hover:border-gray-600",
+      "hover:bg-gray-50 dark:hover:bg-gray-800/80",
+      "focus:border-[#e87e4f] dark:focus:border-[#e87e4f]",
+      "focus:outline-none focus:ring-2 focus:ring-[#e87e4f]/20",
+      error && "border-red-500 dark:border-red-500 hover:border-red-500 dark:hover:border-red-500",
+      className
     );
-  }
 
-  if (multiline) {
-    return (
-      <TextAreaStyles $theme={theme} error={error}>
-        <AntInput.TextArea
+    const textareaClasses = cn(
+      "w-full p-4 rounded-xl text-sm font-normal transition-all duration-200 resize-none",
+      "border-2 border-gray-200 dark:border-gray-700",
+      "bg-white dark:bg-gray-800",
+      "text-gray-900 dark:text-gray-50",
+      "placeholder:text-gray-500 dark:placeholder:text-gray-400",
+      "hover:border-gray-300 dark:hover:border-gray-600",
+      "hover:bg-gray-50 dark:hover:bg-gray-800/80",
+      "focus:border-[#e87e4f] dark:focus:border-[#e87e4f]",
+      "focus:outline-none focus:ring-2 focus:ring-[#e87e4f]/20",
+      error && "border-red-500 dark:border-red-500 hover:border-red-500 dark:hover:border-red-500",
+      className
+    );
+
+    // Handle search input
+    if (onSearch) {
+      const handleSearch = () => {
+        if (onSearch && !loading) {
+          onSearch(searchValue as string);
+        }
+      };
+
+      const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === 'Enter' && !loading) {
+          handleSearch();
+        }
+        onKeyDown?.(e as any);
+      };
+
+      return (
+        <div className="relative flex">
+          <input
+            ref={ref as React.Ref<HTMLInputElement>}
+            type="text"
+            value={searchValue}
+            onChange={(e) => {
+              setSearchValue(e.target.value);
+              onChange?.(e as any);
+            }}
+            onKeyDown={handleKeyDown}
+            className={cn(
+              baseInputClasses,
+              "rounded-r-none border-r-0 focus:border-r-2",
+              enterButton && "pr-2"
+            )}
+            {...props as React.InputHTMLAttributes<HTMLInputElement>}
+          />
+          <button
+            type="button"
+            onClick={handleSearch}
+            disabled={loading}
+            className={cn(
+              "px-6 h-12 rounded-r-xl font-medium text-sm transition-all duration-200",
+              "border-2 border-l-0 border-gray-200 dark:border-gray-700",
+              "bg-gray-50 dark:bg-gray-700",
+              "text-gray-900 dark:text-gray-50",
+              "hover:bg-gray-100 dark:hover:bg-gray-600",
+              "hover:border-gray-300 dark:hover:border-gray-600",
+              "focus:outline-none focus:ring-2 focus:ring-[#e87e4f]/20",
+              "disabled:opacity-50 disabled:cursor-not-allowed",
+              error && "border-red-500 dark:border-red-500"
+            )}
+          >
+            {loading ? (
+              <LoaderIcon className="w-4 h-4 animate-spin" />
+            ) : enterButton === true || !enterButton ? (
+              <SearchIcon className="w-4 h-4" />
+            ) : (
+              enterButton
+            )}
+          </button>
+        </div>
+      );
+    }
+
+    // Handle multiline textarea
+    if (multiline) {
+      return (
+        <textarea
+          ref={ref as React.Ref<HTMLTextAreaElement>}
           rows={rows}
-          className={`${className || ''} ${error ? 'error' : ''}`}
-          onChange={e => onChange?.(e as any)}
-          allowClear={false}
-          showCount={false}
-          count={undefined}
-          onClear={undefined}
+          value={value}
+          onChange={onChange as any}
+          className={textareaClasses}
+          {...props as React.TextareaHTMLAttributes<HTMLTextAreaElement>}
         />
-      </TextAreaStyles>
-    );
-  }
+      );
+    }
 
-  if (type === 'password') {
+    // Handle password input with toggle
+    if (type === 'password') {
+      return (
+        <div className="relative">
+          <input
+            ref={ref as React.Ref<HTMLInputElement>}
+            type={showPassword ? 'text' : 'password'}
+            value={value}
+            onChange={onChange as any}
+            className={cn(baseInputClasses, "pr-12")}
+            {...props as React.InputHTMLAttributes<HTMLInputElement>}
+          />
+          <button
+            type="button"
+            onClick={() => setShowPassword(!showPassword)}
+            className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
+            tabIndex={-1}
+          >
+            {showPassword ? (
+              <EyeOffIcon className="w-4 h-4" />
+            ) : (
+              <EyeIcon className="w-4 h-4" />
+            )}
+          </button>
+        </div>
+      );
+    }
+
+    // Handle regular input
     return (
-      <StyledInput
-        $theme={theme}
-        error={error}
-        type="password"
-        {...props}
-        className={`${className || ''} ${error ? 'error' : ''}`}
-        onChange={onChange}
+      <input
+        ref={ref as React.Ref<HTMLInputElement>}
+        type={type}
+        value={value}
+        onChange={onChange as any}
+        className={baseInputClasses}
+        {...props as React.InputHTMLAttributes<HTMLInputElement>}
       />
     );
   }
+);
 
-  return (
-    <StyledInput
-      $theme={theme}
-      error={error}
-      type={type}
-      {...props}
-      className={`${className || ''} ${error ? 'error' : ''}`}
-      onChange={onChange}
-    />
-  );
-};
+Input.displayName = 'Input';
 
 export default Input;

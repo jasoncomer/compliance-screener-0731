@@ -9,7 +9,8 @@ import {
   XCircle,
   Copy
 } from 'lucide-react';
-import { Tag } from 'antd';
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
 import { satsToBTC } from '../../../utils/crypto';
 import { colors } from '@/design-system/tokens'
 import { RiskScoringResponse } from '../../../typings/riskScoring';
@@ -149,11 +150,26 @@ const AddressSummary: React.FC<AddressSummaryProps> = ({
               {/* Tags section with proper overflow handling */}
               <div className="flex items-start gap-1 mt-auto">
                 <div className="flex gap-1 flex-wrap overflow-hidden">
-                  {address && attributions[address] && getEntityTags(attributions[address]?.entity || '').slice(0, 5).map(tag => (
-                    <Tag key={tag} color={getTagColor(tag.toLowerCase())} className="text-xs px-1 py-0 flex-shrink-0">
-                      {tag.toUpperCase()}
-                    </Tag>
-                  ))}
+                  {address && attributions[address] && getEntityTags(attributions[address]?.entity || '').slice(0, 5).map(tag => {
+                    const tagColor = getTagColor(tag.toLowerCase());
+                    return (
+                      <Badge
+                        key={tag}
+                        className={cn(
+                          "text-xs px-2 py-0 flex-shrink-0",
+                          tagColor === 'red' && "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400",
+                          tagColor === 'orange' && "bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400",
+                          tagColor === 'yellow' && "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400",
+                          tagColor === 'green' && "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400",
+                          tagColor === 'blue' && "bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400",
+                          tagColor === 'purple' && "bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400",
+                          !tagColor && "bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400"
+                        )}
+                      >
+                        {tag.toUpperCase()}
+                      </Badge>
+                    );
+                  })}
                 </div>
               </div>
             </div>

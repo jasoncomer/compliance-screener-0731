@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { Card, SubTitle, InfoList, InfoItem, Label, Value, Button } from './styled';
-import { Form, Input, Modal, message } from 'antd';
-import { LockOutlined } from '@ant-design/icons';
+import { Modal } from '@/components/ui/modal';
+import { Input } from '@/components/ui/input';
+import { Lock } from 'lucide-react';
 import { changePassword } from '../../../api/auth';
+import { useToast } from '@/hooks/use-toast';
 
 interface SecuritySectionProps {
   theme: 'dark' | 'light';
@@ -10,26 +12,55 @@ interface SecuritySectionProps {
 
 const SecuritySection: React.FC<SecuritySectionProps> = ({ theme }) => {
   const [isModalVisible, setIsModalVisible] = useState(false);
-  const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
+  const { toast } = useToast();
+  const [formValues, setFormValues] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: ''
+  });
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const handleSubmit = async (values: { currentPassword: string; newPassword: string; confirmPassword: string }) => {
-    if (values.newPassword !== values.confirmPassword) {
-      form.setFields([{
-        name: 'confirmPassword',
-        errors: ['Passwords do not match']
-      }]);
-      return;
+  const validateForm = () => {
+    const newErrors: Record<string, string> = {};
+
+    if (!formValues.currentPassword) {
+      newErrors.currentPassword = 'Please enter your current password';
     }
+    if (!formValues.newPassword) {
+      newErrors.newPassword = 'Please enter your new password';
+    } else if (formValues.newPassword.length < 8) {
+      newErrors.newPassword = 'Password must be at least 8 characters long';
+    }
+    if (!formValues.confirmPassword) {
+      newErrors.confirmPassword = 'Please confirm your new password';
+    } else if (formValues.newPassword !== formValues.confirmPassword) {
+      newErrors.confirmPassword = 'Passwords do not match';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = async () => {
+    if (!validateForm()) return;
 
     setLoading(true);
     try {
-      await changePassword(values.currentPassword, values.newPassword);
-      message.success('Password updated successfully');
+      await changePassword(formValues.currentPassword, formValues.newPassword);
+      toast({
+        title: 'Success',
+        description: 'Password updated successfully',
+      });
       setIsModalVisible(false);
-      form.resetFields();
+      setFormValues({ currentPassword: '', newPassword: '', confirmPassword: '' });
+      setErrors({});
     } catch (error) {
-      message.error('Failed to update password. Please check your current password and try again.');
+      toast({
+        title: 'Error',
+        description: 'Failed to update password. Please check your current password and try again.',
+        variant: 'destructive',
+      });
     } finally {
       setLoading(false);
     }
@@ -52,55 +83,83 @@ const SecuritySection: React.FC<SecuritySectionProps> = ({ theme }) => {
       <Modal
         title="Change Password"
         open={isModalVisible}
-        onCancel={() => {
+        onClose={() => {
           setIsModalVisible(false);
-          form.resetFields();
+          setFormValues({ currentPassword: '', newPassword: '', confirmPassword: '' });
+          setErrors({});
         }}
-        onOk={() => form.submit()}
-        confirmLoading={loading}
+        footer={[
+          <Button
+            key="cancel"
+            onClick={() => {
+              setIsModalVisible(false);
+              setFormValues({ currentPassword: '', newPassword: '', confirmPassword: '' });
+              setErrors({});
+            }}
+          >
+            Cancel
+          </Button>,
+          <Button
+            key="submit"
+            onClick={handleSubmit}
+            disabled={loading}
+          >
+            {loading ? 'Updating...' : 'Update Password'}
+          </Button>
+        ]}
       >
-        <Form
-          form={form}
-          layout="vertical"
-          onFinish={handleSubmit}
-        >
-          <Form.Item
-            name="currentPassword"
-            label="Current Password"
-            rules={[{ required: true, message: 'Please enter your current password' }]}
-          >
-            <Input.Password prefix={<LockOutlined />} />
-          </Form.Item>
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium mb-2">Current Password</label>
+            <div className="relative">
+              <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input
+                type="password"
+                value={formValues.currentPassword}
+                onChange={(e) => setFormValues({ ...formValues, currentPassword: e.target.value })}
+                className="pl-10"
+                placeholder="Enter current password"
+              />
+            </div>
+            {errors.currentPassword && (
+              <p className="text-red-500 text-sm mt-1">{errors.currentPassword}</p>
+            )}
+          </div>
 
-          <Form.Item
-            name="newPassword"
-            label="New Password"
-            rules={[
-              { required: true, message: 'Please enter your new password' },
-              { min: 8, message: 'Password must be at least 8 characters long' }
-            ]}
-          >
-            <Input.Password prefix={<LockOutlined />} />
-          </Form.Item>
+          <div>
+            <label className="block text-sm font-medium mb-2">New Password</label>
+            <div className="relative">
+              <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input
+                type="password"
+                value={formValues.newPassword}
+                onChange={(e) => setFormValues({ ...formValues, newPassword: e.target.value })}
+                className="pl-10"
+                placeholder="Enter new password"
+              />
+            </div>
+            {errors.newPassword && (
+              <p className="text-red-500 text-sm mt-1">{errors.newPassword}</p>
+            )}
+          </div>
 
-          <Form.Item
-            name="confirmPassword"
-            label="Confirm New Password"
-            rules={[
-              { required: true, message: 'Please confirm your new password' },
-              ({ getFieldValue }) => ({
-                validator(_, value) {
-                  if (!value || getFieldValue('newPassword') === value) {
-                    return Promise.resolve();
-                  }
-                  return Promise.reject(new Error('Passwords do not match'));
-                },
-              }),
-            ]}
-          >
-            <Input.Password prefix={<LockOutlined />} />
-          </Form.Item>
-        </Form>
+          <div>
+            <label className="block text-sm font-medium mb-2">Confirm New Password</label>
+            <div className="relative">
+              <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input
+                type="password"
+                value={formValues.confirmPassword}
+                onChange={(e) => setFormValues({ ...formValues, confirmPassword: e.target.value })}
+                className="pl-10"
+                placeholder="Confirm new password"
+              />
+            </div>
+            {errors.confirmPassword && (
+              <p className="text-red-500 text-sm mt-1">{errors.confirmPassword}</p>
+            )}
+          </div>
+        </div>
       </Modal>
     </Card>
   );

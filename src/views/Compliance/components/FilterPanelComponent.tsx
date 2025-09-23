@@ -48,16 +48,16 @@ const FilterPanelComponent: React.FC<FilterPanelComponentProps> = ({
 
   useEffect(() => {
     console.log('useEffect', initialStatusFilter);
-    if (initialStatusFilter !== undefined) {
+    if (initialStatusFilter !== undefined && form) {
       // Clear all filters except status when initialStatusFilter changes
       if (onClearFiltersExceptStatus) {
         console.log('calling  onClearFiltersExceptStatus', onClearFiltersExceptStatus);
         onClearFiltersExceptStatus();
       }
-      
+
       // Reset form to clear all fields first
       form.resetFields();
-      
+
       // Then set the status field if provided
       if (initialStatusFilter) {
         form.setFieldsValue({ status: initialStatusFilter.split(',')[0] });
@@ -126,12 +126,14 @@ const FilterPanelComponent: React.FC<FilterPanelComponentProps> = ({
   };
 
   const handleFilterChange = () => {
+    if (!form) return;
     const values = form.getFieldsValue();
     const filters = processFilterValues(values);
     onFilterChange(filters);
   };
 
   const handleDateRangeChange = (dates: any) => {
+    if (!form) return;
     const values = form.getFieldsValue();
     values.dateRange = dates;
     const filters = processFilterValues(values);
@@ -195,6 +197,7 @@ const FilterPanelComponent: React.FC<FilterPanelComponentProps> = ({
             allowClear
             size="small"
             onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+              if (!form) return;
               const values = form.getFieldsValue();
               values.clientId = e.target.value;
               const filters = processFilterValues(values);
@@ -233,6 +236,7 @@ const FilterPanelComponent: React.FC<FilterPanelComponentProps> = ({
             allowClear
             size="small"
             onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+              if (!form) return;
               const values = form.getFieldsValue();
               values.txId = e.target.value;
               const filters = processFilterValues(values);

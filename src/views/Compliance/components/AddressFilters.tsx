@@ -1,9 +1,7 @@
 import React from 'react';
-import { Select } from 'antd';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '../../../lib/utils';
 import { IAddressFilters as AddressFiltersType } from '../../../typings/compliance';
-
-const { Option } = Select;
 
 interface AddressFiltersProps {
   filters: AddressFiltersType;
@@ -27,27 +25,30 @@ const AddressFilters: React.FC<AddressFiltersProps> = ({ filters, onFiltersChang
   return (
     <div className={cn("flex gap-4", className)}>
       <Select
-        placeholder="Blockchain"
-        style={{ width: 200 }}
-        onChange={handleBlockchainChange}
-        allowClear
-        value={filters.blockchain}
-        size="large"
+        onValueChange={handleBlockchainChange}
+        value={filters.blockchain || ''}
       >
-        <Option value="ethereum">Ethereum</Option>
-        <Option value="bitcoin">Bitcoin</Option>
-        {/* Add more blockchains as needed */}
+        <SelectTrigger className="w-[200px] h-12">
+          <SelectValue placeholder="Blockchain" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="ethereum">Ethereum</SelectItem>
+          <SelectItem value="bitcoin">Bitcoin</SelectItem>
+          {/* Add more blockchains as needed */}
+        </SelectContent>
       </Select>
+
       <Select
-        placeholder="Status"
-        style={{ width: 200 }}
-        onChange={handleStatusChange}
-        allowClear
-        value={filters.isActive}
-        size="large"
+        onValueChange={(value) => handleStatusChange(value === 'true')}
+        value={filters.isActive !== undefined ? filters.isActive.toString() : ''}
       >
-        <Option value={true}>Active</Option>
-        <Option value={false}>Inactive</Option>
+        <SelectTrigger className="w-[200px] h-12">
+          <SelectValue placeholder="Status" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="true">Active</SelectItem>
+          <SelectItem value="false">Inactive</SelectItem>
+        </SelectContent>
       </Select>
       {/* <Input.Search
         placeholder="Search by entity name"

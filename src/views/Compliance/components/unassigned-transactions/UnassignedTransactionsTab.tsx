@@ -8,7 +8,7 @@ import BulkSelectComponent from '../BulkSelectComponent';
 import FilterPanelComponent from '../FilterPanelComponent';
 import { selectCurrentOrganization } from '../../../../store/slices/organizationsSlice';
 import { useAppSelector } from '../../../../store/hooks';
-import { 
+import {
   useComplianceTransactions
 } from '../../../../hooks/useComplianceTransactions';
 
@@ -19,7 +19,8 @@ interface UnassignedTransactionsTabProps {
 
 const UnassignedTransactionsTab: React.FC<UnassignedTransactionsTabProps> = ({ initialStatusFilter }) => {
   const organization = useAppSelector(selectCurrentOrganization);
-  
+  const [filterForm] = Form.useForm();
+
   // Local state for pagination, sorting, and filters
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
@@ -73,7 +74,6 @@ const UnassignedTransactionsTab: React.FC<UnassignedTransactionsTabProps> = ({ i
   
   // Entity modal state
   const [modalVisible, setModalVisible] = useState<boolean>(false);
-  const [form] = Form.useForm();
   
   // Bulk selection state
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
@@ -101,17 +101,17 @@ const UnassignedTransactionsTab: React.FC<UnassignedTransactionsTabProps> = ({ i
     });
   }, [organization, currentPage, pageSize, initialStatusFilter, sortBy, sortOrder]);
 
-  // Update form when initialStatusFilter changes
+  // Update filters when initialStatusFilter changes
   useEffect(() => {
     if (initialStatusFilter !== undefined) {
-      // Update form to reflect the status filter
+      // Update filters to reflect the status filter
       if (initialStatusFilter) {
-        form.setFieldsValue({ status: initialStatusFilter.split(',')[0] }); // Set first status for single select
+        setFilters(prev => ({ ...prev, status: initialStatusFilter.split(',')[0] }));
       } else {
-        form.setFieldsValue({ status: undefined });
+        setFilters(prev => ({ ...prev, status: undefined }));
       }
     }
-  }, [initialStatusFilter, form]);
+  }, [initialStatusFilter]);
 
   // Extract unique filter options from transaction data
   useEffect(() => {
@@ -203,11 +203,11 @@ const UnassignedTransactionsTab: React.FC<UnassignedTransactionsTabProps> = ({ i
   
   // Clear all filters
   const handleClearFilters = () => {
-    form.resetFields();
+    filterForm.resetFields();
     setCurrentPage(1);
     setSortBy('timestamp');
     setSortOrder('desc');
-    const newFilters = { 
+    const newFilters = {
       status: initialStatusFilter,
       page: 1,
       limit: pageSize,
@@ -259,7 +259,7 @@ const UnassignedTransactionsTab: React.FC<UnassignedTransactionsTabProps> = ({ i
       />
       
       <FilterPanelComponent
-        form={form}
+        form={filterForm}
         availableBlockchains={availableBlockchains}
         showStatusFilter={false}
         showAssignedToFilter={false}

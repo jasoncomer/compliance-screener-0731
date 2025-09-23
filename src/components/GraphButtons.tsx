@@ -1,29 +1,8 @@
-import { RadarChartOutlined } from '@ant-design/icons';
-import { Button } from 'antd';
 import React from 'react';
-import styled from 'styled-components';
+import { Button } from '@/components/ui/button';
+import { Radar } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
-const GraphButtonsWrapper = styled.div`
-  position: absolute;
-  top: 200px;
-  left: 15px;
-  z-index: 9;
-  display: flex;
-  transition: all 0.5s;
-
-  .anticon {
-    cursor: pointer;
-  }
-
-  .buttons-container {
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-    padding: 5px;
-    background: white;
-    border-radius: 5px;
-  }
-`;
 
 interface Props {
   onClick?: () => void;
@@ -41,28 +20,32 @@ const GraphButtons: React.FC<Props> = ({ onClick }) => {
   // };
 
   return (
-    <GraphButtonsWrapper
-      className="graph-buttons"
+    <div
+      className={cn(
+        "graph-buttons",
+        "absolute top-[200px] left-[15px] z-[9] flex transition-all duration-500"
+      )}
       // onMouseEnter={handleMouseEnter}
       // onMouseLeave={handleMouseLeave}
     >
       <Button
-        type="primary"
-        shape="circle"
-        size='large'
-        icon={<RadarChartOutlined />}
+        variant="default"
+        size="icon"
+        className="h-12 w-12 rounded-full"
         onClick={onClick}
-      />
+      >
+        <Radar className="h-6 w-6" />
+      </Button>
 
       {/* {isHovered && (
-        <div className="buttons-container">
+        <div className="buttons-container flex flex-col gap-[5px] p-[5px] bg-white rounded-[5px]">
           <button>Button 1</button>
           <button>Button 2</button>
           <button>Button 3</button>
           <button>Button 4</button>
         </div>
       )} */}
-    </GraphButtonsWrapper>
+    </div>
   );
 };
 

@@ -1,177 +1,29 @@
 import React, { useState } from 'react';
-import { Button, notification } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../api/api';
 import Input from '../components/common/Input';
-import { useTheme } from '../context/ThemeContext';
-import { colors } from '@/design-system/tokens'
 import { useAnalytics } from '../hooks/useAnalytics';
 import PageTransition from '../components/PageTransition';
-import styled from 'styled-components';
+import { cn } from '../lib/utils';
 
-import type { NotificationArgsProps } from 'antd';
-
-type NotificationPlacement = NotificationArgsProps['placement'];
-
-// Styled components for modern design - matching Login view
-const RegisterContainer = styled.div<{ $theme: string }>`
-  min-height: 100vh;
-  width: 100vw;
-  background: ${({ $theme }) => $theme === 'dark' ? 'linear-gradient(135deg, #0f0f23 0%, #1a1a2e 100%)' : 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)'};
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
-`;
-
-const RegisterCard = styled.div<{ $theme: string }>`
-  background: ${({ $theme }) => $theme === 'dark' ? 'rgba(30, 30, 30, 0.95)' : 'rgba(255, 255, 255, 0.95)'};
-  backdrop-filter: blur(20px);
-  border-radius: 24px;
-  padding: 48px;
-  width: 100%;
-  max-width: 480px;
-  box-shadow: ${({ $theme }) => $theme === 'dark' 
-    ? '0 25px 50px -12px rgba(0, 0, 0, 0.8)' 
-    : '0 25px 50px -12px rgba(0, 0, 0, 0.1)'};
-  border: ${({ $theme }) => $theme === 'dark' 
-    ? '1px solid rgba(255, 255, 255, 0.1)' 
-    : '1px solid rgba(0, 0, 0, 0.05)'};
-`;
-
-const LogoSection = styled.div`
-  text-align: center;
-  margin-bottom: 40px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-`;
-
-const LogoContainer = styled.div<{ $theme: string }>`
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 280px;
-  height: 130px;
-  margin-bottom: 20px;
-`;
-
-const Logo = styled.img<{ $theme: string }>`
-  width: 280px;
-  height: 130px;
-  border-radius: 16px;
-  filter: ${({ $theme }) => $theme === 'dark' ? 'brightness(0.9) contrast(1.1)' : 'brightness(1) contrast(1)'};
-  opacity: 0.9;
-  transition: all 0.3s ease;
-  
-  &:hover {
-    opacity: 1;
-    transform: scale(1.05);
-  }
-`;
-
-
-
-const Tagline = styled.p<{ $theme: string }>`
-  font-size: 14px;
-  color: ${({ $theme }) => $theme === 'dark' ? '#a0aec0' : '#718096'};
-  margin: 0;
-  font-weight: 400;
-`;
-
-const RegisterTitle = styled.h2<{ $theme: string }>`
-  font-size: 28px;
-  font-weight: 600;
-  color: ${({ $theme }) => $theme === 'dark' ? '#ffffff' : '#1a202c'};
-  margin: 0 0 32px 0;
-  text-align: center;
-  letter-spacing: -0.025em;
-`;
-
-const FormSection = styled.form`
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-`;
-
-const InputGroup = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-`;
-
-const NameRow = styled.div`
-  display: flex;
-  gap: 16px;
-  
-  @media (max-width: 480px) {
-    flex-direction: column;
-  }
-`;
-
-const ActionButtons = styled.div`
-  display: flex;
-  gap: 16px;
-  margin-top: 8px;
-`;
-
-const StyledButton = styled(Button)<{ variant: 'primary' | 'secondary'; $theme?: string }>`
-  flex: 1;
-  height: 48px;
-  border-radius: 12px;
-  font-weight: 600;
-  font-size: 14px;
-  border: ${({ variant, $theme }) => variant === 'secondary' 
-    ? `2px solid ${$theme === 'dark' ? '#4a5568' : '#e2e8f0'}` 
-    : 'none'};
-  background: ${({ variant }) => variant === 'primary' 
-    ? colors.brand.primary 
-    : 'transparent'};
-  color: ${({ variant, $theme }) => variant === 'primary' 
-    ? '#ffffff' 
-    : $theme === 'dark' ? '#ffffff' : '#1a202c'};
-  
-  &:hover {
-    background: ${({ variant, $theme }) => variant === 'primary' 
-      ? colors.brand.primaryDark 
-      : $theme === 'dark' ? '#4a5568' : '#f7fafc'};
-    border-color: ${({ variant, $theme }) => variant === 'secondary' 
-      ? $theme === 'dark' ? '#718096' : '#cbd5e0' 
-      : 'transparent'};
-  }
-  
-  &:focus {
-    box-shadow: 0 0 0 2px ${colors.brand.primary}40;
-  }
-`;
 
 const Register = () => {
   const navigate = useNavigate();
-  const [notifApi, contextHolder] = notification.useNotification();
   const { trackEvent, trackError } = useAnalytics();
-  const { theme } = useTheme();
 
   const [name, setName] = useState('');
   const [surname, setSurname] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-
-  const openNotification = (placement: NotificationPlacement, message: string, description: string) => {
-    notifApi[message === 'Success' ? 'success' : 'error']({
-      message,
-      description,
-      placement,
-      duration: 4,
-    });
-  };
+  const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   const handleSubmit = async (event: React.FormEvent) => {
     if (loading) return;
-    
+
     if (!name || !surname || !email || !password) {
-      openNotification('topRight', 'Error', 'Please fill in all fields');
+      setNotification({ type: 'error', message: 'Please fill in all fields' });
+      setTimeout(() => setNotification(null), 4000);
       return;
     }
 
@@ -183,22 +35,25 @@ const Register = () => {
       const { data } = response;
       const { user } = data;
       const { accessToken } = user;
-      
+
       // Save to local storage
       localStorage.setItem('accessToken', accessToken);
       localStorage.setItem('user', JSON.stringify(user));
-      
+
       trackEvent('registration_success', { method: 'email' });
-      openNotification('topRight', 'Success', 'Account created successfully!');
-      
+      setNotification({ type: 'success', message: 'Account created successfully!' });
+
       // Redirect to welcome page
-      window.location.href = '/welcome';
+      setTimeout(() => {
+        window.location.href = '/welcome';
+      }, 1000);
     } catch (error: any) {
       console.error('Registration error:', error);
       trackError(error, { context: 'user_registration' });
-      
+
       const errorMessage = error.response?.data?.message || 'Error creating account. Please check your details and try again.';
-      openNotification('topRight', 'Registration Failed', errorMessage);
+      setNotification({ type: 'error', message: errorMessage });
+      setTimeout(() => setNotification(null), 4000);
     } finally {
       setLoading(false);
     }
@@ -213,75 +68,91 @@ const Register = () => {
 
   return (
     <PageTransition>
-      <RegisterContainer $theme={theme}>
-        {contextHolder}
-        <RegisterCard $theme={theme}>
-        <LogoSection>
-          <LogoContainer $theme={theme}>
-            <Logo 
-              src='/aws_blockscout_banner_logo-removebg-preview.png' 
-              alt="Blockscout Research Logo"
-              $theme={theme}
-            />
-          </LogoContainer>
-          <Tagline $theme={theme}>Advanced blockchain analytics and compliance</Tagline>
-        </LogoSection>
-        
-        <RegisterTitle $theme={theme}>Create your account</RegisterTitle>
-        
-        <FormSection onSubmit={handleSubmit}>
-          <NameRow>
-            <Input
-              type="text"
-              value={name}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setName(e.target.value)}
-              placeholder='First Name'
-            />
-            <Input
-              type="text"
-              value={surname}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSurname(e.target.value)}
-              placeholder='Last Name'
-            />
-          </NameRow>
+      <div className="min-h-screen w-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-950 dark:to-gray-900 flex items-center justify-center p-5">
+        {notification && (
+          <div className={cn(
+            "fixed top-5 right-5 px-5 py-4 rounded-lg shadow-lg z-[1001] animate-slide-in",
+            notification.type === 'success' ? 'bg-green-500' : 'bg-red-500',
+            "text-white"
+          )}>
+            <div className="text-sm">{notification.message}</div>
+          </div>
+        )}
 
-          <InputGroup>
-            <Input
-              type="email"
-              value={email}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
-              placeholder='Enter your email'
-            />
-            <Input
-              type="password"
-              value={password}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
-              placeholder='Create a password'
-            />
-          </InputGroup>
-          
-          <ActionButtons>
-            <StyledButton 
-              type='default' 
-              variant="secondary"
-              $theme={theme}
-              onClick={navLogin}
-            >
-              Back to login
-            </StyledButton>
-            <StyledButton 
-              type="primary" 
-              variant="primary"
-              $theme={theme}
-              htmlType="submit" 
-              loading={loading}
-            >
-              Create account
-            </StyledButton>
-          </ActionButtons>
-        </FormSection>
-      </RegisterCard>
-    </RegisterContainer>
+        <div className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl rounded-3xl p-12 w-full max-w-[480px] shadow-2xl dark:shadow-black/50 border border-gray-200 dark:border-gray-800">
+          <div className="text-center mb-10 flex flex-col items-center justify-center">
+            <div className="flex items-center justify-center w-[280px] h-[130px] mb-5">
+              <img
+                src='/aws_blockscout_banner_logo-removebg-preview.png'
+                alt="Blockscout Research Logo"
+                className="w-[280px] h-[130px] rounded-2xl opacity-90 hover:opacity-100 hover:scale-105 transition-all duration-300"
+              />
+            </div>
+            <p className="text-sm text-gray-600 dark:text-gray-400 font-normal">
+              Advanced blockchain analytics and compliance
+            </p>
+          </div>
+
+          <h2 className="text-3xl font-semibold text-gray-900 dark:text-white mb-8 text-center tracking-tight">
+            Create your account
+          </h2>
+
+          <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+            <div className="flex gap-4 max-[480px]:flex-col">
+              <Input
+                type="text"
+                value={name}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setName(e.target.value)}
+                placeholder='First Name'
+              />
+              <Input
+                type="text"
+                value={surname}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSurname(e.target.value)}
+                placeholder='Last Name'
+              />
+            </div>
+
+            <div className="flex flex-col gap-4">
+              <Input
+                type="email"
+                value={email}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
+                placeholder='Enter your email'
+              />
+              <Input
+                type="password"
+                value={password}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
+                placeholder='Create a password'
+              />
+            </div>
+
+            <div className="flex gap-4 mt-2">
+              <button
+                type="button"
+                onClick={navLogin}
+                className="flex-1 h-12 rounded-xl font-semibold text-sm bg-transparent text-gray-900 dark:text-gray-50 border-2 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 hover:border-gray-300 dark:hover:border-gray-600 transition-all focus:outline-none focus:ring-2 focus:ring-[#e87e4f]/40"
+              >
+                Back to login
+              </button>
+              <button
+                type="submit"
+                disabled={loading}
+                className={cn(
+                  "flex-1 h-12 rounded-xl font-semibold text-sm bg-[#e87e4f] text-white border-none hover:bg-[#d6693a] transition-all focus:outline-none focus:ring-2 focus:ring-[#e87e4f]/40 flex items-center justify-center",
+                  loading && "opacity-70 cursor-not-allowed"
+                )}
+              >
+                Create account
+                {loading && (
+                  <span className="ml-2 inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                )}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
     </PageTransition>
   );
 };

@@ -1,6 +1,7 @@
 import { Component, ErrorInfo, ReactNode } from 'react';
-import { Alert, Button } from 'antd';
-import { ReloadOutlined } from '@ant-design/icons';
+import { Button } from '@/components/ui/button';
+import { RefreshCw, AlertCircle } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface Props {
   children: ReactNode;
@@ -39,48 +40,58 @@ class ErrorBoundary extends Component<Props, State> {
       }
 
       return (
-        <div style={{ padding: '20px', textAlign: 'center' }}>
-          <Alert
-            message="Something went wrong"
-            description={
-              <div>
-                <p>An error occurred while rendering this component.</p>
-                {process.env.NODE_ENV === 'development' && this.state.error && (
-                  <details style={{ marginTop: '10px', textAlign: 'left' }}>
-                    <summary>Error Details</summary>
-                    <pre style={{ 
-                      background: '#f5f5f5', 
-                      padding: '10px', 
-                      borderRadius: '4px',
-                      fontSize: '12px',
-                      overflow: 'auto'
-                    }}>
-                      {this.state.error.toString()}
-                      {this.state.errorInfo && (
-                        <>
-                          <br />
-                          <br />
-                          {this.state.errorInfo.componentStack}
-                        </>
-                      )}
-                    </pre>
-                  </details>
-                )}
+        <div className="p-5 text-center">
+          <div className={cn(
+            "relative rounded-lg border p-4",
+            "border-red-200 bg-red-50 dark:border-red-900 dark:bg-red-950/20"
+          )}>
+            <div className="flex">
+              <div className="flex-shrink-0">
+                <AlertCircle className="h-5 w-5 text-red-400" aria-hidden="true" />
               </div>
-            }
-            type="error"
-            showIcon
-            action={
-              <Button 
-                size="small" 
-                danger 
-                icon={<ReloadOutlined />}
-                onClick={this.handleReload}
-              >
-                Reload
-              </Button>
-            }
-          />
+              <div className="ml-3 flex-1">
+                <h3 className="text-sm font-medium text-red-800 dark:text-red-200">
+                  Something went wrong
+                </h3>
+                <div className="mt-2 text-sm text-red-700 dark:text-red-300">
+                  <p>An error occurred while rendering this component.</p>
+                  {process.env.NODE_ENV === 'development' && this.state.error && (
+                    <details className="mt-2.5 text-left">
+                      <summary className="cursor-pointer hover:underline">
+                        Error Details
+                      </summary>
+                      <pre className={cn(
+                        "mt-2 overflow-auto rounded",
+                        "bg-gray-100 dark:bg-gray-900",
+                        "p-2.5 text-xs",
+                        "border border-gray-200 dark:border-gray-800"
+                      )}>
+                        {this.state.error.toString()}
+                        {this.state.errorInfo && (
+                          <>
+                            <br />
+                            <br />
+                            {this.state.errorInfo.componentStack}
+                          </>
+                        )}
+                      </pre>
+                    </details>
+                  )}
+                </div>
+                <div className="mt-4">
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    onClick={this.handleReload}
+                    className="inline-flex items-center"
+                  >
+                    <RefreshCw className="mr-2 h-4 w-4" />
+                    Reload
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       );
     }

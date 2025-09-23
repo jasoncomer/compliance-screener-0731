@@ -1,6 +1,6 @@
 import React from 'react';
-import { Card } from 'antd';
-import { useTheme } from '../../../context/ThemeContext';
+import { Card } from '@/components/ui/card';
+import { cn } from '@/lib/utils';
 import { useAttribution } from '../../../context/AttributionContext';
 import { useAppSelector } from '../../../store/hooks';
 import { selectCurrentOrganization } from '../../../store/slices/organizationsSlice';
@@ -20,7 +20,6 @@ interface AddressAttributionEntitiesProps {
 }
 
 const AddressAttributionEntities: React.FC<AddressAttributionEntitiesProps> = ({ address }) => {
-  const { theme } = useTheme();
   const { attributions } = useAttribution();
   const organization = useAppSelector(selectCurrentOrganization);
   const { itemsMap } = useAppSelector((state: RootState) => state.sot);
@@ -130,16 +129,10 @@ const AddressAttributionEntities: React.FC<AddressAttributionEntitiesProps> = ({
     <EntitiesContainer>
       {attributions[address]?.entity && (
         <Card
-          style={{ 
-            flex: 1, 
-            backgroundColor: theme === 'dark' ? 'hsl(222.2 84% 4.9%)' : '#f3f4f6',
-            marginRight: '0.5rem',
-            height: 'fit-content',
-            maxHeight: '120px'
-          }}
-          className="rounded-lg"
-          bodyStyle={{ padding: '0.75rem' }}
-          bordered={false}
+          className={cn(
+            "flex-1 mr-2 h-fit max-h-[120px] rounded-lg border-0 p-3",
+            "bg-gray-100 dark:bg-gray-900"
+          )}
         >
           <div className="!bg-transparent dark:!bg-transparent !p-0 !mb-0">
             {renderEntityWithHover(attributions[address].entity, 'Entity')}
@@ -149,18 +142,12 @@ const AddressAttributionEntities: React.FC<AddressAttributionEntitiesProps> = ({
 
       {attributions[address]?.bo && (attributions[address]?.bo !== attributions[address]?.entity) && (
         <Card
-          style={{ 
-            flex: 1, 
-            backgroundColor: theme === 'dark' ? 'hsl(222.2 84% 4.9%)' : '#f3f4f6',
-            marginLeft: '0.5rem',
-            height: 'fit-content',
-            maxHeight: '120px'
-          }}
-          className="rounded-lg"
-          bodyStyle={{ padding: '0.75rem' }}
-          bordered={false}
+          className={cn(
+            "flex-1 ml-2 h-fit max-h-[120px] rounded-lg border-0 p-3",
+            "bg-gray-100 dark:bg-gray-900"
+          )}
         >
-          <div className="!bg-transparent dark:red !p-0 !mb-0">
+          <div className="!bg-transparent dark:!bg-transparent !p-0 !mb-0">
             {renderEntityWithHover(attributions[address].bo, 'Beneficial Owner')}
           </div>
         </Card>
@@ -168,16 +155,10 @@ const AddressAttributionEntities: React.FC<AddressAttributionEntitiesProps> = ({
 
       {attributions[address]?.custodian && (
         <Card
-          style={{ 
-            flex: 1, 
-            backgroundColor: theme === 'dark' ? 'hsl(222.2 84% 4.9%)' : '#f3f4f6',
-            marginLeft: '0.5rem',
-            height: 'fit-content',
-            maxHeight: '120px'
-          }}
-          className="rounded-lg"
-          bodyStyle={{ padding: '0.75rem' }}
-          bordered={false}
+          className={cn(
+            "flex-1 ml-2 h-fit max-h-[120px] rounded-lg border-0 p-3",
+            "bg-gray-100 dark:bg-gray-900"
+          )}
         >
           <div className="!bg-transparent dark:!bg-transparent !p-0 !mb-0">
             {renderEntityWithHover(attributions[address].custodian, 'Custodian', 'Custodian')}

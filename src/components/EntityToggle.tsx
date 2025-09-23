@@ -1,6 +1,6 @@
 import React from 'react';
-import { Switch } from 'antd';
-import { useTheme } from '../context/ThemeContext';
+import { Switch } from '@/components/ui/switch';
+import { cn } from '@/lib/utils';
 
 interface EntityToggleProps {
   isBeneficialOwner: boolean;
@@ -17,44 +17,45 @@ const EntityToggle: React.FC<EntityToggleProps> = ({
   beneficialOwnerName = "Beneficial Owner",
   disabled = false
 }) => {
-  const { theme } = useTheme();
-
   return (
-    <div className={`flex items-center justify-between p-3 rounded-lg border ${
-      theme === 'dark' 
-        ? 'bg-gray-800 border-gray-700' 
-        : 'bg-gray-50 border-gray-200'
-    }`}>
+    <div className={cn(
+      "flex items-center justify-between p-3 rounded-lg border",
+      "bg-gray-50 border-gray-200",
+      "dark:bg-gray-800 dark:border-gray-700"
+    )}>
       <div className="flex-1">
-        <div className={`text-sm font-medium ${
-          theme === 'dark' ? 'text-gray-200' : 'text-gray-700'
-        }`}>
+        <div className={cn(
+          "text-sm font-medium",
+          "text-gray-700 dark:text-gray-200"
+        )}>
           Viewing: {isBeneficialOwner ? beneficialOwnerName : custodialEntityName}
         </div>
-        <div className={`text-xs ${
-          theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
-        }`}>
-          {isBeneficialOwner 
-            ? "Showing beneficial owner information" 
+        <div className={cn(
+          "text-xs",
+          "text-gray-500 dark:text-gray-400"
+        )}>
+          {isBeneficialOwner
+            ? "Showing beneficial owner information"
             : "Showing custodial entity information"
           }
         </div>
       </div>
       <div className="flex items-center space-x-3">
-        <span className={`text-sm ${
-          theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
-        }`}>
+        <span className={cn(
+          "text-sm",
+          "text-gray-600 dark:text-gray-300"
+        )}>
           {custodialEntityName}
         </span>
         <Switch
           checked={isBeneficialOwner}
-          onChange={onToggle}
+          onCheckedChange={onToggle}
           disabled={disabled}
-          size="small"
         />
-        <span className={`text-sm ${
-          theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
-        }`}>
+        <span className={cn(
+          "text-sm",
+          "text-gray-600 dark:text-gray-300"
+        )}>
           {beneficialOwnerName}
         </span>
       </div>

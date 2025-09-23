@@ -1,7 +1,5 @@
 import React from 'react';
-import { Select } from 'antd';
-
-const { Option } = Select;
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 export interface CurrencySelectorProps {
   value: string;
@@ -22,14 +20,18 @@ export const conversionRates: { [key: string]: number } = {
 
 const CurrencySelector: React.FC<CurrencySelectorProps> = ({ value, onChange }) => {
   return (
-    <Select 
-      value={value} 
-      onChange={onChange} 
-      style={{ width: 120 }}
+    <Select
+      value={value}
+      onValueChange={onChange}
     >
-      <Option value="USD">USD</Option>
-      <Option value="GBP">GBP</Option>
-      <Option value="MXN">MXN</Option>
+      <SelectTrigger className="w-[120px]">
+        <SelectValue placeholder="Select currency" />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value="USD">USD</SelectItem>
+        <SelectItem value="GBP">GBP</SelectItem>
+        <SelectItem value="MXN">MXN</SelectItem>
+      </SelectContent>
     </Select>
   );
 };

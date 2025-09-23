@@ -1,5 +1,4 @@
 import styled, { css, keyframes } from 'styled-components';
-import { Card } from 'antd';
 import { colors } from '@/design-system/tokens'
 
 const transitionLength = '0.5s';
@@ -26,19 +25,19 @@ const fadeOut = keyframes`
   }
 `;
 
-export const StyledCard = styled(Card)`
+// StyledCard is now a div styled to look like a card
+export const StyledCard = styled.div`
   max-width: 800px;
   width: fit-content;
   margin: auto;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  padding: 32px;
 
   &.form-view {
     max-width: 600px;
-    width: 100%;
-  }
-
-  .ant-card-body {
-    padding: 32px;
     width: 100%;
   }
 `;

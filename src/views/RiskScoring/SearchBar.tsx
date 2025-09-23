@@ -1,5 +1,6 @@
 import React from 'react';
-import { Card, Space, Button } from 'antd';
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import Input from '../../components/common/Input';
 
 interface SearchBarProps {
@@ -23,27 +24,25 @@ const SearchBar: React.FC<SearchBarProps> = ({
   };
 
   return (
-    <Card style={{ marginBottom: '24px' }}>
-      <Space>
+    <Card className="mb-6 p-6">
+      <div className="flex gap-3">
         <Input
           placeholder="Enter blockchain address"
           value={address}
           onChange={(e: React.ChangeEvent<HTMLInputElement>) => onAddressChange(e.target.value)}
-          style={{ width: '400px' }}
-          onPressEnter={onSubmit}
+          className="w-[400px]"
           enterButton="Analyze Risk"
           loading={loading}
-          onSearch={onSubmit}
+          onSearch={() => onSubmit()}
         />
         <Button
-          type="default"
-          size="middle"
+          variant="outline"
           onClick={handleViewInExplorer}
           disabled={!address}
         >
           View in Block Explorer
         </Button>
-      </Space>
+      </div>
     </Card>
   );
 };

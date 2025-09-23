@@ -7,7 +7,7 @@ import { BtcTransaction } from '../../typings/BtcTransaction';
 import { useTheme } from '../../context/ThemeContext';
 import { useAttribution } from '../../context/AttributionContext';
 import Pagination from '../../components/common/Pagination';
-import { Tooltip } from 'antd';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { IBtcBlock } from '../../typings/Block';
 import {
   BlockLayout,
@@ -141,7 +141,21 @@ const BlockView: React.FC = () => {
               <Row><Label>Version</Label><Value>{blockData.version}</Value></Row>
               <Row><Label>Bits</Label><Value>{blockData.bits}</Value></Row>
               <Row><Label>Nonce</Label><Value>{blockData.nonce}</Value></Row>
-              <Row><Label>Coinbase Param</Label><Value><Tooltip title={blockData.coinbase_param}>{truncateStringMiddle(blockData.coinbase_param || '', 18)}</Tooltip></Value></Row>
+              <Row>
+                <Label>Coinbase Param</Label>
+                <Value>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <span>{truncateStringMiddle(blockData.coinbase_param || '', 18)}</span>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>{blockData.coinbase_param}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </Value>
+              </Row>
               <Row><Label>Merkle Root</Label><Value><span style={{ fontFamily: 'monospace', color: '#fff' }}>{blockData.merkle_root}</span></Value></Row>
             </div>
           </div>

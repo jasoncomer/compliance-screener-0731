@@ -22,6 +22,7 @@ export interface LogoListResponse {
 export class LogoService {
   private static readonly ENTITY_LOGOS_BASE = 'https://storage.googleapis.com/entity-logos';
   private static readonly ENTITY_TYPE_LOGOS_BASE = 'https://storage.googleapis.com/entity-type-logos';
+  static readonly APP_ASSETS_BASE = 'https://storage.googleapis.com/blockscout_assets';
   
   private static logoCache = new Map<string, string | null>();
 
