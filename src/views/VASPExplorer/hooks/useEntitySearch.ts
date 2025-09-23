@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
-import { ConsolidatedEntity } from '../types';
+
 import { SOT } from '../../../typings/interfaces';
-import { getEntityTags, getAssociateCountries, getSocialMediaProfiles } from '../../../utils/sotUtils';
+import { getAssociateCountries, getEntityTags, getSocialMediaProfiles } from '../../../utils/sotUtils';
+import { ConsolidatedEntity } from '../types';
 
 interface UseEntitySearchProps {
   sot: SOT[];

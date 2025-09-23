@@ -1,7 +1,9 @@
 import React, { forwardRef, useMemo } from 'react';
-import EntityOption from './EntityOption';
-import { ConsolidatedEntity } from '../types';
+
 import { SOT } from '../../../typings/interfaces';
+import { ConsolidatedEntity } from '../types';
+
+import EntityOption from './EntityOption';
 
 interface SearchDropdownProps {
   isOpen: boolean;
@@ -24,7 +26,7 @@ const SearchDropdown = forwardRef<HTMLDivElement, SearchDropdownProps>(({
 }, ref) => {
   const headerTitle = useMemo(() => (title: string, count: number) => {
     return (
-      <div className="px-3 pt-3 pb-2 mt-1 bg-gray-50 dark:bg-gray-700">
+      <div className="px-3 pt-3 pb-2 bg-gray-50 dark:bg-gray-700">
         <span className="text-sm font-semibold uppercase tracking-wide text-gray-600 dark:text-white">
           {title}
         </span>

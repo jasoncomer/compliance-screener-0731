@@ -1,4 +1,5 @@
 import React from 'react';
+
 import { OptionCardProps } from '../types';
 import { OptionCard as StyledOptionCard } from '../WelcomeStyles';
 

@@ -1,6 +1,8 @@
-import React, { useState, useMemo, useEffect, useRef } from 'react';
+import React, { useEffect, useMemo, useRef,useState } from 'react';
+
+import { BarChart3,Calendar, ChevronDown } from 'lucide-react';
+
 import { useTheme } from "../../../../context/ThemeContext";
-import { ChevronDown, Calendar, BarChart3 } from 'lucide-react';
 import { BtcTransaction } from "../../../../typings/BtcTransaction";
 
 interface TransactionActivityProps {

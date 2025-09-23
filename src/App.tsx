@@ -1,39 +1,40 @@
+import { useEffect, useState } from "react";
+
 import {
+  Navigate,
   Route,
   Routes,
-  Navigate,
   useLocation
 } from "react-router-dom";
-import { useEffect, useState } from "react";
+
+import { setAuthToken } from "./api/api";
+import OAuthCallback from './components/OAuthCallback';
+import ProtectedRoute from './components/ProtectedRoute';
+import { message,MessageContainer, NotificationContainer } from "./components/ui/message";
+import { PageSpinner } from "./components/ui/spinner";
+import { Toaster } from './components/ui/toaster';
+import { config } from "./config/config";
+import { useAppContext } from "./context/AppContext";
+import { AutosaveProvider } from './context/AutosaveContext';
+import { FlowTraceProvider } from './context/FlowTraceContext';
+import { useTheme } from "./context/ThemeContext";
+import { useAnalytics } from './hooks/useAnalytics';
+import { useAppDispatch } from './store/hooks';
+import { fetchOrganizations } from './store/slices/organizationsSlice';
+import Admin from './views/Admin';
+import Alerts from './views/Alerts';
+import BlockExplorer from './views/blockexplorer/BlockExplorer';
+import ComplianceScreener from './views/Compliance/ComplianceScreener';
+import { ComplianceDashboard } from "./views/compliance-v2/compliance-dashboard";
+import FlowTrace from './views/Flowtrace/FlowTracePage';
+import Home from "./views/Home";
 import Login from './views/Login';
 import Register from "./views/Register";
 import ResetPassword from "./views/ResetPassword";
-import Home from "./views/Home";
-import { useAppContext } from "./context/AppContext";
-import { config } from "./config/config";
-import { setAuthToken } from "./api/api";
-import { useTheme } from "./context/ThemeContext";
-import { PageSpinner } from "./components/ui/spinner";
-import { MessageContainer, NotificationContainer, message } from "./components/ui/message";
-import ComplianceScreener from './views/Compliance/ComplianceScreener';
-import Admin from './views/Admin';
-import Alerts from './views/Alerts';
-import BlockHam from './views/VASPExplorer/VASPExplorer';
-import BlockExplorer from './views/blockexplorer/BlockExplorer';
-
 import RiskDashboard from './views/RiskDashboard/index';
 import Settings from './views/Settings';
-import FlowTrace from './features/flowtrace/FlowTracePage';
-import ProtectedRoute from './components/ProtectedRoute';
+import { VASPExplorer } from './views/VASPExplorer';
 import Welcome from './views/Welcome/index';
-import { useAppDispatch } from './store/hooks';
-import { fetchOrganizations } from './store/slices/organizationsSlice';
-import { FlowTraceProvider } from './context/FlowTraceContext';
-import { useAnalytics } from './hooks/useAnalytics';
-import { ComplianceDashboard } from "./views/compliance-v2/compliance-dashboard";
-import { Toaster } from './components/ui/toaster';
-import OAuthCallback from './components/OAuthCallback';
-import { AutosaveProvider } from './context/AutosaveContext';
 
 function App() {
   const dispatch = useAppDispatch();
@@ -135,7 +136,7 @@ function App() {
             <Route path="compliance-dashboard" element={<ComplianceDashboard />} />
             <Route path="admin" element={<Admin />} />
             <Route path="alerts" element={<Alerts />} />
-            <Route path="blockham" element={<BlockHam />} />
+            <Route path="vasp-explorer" element={<VASPExplorer />} />
             <Route path="block-explorer/*" element={<BlockExplorer />} />
 
             <Route path="risk-dashboard" element={<RiskDashboard />} />

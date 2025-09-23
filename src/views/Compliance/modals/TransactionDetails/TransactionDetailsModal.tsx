@@ -1,33 +1,35 @@
 import React, { FC, useMemo, useState } from 'react';
-import { IComplianceTransaction } from '../../../../typings/compliance';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
+
+import { 
+  Bitcoin, 
+  Building2, 
+  Clock,
+  Eye,
+  FileText, 
+  Hash, 
+  History,
+  Shield, 
+  User} from "lucide-react";
+
 import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Textarea } from "@/components/ui/textarea";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+
+import EntityDisplayCard from '../../../../components/EntityDisplayCard';
+import { useAttribution } from '../../../../context/AttributionContext';
+import { useCryptoPrices } from '../../../../hooks/useCryptoPrices';
 import { useAppSelector } from '../../../../store/hooks';
 import { selectTransactionById } from '../../../../store/slices/complianceTransactionsSlice';
 import { selectActiveOrgMembersMap } from '../../../../store/slices/organizationsSlice';
-import { useAttribution } from '../../../../context/AttributionContext';
-import { useCryptoPrices } from '../../../../hooks/useCryptoPrices';
+import { IComplianceTransaction } from '../../../../typings/compliance';
 import { getUserDisplayName } from '../../../../utils/display-labels';
-import { getComplianceReportStatusClassName } from '../../utils/compliance.utils';
-import EntityDisplayCard from '../../../../components/EntityDisplayCard';
 import TransactionRiskModal from '../../components/modals/TransactionRiskModal';
+import { getComplianceReportStatusClassName } from '../../utils/compliance.utils';
 import CaseAssignmentHistoryModal from '../CaseAssignmentHistoryModal';
-import { 
-  Hash, 
-  Building2, 
-  Shield, 
-  FileText, 
-  Bitcoin, 
-  Eye,
-  Clock,
-  User,
-  History
-} from "lucide-react";
 
 interface TransactionDetailsModalProps {
   isVisible: boolean;

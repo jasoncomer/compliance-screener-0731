@@ -1,6 +1,8 @@
 import React, { forwardRef, useState } from 'react';
+
+import { EyeIcon, EyeOffIcon, LoaderIcon,SearchIcon } from 'lucide-react';
+
 import { cn } from '@/lib/utils';
-import { EyeIcon, EyeOffIcon, SearchIcon, LoaderIcon } from 'lucide-react';
 
 export interface CustomInputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement | HTMLTextAreaElement>, 'size' | 'type'> {
   error?: boolean;

@@ -1,19 +1,22 @@
 import React, { useState } from 'react';
-import styled from 'styled-components';
-import { colors } from '@/design-system/tokens'
-import { IComplianceTransaction } from '../../../../typings/compliance';
-import { getRiskScoreColor, getComplianceReportStatusColor } from '../../utils/compliance.utils';
-import { Tag, Button, Space } from 'antd';
+
 import { EyeOutlined } from '@ant-design/icons';
-import { useAppSelector } from '../../../../store/hooks';
-import { selectActiveOrgMembersMap } from '../../../../store/slices/organizationsSlice';
-import { getUserDisplayName } from '../../../../utils/display-labels';
-import { selectTransactionById } from '../../../../store/slices/complianceTransactionsSlice';
+import { Button, Space,Tag } from 'antd';
+import styled from 'styled-components';
+
+import { colors } from '@/design-system/tokens'
+
 import EntityQuickView from '../../../../components/EntityQuickView';
-import { SOT } from '../../../../typings/interfaces';
 import { useCryptoPrices } from '../../../../hooks/useCryptoPrices';
-import TransactionRiskModal from '../../components/modals/TransactionRiskModal';
+import { useAppSelector } from '../../../../store/hooks';
+import { selectTransactionById } from '../../../../store/slices/complianceTransactionsSlice';
+import { selectActiveOrgMembersMap } from '../../../../store/slices/organizationsSlice';
+import { IComplianceTransaction } from '../../../../typings/compliance';
 import { EComplianceTransactionStatus } from '../../../../typings/compliance';
+import { SOT } from '../../../../typings/interfaces';
+import { getUserDisplayName } from '../../../../utils/display-labels';
+import TransactionRiskModal from '../../components/modals/TransactionRiskModal';
+import { getComplianceReportStatusColor,getRiskScoreColor } from '../../utils/compliance.utils';
 
 // Status mapping for display labels
 const getStatusDisplayLabel = (status: EComplianceTransactionStatus): string => {

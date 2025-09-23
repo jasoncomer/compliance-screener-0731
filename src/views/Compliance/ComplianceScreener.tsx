@@ -1,14 +1,17 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useCallback, useEffect, useMemo,useState } from 'react';
+
+import { DatabaseOutlined, FileSearchOutlined, HistoryOutlined,TableOutlined } from '@ant-design/icons';
 import { Tabs } from 'antd';
-import { DatabaseOutlined, TableOutlined, FileSearchOutlined, HistoryOutlined } from '@ant-design/icons';
 import { Search } from 'lucide-react';
+
 import ViewWrapper from '../../components/ViewWrapper';
-import UnassignedTransactionsTab from './components/unassigned-transactions/UnassignedTransactionsTab';
-import MonitoredAddressesTab from './components/monitored-addresses/MonitoredAddressesTab';
-import ActiveCasesTab from './components/active-cases/ActiveCasesTab';
-import ArchivedCasesTab from './components/archived-cases/ArchivedCasesTab';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import { fetchMonitoredAddresses, selectAllAddresses } from '../../store/slices/monitoredAddressesSlice';
+
+import ActiveCasesTab from './components/active-cases/ActiveCasesTab';
+import ArchivedCasesTab from './components/archived-cases/ArchivedCasesTab';
+import MonitoredAddressesTab from './components/monitored-addresses/MonitoredAddressesTab';
+import UnassignedTransactionsTab from './components/unassigned-transactions/UnassignedTransactionsTab';
 
 type TabKey = 'transactions' | 'active-cases' | 'addresses' | 'archived-cases';
 
@@ -18,8 +21,6 @@ interface TabConfig {
   icon: React.ReactNode;
   component: React.ReactNode;
 }
-
-
 
 const ComplianceScreener: React.FC = () => {
   const dispatch = useAppDispatch();

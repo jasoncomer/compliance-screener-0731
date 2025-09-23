@@ -1,7 +1,9 @@
 import React, { forwardRef, useEffect, useRef } from 'react';
-import { Search, Loader2 } from 'lucide-react';
-import { cn } from '../../lib/utils';
+
+import { Loader2,Search } from 'lucide-react';
+
 import { useTheme } from '../../context/ThemeContext';
+import { cn } from '../../lib/utils';
 
 interface SearchInputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'type'> {
   variant?: 'default' | 'compact' | 'with-action';

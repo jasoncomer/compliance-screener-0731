@@ -1,24 +1,27 @@
 import React from 'react';
-import { 
-  Bitcoin, 
-  Clock, 
-  TrendingUp, 
-  TrendingDown, 
-  AlertTriangle,
-  CheckCircle,
-  XCircle,
-  Copy
-} from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
-import { cn } from '@/lib/utils';
-import { satsToBTC } from '../../../utils/crypto';
-import { colors } from '@/design-system/tokens'
-import { RiskScoringResponse } from '../../../typings/riskScoring';
-import AddressAttributionEntities from './AddressAttributionEntities';
-import { getEntityTypeLabel } from '../../../utils/display-labels';
-import { EEntityType } from '../../../typings/SOT';
-import { SimpleLogo } from '../../../components/common/Logo';
+
 import { Tag } from 'antd';
+import { 
+  AlertTriangle,
+  Bitcoin, 
+  CheckCircle,
+  Clock, 
+  Copy,
+  TrendingDown, 
+  TrendingUp, 
+  XCircle} from 'lucide-react';
+
+import { Badge } from '@/components/ui/badge';
+import { colors } from '@/design-system/tokens'
+import { cn } from '@/lib/utils';
+
+import { SimpleLogo } from '../../../components/common/Logo';
+import { RiskScoringResponse } from '../../../typings/riskScoring';
+import { EEntityType } from '../../../typings/SOT';
+import { satsToBTC } from '../../../utils/crypto';
+import { getEntityTypeLabel } from '../../../utils/display-labels';
+
+import AddressAttributionEntities from './AddressAttributionEntities';
 
 interface AddressSummaryProps {
   address: string | undefined;

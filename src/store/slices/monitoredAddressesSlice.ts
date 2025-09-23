@@ -1,13 +1,13 @@
-import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
+import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit';
+import { createSelector } from '@reduxjs/toolkit';
+
 import { api } from '../../api/api';
 import { 
-  MonitoredAddress, 
-  IAddressFilters, 
-  MonitoredAddressChange,
   AddressUploadFormat,
-  AddressUploadResponse 
-} from '../../typings/compliance';
-import { createSelector } from '@reduxjs/toolkit';
+  AddressUploadResponse, 
+  IAddressFilters, 
+  MonitoredAddress, 
+  MonitoredAddressChange} from '../../typings/compliance';
 import { RootState } from '../store';
 
 interface MonitoredAddressesState {

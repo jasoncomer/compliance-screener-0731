@@ -1,40 +1,42 @@
 import React, { useMemo, useState } from 'react';
-import { IComplianceTransaction, EComplianceTransactionStatus } from '../../../../typings/compliance';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import { useAppSelector, useAppDispatch } from '../../../../store/hooks';
-import { selectTransactionById, updateTransactionStatus } from '../../../../store/slices/complianceTransactionsSlice';
-import { selectActiveOrgMembersMap } from '../../../../store/slices/organizationsSlice';
+
+import { 
+  BarChart3,
+  Bitcoin, 
+  Building2, 
+  Clock,
+  Database,
+  Eye,
+  FileText, 
+  GitBranch,
+  Globe,
+  Hash, 
+  History,
+  Shield, 
+  User} from "lucide-react";
 import { useSelector } from 'react-redux';
-import { RootState } from '../../../../store/store';
+
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+
+import EntityDisplayCard from '../../../../components/EntityDisplayCard';
+import EntityQuickView from '../../../../components/EntityQuickView';
 import { useAttribution } from '../../../../context/AttributionContext';
 import { useCryptoPrices } from '../../../../hooks/useCryptoPrices';
+import { useAppDispatch,useAppSelector } from '../../../../store/hooks';
+import { selectTransactionById, updateTransactionStatus } from '../../../../store/slices/complianceTransactionsSlice';
+import { selectActiveOrgMembersMap } from '../../../../store/slices/organizationsSlice';
+import { RootState } from '../../../../store/store';
+import { EComplianceTransactionStatus,IComplianceTransaction } from '../../../../typings/compliance';
 import { getUserDisplayName } from '../../../../utils/display-labels';
-import { getComplianceReportStatusClassName } from '../../utils/compliance.utils';
-import EntityQuickView from '../../../../components/EntityQuickView';
-import EntityDisplayCard from '../../../../components/EntityDisplayCard';
 import TransactionRiskModal from '../../components/modals/TransactionRiskModal';
+import { getComplianceReportStatusClassName } from '../../utils/compliance.utils';
 import CaseAssignmentHistoryModal from '../CaseAssignmentHistoryModal';
-import { 
-  Hash, 
-  Building2, 
-  Shield, 
-  FileText, 
-  Bitcoin, 
-  Eye,
-  Clock,
-  User,
-  Globe,
-  BarChart3,
-  GitBranch,
-  Database,
-  History
-} from "lucide-react";
 
 interface AssignedTransactionDetailsModalProps {
   isVisible: boolean;

@@ -1,7 +1,8 @@
-import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import { RootState } from '../store';
+import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit';
+
 import { api } from '../../api/api';
-import { ISubscriptionTier, IOrganizationSubscription } from '../../typings/subscription';
+import { IOrganizationSubscription,ISubscriptionTier } from '../../typings/subscription';
+import { RootState } from '../store';
 
 interface SubscriptionState {
   tiers: ISubscriptionTier[];

@@ -1,11 +1,14 @@
 import React, { useState } from 'react';
-import { Modal, Button, Space, Tag } from 'antd';
+
 import { EyeOutlined } from '@ant-design/icons';
-import { useTheme } from '../../../context/ThemeContext';
+import { Button, Modal, Space, Tag } from 'antd';
+
 import { colors } from '@/design-system/tokens'
+
+import { useTheme } from '../../../context/ThemeContext';
+import { calculateSimpleRiskScore } from '../../../services/inputTransactionRiskService';
 import { IComplianceTransaction } from '../../../typings/compliance';
 import TransactionRiskModal from '../components/modals/TransactionRiskModal';
-import { calculateSimpleRiskScore } from '../../../services/inputTransactionRiskService';
 
 interface EntityModalProps {
   visible: boolean;

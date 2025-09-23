@@ -1,12 +1,14 @@
 import React from 'react';
+
 import { User } from 'lucide-react';
-import { Badge } from '../../../components/ui/badge';
-import EntityQuickView from '../../../components/EntityQuickView';
+
 import { SimpleLogo } from '../../../components/common/Logo';
-import { ConsolidatedEntity } from '../types';
+import EntityQuickView from '../../../components/EntityQuickView';
+import { Badge } from '../../../components/ui/badge';
 import { SOT } from '../../../typings/interfaces';
 import { EEntityType } from '../../../typings/SOT';
 import { getEntityTypeLabel } from '../../../utils/display-labels';
+import { ConsolidatedEntity } from '../types';
 
 interface EntityOptionProps {
   entity: ConsolidatedEntity;
@@ -26,8 +28,8 @@ const EntityOption: React.FC<EntityOptionProps> = React.memo(({
   onClick 
 }) => (
   <div
-    className={`px-3 py-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 ${
-      isHighlighted ? 'bg-gray-100 dark:bg-gray-700' : ''
+    className={`px-3 py-2 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 ${
+      isHighlighted ? 'bg-gray-200 dark:bg-gray-600' : ''
     }`}
     onClick={onClick}
   >

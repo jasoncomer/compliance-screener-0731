@@ -1,12 +1,15 @@
 import React, { useState } from 'react';
-import { BtcTransaction } from '../../../typings/BtcTransaction';
-import { BsBlock } from '../../../styles/Table';
-import BtcTransactionInputsOutputs from './BtcTransactionTableInputsOutputs';
-import styled from 'styled-components';
+
 import { Link } from 'react-router-dom';
+import styled from 'styled-components';
+
 import { Theme } from '../../../context/ThemeContext';
-import { satsToBTC, truncateAddress } from '../../../utils/crypto';
 import useWindowSize from '../../../hooks/useWindowSize';
+import { BsBlock } from '../../../styles/Table';
+import { BtcTransaction } from '../../../typings/BtcTransaction';
+import { satsToBTC, truncateAddress } from '../../../utils/crypto';
+
+import BtcTransactionInputsOutputs from './BtcTransactionTableInputsOutputs';
 
 const HeaderWrapper = styled.div<{ theme?: { theme: Theme } }>`
   display: flex;

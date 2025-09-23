@@ -4,8 +4,11 @@
  */
 
 import React, { useState } from 'react';
-import { Table, Button, Space, Card, Typography } from 'antd';
-import { getTransactionGroupClassWithHover, getTransactionColorIndex } from '../../utils/transactionGrouping';
+
+import { Button, Card, Space, Table, Typography } from 'antd';
+
+import { getTransactionColorIndex,getTransactionGroupClassWithHover } from '../../utils/transactionGrouping';
+
 import '../../styles/transactionGrouping.css';
 
 const { Title, Text } = Typography;

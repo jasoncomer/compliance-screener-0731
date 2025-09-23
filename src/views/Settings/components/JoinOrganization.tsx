@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
-import { Card, Form, Button, Result, Spin, Input, message } from 'antd';
+
+import { TeamOutlined } from '@ant-design/icons';
+import { Button, Card, Form, Input, message,Result, Spin } from 'antd';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import styled from 'styled-components';
-import ViewWrapper from '../../../components/ViewWrapper';
-import { TeamOutlined } from '@ant-design/icons';
+
 import { api } from '../../../api/api';
+import ViewWrapper from '../../../components/ViewWrapper';
 import { useAppContext } from '../../../context/AppContext';
 
 const StyledCard = styled(Card)`

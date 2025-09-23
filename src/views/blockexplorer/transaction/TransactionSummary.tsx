@@ -1,17 +1,18 @@
 import React from 'react';
+
 import { 
-  Hash, 
-  Clock, 
-  TrendingUp, 
-  TrendingDown, 
-  Box,
   ArrowLeftRight,
+  Box,
   CheckCircle,
-  Copy
-} from 'lucide-react';
-import { satsToBTC } from '../../../utils/crypto';
-import { BtcTransaction } from '../../../typings/BtcTransaction';
+  Clock, 
+  Copy,
+  Hash, 
+  TrendingDown, 
+  TrendingUp} from 'lucide-react';
+
 import { cn } from '../../../lib/utils';
+import { BtcTransaction } from '../../../typings/BtcTransaction';
+import { satsToBTC } from '../../../utils/crypto';
 
 interface TransactionSummaryProps {
   transaction: BtcTransaction;

@@ -1,18 +1,19 @@
 import React, { useEffect, useState } from 'react';
-import { Timeline, Card, Spin, Alert, Typography, Tag, Tooltip } from 'antd';
-import { format } from 'date-fns';
+
 import {
-  EditOutlined,
-  PlusOutlined,
-  DeleteOutlined,
-  InfoCircleOutlined,
-  TagOutlined,
   CheckCircleOutlined,
-  StopOutlined,
   ClockCircleOutlined,
+  DeleteOutlined,
+  EditOutlined,
+  InboxOutlined,
+  InfoCircleOutlined,
   LockOutlined,
-  InboxOutlined
-} from '@ant-design/icons';
+  PlusOutlined,
+  StopOutlined,
+  TagOutlined} from '@ant-design/icons';
+import { Alert, Card, Spin, Tag, Timeline, Tooltip,Typography } from 'antd';
+import { format } from 'date-fns';
+
 import { compliance } from '../../../../api/compliance';
 import { MonitoredAddressChange } from '../../../../typings/compliance';
 

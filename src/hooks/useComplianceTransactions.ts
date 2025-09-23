@@ -1,6 +1,7 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+
 import { api } from '../api/api';
-import { TransactionFilters, IComplianceTransaction, ComplianceTransactionResponse } from '../typings/compliance';
+import { ComplianceTransactionResponse,IComplianceTransaction, TransactionFilters } from '../typings/compliance';
 
 // Query keys
 export const complianceQueryKeys = {

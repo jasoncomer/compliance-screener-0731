@@ -1,15 +1,18 @@
-import React, { useState, useEffect } from 'react';
-import { Spin, Alert } from 'antd';
-import { Shield, ExternalLink } from 'lucide-react';
-import ViewWrapper from '../../components/ViewWrapper';
-import SearchInput from '../../components/common/SearchInput';
-import EmptyState from '../../components/common/EmptyState';
+import React, { useEffect,useState } from 'react';
+
+import { Alert,Spin } from 'antd';
+import Paragraph from 'antd/es/typography/Paragraph';
+import { ExternalLink,Shield } from 'lucide-react';
+import { useLocation } from 'react-router-dom';
+
 import { calculateRiskScore } from '../../api/riskScoring';
+import EmptyState from '../../components/common/EmptyState';
+import SearchInput from '../../components/common/SearchInput';
+import ViewWrapper from '../../components/ViewWrapper';
 import { RiskScoringResponse } from '../../typings/riskScoring';
+
 import RiskDetailsTable from './RiskDetailsTable';
 import RiskScoreCards from './RiskScoreCards';
-import Paragraph from 'antd/es/typography/Paragraph';
-import { useLocation } from 'react-router-dom';
 
 
 

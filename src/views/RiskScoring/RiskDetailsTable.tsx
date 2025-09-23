@@ -1,11 +1,15 @@
 import React from 'react';
-import { Card, Table, Tabs, Space, Typography, Progress, Empty } from 'antd';
-import { UserOutlined, TransactionOutlined, GlobalOutlined } from '@ant-design/icons';
-import { RiskScoringResponse, RiskFactor } from '../../typings/riskScoring';
-import { getRiskIcon } from './utils';
-import JurisdictionMap from './JurisdictionMap';
-import EntityDetails from './EntityDetails';
+
+import { GlobalOutlined,TransactionOutlined, UserOutlined } from '@ant-design/icons';
+import { Card, Empty,Progress, Space, Table, Tabs, Typography } from 'antd';
+
 import { colors } from '@/design-system/tokens'
+
+import { RiskFactor,RiskScoringResponse } from '../../typings/riskScoring';
+
+import EntityDetails from './EntityDetails';
+import JurisdictionMap from './JurisdictionMap';
+import { getRiskIcon } from './utils';
 // import TransactionDetails from './TransactionDetails';
 
 const { TabPane } = Tabs;

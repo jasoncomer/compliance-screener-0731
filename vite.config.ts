@@ -1,6 +1,6 @@
-import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import path from 'path'
+import { defineConfig } from 'vite'
 
 // Custom plugin to handle eval warnings from trusted libraries
 const suppressEvalWarnings = () => {

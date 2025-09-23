@@ -1,9 +1,11 @@
 import React, { useEffect } from 'react';
-import { Form, Button, Select, Input, DatePicker, Card } from 'antd';
-import { FilterOutlined, ClearOutlined } from '@ant-design/icons';
-import { EComplianceTransactionStatus, TransactionFilters } from '../../../typings/compliance';
-import { selectActiveOrgMembers } from '../../../store/slices/organizationsSlice';
+
+import { ClearOutlined,FilterOutlined } from '@ant-design/icons';
+import { Button, Card,DatePicker, Form, Input, Select } from 'antd';
+
 import { useAppSelector } from '../../../store/hooks';
+import { selectActiveOrgMembers } from '../../../store/slices/organizationsSlice';
+import { EComplianceTransactionStatus, TransactionFilters } from '../../../typings/compliance';
 import { getUserDisplayName } from '../../../utils/display-labels';
 
 const { RangePicker } = DatePicker;

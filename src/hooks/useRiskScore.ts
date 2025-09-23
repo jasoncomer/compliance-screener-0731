@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+
 import { calculateRiskScore } from '../api/riskScoring';
 import { RiskScoringResponse } from '../typings/riskScoring';
 

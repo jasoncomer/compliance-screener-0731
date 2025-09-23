@@ -1,11 +1,13 @@
 import React from 'react';
 
-import { Card, Typography, Tag } from 'antd';
-import { UserOutlined, GlobalOutlined, TwitterOutlined, SendOutlined, GithubOutlined, LinkedinOutlined, FacebookOutlined, InstagramOutlined, YoutubeOutlined, RedditOutlined, WarningOutlined } from '@ant-design/icons';
+import { FacebookOutlined, GithubOutlined, GlobalOutlined, InstagramOutlined, LinkedinOutlined, RedditOutlined, SendOutlined, TwitterOutlined, UserOutlined, WarningOutlined,YoutubeOutlined } from '@ant-design/icons';
+import { Card, Tag,Typography } from 'antd';
 import styled from 'styled-components';
-import { SOTV2 } from '../../typings/interfaces';
+
 import { colors } from '@/design-system/tokens'
+
 import { SimpleLogo } from '../../components/common/Logo';
+import { SOTV2 } from '../../typings/interfaces';
 
 const { Title, Text } = Typography;
 

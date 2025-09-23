@@ -18,16 +18,20 @@
  * - Entity exploration
  */
 
-import React, { useState, useEffect } from 'react';
-import { Modal, Card, Statistic, Progress, Table, Tabs, Space, Typography, Empty, Spin } from 'antd';
-import { UserOutlined, TransactionOutlined, GlobalOutlined, SafetyOutlined } from '@ant-design/icons';
-import { RiskFactor } from '../../../../typings/riskScoring';
+import React, { useEffect,useState } from 'react';
+
+import { GlobalOutlined, SafetyOutlined,TransactionOutlined, UserOutlined } from '@ant-design/icons';
+import { Card, Empty, Modal, Progress, Space, Spin,Statistic, Table, Tabs, Typography } from 'antd';
+
+import { colors } from '@/design-system/tokens';
+
+import { blockchain } from '../../../../api/blockchain';
+import { useTheme } from '../../../../context/ThemeContext';
+import { calculateDetailedRiskAnalysis } from '../../../../services/inputTransactionRiskService';
 import { BtcTransaction } from '../../../../typings/BtcTransaction';
 import { IComplianceTransaction } from '../../../../typings/compliance';
-import { colors } from '@/design-system/tokens';
-import { useTheme } from '../../../../context/ThemeContext';
-import { blockchain } from '../../../../api/blockchain';
-import { calculateDetailedRiskAnalysis } from '../../../../services/inputTransactionRiskService';
+import { RiskFactor } from '../../../../typings/riskScoring';
+
 import './RiskScoreModal.css';
 
 const { Text } = Typography;

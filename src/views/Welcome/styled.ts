@@ -1,4 +1,5 @@
 import styled, { css, keyframes } from 'styled-components';
+
 import { colors } from '@/design-system/tokens'
 
 const transitionLength = '0.5s';

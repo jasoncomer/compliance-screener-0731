@@ -1,6 +1,7 @@
 import React from 'react';
-import { cn } from '../lib/utils';
+
 import { Theme } from '../context/ThemeContext';
+import { cn } from '../lib/utils';
 
 interface StyledLayoutProps {
   children: React.ReactNode;

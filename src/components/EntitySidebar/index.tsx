@@ -1,12 +1,15 @@
 import React, { useEffect, useState } from 'react';
-import { useSelector } from 'react-redux';
+
 import { User } from 'lucide-react';
-import { RootState } from '../../store/store';
-import { SidebarCard, ScrollableContent } from './styles';
-import { EntityListSection } from './EntityListSection';
-import { SOT } from '../../typings/interfaces';
+import { useSelector } from 'react-redux';
+
 import { api } from '../../api/api';
+import { RootState } from '../../store/store';
+import { SOT } from '../../typings/interfaces';
 import { SimpleLogo } from '../common/Logo';
+
+import { EntityListSection } from './EntityListSection';
+import { ScrollableContent,SidebarCard } from './styles';
 
 // Explicitly declare the props matching the interface
 interface Props {

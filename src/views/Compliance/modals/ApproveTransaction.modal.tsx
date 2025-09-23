@@ -1,6 +1,8 @@
 import { FC } from 'react';
-import { Button, Modal } from 'antd';
+
 import { ExclamationCircleOutlined } from '@ant-design/icons';
+import { Button, Modal } from 'antd';
+
 import { colors } from '@/design-system/tokens'
 
 interface ApproveTransactionModalProps {

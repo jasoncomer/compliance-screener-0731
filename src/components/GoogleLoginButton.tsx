@@ -1,7 +1,9 @@
 import React from 'react';
+
 import { Button } from '@/components/ui/button';
-import { config } from '../config/config';
 import { cn } from '@/lib/utils';
+
+import { config } from '../config/config';
 
 const { BASE_API_URL } = config;
 

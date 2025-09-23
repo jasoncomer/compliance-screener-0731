@@ -1,7 +1,7 @@
 // Re-export types from the compliance.ts file
 import {
-  IComplianceTransaction,
   ComplianceTransactionResponse,
+  IComplianceTransaction,
 } from './compliance';
 
 export type { IComplianceTransaction as ComplianceTransaction, ComplianceTransactionResponse };

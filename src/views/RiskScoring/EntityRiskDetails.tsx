@@ -1,4 +1,5 @@
 import React from 'react';
+
 import { RiskScoringResponse } from '../../typings/riskScoring';
 
 

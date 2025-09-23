@@ -1,8 +1,9 @@
 
+import { ArrowDownLeft,ArrowUpRight } from "lucide-react"
+
+import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Badge } from "@/components/ui/badge"
-import { ArrowUpRight, ArrowDownLeft } from "lucide-react"
 
 const transactions = [
   { hash: "0x123...abc", type: "in", from: "0x456...def", to: "Self", amount: "10.5 ETH", value: "$35,000" },

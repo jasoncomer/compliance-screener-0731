@@ -1,25 +1,27 @@
 import React, { useEffect } from 'react';
+
 import { useParams, useSearchParams } from 'react-router-dom';
+
 import { api } from '../../../api/api';
+import { calculateRiskScore } from '../../../api/riskScoring';
+import Pagination from '../../../components/common/Pagination';
+import { useAttribution } from '../../../context/AttributionContext';
+import { useToast } from '../../../hooks/use-toast';
 import { flowtraceService } from '../../../services/flowtraceService';
+import { useAppDispatch,useAppSelector } from '../../../store/hooks';
+import { fetchSOT } from '../../../store/slices/sotSlice';
+import { RootState } from '../../../store/store';
 import { BsBlock } from '../../../styles/Table';
 import { IBtcAddress } from '../../../typings/BtcAddress';
-import BtcTransactionTable from '../transaction/BtcTransactionTable';
 import { BtcTransaction } from '../../../typings/BtcTransaction';
-import { useAttribution } from '../../../context/AttributionContext';
-import Pagination from '../../../components/common/Pagination';
-import { getTagColor } from '../../../utils/tag-colors';
-import { calculateRiskScore } from '../../../api/riskScoring';
 import { RiskScoringResponse } from '../../../typings/riskScoring';
-import AddressSummary from './AddressSummary';
-import AddressNotFound from './AddressNotFound';
-import AddressLoading from './AddressLoading';
-import { useToast } from '../../../hooks/use-toast';
+import { getTagColor } from '../../../utils/tag-colors';
 import RiskScoreModal from '../../RiskDashboard/components/risk-analysis/RiskScoreModal';
+import BtcTransactionTable from '../transaction/BtcTransactionTable';
 
-import { useAppSelector, useAppDispatch } from '../../../store/hooks';
-import { RootState } from '../../../store/store';
-import { fetchSOT } from '../../../store/slices/sotSlice';
+import AddressLoading from './AddressLoading';
+import AddressNotFound from './AddressNotFound';
+import AddressSummary from './AddressSummary';
 
 const Address: React.FC = () => {
   const { address } = useParams();

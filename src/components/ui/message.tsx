@@ -1,7 +1,9 @@
 import * as React from "react"
-import { CheckCircle, XCircle, AlertCircle, Info, X } from "lucide-react"
-import { cn } from "@/lib/utils"
+
+import { AlertCircle, CheckCircle, Info, X,XCircle } from "lucide-react"
+
 import { ANIMATIONS, Z_INDEX } from "@/design-system/constants"
+import { cn } from "@/lib/utils"
 
 // Message types
 type MessageType = "success" | "error" | "warning" | "info" | "loading"
@@ -217,7 +219,7 @@ export const useMessage = () => {
 }
 
 // Export the container component that needs to be added to App
-export { MessageContainer, message }
+export { message,MessageContainer }
 
 // Notification API (similar to message but positioned differently)
 export interface NotificationOptions {
@@ -455,4 +457,4 @@ export const useNotification = () => {
 }
 
 // Export the notification components
-export { NotificationContainer, notification }
+export { notification,NotificationContainer }

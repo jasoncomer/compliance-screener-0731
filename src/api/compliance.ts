@@ -1,11 +1,12 @@
-import { axiosInstance } from './api';
 import {
-  MonitoredAddress,
   AddressUploadFormat,
   AddressUploadResponse,
-  MonitoredAddressChange,
   IComplianceTransaction,
+  MonitoredAddress,
+  MonitoredAddressChange,
 } from '../typings/compliance';
+
+import { axiosInstance } from './api';
 
 // API endpoints
 export const compliance = {

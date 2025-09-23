@@ -1,20 +1,23 @@
-import React, { useState, useMemo, useCallback, useEffect } from 'react';
-import { Table, Tag, Button, Space, Tooltip, Spin, Checkbox, Modal, Select } from 'antd';
-import { EyeOutlined, CheckOutlined } from '@ant-design/icons';
-import { EComplianceTransactionStatus, IComplianceTransaction } from '../../../../typings/compliance';
-import AssignedTransactionDetailsModal from '../../modals/TransactionDetails/AssignedTransactionDetailsModal';
-import TransactionRiskModal from '../modals/TransactionRiskModal';
-import { conversionRates, currencySymbols } from '../CurrencySelector';
-import { getComplianceReportStatusColor } from '../../utils/compliance.utils';
-import { calculateSimpleRiskScore, calculateDetailedRiskAnalysis, InputTransactionRiskData } from '../../../../services/inputTransactionRiskService';
-import { getBlockchainLabel } from '../../../../utils/display-labels';
-import { truncateAddress } from '../../../../utils/crypto';
-import { useAppSelector, useAppDispatch } from '../../../../store/hooks';
-import { updateTransactionAssignee, updateTransactionStatus } from '../../../../store/slices/complianceTransactionsSlice';
-import { IUser } from '../../../../typings/interfaces';
-import { useCryptoPrices } from '../../../../hooks/useCryptoPrices';
-import { useAttribution } from '../../../../context/AttributionContext';
+import React, { useCallback, useEffect,useMemo, useState } from 'react';
+
+import { CheckOutlined,EyeOutlined } from '@ant-design/icons';
+import { Button, Checkbox, Modal, Select,Space, Spin, Table, Tag, Tooltip } from 'antd';
+
 import { blockchain } from '../../../../api/blockchain';
+import { useAttribution } from '../../../../context/AttributionContext';
+import { useCryptoPrices } from '../../../../hooks/useCryptoPrices';
+import { calculateDetailedRiskAnalysis, calculateSimpleRiskScore, InputTransactionRiskData } from '../../../../services/inputTransactionRiskService';
+import { useAppDispatch,useAppSelector } from '../../../../store/hooks';
+import { updateTransactionAssignee, updateTransactionStatus } from '../../../../store/slices/complianceTransactionsSlice';
+import { EComplianceTransactionStatus, IComplianceTransaction } from '../../../../typings/compliance';
+import { IUser } from '../../../../typings/interfaces';
+import { truncateAddress } from '../../../../utils/crypto';
+import { getBlockchainLabel } from '../../../../utils/display-labels';
+import AssignedTransactionDetailsModal from '../../modals/TransactionDetails/AssignedTransactionDetailsModal';
+import { getComplianceReportStatusColor } from '../../utils/compliance.utils';
+import { conversionRates, currencySymbols } from '../CurrencySelector';
+import TransactionRiskModal from '../modals/TransactionRiskModal';
+
 import '../../../../styles/transactionGrouping.css';
 
 // Status mapping for display labels

@@ -1,24 +1,22 @@
 // Re-export types from the compliance.ts file
 import {
-  MonitoredAddress,
+  AddressImportFormat,
   AddressUploadFormat,
   AddressUploadResponse,
-  AddressImportFormat,
   IAddressFilters,
   IComplianceTransaction,
-  TransactionFilters,
+  MonitoredAddress,
+  MonitoredAddressChange,
   MonitoredAddressChangeType,
-  MonitoredAddressChange
-} from './compliance';
+  TransactionFilters} from './compliance';
 
 export type {
-  MonitoredAddress,
+  IAddressFilters as AddressFilters,
+  AddressImportFormat,
   AddressUploadFormat,
   AddressUploadResponse,
-  AddressImportFormat,
-  IAddressFilters as AddressFilters,
   IComplianceTransaction as ComplianceTransaction,
-  TransactionFilters,
+  MonitoredAddress,
+  MonitoredAddressChange,
   MonitoredAddressChangeType,
-  MonitoredAddressChange
-}; 
+  TransactionFilters}; 

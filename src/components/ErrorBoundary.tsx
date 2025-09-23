@@ -1,6 +1,8 @@
 import { Component, ErrorInfo, ReactNode } from 'react';
+
+import { AlertCircle,RefreshCw } from 'lucide-react';
+
 import { Button } from '@/components/ui/button';
-import { RefreshCw, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface Props {

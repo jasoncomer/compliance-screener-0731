@@ -1,5 +1,7 @@
 import React, { useEffect } from 'react';
-import { Form, Input, Select, Row, Col } from 'antd';
+
+import { Col,Form, Input, Row, Select } from 'antd';
+
 import { MonitoredAddress } from '../../../typings/compliance';
 
 const { Option } = Select;

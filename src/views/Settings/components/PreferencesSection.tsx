@@ -1,7 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import { Switch, InputNumber, Select, Tooltip, Alert } from 'antd';
-import { InfoCircleOutlined, ClockCircleOutlined } from '@ant-design/icons';
-import { Card, SubTitle, PreferencesGrid, PreferenceToggle, Label } from './styled';
+import React, { useEffect,useState } from 'react';
+
+import { ClockCircleOutlined,InfoCircleOutlined } from '@ant-design/icons';
+import { Alert,InputNumber, Select, Switch, Tooltip } from 'antd';
+
+import { Card, Label,PreferencesGrid, PreferenceToggle, SubTitle } from './styled';
 
 interface PreferencesSectionProps {
   theme: 'dark' | 'light';

@@ -1,7 +1,8 @@
-import { createSlice, createAsyncThunk, PayloadAction, createSelector } from '@reduxjs/toolkit';
+import { createAsyncThunk, createSelector,createSlice, PayloadAction } from '@reduxjs/toolkit';
+
 import { api } from '../../api/api';
-import { IOrganization, IInvitation, EMemberRole, IOrganizationMember } from '../../typings/organization';
 import { IUser } from '../../typings/interfaces';
+import { EMemberRole, IInvitation, IOrganization, IOrganizationMember } from '../../typings/organization';
 import { RootState } from '../store';
 
 interface OrganizationsState {

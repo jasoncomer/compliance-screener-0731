@@ -1,10 +1,12 @@
-import { Button, message } from 'antd';
-import { CheckOutlined, SearchOutlined } from '@ant-design/icons';
-import { EComplianceTransactionStatus } from '../../../../typings/compliance';
 import { useState } from 'react';
-import { selectTransactionById } from '../../../../store/slices/complianceTransactionsSlice';
-import { useAppSelector } from '../../../../store/hooks';
+
+import { CheckOutlined, SearchOutlined } from '@ant-design/icons';
+import { Button, message } from 'antd';
+
 import { useUpdateTransactionStatus } from '../../../../hooks/useComplianceTransactions';
+import { useAppSelector } from '../../../../store/hooks';
+import { selectTransactionById } from '../../../../store/slices/complianceTransactionsSlice';
+import { EComplianceTransactionStatus } from '../../../../typings/compliance';
 import ApproveTransactionModal from '../ApproveTransaction.modal';
 
 

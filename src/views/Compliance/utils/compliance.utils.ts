@@ -1,5 +1,5 @@
+import { getRiskScoreClassName as getUnifiedRiskScoreClassName,getRiskScoreColor as getUnifiedRiskScoreColor } from '../../../services/inputTransactionRiskService';
 import { EComplianceTransactionStatus } from '../../../typings/compliance';
-import { getRiskScoreColor as getUnifiedRiskScoreColor, getRiskScoreClassName as getUnifiedRiskScoreClassName } from '../../../services/inputTransactionRiskService';
 
 // Re-export unified risk calculation functions
 export const getRiskScoreColor = getUnifiedRiskScoreColor;

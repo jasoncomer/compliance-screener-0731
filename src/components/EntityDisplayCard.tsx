@@ -1,7 +1,9 @@
 import React from 'react';
+
 import { EyeOutlined } from '@ant-design/icons';
-import { getEntityTypeLabel } from '../utils/display-labels';
+
 import { EEntityType } from '../typings/SOT';
+import { getEntityTypeLabel } from '../utils/display-labels';
 
 interface EntityDisplayCardProps {
   entityId: string;

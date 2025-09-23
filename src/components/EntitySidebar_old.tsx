@@ -1,15 +1,19 @@
 import React from 'react';
-import styled from 'styled-components';
-import { Typography, Card, Avatar } from 'antd';
+
 import { UserOutlined } from '@ant-design/icons';
-import { SimpleLogo } from './common/Logo';
-import { SOT } from '../typings/interfaces';
+import { Avatar,Card, Typography } from 'antd';
 import { useSelector } from 'react-redux';
-import { RootState } from '../store/store';
-import { getEntityTypeLabel } from '../utils/display-labels';
-import { EEntityType } from '../typings/SOT';
+import styled from 'styled-components';
+
 import { colors } from '@/design-system/tokens'
+
 import { api } from '../api/api';
+import { RootState } from '../store/store';
+import { SOT } from '../typings/interfaces';
+import { EEntityType } from '../typings/SOT';
+import { getEntityTypeLabel } from '../utils/display-labels';
+
+import { SimpleLogo } from './common/Logo';
 
 const { Title } = Typography;
 

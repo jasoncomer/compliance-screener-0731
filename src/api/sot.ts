@@ -1,5 +1,6 @@
 import { SOT } from "../typings/interfaces";
 import { ISOTSyncLog } from "../typings/SOT";
+
 import { axiosInstance } from "./api";
 
 interface RelatedEntitiesResponse {

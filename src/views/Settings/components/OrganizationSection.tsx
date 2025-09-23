@@ -1,12 +1,15 @@
 import React, { useState } from 'react';
-import { Form, Button, message, Tabs, Table, Modal, Select, Tag, Tooltip, InputNumber, Switch } from 'antd';
-import { UserAddOutlined, CopyOutlined, InfoCircleOutlined } from '@ant-design/icons';
-import { Card, SubTitle, InfoList, InfoItem, Label, Value } from './styled';
-import { IOrganization, IMember, IInvitation, EMemberRole, IOrganizationMember } from '../../../typings/organization';
-import { IUser } from '../../../typings/interfaces';
+
+import { CopyOutlined, InfoCircleOutlined,UserAddOutlined } from '@ant-design/icons';
+import { Button, Form, InputNumber, message, Modal, Select, Switch,Table, Tabs, Tag, Tooltip } from 'antd';
+
 import Input from '../../../components/common/Input';
-import { useAppSelector, useAppDispatch } from '../../../store/hooks';
-import { selectActiveOrgMembers, updateMemberRole, selectCurrentOrganization, updateOrganization, selectActiveOrgPendingInvitations } from '../../../store/slices/organizationsSlice';
+import { useAppDispatch,useAppSelector } from '../../../store/hooks';
+import { selectActiveOrgMembers, selectActiveOrgPendingInvitations,selectCurrentOrganization, updateMemberRole, updateOrganization } from '../../../store/slices/organizationsSlice';
+import { IUser } from '../../../typings/interfaces';
+import { EMemberRole, IInvitation, IMember, IOrganization, IOrganizationMember } from '../../../typings/organization';
+
+import { Card, InfoItem, InfoList, Label, SubTitle, Value } from './styled';
 
 // Helper function to get current user's role and permissions
 const getUserRoleAndPermissions = (

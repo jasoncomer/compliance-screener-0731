@@ -1,6 +1,7 @@
 import React from 'react';
-import { Modal, Upload, Button } from 'antd';
+
 import { UploadOutlined } from '@ant-design/icons';
+import { Button,Modal, Upload } from 'antd';
 import type { UploadFile } from 'antd/es/upload/interface';
 
 interface MonitoredAddressUploadModalProps {

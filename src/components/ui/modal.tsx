@@ -1,8 +1,11 @@
 import * as React from "react"
+
 import { X } from "lucide-react"
+
+import { ANIMATIONS,BORDER_RADIUS, SPACING_STANDARDS, Z_INDEX } from "@/design-system/constants"
 import { cn } from "@/lib/utils"
+
 import { Button } from "./button"
-import { SPACING_STANDARDS, BORDER_RADIUS, Z_INDEX, ANIMATIONS } from "@/design-system/constants"
 
 export interface ModalProps {
   open?: boolean

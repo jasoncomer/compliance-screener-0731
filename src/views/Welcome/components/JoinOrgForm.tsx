@@ -1,9 +1,11 @@
 import React from 'react';
-import { Form, Button } from 'antd';
+
 import { ArrowLeftOutlined } from '@ant-design/icons';
+import { Button,Form } from 'antd';
+
 import Input from '../../../components/common/Input';
-import { JoinOrgFormProps, JoinOrgFormData } from '../types';
-import { WelcomeHeader, ActionButtons, FormContainer } from '../WelcomeStyles';
+import { JoinOrgFormData,JoinOrgFormProps } from '../types';
+import { ActionButtons, FormContainer,WelcomeHeader } from '../WelcomeStyles';
 
 const JoinOrgForm: React.FC<JoinOrgFormProps> = ({ onBack, onSubmit }) => {
   const [form] = Form.useForm<JoinOrgFormData>();

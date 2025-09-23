@@ -1,6 +1,8 @@
+import { AlertTriangle } from "lucide-react"
+
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { AlertTriangle } from "lucide-react"
+
 import { Transaction } from "../../components/types"
 
 interface RiskAnalysisTabProps {

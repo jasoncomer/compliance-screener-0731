@@ -1,5 +1,5 @@
-import { IUser } from '../typings/interfaces';
 import { config } from '../config/config';
+import { IUser } from '../typings/interfaces';
 
 const { accessToken, refreshToken, user } = config.localstorageKeys;
 

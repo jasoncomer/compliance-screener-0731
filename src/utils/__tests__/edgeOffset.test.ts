@@ -1,4 +1,4 @@
-import { getEdgeOffset } from '../../features/flowtrace/utils/edgeOffset'
+import { getEdgeOffset } from '../../views/Flowtrace/utils/edgeOffset'
 
 describe('getEdgeOffset', () => {
   const A = { x: 0, y: 0 }

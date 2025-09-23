@@ -1,5 +1,6 @@
 import { useCallback } from 'react';
-import { track, identify, setUserProperties, reset } from '../config/mixpanel';
+
+import { identify, reset,setUserProperties, track } from '../config/mixpanel';
 
 export const useAnalytics = () => {
   const trackEvent = useCallback((eventName: string, properties?: Record<string, any>) => {

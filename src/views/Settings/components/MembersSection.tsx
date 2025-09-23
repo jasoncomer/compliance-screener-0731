@@ -1,12 +1,15 @@
 import React, { useState } from 'react';
-import { Form, Button, message, Table, Modal, Select, Tag, Input, Tooltip } from 'antd';
-import { UserAddOutlined, CopyOutlined, SettingOutlined } from '@ant-design/icons';
-import { IMember, EMemberRole, IInvitation, IOrganizationMember } from '../../../typings/organization';
-import { IUser } from '../../../typings/interfaces';
-import { IOrganization } from '../../../typings/organization';
+
+import { CopyOutlined, SettingOutlined,UserAddOutlined } from '@ant-design/icons';
+import { Button, Form, Input, message, Modal, Select, Table, Tag, Tooltip } from 'antd';
+
 import { useAppSelector } from '../../../store/hooks';
 import { selectActiveOrgMembers, selectActiveOrgPendingInvitations, selectCurrentOrganization } from '../../../store/slices/organizationsSlice';
-import { Card, SubTitle, InfoList, InfoItem, Label, Value } from './styled';
+import { IUser } from '../../../typings/interfaces';
+import { EMemberRole, IInvitation, IMember, IOrganizationMember } from '../../../typings/organization';
+import { IOrganization } from '../../../typings/organization';
+
+import { Card, InfoItem, InfoList, Label, SubTitle, Value } from './styled';
 
 // Helper function to get current user's role and permissions
 const getUserRoleAndPermissions = (

@@ -1,15 +1,18 @@
 import React from 'react';
-import styled from 'styled-components';
+
 import { UserOutlined } from '@ant-design/icons';
-import { SimpleLogo } from './common/Logo';
-import { SOT } from '../typings/interfaces';
 import { useSelector } from 'react-redux';
-import { RootState } from '../store/store';
-import { getEntityTypeLabel } from '../utils/display-labels';
-import { EEntityType } from '../typings/SOT';
-import { Card } from './ui/card';
+import styled from 'styled-components';
 
 import { colors } from '@/design-system/tokens'
+
+import { RootState } from '../store/store';
+import { SOT } from '../typings/interfaces';
+import { EEntityType } from '../typings/SOT';
+import { getEntityTypeLabel } from '../utils/display-labels';
+
+import { SimpleLogo } from './common/Logo';
+import { Card } from './ui/card';
 
 const AssociatedSOTsWrapper = styled.div`
   text-align: left;

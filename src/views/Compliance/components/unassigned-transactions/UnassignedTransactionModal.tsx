@@ -1,36 +1,39 @@
 
-import { useState, useEffect } from "react"
+import { useEffect,useState } from "react"
+
 import {
-  X,
   AlertTriangle,
+  Bitcoin,
+  Building2,
   CheckCircle,
   Clock,
-  User,
-  Hash,
-  Building2,
   Coins,
-  FileText,
-  Shield,
-  Bitcoin,
   Eye,
+  FileText,
+  Hash,
+  Shield,
+  User,
+  X,
 } from "lucide-react"
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
+
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { useAppSelector, useAppDispatch } from "../../../../store/hooks"
-import { selectSotItemsMap, fetchSOT } from "../../../../store/slices/sotSlice"
-import { SOT } from "../../../../typings/interfaces"
-import { getEntityTags } from "../../../../utils/sotUtils"
+import { Textarea } from "@/components/ui/textarea"
+import { useTheme } from "@/context/ThemeContext"
+import { EComplianceTransactionStatus,IComplianceTransaction } from "@/typings/compliance"
+
+import EntityQuickView from "../../../../components/EntityQuickView"
 import { useAttribution } from "../../../../context/AttributionContext"
 import { useCryptoPrices } from "../../../../hooks/useCryptoPrices"
-import EntityQuickView from "../../../../components/EntityQuickView"
-import { Textarea } from "@/components/ui/textarea"
-import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { IComplianceTransaction, EComplianceTransactionStatus } from "@/typings/compliance"
+import { useAppDispatch,useAppSelector } from "../../../../store/hooks"
+import { fetchSOT,selectSotItemsMap } from "../../../../store/slices/sotSlice"
+import { SOT } from "../../../../typings/interfaces"
+import { getEntityTags } from "../../../../utils/sotUtils"
 import { getComplianceReportStatusClassName } from "../../utils/compliance.utils"
-import { useTheme } from "@/context/ThemeContext"
 import TransactionRiskModal from "../modals/TransactionRiskModal"
 
 interface UnassignedTransactionModalProps {

@@ -1,21 +1,24 @@
-import React, { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { useAppSelector } from '../../../store/hooks';
-import { selectActiveOrgMembersMap } from '../../../store/slices/organizationsSlice';
-import { getUserDisplayName } from '../../../utils/display-labels';
-import { IComplianceTransaction } from '../../../typings/compliance';
+import React, { useEffect,useState } from 'react';
+
 import { 
-  User, 
-  Clock, 
   ArrowRight, 
+  Clock, 
   History,
+  User, 
   UserCheck,
   UserX
 } from "lucide-react";
+
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
+
+import { useAppSelector } from '../../../store/hooks';
+import { selectActiveOrgMembersMap } from '../../../store/slices/organizationsSlice';
+import { IComplianceTransaction } from '../../../typings/compliance';
+import { getUserDisplayName } from '../../../utils/display-labels';
 
 interface AssignmentHistoryEntry {
   id: string;

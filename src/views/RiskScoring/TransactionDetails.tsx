@@ -1,9 +1,12 @@
 import React from 'react';
-import { Card, Typography, Descriptions, Tag, Space, Progress } from 'antd';
-import { ClockCircleOutlined, CheckCircleOutlined, CloseCircleOutlined } from '@ant-design/icons';
-import { TransactionInfo, RiskFactor } from '../../typings/riskScoring';
-import { getRiskColor } from './utils';
+
+import { CheckCircleOutlined, ClockCircleOutlined, CloseCircleOutlined } from '@ant-design/icons';
+import { Card, Descriptions, Progress,Space, Tag, Typography } from 'antd';
 import styled from 'styled-components';
+
+import { RiskFactor,TransactionInfo } from '../../typings/riskScoring';
+
+import { getRiskColor } from './utils';
 
 const { Title, Text } = Typography;
 

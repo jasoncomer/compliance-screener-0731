@@ -1,12 +1,15 @@
-import React, { useState, useEffect } from 'react';
-import { Form, Button, message, Table, Tag, Modal } from 'antd';
-import { UserOutlined, MailOutlined } from '@ant-design/icons';
-import { Card as StyledCard, SubTitle, InfoList, InfoItem, Label, Value } from './styled';
-import { IUser } from '../../../typings/interfaces';
-import { IInvitation, EMemberRole } from '../../../typings/organization';
+import React, { useEffect,useState } from 'react';
+
+import { MailOutlined,UserOutlined } from '@ant-design/icons';
+import { Button, Form, message, Modal,Table, Tag } from 'antd';
+
 import Input from '../../../components/common/Input';
 import { useAppDispatch, useAppSelector } from '../../../store/hooks';
 import { getUserPendingInvitations, respondToInvitation, selectPendingInvitations } from '../../../store/slices/organizationsSlice';
+import { IUser } from '../../../typings/interfaces';
+import { EMemberRole,IInvitation } from '../../../typings/organization';
+
+import { Card as StyledCard, InfoItem, InfoList, Label, SubTitle, Value } from './styled';
 
 interface ProfileSectionProps {
   user?: IUser;

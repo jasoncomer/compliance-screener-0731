@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
 
 import { Outlet } from 'react-router-dom';
-import { useTheme } from '../context/ThemeContext';
-import { storage } from '../utils/storage';
+
 import { setAuthToken } from '../api/api';
 import SideNav from '../components/SideNav';
+import { useTheme } from '../context/ThemeContext';
+import { storage } from '../utils/storage';
 
 const Home: React.FC = () => {
   const { theme } = useTheme();

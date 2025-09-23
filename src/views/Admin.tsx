@@ -1,7 +1,9 @@
-import { FC, useState, useEffect } from 'react'
-import styled from 'styled-components';
+import { FC, useEffect,useState } from 'react'
+
+import { message, Modal, Table, Tag } from 'antd';
 import { FiInfo } from 'react-icons/fi';
-import { Modal, message, Table, Tag } from 'antd';
+import styled from 'styled-components';
+
 import { sot } from '../api/sot';
 import type { ISOTSyncLog } from '../typings/SOT';
 

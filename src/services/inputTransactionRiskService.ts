@@ -12,8 +12,8 @@
  * - Integration with existing SOT and attribution data
  */
 
-import { RiskFactor } from '../typings/riskScoring';
 import { calculateRiskScore } from '../api/riskScoring';
+import { RiskFactor } from '../typings/riskScoring';
 
 export interface InputTransactionRiskData {
   overallRisk: number;

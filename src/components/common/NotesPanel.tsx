@@ -1,12 +1,14 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Input, List, Typography, Spin, message, Popconfirm } from 'antd';
-import styled from 'styled-components';
-import { useTheme } from '../../context/ThemeContext';
-import { INote, ICreateNote, notesApi } from '../../api/notes';
+import React, { useEffect, useRef,useState } from 'react';
+
+import { CheckOutlined, CloseOutlined,DeleteOutlined, EditOutlined, SendOutlined } from '@ant-design/icons';
+import { Input, List, message, Popconfirm,Spin, Typography } from 'antd';
 import { useSelector } from 'react-redux';
-import { selectCurrentOrganization } from '../../store/slices/organizationsSlice';
-import { SendOutlined, EditOutlined, DeleteOutlined, CheckOutlined, CloseOutlined } from '@ant-design/icons';
+import styled from 'styled-components';
+
+import { ICreateNote, INote, notesApi } from '../../api/notes';
 import { useAppContext } from '../../context/AppContext';
+import { useTheme } from '../../context/ThemeContext';
+import { selectCurrentOrganization } from '../../store/slices/organizationsSlice';
 
 const { TextArea } = Input;
 const { Text } = Typography;

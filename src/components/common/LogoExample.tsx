@@ -1,9 +1,12 @@
 import React, { useState } from 'react';
-import { Card, Space, Button, Divider, Typography } from 'antd';
-import { UserOutlined, BankOutlined } from '@ant-design/icons';
-import { SimpleLogo } from './Logo';
+
+import { BankOutlined,UserOutlined } from '@ant-design/icons';
+import { Button, Card, Divider, Space, Typography } from 'antd';
+
 import { useLogo } from '../../hooks/useLogo';
 import { LogoService } from '../../services/logoService';
+
+import { SimpleLogo } from './Logo';
 
 const { Title, Text } = Typography;
 

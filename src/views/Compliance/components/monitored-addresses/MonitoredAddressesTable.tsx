@@ -1,5 +1,7 @@
 import React from 'react';
-import { Table, Button, Space } from 'antd';
+
+import { Button, Space,Table } from 'antd';
+
 import { MonitoredAddress } from '../../../../typings/compliance';
 
 interface MonitoredAddressTableProps {

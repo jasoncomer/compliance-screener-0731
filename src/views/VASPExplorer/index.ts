@@ -1,2 +1,2 @@
-export { default } from './VASPExplorer';
 export * from './types'; 
+export { VASPExplorer } from './VASPExplorer';

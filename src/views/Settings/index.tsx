@@ -1,29 +1,32 @@
-import { useState, useEffect } from 'react';
-import { message } from 'antd';
+import { useEffect,useState } from 'react';
+
 import { SettingOutlined } from '@ant-design/icons';
+import { message } from 'antd';
+
+import ViewWrapper from '../../components/ViewWrapper';
 import { useAppContext } from '../../context/AppContext';
-import { useTheme } from '../../context/ThemeContext';
 import { useAutosave } from '../../context/AutosaveContext';
+import { useTheme } from '../../context/ThemeContext';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import {
   fetchOrganizations,
   inviteMember,
-  revokeInvitationAsync,
   removeMember,
+  revokeInvitationAsync,
   selectCurrentOrganization,
   updateOrganization,
 } from '../../store/slices/organizationsSlice';
-import ViewWrapper from '../../components/ViewWrapper';
-import ProfileSection from './components/ProfileSection';
-import PreferencesSection from './components/PreferencesSection';
-import NotificationsSection from './components/NotificationsSection';
-import SecuritySection from './components/SecuritySection';
-import OrganizationSection from './components/OrganizationSection';
-import SubscriptionSection from './components/SubscriptionSection';
-import SettingsSidebar from './components/SettingsSidebar';
-import { SettingSection } from '../../typings/settings';
 import { EMemberRole, IOrganization } from '../../typings/organization';
-import { SettingsLayout, ContentArea } from './components/styled';
+import { SettingSection } from '../../typings/settings';
+
+import NotificationsSection from './components/NotificationsSection';
+import OrganizationSection from './components/OrganizationSection';
+import PreferencesSection from './components/PreferencesSection';
+import ProfileSection from './components/ProfileSection';
+import SecuritySection from './components/SecuritySection';
+import SettingsSidebar from './components/SettingsSidebar';
+import { ContentArea,SettingsLayout } from './components/styled';
+import SubscriptionSection from './components/SubscriptionSection';
 
 const Settings = () => {
   const { theme, toggleTheme } = useTheme();

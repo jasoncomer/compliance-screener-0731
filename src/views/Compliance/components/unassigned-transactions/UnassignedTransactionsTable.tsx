@@ -1,21 +1,26 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { Table, Spin } from 'antd';
+import React, { useEffect, useMemo,useState } from 'react';
+
+import { Spin,Table } from 'antd';
 import type { ColumnType, TableRowSelection } from 'antd/es/table/interface';
-import { EComplianceTransactionStatus, IComplianceTransaction } from '../../../../typings/compliance';
-import { currencySymbols } from '../CurrencySelector';
-import { useAttribution } from '../../../../context/AttributionContext';
-import { truncateAddress } from '../../../../utils/crypto';
-import { getComplianceReportStatusClassName } from '../../utils/compliance.utils';
-import { calculateSimpleRiskScore, calculateDetailedRiskAnalysis, InputTransactionRiskData } from '../../../../services/inputTransactionRiskService';
-import { getBlockchainLabel } from '../../../../utils/display-labels';
-import { useCryptoPrices } from '../../../../hooks/useCryptoPrices';
+
 import { Badge } from '@/components/ui/badge';
-import { UnassignedTransactionModal } from './UnassignedTransactionModal';
+
 import { blockchain } from '../../../../api/blockchain';
+import { useAttribution } from '../../../../context/AttributionContext';
+import { useUpdateTransactionAssignee } from '../../../../hooks/useComplianceTransactions';
+import { useCryptoPrices } from '../../../../hooks/useCryptoPrices';
+import { calculateDetailedRiskAnalysis, calculateSimpleRiskScore, InputTransactionRiskData } from '../../../../services/inputTransactionRiskService';
 import { useAppSelector } from '../../../../store/hooks';
 import { selectActiveOrgMembers } from '../../../../store/slices/organizationsSlice';
+import { EComplianceTransactionStatus, IComplianceTransaction } from '../../../../typings/compliance';
+import { truncateAddress } from '../../../../utils/crypto';
+import { getBlockchainLabel } from '../../../../utils/display-labels';
 import { getUserDisplayName } from '../../../../utils/display-labels';
-import { useUpdateTransactionAssignee } from '../../../../hooks/useComplianceTransactions';
+import { getComplianceReportStatusClassName } from '../../utils/compliance.utils';
+import { currencySymbols } from '../CurrencySelector';
+
+import { UnassignedTransactionModal } from './UnassignedTransactionModal';
+
 import '../../../../styles/transactionGrouping.css';
 
 interface TransactionsTableProps {

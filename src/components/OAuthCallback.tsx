@@ -1,9 +1,11 @@
 import React, { useEffect } from 'react';
+
+import { message,Spin } from 'antd';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Spin, message } from 'antd';
+
+import { setAuthToken } from '../api/api';
 import { useAppContext } from '../context/AppContext';
 import { storage } from '../utils/storage';
-import { setAuthToken } from '../api/api';
 
 const OAuthCallback: React.FC = () => {
   const [searchParams] = useSearchParams();

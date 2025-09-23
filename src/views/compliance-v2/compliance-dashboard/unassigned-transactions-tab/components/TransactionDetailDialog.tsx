@@ -1,3 +1,7 @@
+import { ReactNode } from "react"
+
+import { Shield } from "lucide-react"
+
 import { Badge } from "@/components/ui/badge"
 import {
   Dialog,
@@ -8,8 +12,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Shield } from "lucide-react"
-import { ReactNode } from "react"
+
 import { Transaction } from "../../components/types"
 import ActionsTab from "../transaction-detail-tabs/ActionsTab"
 import ComplianceTab from "../transaction-detail-tabs/ComplianceTab"

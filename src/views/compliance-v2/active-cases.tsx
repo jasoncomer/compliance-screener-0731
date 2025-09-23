@@ -1,5 +1,23 @@
 
 import { useState } from "react"
+
+import {
+  AlertCircle,
+  AlertTriangle,
+  Calendar,
+  CheckCircle,
+  Clock,
+  DollarSign,
+  Eye,
+  FileText,
+  Filter,
+  MessageSquare,
+  Search,
+  Shield,
+  TrendingUp,
+  User,
+} from "lucide-react"
+
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -17,22 +35,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
-import {
-  AlertTriangle,
-  CheckCircle,
-  Clock,
-  Eye,
-  FileText,
-  Filter,
-  MessageSquare,
-  Search,
-  TrendingUp,
-  User,
-  Calendar,
-  DollarSign,
-  Shield,
-  AlertCircle,
-} from "lucide-react"
 
 interface Case {
   id: string

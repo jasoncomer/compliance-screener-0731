@@ -1,4 +1,5 @@
 import { forwardRef } from 'react';
+
 import EntityDetails from '../views/RiskDashboard/components/entity-intelligence/EntityDetails';
 
 interface EntityHeightMeasurerProps {

@@ -168,17 +168,16 @@ interface TransactionInfo {
 }
 
 export type {
-  RiskFactor,
+  EntityData,
+  EntityInfo,
+  EntityMetadata,
   EntityRiskFactor,
   JurisdictionRiskFactor,
-  TransactionRiskFactor,
+  RiskDataPoint,
+  RiskFactor,
   RiskFactorCollection,
   RiskFactorRecord,
-  RiskDataPoint,
-  EntityMetadata,
-  EntityData,
-  RiskScoringResponse,
   RiskScoringConfig,
-  EntityInfo,
-  TransactionInfo
-}; 
+  RiskScoringResponse,
+  TransactionInfo,
+  TransactionRiskFactor}; 

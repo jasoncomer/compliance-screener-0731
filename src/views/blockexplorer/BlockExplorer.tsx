@@ -1,17 +1,19 @@
-import { Route, Routes, useNavigate, useLocation } from 'react-router-dom';
-import React, { useState, useEffect } from 'react';
-import { Globe, MessageSquare, Box, ArrowLeftRight, Wallet, Building, Users } from 'lucide-react';
-import { cn } from '../../lib/utils';
-import ViewWrapper from '../../components/ViewWrapper';
-import SearchInput from '../../components/common/SearchInput';
-import EmptyState from '../../components/common/EmptyState';
-import { useAddress } from '../../hooks/useAddress';
+import React, { useEffect,useState } from 'react';
 
+import { ArrowLeftRight, Box, Building, Globe, MessageSquare, Users,Wallet } from 'lucide-react';
+import { Route, Routes, useLocation,useNavigate } from 'react-router-dom';
+
+import EmptyState from '../../components/common/EmptyState';
+import NotesModal from '../../components/common/NotesModal';
+import SearchInput from '../../components/common/SearchInput';
+import ViewWrapper from '../../components/ViewWrapper';
+import { useAddress } from '../../hooks/useAddress';
+import { cn } from '../../lib/utils';
 import { determineInputType } from '../../utils/crypto';
-import TransactionView from './TransactionView';
+
 import Address from './address-page/Address';
 import BlockView from './BlockView';
-import NotesModal from '../../components/common/NotesModal';
+import TransactionView from './TransactionView';
 
 const EntityAndBeneficialOwnersSection: React.FC = () => (
   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-2xl mb-6">
@@ -80,7 +82,7 @@ const BlockExplorerEmptyState: React.FC = () => (
         {/* Entity and Beneficial Owners Section */}
         <EntityAndBeneficialOwnersSection />
 
-        <div className="p-3 rounded-lg bg-muted/50 border border-border max-w-md">
+        <div className="p-3 rounded-lg bg-muted/50 border border-border max-w-2xl">
           <p className="text-sm text-muted-foreground">
             <strong>Tip:</strong> Simply paste a transaction hash, wallet address, or block number in the search bar above to get started.
           </p>
@@ -212,7 +214,7 @@ const BlockExplorer: React.FC = () => {
       title="Block Explorer"
       fullWidth={true}
     >
-      <div className="sticky top-[0] z-20 bg-white dark:bg-background border-b border-gray-200 dark:border-gray-700 px-4 pt-2 py-4 mb-2">
+      <div className="sticky top-[0] z-20 bg-white dark:bg-background border-b border-gray-200 dark:border-gray-700 pt-2 py-4 mb-2">
         <div className="flex justify-between items-center gap-4">
           <div className="flex-1 max-w-2xl">
             <SearchInput

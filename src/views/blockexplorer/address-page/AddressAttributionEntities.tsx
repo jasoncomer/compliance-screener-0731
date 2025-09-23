@@ -1,18 +1,21 @@
 import React from 'react';
+
 import { Card } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
+
+import { SimpleLogo } from '../../../components/common/Logo';
+import EntityQuickView from '../../../components/EntityQuickView';
 import { useAttribution } from '../../../context/AttributionContext';
 import { useAppSelector } from '../../../store/hooks';
 import { selectCurrentOrganization } from '../../../store/slices/organizationsSlice';
 import { RootState } from '../../../store/store';
-import { getEntityTypeLabel, capitalizeFirstLetter } from '../../../utils/display-labels';
 import { EEntityType } from '../../../typings/SOT';
-import EntityQuickView from '../../../components/EntityQuickView';
-import { SimpleLogo } from '../../../components/common/Logo';
+import { capitalizeFirstLetter,getEntityTypeLabel } from '../../../utils/display-labels';
+
 import {
-  EntityRow,
   EntitiesContainer,
   EntityInfo,
+  EntityRow,
 } from './AddressStyles';
 
 interface AddressAttributionEntitiesProps {

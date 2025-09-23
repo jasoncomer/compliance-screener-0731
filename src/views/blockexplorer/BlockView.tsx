@@ -1,14 +1,17 @@
 import React, { useEffect, useState } from 'react';
+
 import { useParams } from 'react-router-dom';
+
 import { api } from '../../api/api';
-import { BsBlock } from '../../styles/Table';
-import BtcTransactionTable from './transaction/BtcTransactionTable';
-import { BtcTransaction } from '../../typings/BtcTransaction';
-import { useAttribution } from '../../context/AttributionContext';
 import Pagination from '../../components/common/Pagination';
-import { IBtcBlock } from '../../typings/Block';
-import BlockSummary from './BlockSummary';
+import { useAttribution } from '../../context/AttributionContext';
 import { useToast } from '../../hooks/use-toast';
+import { BsBlock } from '../../styles/Table';
+import { IBtcBlock } from '../../typings/Block';
+import { BtcTransaction } from '../../typings/BtcTransaction';
+
+import BtcTransactionTable from './transaction/BtcTransactionTable';
+import BlockSummary from './BlockSummary';
 
 const BlockView: React.FC = () => {
   const { block } = useParams();

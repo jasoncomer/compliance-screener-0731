@@ -2,6 +2,7 @@
 
 import { IBSApiResponse, IUser } from "../typings/interfaces";
 import { IRegisterUserResponse, IUserCreate } from "../typings/user";
+
 import { axiosInstance } from "./api";
 
 // Function to authenticate a user

@@ -1,21 +1,23 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect,useState } from 'react';
+
+import { ArrowRightOutlined,TeamOutlined, UserAddOutlined } from '@ant-design/icons';
+import { message,Modal, Spin } from 'antd';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Spin, Modal, message } from 'antd';
-import { TeamOutlined, UserAddOutlined, ArrowRightOutlined } from '@ant-design/icons';
-import { useTheme } from '../../context/ThemeContext';
+
 import { api } from '../../api/api';
-import OptionCard from './components/OptionCard';
+import { useTheme } from '../../context/ThemeContext';
+import { IOrganizationCreate } from '../../typings/organization';
+
 import CreateOrgForm from './components/CreateOrgForm';
 import JoinOrgForm from './components/JoinOrgForm';
-import { WelcomeOption, JoinOrgFormData } from './types';
-import { IOrganizationCreate } from '../../typings/organization';
+import OptionCard from './components/OptionCard';
+import { JoinOrgFormData,WelcomeOption } from './types';
 import {
+  ContentWrapper,
+  LoadingWrapper,
   StyledCard,
   WelcomeContainer,
-  WelcomeHeader,
-  LoadingWrapper,
-  ContentWrapper
-} from './WelcomeStyles';
+  WelcomeHeader} from './WelcomeStyles';
 
 const Welcome: React.FC = () => {
   const { theme } = useTheme();

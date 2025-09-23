@@ -1,39 +1,41 @@
-import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import { BarChart3, AlertCircle } from 'lucide-react';
+import React, { useCallback, useEffect, useMemo,useRef, useState } from 'react';
+
+import { AlertCircle,BarChart3 } from 'lucide-react';
+
 import AddressSearchInput from '../../components/common/AddressSearchInput';
 import EmptyState from '../../components/common/EmptyState';
+import EntityHeightMeasurer from '../../components/EntityHeightMeasurer';
 import ViewWrapper from '../../components/ViewWrapper';
+import { useAttribution } from '../../context/AttributionContext';
 import { useTheme } from '../../context/ThemeContext';
-import { 
-  RiskAssessment, 
-  TransactionActivity,
-  TopCounterparties, 
-  TransactionHistory, 
-  EntityDetails,
-  RiskScoreModal,
-  GeographicPresence
-} from './components';
-import AddressNotFound from '../blockexplorer/address-page/AddressNotFound';
-// import { EnhancedD3SankeyDiagram } from './components/EnhancedD3SankeyDiagram';
-import { SimpleSankeyTest } from './components/SimpleSankeyTest';
-import SocialMediaFeed from './components/entity-intelligence/SocialMediaFeed';
-import { AddressSummary } from './components/AddressSummary';
-import AddressHeader from './components/address/AddressHeader';
-import { useAddressTransactions } from '../../hooks/useAddressTransactions';
-import { useAddressSummary } from '../../hooks/useAddressSummary';
-import { useAddressBlockStats } from '../../hooks/useAddressBlockStats';
 import { useAddress } from '../../hooks/useAddress';
+import { useAddressBlockStats } from '../../hooks/useAddressBlockStats';
+import { useAddressSummary } from '../../hooks/useAddressSummary';
+import { useAddressTransactions } from '../../hooks/useAddressTransactions';
 import { useCryptoPrices } from '../../hooks/useCryptoPrices';
 import { useRiskScore } from '../../hooks/useRiskScore';
-import { transformBtcTransactions } from '../../utils/transactionTransformers';
-import { useAttribution } from '../../context/AttributionContext';
-import { useAppSelector, useAppDispatch } from '../../store/hooks';
-import { RootState } from '../../store/store';
-import { getEntityTypeLabel } from '../../utils/display-labels';
-import { EEntityType } from '../../typings/SOT';
+import { useAppDispatch,useAppSelector } from '../../store/hooks';
 import { fetchSOT } from '../../store/slices/sotSlice';
+import { RootState } from '../../store/store';
+import { EEntityType } from '../../typings/SOT';
+import { getEntityTypeLabel } from '../../utils/display-labels';
 import { applyBeneficialOwnerOverride } from '../../utils/entityUtils';
-import EntityHeightMeasurer from '../../components/EntityHeightMeasurer';
+import { transformBtcTransactions } from '../../utils/transactionTransformers';
+import AddressNotFound from '../blockexplorer/address-page/AddressNotFound';
+
+import AddressHeader from './components/address/AddressHeader';
+import { AddressSummary } from './components/AddressSummary';
+import SocialMediaFeed from './components/entity-intelligence/SocialMediaFeed';
+// import { EnhancedD3SankeyDiagram } from './components/EnhancedD3SankeyDiagram';
+import { SimpleSankeyTest } from './components/SimpleSankeyTest';
+import { 
+  EntityDetails,
+  GeographicPresence,
+  RiskAssessment, 
+  RiskScoreModal,
+  TopCounterparties, 
+  TransactionActivity,
+  TransactionHistory} from './components';
 
 const RiskDashboard: React.FC = React.memo(() => {
   const { theme } = useTheme();
@@ -963,7 +965,7 @@ const RiskDashboard: React.FC = React.memo(() => {
       fullWidth={true}
     >
       {/* Sticky Search Bar */}
-      <div className={`sticky top-[0] z-20 bg-white dark:bg-background border-b border-gray-200 dark:border-gray-700 px-4 ${isEmptyState ? 'pt-2 py-4 mb-2' : 'py-4'}`}>
+      <div className={`sticky top-[0] z-20 bg-white dark:bg-background border-b border-gray-200 dark:border-gray-700 ${isEmptyState ? 'pt-2 py-4 mb-2' : 'py-4'}`}>
         <div className="flex justify-between items-center gap-4">
           <div className="flex-1 max-w-2xl">
             <AddressSearchInput

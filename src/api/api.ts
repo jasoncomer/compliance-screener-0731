@@ -1,15 +1,17 @@
 import axios, { AxiosInstance } from 'axios';
+
+import { storage } from '../utils/storage';
+
 import { users } from './auth';
 import { blockchain } from './blockchain';
-import { sot } from './sot';
 import { compliance } from './compliance';
-import { organizations } from './organizations';
-import { crypto } from './crypto';
-import { subscription } from './subscription';
 import { contactSales } from './contactSales';
-import { socialMedia } from './socialMedia';
+import { crypto } from './crypto';
 import { notesApi } from './notes';
-import { storage } from '../utils/storage';
+import { organizations } from './organizations';
+import { socialMedia } from './socialMedia';
+import { sot } from './sot';
+import { subscription } from './subscription';
 
 export const BASE_API_URL = process.env.NODE_ENV === 'production' ? 'https://api.blockscout.ai/api/v1' : 'http://localhost:8004/api/v1';
 

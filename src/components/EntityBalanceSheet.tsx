@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { Table, Card, Spin } from 'antd';
-import { getEntityBalance, EntityBalance } from '../api/entityBalanceSheet';
+
+import { Card, Spin,Table } from 'antd';
+
+import { EntityBalance,getEntityBalance } from '../api/entityBalanceSheet';
 
 interface EntityBalanceSheetProps {
   currentEntityId?: string;

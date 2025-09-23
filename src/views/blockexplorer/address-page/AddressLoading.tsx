@@ -1,4 +1,5 @@
 import React from 'react';
+
 import { Loader2, Wallet } from 'lucide-react';
 
 interface AddressLoadingProps {

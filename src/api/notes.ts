@@ -1,5 +1,6 @@
-import { axiosInstance } from './api';
 import { IBSApiResponse } from '../typings/interfaces';
+
+import { axiosInstance } from './api';
 
 export interface ICreateNote {
   content: string;

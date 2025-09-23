@@ -1,6 +1,8 @@
 import React from 'react';
-import { Button, Space } from 'antd';
+
 import { PlusOutlined, UploadOutlined } from '@ant-design/icons';
+import { Button, Space } from 'antd';
+
 import { cn } from '../../../lib/utils';
 
 interface MonitoredTableActionsProps {

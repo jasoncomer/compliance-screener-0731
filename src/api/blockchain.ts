@@ -1,8 +1,9 @@
 import { IBtcAddress, IBtcAddressSummary } from "../typings/BtcAddress";
 import { BtcTransaction } from "../typings/BtcTransaction";
 import { IAttribution, IReferenceAttribution } from "../typings/ReferenceAttribution";
-import { axiosInstance } from "./api";
+
 import { getAddressTransactions } from "./blockchain/address";
+import { axiosInstance } from "./api";
 
 
 const getAttributions = async (addresses: string[]): Promise<{ data: IAttribution[], referenceData: IReferenceAttribution[] }> => {

@@ -1,6 +1,6 @@
-import { v4 as uuid } from 'uuid'
 // import * as diff from 'json-diff' // Unused for now
-import { openDB, DBSchema, IDBPDatabase } from 'idb'
+import { DBSchema, IDBPDatabase,openDB } from 'idb'
+import { v4 as uuid } from 'uuid'
 
 // Database schema for IndexedDB
 interface WorkspaceDB extends DBSchema {

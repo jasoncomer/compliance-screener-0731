@@ -1,7 +1,8 @@
-import Papa from 'papaparse';
-import type { MonitoredAddress, AddressUploadFormat, AddressUploadResponse } from '../typings/addresses';
 import type { ParseResult } from 'papaparse';
-import { isValidBlockchainAddress, getBlockchainType } from '../utils/addressValidation';
+import Papa from 'papaparse';
+
+import type { AddressUploadFormat, AddressUploadResponse,MonitoredAddress } from '../typings/addresses';
+import { getBlockchainType,isValidBlockchainAddress } from '../utils/addressValidation';
 
 export class AddressService {
   private static validateAddress(address: string, blockchain: string): boolean {

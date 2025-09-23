@@ -1,5 +1,6 @@
-import { Menu as AntdMenu } from "antd";
 import { FC } from "react";
+
+import { Menu as AntdMenu } from "antd";
 import styled from "styled-components";
 
 const Menu = styled(AntdMenu)`

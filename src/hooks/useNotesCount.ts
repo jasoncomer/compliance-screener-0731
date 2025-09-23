@@ -1,7 +1,9 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useCallback,useEffect, useState } from 'react';
+
 import { useSelector } from 'react-redux';
-import { selectCurrentOrganization } from '../store/slices/organizationsSlice';
+
 import { notesApi } from '../api/notes';
+import { selectCurrentOrganization } from '../store/slices/organizationsSlice';
 
 export type NoteContextType = 'transaction' | 'address' | 'cluster';
 

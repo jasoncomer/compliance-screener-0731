@@ -1,13 +1,16 @@
 import React, { useEffect, useState } from 'react';
+
 import { useParams } from 'react-router-dom';
-import { BtcTransaction } from '../../typings/BtcTransaction';
-import { BsBlock } from '../../styles/Table';
-import TransactionSummary from './transaction/TransactionSummary';
-import BtcTransactionTable from './transaction/BtcTransactionTable';
+
 import { api } from '../../api/api';
-import { useTheme } from '../../context/ThemeContext';
 import { useAttribution } from '../../context/AttributionContext';
+import { useTheme } from '../../context/ThemeContext';
 import { useToast } from '../../hooks/use-toast';
+import { BsBlock } from '../../styles/Table';
+import { BtcTransaction } from '../../typings/BtcTransaction';
+
+import BtcTransactionTable from './transaction/BtcTransactionTable';
+import TransactionSummary from './transaction/TransactionSummary';
 
 const TransactionView: React.FC = () => {
   const { txid } = useParams();

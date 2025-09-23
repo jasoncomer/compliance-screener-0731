@@ -1,8 +1,9 @@
 import React from 'react';
+
+import { cn } from '../../../lib/utils';
 import { BsBlock } from '../../../styles/Table';
 import { BtcTransaction } from '../../../typings/BtcTransaction';
 import { satsToBTC } from '../../../utils/crypto';
-import { cn } from '../../../lib/utils';
 
 interface BtcTransactionSummaryProps {
   transaction: BtcTransaction;

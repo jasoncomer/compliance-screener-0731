@@ -1,14 +1,17 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Modal, Button, Input, Typography, Spin, message as antMessage, Popconfirm } from 'antd';
-import styled from 'styled-components';
-import { useTheme } from '../../context/ThemeContext';
-import { colors } from '@/design-system/tokens'
-import { INote, ICreateNote, notesApi } from '../../api/notes';
+import React, { useEffect, useRef,useState } from 'react';
+
+import { DeleteOutlined,EditOutlined, SendOutlined } from '@ant-design/icons';
+import { Button, Input, message as antMessage, Modal, Popconfirm,Spin, Typography } from 'antd';
 import { useSelector } from 'react-redux';
+import styled from 'styled-components';
+
+import { colors } from '@/design-system/tokens'
+
+import { ICreateNote, INote, notesApi } from '../../api/notes';
+import { useAppContext } from '../../context/AppContext';
+import { useTheme } from '../../context/ThemeContext';
 import { selectCurrentOrganization } from '../../store/slices/organizationsSlice';
 import { truncateAddress } from '../../utils/crypto';
-import { SendOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
-import { useAppContext } from '../../context/AppContext';
 
 const { Text } = Typography;
 

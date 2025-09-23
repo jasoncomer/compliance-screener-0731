@@ -1,6 +1,8 @@
 import React from 'react';
-import { IApiResponse } from '../typings/interfaces';
+
 import styled from 'styled-components';
+
+import { IApiResponse } from '../typings/interfaces';
 
 const AccountSummaryWrapper = styled.div`
   position: absolute;

@@ -1,5 +1,6 @@
 import { api } from "../api/api";
 import { BtcTransaction } from "../typings/BtcTransaction";
+
 import { isValidBitcoinAddress as validateBitcoinAddress } from './addressValidation';
 
 const satsToBTC = (sats: number) => sats / 100000000;
@@ -95,14 +96,14 @@ const getTransactionAmountOfAddress = (tx: BtcTransaction, address: string) => {
 }
 
 export {
-  satsToBTC,
   BTCToSats,
-  truncateAddress,
   determineInputType,
   fetchBlockchainData,
-  isValidBitcoinAddress,
-  isValidBitcoinTransactionHash,
-  isValidBitcoinBlockNumber,
-  isValidBitcoinBlockHash,
   getTransactionAmountOfAddress,
+  isValidBitcoinAddress,
+  isValidBitcoinBlockHash,
+  isValidBitcoinBlockNumber,
+  isValidBitcoinTransactionHash,
+  satsToBTC,
+  truncateAddress,
 };

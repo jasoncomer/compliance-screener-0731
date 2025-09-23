@@ -1,10 +1,11 @@
 import React from 'react';
+
 import { 
-  Search, 
   AlertCircle, 
   FileSearch,
-  Inbox
-} from 'lucide-react';
+  Inbox,
+  Search} from 'lucide-react';
+
 import { cn } from '../../lib/utils';
 
 interface EmptyStateProps {

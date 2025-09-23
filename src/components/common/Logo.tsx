@@ -1,6 +1,8 @@
 import React from 'react';
-import { Avatar, Spin, Tooltip } from 'antd';
+
 import { UserOutlined } from '@ant-design/icons';
+import { Avatar, Spin, Tooltip } from 'antd';
+
 import { useLogo } from '../../hooks/useLogo';
 
 interface LogoProps {

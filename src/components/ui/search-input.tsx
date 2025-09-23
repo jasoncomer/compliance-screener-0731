@@ -1,8 +1,11 @@
 import * as React from "react"
+
 import { Search, X } from "lucide-react"
+
 import { cn } from "@/lib/utils"
-import { Input, type InputProps } from "./input"
+
 import { Button } from "./button"
+import { Input, type InputProps } from "./input"
 
 export interface SearchInputProps extends Omit<InputProps, 'type'> {
   onClear?: () => void

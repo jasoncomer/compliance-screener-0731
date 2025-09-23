@@ -1,8 +1,10 @@
 import React from 'react';
-import { UserOutlined, GlobalOutlined, TwitterOutlined, SendOutlined, MailOutlined, PhoneOutlined, EnvironmentOutlined, WarningOutlined, TagOutlined, TeamOutlined, CalendarOutlined, LinkOutlined, DatabaseOutlined, CompassOutlined, FileTextOutlined } from '@ant-design/icons';
-import { useTheme } from '../../../../context/ThemeContext';
+
+import { CalendarOutlined, CompassOutlined, DatabaseOutlined, EnvironmentOutlined, FileTextOutlined,GlobalOutlined, LinkOutlined, MailOutlined, PhoneOutlined, SendOutlined, TagOutlined, TeamOutlined, TwitterOutlined, UserOutlined, WarningOutlined } from '@ant-design/icons';
+
 import { SimpleLogo } from '../../../../components/common/Logo';
 import EntityToggle from '../../../../components/EntityToggle';
+import { useTheme } from '../../../../context/ThemeContext';
 
 interface EntityDetailsProps {
   name: string;

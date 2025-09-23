@@ -1,8 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import styled from 'styled-components';
-import { Typography, Card, Avatar } from 'antd';
+import React, { useEffect,useState } from 'react';
+
 import { UserOutlined } from '@ant-design/icons';
+import { Avatar,Card, Typography } from 'antd';
+import styled from 'styled-components';
+
 import { colors } from '@/design-system/tokens'
+
 import { api } from '../api/api';
 
 const { Title } = Typography;

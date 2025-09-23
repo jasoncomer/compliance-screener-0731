@@ -1,10 +1,14 @@
 import React, { useState } from 'react';
+
 import { AlertOutlined } from '@ant-design/icons';
-import ViewWrapper from '../components/ViewWrapper';
-import { Typography, Table, Tag, Input, Select, Space, Button, Collapse } from 'antd';
-import AlertConfig from './AlertConfig';
+import { Button, Collapse,Input, Select, Space, Table, Tag, Typography } from 'antd';
+
 import { colors } from '@/design-system/tokens'
+
+import ViewWrapper from '../components/ViewWrapper';
 import { useTheme } from '../context/ThemeContext';
+
+import AlertConfig from './AlertConfig';
 
 const { Paragraph } = Typography;
 const { Option } = Select;

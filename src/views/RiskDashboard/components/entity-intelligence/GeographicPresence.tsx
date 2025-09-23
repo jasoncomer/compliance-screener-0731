@@ -1,10 +1,13 @@
-import React, { useState, useMemo } from 'react';
-import { Card, Typography, Tag, Tooltip } from 'antd';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
-import { useTheme } from '../../../../context/ThemeContext';
-import { countryCoordinates } from '../../../../config/country-coordinates';
-import { MapPin, Globe, Users } from 'lucide-react';
+import React, { useMemo,useState } from 'react';
+
+import { Card, Tag, Tooltip,Typography } from 'antd';
 import L from 'leaflet';
+import { Globe, MapPin, Users } from 'lucide-react';
+import { MapContainer, Marker, Popup,TileLayer } from 'react-leaflet';
+
+import { countryCoordinates } from '../../../../config/country-coordinates';
+import { useTheme } from '../../../../context/ThemeContext';
+
 import 'leaflet/dist/leaflet.css';
 
 // Risk score data

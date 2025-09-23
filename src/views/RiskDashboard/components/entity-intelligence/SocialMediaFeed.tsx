@@ -1,5 +1,7 @@
 import React from 'react';
-import { Globe, FileText, LoaderCircle, Twitter } from 'lucide-react';
+
+import { FileText, Globe, LoaderCircle, Twitter } from 'lucide-react';
+
 import { useTheme } from '../../../../context/ThemeContext';
 import { useSocialMediaData } from '../../../../hooks/useSocialMedia';
 

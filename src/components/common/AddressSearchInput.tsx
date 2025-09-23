@@ -1,8 +1,10 @@
-import React, { forwardRef, useState, useEffect, useRef } from 'react';
-import { Search, Loader2, AlertCircle, CheckCircle } from 'lucide-react';
-import { cn } from '../../lib/utils';
-import { isValidBlockchainAddress, getBlockchainType } from '../../utils/addressValidation';
+import React, { forwardRef, useEffect, useRef,useState } from 'react';
+
+import { AlertCircle, CheckCircle,Loader2, Search } from 'lucide-react';
+
 import { useTheme } from '../../context/ThemeContext';
+import { cn } from '../../lib/utils';
+import { getBlockchainType,isValidBlockchainAddress } from '../../utils/addressValidation';
 
 interface AddressSearchInputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'type'> {
   variant?: 'default' | 'compact' | 'with-action';

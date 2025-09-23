@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
-import { Card, Button, Row, Col, Space, Modal, Select, message } from 'antd';
+
 import { UserOutlined } from '@ant-design/icons';
+import { Button, Card, Col, message,Modal, Row, Select, Space } from 'antd';
+
+import { useBulkUpdateTransactionAssignee } from '../../../hooks/useComplianceTransactions';
 import { useAppSelector } from '../../../store/hooks';
 import { selectActiveOrgMembers } from '../../../store/slices/organizationsSlice';
 import { EMemberStatus } from '../../../typings/organization';
 import { getUserDisplayName } from '../../../utils/display-labels';
-import { useBulkUpdateTransactionAssignee } from '../../../hooks/useComplianceTransactions';
 
 interface BulkSelectComponentProps {
   selectedRowKeys: React.Key[];

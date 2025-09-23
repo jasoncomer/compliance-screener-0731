@@ -1,20 +1,22 @@
-import React, { useState, useEffect } from 'react';
-import { message, Modal, Form } from 'antd';
+import React, { useEffect,useState } from 'react';
+
+import { Form,message, Modal } from 'antd';
 import type { UploadFile } from 'antd/es/upload/interface';
+
+import { api } from '../../../../api/api';
 import type { 
-  MonitoredAddress, 
   AddressUploadFormat, 
   IAddressFilters,
+  MonitoredAddress, 
 } from '../../../../typings/compliance';
-import { api } from '../../../../api/api';
+import AddressFilters from '../AddressFilters';
+import AddressFormModal from '../AddressFormModal';
+import MonitoredTableActions from '../MonitoredTableActions';
 
 // Import sub-components
 import MonitoredAddressesTable from './MonitoredAddressesTable';
-import AddressFilters from '../AddressFilters';
-import AddressFormModal from '../AddressFormModal';
-import MonitoredAddressUploadModal from './MonitoredAddressUploadModal';
 import MonitoredAddressHistoryModal from './MonitoredAddressHistoryModal';
-import MonitoredTableActions from '../MonitoredTableActions';
+import MonitoredAddressUploadModal from './MonitoredAddressUploadModal';
 
 interface MonitoredAddressManagementProps {
   onClose?: () => void;

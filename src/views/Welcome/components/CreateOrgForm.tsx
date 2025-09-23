@@ -1,10 +1,12 @@
 import React from 'react';
-import { Form, Button } from 'antd';
+
 import { ArrowLeftOutlined } from '@ant-design/icons';
+import { Button,Form } from 'antd';
+
 import Input from '../../../components/common/Input';
-import { CreateOrgFormProps } from '../types';
 import { IOrganizationCreate } from '../../../typings/organization';
-import { WelcomeHeader, ActionButtons, FormContainer } from '../WelcomeStyles';
+import { CreateOrgFormProps } from '../types';
+import { ActionButtons, FormContainer,WelcomeHeader } from '../WelcomeStyles';
 
 const CreateOrgForm: React.FC<CreateOrgFormProps> = ({ onBack, onSubmit }) => {
   const [form] = Form.useForm<IOrganizationCreate>();

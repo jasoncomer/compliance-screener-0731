@@ -1,9 +1,11 @@
 import React from 'react';
+
 import styled from 'styled-components';
 
-import BtcInputsOutputs from './BtcInputsOutputs';
-import { satsToBTC } from '../../../utils/crypto';
 import { BtcTransaction } from '../../../typings/BtcTransaction';
+import { satsToBTC } from '../../../utils/crypto';
+
+import BtcInputsOutputs from './BtcInputsOutputs';
 
 interface BtcTransactionInputsOutputsProps {
   transaction: BtcTransaction;

@@ -1,22 +1,23 @@
-import React, { useState, useEffect } from 'react';
-import { Form, Button, Select, Input, DatePicker, Card } from 'antd';
-import { FilterOutlined, ClearOutlined, FileSearchOutlined } from '@ant-design/icons';
-import { EComplianceTransactionStatus, TransactionFilters } from '../../../../typings/compliance';
+import React, { useEffect,useState } from 'react';
+
+import { ClearOutlined, FileSearchOutlined,FilterOutlined } from '@ant-design/icons';
+import { Button, Card,DatePicker, Form, Input, Select } from 'antd';
+
 import { cn } from '../../../../lib/utils';
-import { getUserDisplayName } from '../../../../utils/display-labels';
-import ActiveCasesTable from '../active-cases/ActiveCasesTable';
-import { selectCurrentOrganization, selectActiveOrgMembers } from '../../../../store/slices/organizationsSlice';
 import { useAppDispatch, useAppSelector } from '../../../../store/hooks';
 import { 
   fetchComplianceTransactions, 
   selectCompletedTransactions,
-  selectPagination, 
-  selectIsLoading,
   selectComplianceFilters,
+  selectIsLoading,
+  selectPagination, 
   setFilters,
-  setPage,
-  setLimit
-} from '../../../../store/slices/complianceTransactionsSlice';
+  setLimit,
+  setPage} from '../../../../store/slices/complianceTransactionsSlice';
+import { selectActiveOrgMembers,selectCurrentOrganization } from '../../../../store/slices/organizationsSlice';
+import { EComplianceTransactionStatus, TransactionFilters } from '../../../../typings/compliance';
+import { getUserDisplayName } from '../../../../utils/display-labels';
+import ActiveCasesTable from '../active-cases/ActiveCasesTable';
 
 const { RangePicker } = DatePicker;
 

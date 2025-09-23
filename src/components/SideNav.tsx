@@ -1,30 +1,31 @@
 import React from 'react';
+
 import { 
-  User, 
-  LogOut, 
-  Settings, 
-  Users,
-  Menu,
   BarChart3,
-  Globe,
   Database,
   GitBranch,
-  Search
-} from 'lucide-react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { cn } from '../lib/utils';
-import { Theme } from '../context/ThemeContext';
-import { useAppContext } from '../context/AppContext';
+  Globe,
+  LogOut, 
+  Menu,
+  Search,
+  Settings, 
+  User, 
+  Users} from 'lucide-react';
+import { useLocation,useNavigate } from 'react-router-dom';
+
 import BSLogo from '../assets/darkmode_logo.png';
+import { useAppContext } from '../context/AppContext';
+import { Theme } from '../context/ThemeContext';
+import { cn } from '../lib/utils';
+
 import { Button } from './ui/button';
 import { 
   DropdownMenu, 
-  DropdownMenuTrigger, 
   DropdownMenuContent, 
   DropdownMenuItem, 
-  DropdownMenuSeparator 
-} from './ui/dropdown-menu';
-import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from './ui/tooltip';
+  DropdownMenuSeparator, 
+  DropdownMenuTrigger} from './ui/dropdown-menu';
+import { Tooltip, TooltipContent, TooltipProvider,TooltipTrigger } from './ui/tooltip';
 
 interface SideNavProps {
   theme: Theme;
@@ -70,11 +71,11 @@ const SideNav: React.FC<SideNavProps> = ({ theme, collapsed, onCollapse }) => {
       icon: <Search />,
       label: 'Compliance Screener',
     },
-    // {
-    //   key: 'compliance-dashboard',
-    //   icon: <BarChart3 />,
-    //   label: 'Compliance Dashboard',
-    // },
+    {
+      key: 'compliance-dashboard',
+      icon: <BarChart3 />,
+      label: 'Compliance Dashboard',
+    },
     {
       key: 'block-explorer',
       icon: <Globe />,
@@ -91,7 +92,7 @@ const SideNav: React.FC<SideNavProps> = ({ theme, collapsed, onCollapse }) => {
       label: 'FlowTrace',
     },
     {
-      key: 'blockham',
+      key: 'vasp-explorer',
       icon: <Database />,
       label: 'VASP Entity Explorer',
     },

@@ -1,23 +1,23 @@
 import React, { useCallback, useEffect, useState } from 'react';
+
 import { Database } from 'lucide-react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useSearchParams } from 'react-router-dom';
 
-import SearchInput from '../../components/common/SearchInput';
-import ViewWrapper from '../../components/ViewWrapper';
-import SOTEditor from '../../components/SOTEditor';
 import EmptyState from '../../components/common/EmptyState';
-import { SearchDropdown } from './components';
-
-import { AppDispatch, RootState } from '../../store/store';
-import { fetchSOT } from '../../store/slices/sotSlice';
+import SearchInput from '../../components/common/SearchInput';
+import SOTEditor from '../../components/SOTEditor';
+import ViewWrapper from '../../components/ViewWrapper';
+import { useDebounce } from '../../hooks/useDebounce';
 import { fetchOrganizations, selectCurrentOrganization } from '../../store/slices/organizationsSlice';
+import { fetchSOT } from '../../store/slices/sotSlice';
+import { AppDispatch, RootState } from '../../store/store';
 import { SOT } from '../../typings/interfaces';
 
-import { useDebounce } from '../../hooks/useDebounce';
+import { SearchDropdown } from './components';
 import { useEntitySearch, useSearchDropdown } from './hooks';
 
-const VASPExplorer: React.FC = () => {
+export const VASPExplorer: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
   const { items: sot, itemsMap: sotMap, loading: sotLoading} = useSelector((state: RootState) => state.sot);
   const organization = useSelector(selectCurrentOrganization);
@@ -152,7 +152,7 @@ const VASPExplorer: React.FC = () => {
     >
 
       {/* Sticky Search Bar */}
-      <div className={`sticky top-[0] z-20 bg-white dark:bg-background border-b border-gray-200 dark:border-gray-700 px-4 ${isEmptyState ? 'pt-2 py-4 mb-2' : 'py-4'}`}>
+      <div className={`sticky top-[0] z-20 bg-white dark:bg-background border-b border-gray-200 dark:border-gray-700 ${isEmptyState ? 'pt-2 py-4 mb-2' : 'py-4'}`}>
         <div className="flex justify-between items-center gap-4">
           <div className="flex-1 max-w-2xl">
             <div className="relative w-full">
@@ -197,5 +197,3 @@ const VASPExplorer: React.FC = () => {
     </ViewWrapper>
   );
 };
-
-export default VASPExplorer; 

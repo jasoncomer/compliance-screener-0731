@@ -1,13 +1,15 @@
 import React from 'react';
+
 import { 
-  SettingOutlined, 
-  UserOutlined, 
   BellOutlined,
+  CrownOutlined,
   SecurityScanOutlined,
-  CrownOutlined
-} from '@ant-design/icons';
-import { Sidebar, SidebarItem } from './styled';
+  SettingOutlined, 
+  UserOutlined} from '@ant-design/icons';
+
 import { SettingSection } from '../../../typings/settings';
+
+import { Sidebar, SidebarItem } from './styled';
 
 interface SettingsSidebarProps {
   activeSection: SettingSection;

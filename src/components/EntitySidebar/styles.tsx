@@ -1,5 +1,7 @@
 import React from 'react';
-import { Typography, Card } from 'antd';
+
+import { Card,Typography } from 'antd';
+
 import { cn } from '../../lib/utils';
 
 const { Title } = Typography;

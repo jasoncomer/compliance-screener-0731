@@ -1,5 +1,6 @@
 import React from 'react';
-import { Card, SubTitle, InfoList, InfoItem, Label, Value } from './styled';
+
+import { Card, InfoItem, InfoList, Label, SubTitle, Value } from './styled';
 
 interface NotificationsSectionProps {
   theme: 'dark' | 'light';

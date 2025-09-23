@@ -1,6 +1,8 @@
 import React from 'react';
-import { BtcTransaction } from '../../../typings/BtcTransaction';
+
 import styled from 'styled-components';
+
+import { BtcTransaction } from '../../../typings/BtcTransaction';
 
 interface BtcTransactionTableHeaderProps {
   transaction: BtcTransaction;

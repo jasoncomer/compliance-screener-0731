@@ -1,8 +1,11 @@
 import React from 'react';
+
 import { DatabaseOutlined } from '@ant-design/icons';
+
 import { cn } from '../../../../lib/utils';
-import MonitoredAddressManagement from './MonitoredAddressManagement';
 import { MonitoredAddress } from '../../../../typings/compliance';
+
+import MonitoredAddressManagement from './MonitoredAddressManagement';
 
 interface MonitoredAddressesTabProps {
   addresses: MonitoredAddress[];

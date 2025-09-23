@@ -1,6 +1,9 @@
 import React from 'react';
+
 import { Modal } from 'antd';
+
 import { MonitoredAddress } from '../../../typings/compliance';
+
 import AddressForm from './AddressForm';
 
 interface AddressFormModalProps {

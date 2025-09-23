@@ -1,39 +1,29 @@
-import { useState, useEffect } from 'react'
+import { useEffect,useState } from 'react'
+
+import {
+  ChevronDown,
+  Clock,
+  Edit3,
+  GitBranch,
+  GitCommit,
+  MoreVertical,
+  Plus,
+  Save,
+  Search,
+  Star,
+  Trash2,
+} from 'lucide-react'
+
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
-  DialogTitle,
   DialogDescription,
   DialogFooter,
+  DialogHeader,
+  DialogTitle,
 } from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
-import { Badge } from '@/components/ui/badge'
-import {
-  getAllWorkspaces,
-  saveVersion,
-  createWorkspace,
-  deleteWorkspace,
-  renameWorkspace,
-  type Workspace,
-  type WorkspaceVersion,
-} from '@/lib/workspace-utils'
-import {
-  Save,
-  Trash2,
-  Edit3,
-  Star,
-  Clock,
-  GitBranch,
-  GitCommit,
-  Plus,
-  Search,
-  MoreVertical,
-  ChevronDown,
-} from 'lucide-react'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -42,6 +32,18 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
+import {
+  createWorkspace,
+  deleteWorkspace,
+  getAllWorkspaces,
+  renameWorkspace,
+  saveVersion,
+  type Workspace,
+  type WorkspaceVersion,
+} from '@/lib/workspace-utils'
 
 interface GitHubWorkspaceManagerProps {
   open: boolean

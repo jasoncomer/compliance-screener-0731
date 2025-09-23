@@ -1,6 +1,8 @@
 import React from 'react';
-import { Shield, Eye, Loader2, Info } from 'lucide-react';
+
 import { Tag } from 'antd';
+import { Eye, Info,Loader2, Shield } from 'lucide-react';
+
 import { useTheme } from "../../../../context/ThemeContext";
 
 interface RiskAssessmentProps {

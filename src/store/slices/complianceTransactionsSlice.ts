@@ -1,6 +1,7 @@
-import { createSlice, createAsyncThunk, PayloadAction, createSelector } from '@reduxjs/toolkit';
+import { createAsyncThunk, createSelector,createSlice, PayloadAction } from '@reduxjs/toolkit';
+
 import { api } from '../../api/api';
-import { IComplianceTransaction, ComplianceTransactionResponse, TransactionFilters, EComplianceTransactionStatus } from '../../typings/compliance';
+import { ComplianceTransactionResponse, EComplianceTransactionStatus,IComplianceTransaction, TransactionFilters } from '../../typings/compliance';
 import { RootState } from '../store';
 
 interface ComplianceTransactionsState {

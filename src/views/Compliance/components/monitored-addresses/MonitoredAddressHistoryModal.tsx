@@ -1,5 +1,7 @@
 import React from 'react';
+
 import { Modal } from 'antd';
+
 import MonitoredAddressChangeHistory from './MonitoredAddressChangeHistory';
 
 interface MonitoredAddressHistoryModalProps {

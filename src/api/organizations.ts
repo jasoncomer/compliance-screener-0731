@@ -1,16 +1,16 @@
-import { axiosInstance } from './api';
 import { IBSApiResponse, IUser } from '../typings/interfaces';
 import {
+  EMemberRole,
+  IInvitation,
+  IInviteResponse,
   IOrganization,
   IOrganizationCreate,
-  IOrganizationUpdate,
-  IOrganizationMember,
   IOrganizationInvite,
   IOrganizationJoin,
-  IInviteResponse,
-  IInvitation,
-  EMemberRole
-} from '../typings/organization';
+  IOrganizationMember,
+  IOrganizationUpdate} from '../typings/organization';
+
+import { axiosInstance } from './api';
 
 export const organizations = {
   // List organizations where user is a member

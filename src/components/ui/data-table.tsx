@@ -1,14 +1,18 @@
 import * as React from "react"
+
 import {
+  ArrowDown,
+  ArrowUp,
   ChevronDown,
-  ChevronsUpDown,
   ChevronLeft,
   ChevronRight,
-  ArrowUp,
-  ArrowDown,
+  ChevronsUpDown,
 } from "lucide-react"
+
 import { cn } from "@/lib/utils"
+
 import { Button } from "./button"
+import { Checkbox } from "./checkbox"
 import {
   Table,
   TableBody,
@@ -17,7 +21,6 @@ import {
   TableHeader,
   TableRow,
 } from "./table"
-import { Checkbox } from "./checkbox"
 
 // Types
 export interface Column<T = any> {

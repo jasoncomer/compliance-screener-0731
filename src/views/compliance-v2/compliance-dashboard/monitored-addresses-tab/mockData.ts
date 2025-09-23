@@ -1,4 +1,5 @@
-import { AlertTriangle, Bell, Target, DollarSign } from "lucide-react"
+import { AlertTriangle, Bell, DollarSign,Target } from "lucide-react"
+
 import { Address, AddressStat } from "./types"
 
 export const mockMonitoredAddresses: Address[] = [

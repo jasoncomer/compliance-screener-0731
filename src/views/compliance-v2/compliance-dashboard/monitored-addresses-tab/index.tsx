@@ -1,11 +1,12 @@
 
 import { useState } from "react"
-import { StatsCards } from "./StatsCards"
-import { FiltersSection } from "./FiltersSection"
+
 import { AddAddressDialog } from "./AddAddressDialog"
-import { AddressTable } from "./AddressTable"
 import { AddressDetailDialog } from "./AddressDetailDialog"
-import { mockMonitoredAddresses, addressStats } from "./mockData"
+import { AddressTable } from "./AddressTable"
+import { FiltersSection } from "./FiltersSection"
+import { addressStats,mockMonitoredAddresses } from "./mockData"
+import { StatsCards } from "./StatsCards"
 import { Address } from "./types"
 
 export default function MonitoredAddresses() {

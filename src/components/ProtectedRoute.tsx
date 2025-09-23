@@ -1,4 +1,5 @@
 import { Navigate, useLocation } from 'react-router-dom';
+
 import { useAppContext } from '../context/AppContext';
 
 interface ProtectedRouteProps {

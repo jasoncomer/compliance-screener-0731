@@ -1,6 +1,7 @@
-import styled from 'styled-components';
-import { Card } from 'antd';
 import { CSSProperties } from 'react';
+
+import { Card } from 'antd';
+import styled from 'styled-components';
 
 export const BlockLayout = styled.div`
   display: flex;

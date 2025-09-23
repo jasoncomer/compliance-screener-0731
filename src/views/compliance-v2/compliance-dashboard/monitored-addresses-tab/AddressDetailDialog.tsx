@@ -1,3 +1,15 @@
+import {
+  Activity,
+  AlertCircle,
+  Bell,
+  CheckCircle,
+  Clock,
+  Copy,
+  DollarSign,
+  Target,
+  Trash2,
+} from "lucide-react"
+
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -11,22 +23,12 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Switch } from "@/components/ui/switch"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
-import { Switch } from "@/components/ui/switch"
-import {
-  Bell,
-  Copy,
-  Target,
-  Activity,
-  DollarSign,
-  Clock,
-  AlertCircle,
-  CheckCircle,
-  Trash2,
-} from "lucide-react"
+
 import { Address } from "./types"
-import { getCategoryColor, getStatusColor, getRiskScoreColor, getBlockchainColor, copyToClipboard } from "./utils"
+import { copyToClipboard,getBlockchainColor, getCategoryColor, getRiskScoreColor, getStatusColor } from "./utils"
 
 interface AddressDetailDialogProps {
   address: Address | null

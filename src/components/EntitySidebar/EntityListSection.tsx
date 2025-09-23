@@ -1,18 +1,19 @@
 import React from 'react';
-import { SimpleLogo } from '../common/Logo';
+
 import { SOT } from '../../typings/interfaces';
-import { getEntityTypeLabel } from '../../utils/display-labels';
 import { EEntityType } from '../../typings/SOT';
+import { getEntityTypeLabel } from '../../utils/display-labels';
+import { SimpleLogo } from '../common/Logo';
+
 import {
-  Section,
-  SectionTitle,
-  ScrollableSection,
-  EntityList,
-  StyledCard,
   CardContent,
   EntityInfo,
-  ScrollMoreMessage
-} from './styles';
+  EntityList,
+  ScrollableSection,
+  ScrollMoreMessage,
+  Section,
+  SectionTitle,
+  StyledCard} from './styles';
 
 interface EntityListSectionProps {
   entities: SOT[];

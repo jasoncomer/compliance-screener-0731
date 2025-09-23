@@ -1,9 +1,12 @@
 import React from 'react';
-import { Modal, Card, Statistic, Progress, Table, Tabs, Space, Typography, Empty } from 'antd';
-import { User, CreditCard, Globe, AlertTriangle, CheckCircle, XCircle, Shield } from 'lucide-react';
-import { RiskScoringResponse, RiskFactor } from '../../../../typings/riskScoring';
+
+import { Card, Empty,Modal, Progress, Space, Statistic, Table, Tabs, Typography } from 'antd';
+import { AlertTriangle, CheckCircle, CreditCard, Globe, Shield,User, XCircle } from 'lucide-react';
+
 import { colors } from '@/design-system/tokens'
+
 import { useTheme } from '../../../../context/ThemeContext';
+import { RiskFactor,RiskScoringResponse } from '../../../../typings/riskScoring';
 
 const { Text } = Typography;
 

@@ -1,14 +1,16 @@
 import React from 'react';
+
 import { 
-  Hash, 
-  Clock, 
-  Box, 
   ArrowLeftRight,
+  Box, 
   CheckCircle,
+  Clock, 
   Copy,
   Database,
+  Hash, 
   Zap
 } from 'lucide-react';
+
 import { IBtcBlock } from '../../typings/Block';
 import { truncateStringMiddle } from '../../utils/generic';
 

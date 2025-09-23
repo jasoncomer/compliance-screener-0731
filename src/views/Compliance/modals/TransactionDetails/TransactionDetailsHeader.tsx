@@ -1,13 +1,15 @@
-import { useState, useRef, useImperativeHandle, forwardRef, useEffect } from 'react';
-import { Select, message } from 'antd';
-import { InfoCircleOutlined, UserOutlined, LoadingOutlined } from '@ant-design/icons';
+import { forwardRef, useEffect,useImperativeHandle, useRef, useState } from 'react';
+
+import { InfoCircleOutlined, LoadingOutlined,UserOutlined } from '@ant-design/icons';
+import { message,Select } from 'antd';
+
+import { useUpdateTransactionAssignee, useUpdateTransactionStatus } from '../../../../hooks/useComplianceTransactions';
+import { useAppSelector } from '../../../../store/hooks';
+import { selectActiveOrgMembers } from '../../../../store/slices/organizationsSlice';
 import { EComplianceTransactionStatus } from '../../../../typings/compliance';
 import { IComplianceTransaction } from '../../../../typings/compliance';
-import { selectActiveOrgMembers } from '../../../../store/slices/organizationsSlice';
-import { useAppSelector } from '../../../../store/hooks';
 import { EMemberStatus, IOrganizationMember } from '../../../../typings/organization';
 import { getUserDisplayName } from '../../../../utils/display-labels';
-import { useUpdateTransactionAssignee, useUpdateTransactionStatus } from '../../../../hooks/useComplianceTransactions';
 
 // CSS styles
 const highlightStyles = `

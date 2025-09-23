@@ -1,10 +1,14 @@
 import React, { useState } from 'react';
-import { Card, SubTitle, InfoList, InfoItem, Label, Value, Button } from './styled';
-import { Modal } from '@/components/ui/modal';
-import { Input } from '@/components/ui/input';
+
 import { Lock } from 'lucide-react';
-import { changePassword } from '../../../api/auth';
+
+import { Input } from '@/components/ui/input';
+import { Modal } from '@/components/ui/modal';
 import { useToast } from '@/hooks/use-toast';
+
+import { changePassword } from '../../../api/auth';
+
+import { Button,Card, InfoItem, InfoList, Label, SubTitle, Value } from './styled';
 
 interface SecuritySectionProps {
   theme: 'dark' | 'light';

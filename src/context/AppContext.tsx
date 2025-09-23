@@ -1,9 +1,10 @@
 // AppContext.tsx
-import React, { createContext, useState, ReactNode, useContext, useCallback } from 'react';
+import React, { createContext, ReactNode, useCallback,useContext, useState } from 'react';
+
+import { setAuthToken } from '../api/api';
 import { IUser } from '../typings/interfaces';
 import { IAttributionMap, ReferenceAttributionMap } from '../typings/ReferenceAttribution';
 import { storage } from '../utils/storage';
-import { setAuthToken } from '../api/api';
 
 export interface AppContextProps {
   user: IUser | null;

@@ -1,5 +1,6 @@
 import React from 'react';
-import { WarningOutlined, CheckCircleOutlined } from '@ant-design/icons';
+
+import { CheckCircleOutlined,WarningOutlined } from '@ant-design/icons';
 
 export const getRiskColor = (score: number): string => {
   if (score > 70) return '#cf1322';

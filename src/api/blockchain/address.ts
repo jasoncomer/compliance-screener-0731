@@ -1,5 +1,5 @@
-import { axiosInstance } from '../api';
 import { BtcTransaction } from '../../typings/BtcTransaction';
+import { axiosInstance } from '../api';
 
 interface GetAddressTransactionsResponseData {
   txs: BtcTransaction[];

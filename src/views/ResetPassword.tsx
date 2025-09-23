@@ -1,13 +1,16 @@
-import { useState, useEffect } from 'react';
+import { useEffect,useState } from 'react';
+
+import { Button, Form, Input, notification } from 'antd';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Form, Input, Button, notification } from 'antd';
-import { FormWrapper } from '../styles/Common';
-import { api } from '../api/api';
-import { useAnalytics } from '../hooks/useAnalytics';
-import { useTheme } from '../context/ThemeContext';
 import styled from 'styled-components';
+
 import { colors } from '@/design-system/tokens'
+
+import { api } from '../api/api';
+import { useTheme } from '../context/ThemeContext';
 import { Theme } from '../context/ThemeContext';
+import { useAnalytics } from '../hooks/useAnalytics';
+import { FormWrapper } from '../styles/Common';
 
 interface StyledFormWrapperProps {
   $theme: Theme;

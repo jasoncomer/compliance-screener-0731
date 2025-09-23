@@ -1,12 +1,16 @@
 import React from 'react';
+
+import { EyeOutlined,GlobalOutlined, SendOutlined, TwitterOutlined, UserOutlined } from '@ant-design/icons';
+import { Card, Popover,Tag, Typography } from 'antd';
 import styled from 'styled-components';
-import { Card, Tag, Typography, Popover } from 'antd';
-import { UserOutlined, GlobalOutlined, TwitterOutlined, SendOutlined, EyeOutlined } from '@ant-design/icons';
-import { SimpleLogo } from './common/Logo';
+
+import { colors } from '@/design-system/tokens'
+
 import { SOT } from '../typings/interfaces';
 import { EEntityType } from '../typings/SOT';
 import { getEntityTypeLabel } from '../utils/display-labels';
-import { colors } from '@/design-system/tokens'
+
+import { SimpleLogo } from './common/Logo';
 
 const { Text } = Typography;
 

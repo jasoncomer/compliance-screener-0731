@@ -1,5 +1,6 @@
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
 import ActiveCases from "./compliance-dashboard/active-cases-tab"
 import ArchivedCasesTab from "./compliance-dashboard/archived-cases-tab"
 import ComplianceHeader from "./compliance-dashboard/components/ComplianceHeader"

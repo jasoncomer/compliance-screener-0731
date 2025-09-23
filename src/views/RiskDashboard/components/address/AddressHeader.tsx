@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
-import { Copy, Check, Building2 } from 'lucide-react';
-import { getTagColor } from '../../../../utils/tag-colors';
+
+import { Building2,Check, Copy } from 'lucide-react';
+
 import { useTheme } from '../../../../context/ThemeContext';
 import { useLogo } from '../../../../hooks/useLogo';
+import { getTagColor } from '../../../../utils/tag-colors';
 
 interface AddressHeaderProps {
   address: string;
