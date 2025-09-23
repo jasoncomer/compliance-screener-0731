@@ -52,4 +52,10 @@ const sotSlice = createSlice({
   },
 });
 
+// Selectors
+export const selectSotItemsMap = (state: { sot: SOTState }) => state.sot.itemsMap;
+export const selectSotItems = (state: { sot: SOTState }) => state.sot.items;
+export const selectSotLoading = (state: { sot: SOTState }) => state.sot.loading;
+export const selectSotError = (state: { sot: SOTState }) => state.sot.error;
+
 export default sotSlice.reducer;

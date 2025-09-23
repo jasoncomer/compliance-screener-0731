@@ -179,12 +179,63 @@ export const selectCompletedTransactions = createSelector(
 
 export const selectActiveTransactions = createSelector(
   (state: RootState) => state.complianceTransactions.transactions,
-  (txs: Record<string, IComplianceTransaction>) => Object.values(txs).filter((tx) => 
-    tx.status !== EComplianceTransactionStatus.UNASSIGNED && 
-    tx.status !== EComplianceTransactionStatus.APPROVED && 
-    tx.status !== EComplianceTransactionStatus.CLOSED_WITH_NOTE && 
-    tx.status !== EComplianceTransactionStatus.CLOSED_WITH_SAR
-  )
+  (state: RootState) => state.complianceTransactions.filters,
+  (txs: Record<string, IComplianceTransaction>, filters: TransactionFilters) => {
+    const allTransactions = Object.values(txs);
+    
+    // If we have server-side filtering (indicated by non-status filters), return all transactions
+    // as they are already filtered by the server
+    const hasServerSideFilters = filters.blockchain || filters.assignedTo || 
+                                filters.timestamp || filters.minAmount || 
+                                filters.maxAmount || filters.riskLevel;
+    
+    if (hasServerSideFilters) {
+      return allTransactions;
+    }
+    
+    // Apply client-side filtering for fields that need partial matching
+    let filteredTransactions = allTransactions;
+    
+    // Filter by txId (partial match)
+    if (filters.txId) {
+      console.log('Client-side filtering by txId:', {
+        searchTerm: filters.txId,
+        totalTransactions: filteredTransactions.length,
+        sampleTxIds: filteredTransactions.slice(0, 3).map(tx => tx.txId),
+        beforeFilter: filteredTransactions.length
+      });
+      
+      filteredTransactions = filteredTransactions.filter(tx => 
+        tx.txId && tx.txId.toLowerCase().includes(filters.txId!.toLowerCase())
+      );
+      
+      console.log('After txId filtering:', {
+        afterFilter: filteredTransactions.length,
+        filteredTxIds: filteredTransactions.map(tx => tx.txId)
+      });
+    }
+    
+    // Filter by clientId (partial match)
+    if (filters.clientId) {
+      filteredTransactions = filteredTransactions.filter(tx => 
+        tx.clientId && tx.clientId.toLowerCase().includes(filters.clientId!.toLowerCase())
+      );
+    }
+    
+    // If no status filter is set, use default active statuses
+    if (!filters.status) {
+      const defaultActiveStatuses = [
+        EComplianceTransactionStatus.UNREVIEWED,
+        EComplianceTransactionStatus.IN_REVIEW,
+        EComplianceTransactionStatus.HOLD
+      ];
+      return filteredTransactions.filter(tx => defaultActiveStatuses.includes(tx.status));
+    }
+    
+    // If status filter is set, respect it
+    const allowedStatuses = filters.status.split(',').map(s => s.trim());
+    return filteredTransactions.filter(tx => allowedStatuses.includes(tx.status));
+  }
 );
 
 export const selectTransactionById = createSelector(

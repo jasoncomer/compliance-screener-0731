@@ -1,0 +1,183 @@
+/* Dark theme styles (default) */
+.risk-score-modal.dark-theme .ant-modal-content {
+  background-color: #111827;
+  border: 1px solid #374151;
+  border-radius: 16px;
+}
+
+.risk-score-modal.dark-theme .ant-modal-header {
+  background-color: #111827;
+  border-bottom: 1px solid #374151;
+  border-radius: 16px 16px 0 0;
+}
+
+.risk-score-modal.dark-theme .ant-modal-title {
+  color: #e5e7eb;
+}
+
+.risk-score-modal.dark-theme .ant-modal-close {
+  color: #9ca3af;
+}
+
+.risk-score-modal.dark-theme .ant-modal-close:hover {
+  color: #e5e7eb;
+}
+
+.risk-score-modal.dark-theme .ant-tabs-tab {
+  color: #9ca3af;
+}
+
+.risk-score-modal.dark-theme .ant-tabs-tab:hover {
+  color: #e5e7eb;
+}
+
+.risk-score-modal.dark-theme .ant-tabs-tab.ant-tabs-tab-active {
+  color: #3b82f6;
+}
+
+.risk-score-modal.dark-theme .ant-tabs-ink-bar {
+  background-color: #3b82f6;
+}
+
+.risk-score-modal.dark-theme .ant-table {
+  background-color: #1f2937;
+  color: #e5e7eb;
+}
+
+.risk-score-modal.dark-theme .ant-table-thead > tr > th {
+  background-color: #374151;
+  color: #e5e7eb;
+  border-bottom: 1px solid #4b5563;
+}
+
+.risk-score-modal.dark-theme .ant-table-tbody > tr > td {
+  background-color: #1f2937;
+  color: #e5e7eb;
+  border-bottom: 1px solid #374151;
+}
+
+.risk-score-modal.dark-theme .ant-table-tbody > tr:hover > td {
+  background-color: #374151;
+}
+
+.risk-score-modal.dark-theme .ant-progress-text {
+  color: #e5e7eb;
+}
+
+.risk-score-modal.dark-theme .ant-statistic-title {
+  color: #e5e7eb;
+}
+
+.risk-score-modal.dark-theme .ant-statistic-content {
+  color: #e5e7eb;
+}
+
+.risk-score-modal.dark-theme .ant-card {
+  background-color: #1f2937;
+  border: 1px solid #374151;
+  border-radius: 12px;
+}
+
+.risk-score-modal.dark-theme .ant-card-body {
+  background-color: #1f2937;
+}
+
+.risk-score-modal.dark-theme .ant-empty-description {
+  color: #9ca3af;
+}
+
+.risk-score-modal.dark-theme .ant-spin-dot-item {
+  background-color: #3b82f6;
+}
+
+/* Light theme styles */
+.risk-score-modal.light-theme .ant-modal-content {
+  background-color: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+}
+
+.risk-score-modal.light-theme .ant-modal-header {
+  background-color: #ffffff;
+  border-bottom: 1px solid #e5e7eb;
+  border-radius: 16px 16px 0 0;
+}
+
+.risk-score-modal.light-theme .ant-modal-title {
+  color: #374151;
+}
+
+.risk-score-modal.light-theme .ant-modal-close {
+  color: #6b7280;
+}
+
+.risk-score-modal.light-theme .ant-modal-close:hover {
+  color: #374151;
+}
+
+.risk-score-modal.light-theme .ant-tabs-tab {
+  color: #6b7280;
+}
+
+.risk-score-modal.light-theme .ant-tabs-tab:hover {
+  color: #374151;
+}
+
+.risk-score-modal.light-theme .ant-tabs-tab.ant-tabs-tab-active {
+  color: #3b82f6;
+}
+
+.risk-score-modal.light-theme .ant-tabs-ink-bar {
+  background-color: #3b82f6;
+}
+
+.risk-score-modal.light-theme .ant-table {
+  background-color: #ffffff;
+  color: #374151;
+}
+
+.risk-score-modal.light-theme .ant-table-thead > tr > th {
+  background-color: #f9fafb;
+  color: #374151;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.risk-score-modal.light-theme .ant-table-tbody > tr > td {
+  background-color: #ffffff;
+  color: #374151;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.risk-score-modal.light-theme .ant-table-tbody > tr:hover > td {
+  background-color: #f9fafb;
+}
+
+.risk-score-modal.light-theme .ant-progress-text {
+  color: #374151;
+}
+
+.risk-score-modal.light-theme .ant-statistic-title {
+  color: #374151;
+}
+
+.risk-score-modal.light-theme .ant-statistic-content {
+  color: #374151;
+}
+
+.risk-score-modal.light-theme .ant-card {
+  background-color: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+}
+
+.risk-score-modal.light-theme .ant-card-body {
+  background-color: #ffffff;
+}
+
+.risk-score-modal.light-theme .ant-empty-description {
+  color: #6b7280;
+}
+
+.risk-score-modal.light-theme .ant-spin-dot-item {
+  background-color: #3b82f6;
+}

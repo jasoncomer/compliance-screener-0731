@@ -25,7 +25,7 @@ export const useCryptoPrices = () => {
       const response = await api.crypto.getPrices();
       
       const newPrices: CryptoPrices = {};
-      Object.entries(response).forEach(([symbol, data]: [string, any]) => {
+      Object.entries(response.data).forEach(([symbol, data]: [string, any]) => {
         newPrices[symbol] = {
           price: data.price,
           lastUpdated: Date.now(),

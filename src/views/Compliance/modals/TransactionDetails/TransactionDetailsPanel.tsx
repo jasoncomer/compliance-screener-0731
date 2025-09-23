@@ -3,7 +3,8 @@ import styled from 'styled-components';
 import { colors } from '@/design-system/tokens'
 import { IComplianceTransaction } from '../../../../typings/compliance';
 import { getRiskScoreColor, getComplianceReportStatusColor } from '../../utils/compliance.utils';
-import { Tag } from 'antd';
+import { Tag, Button, Space } from 'antd';
+import { EyeOutlined } from '@ant-design/icons';
 import { useAppSelector } from '../../../../store/hooks';
 import { selectActiveOrgMembersMap } from '../../../../store/slices/organizationsSlice';
 import { getUserDisplayName } from '../../../../utils/display-labels';
@@ -11,6 +12,22 @@ import { selectTransactionById } from '../../../../store/slices/complianceTransa
 import EntityQuickView from '../../../../components/EntityQuickView';
 import { SOT } from '../../../../typings/interfaces';
 import { useCryptoPrices } from '../../../../hooks/useCryptoPrices';
+import TransactionRiskModal from '../../components/modals/TransactionRiskModal';
+import { EComplianceTransactionStatus } from '../../../../typings/compliance';
+
+// Status mapping for display labels
+const getStatusDisplayLabel = (status: EComplianceTransactionStatus): string => {
+  const statusMap: Record<EComplianceTransactionStatus, string> = {
+    [EComplianceTransactionStatus.UNASSIGNED]: 'Unassigned',
+    [EComplianceTransactionStatus.UNREVIEWED]: 'Unreviewed',
+    [EComplianceTransactionStatus.IN_REVIEW]: 'In Review',
+    [EComplianceTransactionStatus.APPROVED]: 'Approved',
+    [EComplianceTransactionStatus.HOLD]: 'Hold',
+    [EComplianceTransactionStatus.CLOSED_WITH_NOTE]: 'Approved with Note',
+    [EComplianceTransactionStatus.CLOSED_WITH_SAR]: 'Closed with SAR',
+  };
+  return statusMap[status] || status;
+};
 
 // Base Styled Components
 const Panel = {
@@ -39,12 +56,21 @@ const Field = {
   `,
 
   Label: styled.div`
-    color: #8c8c8c;
+    color: #6b7280; /* gray-500 for light mode */
     font-size: 12px;
+    
+    @media (prefers-color-scheme: dark) {
+      color: #8c8c8c; /* original color for dark mode */
+    }
   `,
 
   Value: styled.div`
     text-transform: capitalize;
+    color: #1f2937; /* gray-800 for light mode */
+    
+    @media (prefers-color-scheme: dark) {
+      color: #ffffff; /* white for dark mode */
+    }
   `,
 
   Link: styled.a`
@@ -68,8 +94,12 @@ const Field = {
   `,
 
   Empty: styled.span`
-    color: #8c8c8c;
+    color: #6b7280; /* gray-500 for light mode */
     font-style: italic;
+    
+    @media (prefers-color-scheme: dark) {
+      color: #8c8c8c; /* original color for dark mode */
+    }
   `,
 
   Bold: styled.div`
@@ -236,26 +266,45 @@ interface RightPanelProps {
 export const RightPanel: React.FC<RightPanelProps> = ({ transactionId }) => {
   const orgMembersMap = useAppSelector(selectActiveOrgMembersMap);
   const transactionDetails = useAppSelector(state => selectTransactionById(state, transactionId));
+  const [isRiskModalVisible, setIsRiskModalVisible] = useState(false);
 
   if (!transactionDetails) return null;
 
-  return (
-    <Panel.Container as={Panel.Right}>
+  const renderRiskScore = () => {
+    if (!transactionDetails.riskScores || transactionDetails.riskScores.length === 0) return 'N/A';
+    const overallScore = transactionDetails.riskScores[0] || 0;
+    
+    return (
+      <Space>
+        <Tag color={getRiskScoreColor(overallScore)}>
+          {overallScore}
+        </Tag>
+        <Button
+          type="text"
+          size="small"
+          icon={<EyeOutlined />}
+          onClick={() => setIsRiskModalVisible(true)}
+          title="View detailed risk analysis"
+        />
+      </Space>
+    );
+  };
 
-      <Field.Container>
-        <Field.Label>Risk Score</Field.Label>
-        <Field.Value>
-          <Tag color={getRiskScoreColor(transactionDetails.riskScores[0])}>
-            {transactionDetails.riskScores[0]}
-          </Tag>
-        </Field.Value>
-      </Field.Container>
+  return (
+    <>
+      <Panel.Container as={Panel.Right}>
+        <Field.Container>
+          <Field.Label>Risk Score</Field.Label>
+          <Field.Value>
+            {renderRiskScore()}
+          </Field.Value>
+        </Field.Container>
 
       <Field.Container>
         <Field.Label>Status</Field.Label>
         <Field.Value>
           <Tag color={getComplianceReportStatusColor(transactionDetails.status)} style={{ marginRight: 0 }}>
-            {transactionDetails.status.replace(/_/g, ' ')}
+            {getStatusDisplayLabel(transactionDetails.status)}
           </Tag>
         </Field.Value>
       </Field.Container>
@@ -270,16 +319,24 @@ export const RightPanel: React.FC<RightPanelProps> = ({ transactionId }) => {
         <Field.Value>{new Date(transactionDetails.timestamp).toLocaleString()}</Field.Value>
       </Field.Container>
 
-      <Field.Container>
-        <Field.Label>ASSIGNED TO</Field.Label>
-        <Field.Value>
-          {transactionDetails.reviewerId ?
-            getUserDisplayName(orgMembersMap[transactionDetails.reviewerId]) :
-            <Field.Empty>Unassigned</Field.Empty>
-          }
-        </Field.Value>
-      </Field.Container>
-    </Panel.Container >
+        <Field.Container>
+          <Field.Label>ASSIGNED TO</Field.Label>
+          <Field.Value>
+            {transactionDetails.reviewerId ?
+              getUserDisplayName(orgMembersMap[transactionDetails.reviewerId]) :
+              <Field.Empty>Unassigned</Field.Empty>
+            }
+          </Field.Value>
+        </Field.Container>
+      </Panel.Container>
+
+      <TransactionRiskModal
+        visible={isRiskModalVisible}
+        onClose={() => setIsRiskModalVisible(false)}
+        transaction={transactionDetails}
+        title="Transaction Risk Analysis"
+      />
+    </>
   );
 };
 

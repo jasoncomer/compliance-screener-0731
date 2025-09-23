@@ -95,6 +95,9 @@ export interface TransactionFilters {
   statusExclude?: string; // Comma-separated list of statuses to exclude
   blockchain?: string;
   clientId?: string;
+  counterpartyEntity?: string;
+  txId?: string;
+  assignedTo?: string; // User ID of the assigned reviewer
   timestamp?: { from?: string; to?: string };
   minAmount?: number;
   maxAmount?: number;

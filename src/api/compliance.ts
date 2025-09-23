@@ -76,6 +76,8 @@ export const compliance = {
       status?: string;
       blockchain?: string;
       clientId?: string;
+      txId?: string;
+      assignedTo?: string;
       timestamp?: { from?: string; to?: string };
       minAmount?: number;
       maxAmount?: number;
@@ -93,6 +95,22 @@ export const compliance = {
   }> => {
     const endpoint = `/compliance/transactions`;
     const response = await axiosInstance.get(endpoint, { params: filters });
+    console.log('API Response for transactions:', {
+      filters,
+      responseData: response.data,
+      transactionsCount: response.data?.data?.transactions?.length || 0,
+      firstTransaction: response.data?.data?.transactions?.[0] ? {
+        keys: Object.keys(response.data.data.transactions[0]),
+        txId: response.data.data.transactions[0].txId,
+        _id: response.data.data.transactions[0]._id
+      } : null,
+      allTxIds: response.data?.data?.transactions?.map((tx: any) => tx.txId) || [],
+      allTxIdsFull: response.data?.data?.transactions?.map((tx: any) => ({ txId: tx.txId, clientId: tx.clientId, _id: tx._id })) || [],
+      searchTerm: filters.txId,
+      matches: response.data?.data?.transactions?.filter((tx: any) => 
+        tx.txId && tx.txId.includes(filters.txId || '')
+      ).length || 0
+    });
     return response.data.data;
   },
 

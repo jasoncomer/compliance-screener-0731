@@ -10,16 +10,19 @@ export interface CurrencyIcon {
 
 export const currencyIcons: CurrencyIcon[] = [
   // Major Cryptocurrencies
-  { code: 'BTC', name: 'Bitcoin', logo: '/logos/btc.png', type: 'crypto' },
-  { code: 'ETH', name: 'Ethereum', logo: '/logos/eth.png', type: 'crypto' },
-  { code: 'USDC', name: 'USD Coin', logo: '/logos/usdc.png', type: 'crypto' },
-  { code: 'USDT', name: 'Tether', logo: '/logos/usdt.png', type: 'crypto' },
-  { code: 'DAI', name: 'Dai', logo: '/logos/dai.png', type: 'crypto' },
-  { code: 'MATIC', name: 'Polygon', logo: '/logos/matic.png', type: 'crypto' },
-  { code: 'AVAX', name: 'Avalanche', logo: '/logos/avax.png', type: 'crypto' },
-  { code: 'BNB', name: 'BNB', logo: '/logos/bnb.png', type: 'crypto' },
-  { code: 'SOL', name: 'Solana', logo: '/logos/sol.png', type: 'crypto' },
-  { code: 'ADA', name: 'Cardano', logo: '/logos/ada.png', type: 'crypto' },
+  { code: 'BTC', name: 'Bitcoin', logo: 'https://s2.coinmarketcap.com/static/img/coins/64x64/1.png', type: 'crypto' },
+  { code: 'ETH', name: 'Ethereum', logo: 'https://s2.coinmarketcap.com/static/img/coins/64x64/1027.png', type: 'crypto' },
+  { code: 'USDC', name: 'USD Coin', logo: 'https://s2.coinmarketcap.com/static/img/coins/64x64/3408.png', type: 'crypto' },
+  { code: 'USDT', name: 'Tether', logo: 'https://s2.coinmarketcap.com/static/img/coins/64x64/825.png', type: 'crypto' },
+  { code: 'DAI', name: 'Dai', logo: 'https://s2.coinmarketcap.com/static/img/coins/64x64/4943.png', type: 'crypto' },
+  { code: 'MATIC', name: 'Polygon', logo: 'https://s2.coinmarketcap.com/static/img/coins/64x64/3890.png', type: 'crypto' },
+  { code: 'AVAX', name: 'Avalanche', logo: 'https://s2.coinmarketcap.com/static/img/coins/64x64/5805.png', type: 'crypto' },
+  { code: 'BNB', name: 'BNB', logo: 'https://s2.coinmarketcap.com/static/img/coins/64x64/1839.png', type: 'crypto' },
+  { code: 'SOL', name: 'Solana', logo: 'https://s2.coinmarketcap.com/static/img/coins/64x64/5426.png', type: 'crypto' },
+  { code: 'ADA', name: 'Cardano', logo: 'https://s2.coinmarketcap.com/static/img/coins/64x64/2010.png', type: 'crypto' },
+  { code: 'LTC', name: 'Litecoin', logo: 'https://s2.coinmarketcap.com/static/img/coins/64x64/2.png', type: 'crypto' },
+  { code: 'XRP', name: 'XRP', logo: 'https://s2.coinmarketcap.com/static/img/coins/64x64/52.png', type: 'crypto' },
+  { code: 'DOGE', name: 'Dogecoin', logo: 'https://s2.coinmarketcap.com/static/img/coins/64x64/74.png', type: 'crypto' },
 
   // Major Fiat Currencies
   { code: 'USD', name: 'US Dollar', logo: '/logos/currencies/usd.svg', type: 'fiat' },
@@ -49,7 +52,7 @@ export function getCurrencyIcon(code: string): CurrencyIcon | undefined {
 export function getCurrencyLogo(code: string): string {
   const icon = getCurrencyIcon(code)
   if (icon) return icon.logo
-  return '/logos/btc.png'
+  return 'https://s2.coinmarketcap.com/static/img/coins/64x64/1.png'
 }
 
 export function getCurrencyName(code: string): string {

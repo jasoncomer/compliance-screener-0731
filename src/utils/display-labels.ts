@@ -59,7 +59,20 @@ export function getEntityTypeLabel(type: EEntityType): string {
 }
 
 export const getUserDisplayName = (user: IUser | IOrganizationMember) => {
-  return `${user.name[0].toUpperCase()}${user.name.slice(1)} ${user.surname[0].toUpperCase()}${user.surname.slice(1)}`;
+  if (!user) return 'Unknown User';
+  
+  const firstName = user.name || '';
+  const lastName = user.surname || '';
+  
+  const formattedFirstName = firstName.length > 0 
+    ? `${firstName[0].toUpperCase()}${firstName.slice(1)}` 
+    : '';
+    
+  const formattedLastName = lastName.length > 0 
+    ? `${lastName[0].toUpperCase()}${lastName.slice(1)}` 
+    : '';
+  
+  return `${formattedFirstName} ${formattedLastName}`.trim() || 'Unknown User';
 }
 
 export const getBlockchainLabel = (blockchain: string) => {

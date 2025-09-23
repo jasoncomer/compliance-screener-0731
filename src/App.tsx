@@ -28,6 +28,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import Welcome from './views/Welcome/index';
 import { useAppDispatch } from './store/hooks';
 import { fetchOrganizations } from './store/slices/organizationsSlice';
+import { FlowTraceProvider } from './context/FlowTraceContext';
 import { useAnalytics } from './hooks/useAnalytics';
 import { ComplianceDashboard } from "./views/compliance-v2/compliance-dashboard";
 import { Toaster } from './components/ui/toaster';
@@ -112,7 +113,8 @@ function App() {
       <NotificationContainer />
       <Toaster />
       <AutosaveProvider>
-        <Routes>
+        <FlowTraceProvider>
+          <Routes>
           <Route path="/" element={<Navigate to="/home/block-explorer" replace />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={user ? <Navigate to="/home/block-explorer" replace /> : <Register />} />
@@ -142,6 +144,7 @@ function App() {
           </Route>
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
+        </FlowTraceProvider>
       </AutosaveProvider>
     </>
   )

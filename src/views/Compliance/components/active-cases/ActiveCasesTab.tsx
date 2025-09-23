@@ -3,9 +3,10 @@ import { Form, Button, Select, Input, DatePicker, Card } from 'antd';
 import { FilterOutlined, ClearOutlined, FileSearchOutlined } from '@ant-design/icons';
 import { EComplianceTransactionStatus, TransactionFilters } from '../../../../typings/compliance';
 import { cn } from '../../../../lib/utils';
+import { getUserDisplayName } from '../../../../utils/display-labels';
 import ActiveCasesTable from './ActiveCasesTable';
 import ErrorBoundary from '../../../../components/ErrorBoundary';
-import { selectCurrentOrganization } from '../../../../store/slices/organizationsSlice';
+import { selectCurrentOrganization, selectActiveOrgMembers } from '../../../../store/slices/organizationsSlice';
 import { useAppDispatch, useAppSelector } from '../../../../store/hooks';
 import { 
   fetchComplianceTransactions, 
@@ -27,6 +28,7 @@ interface ActiveCasesTabProps {
 
 const ActiveCasesTab: React.FC<ActiveCasesTabProps> = ({ isActive, className }) => {
   const organization = useAppSelector(selectCurrentOrganization);
+  const organizationMembers = useAppSelector(selectActiveOrgMembers);
   const dispatch = useAppDispatch();
   
   // Use Redux store data
@@ -39,7 +41,6 @@ const ActiveCasesTab: React.FC<ActiveCasesTabProps> = ({ isActive, className }) 
   
   // Track available filter options
   const [availableBlockchains, setAvailableBlockchains] = useState<string[]>([]);
-  const [availableClientIds, setAvailableClientIds] = useState<string[]>([]);
 
   // Validate and sanitize transactions data
   const validatedTransactions = React.useMemo(() => {
@@ -67,8 +68,8 @@ const ActiveCasesTab: React.FC<ActiveCasesTabProps> = ({ isActive, className }) 
   useEffect(() => {
     if (!isActive) return;
 
-    // Define active statuses for this tab
-    const activeStatuses = [
+    // Define default active statuses for this tab (only when no status filter is set)
+    const defaultActiveStatuses = [
       EComplianceTransactionStatus.UNREVIEWED,
       EComplianceTransactionStatus.IN_REVIEW,
       EComplianceTransactionStatus.HOLD
@@ -76,7 +77,7 @@ const ActiveCasesTab: React.FC<ActiveCasesTabProps> = ({ isActive, className }) 
 
     const mergedFilters = { 
       ...filters,
-      status: filters.status || activeStatuses.join(','), // Always ensure active statuses are set
+      status: filters.status || defaultActiveStatuses.join(','), // Use default only if no status filter is set
       page: currentPage,
       limit: pageSize
     };
@@ -89,10 +90,6 @@ const ActiveCasesTab: React.FC<ActiveCasesTabProps> = ({ isActive, className }) 
       // Extract unique blockchains
       const blockchains = [...new Set(validatedTransactions.map(tx => tx.blockchain).filter(Boolean))];
       setAvailableBlockchains(blockchains);
-      
-      // Extract unique client IDs
-      const clientIds = [...new Set(validatedTransactions.map(tx => tx.clientId).filter(Boolean))];
-      setAvailableClientIds(clientIds);
     }
   }, [validatedTransactions]);
 
@@ -105,7 +102,7 @@ const ActiveCasesTab: React.FC<ActiveCasesTabProps> = ({ isActive, className }) 
   // Clear all filters
   const handleClearFilters = () => {
     form.resetFields();
-    const activeStatuses = [
+    const defaultActiveStatuses = [
       EComplianceTransactionStatus.UNREVIEWED,
       EComplianceTransactionStatus.IN_REVIEW,
       EComplianceTransactionStatus.HOLD
@@ -113,13 +110,12 @@ const ActiveCasesTab: React.FC<ActiveCasesTabProps> = ({ isActive, className }) 
     dispatch(setFilters({
       page: 1,
       limit: pageSize,
-      status: activeStatuses.join(',') // Maintain active status filter
+      status: defaultActiveStatuses.join(',') // Reset to default active statuses when clearing
     }));
   };
   
   // Handle filter form submission
   const handleFilterSubmit = (values: Record<string, any>) => {
-    console.log('handleFilterSubmit', values);
     // Create new filter object
     const newFilters: TransactionFilters = {
       ...filters,
@@ -127,7 +123,6 @@ const ActiveCasesTab: React.FC<ActiveCasesTabProps> = ({ isActive, className }) 
     };
     
     // Add form filters
-    console.log('newFilters', newFilters);
     if (values.status) {
       newFilters.status = values.status;
     } else {
@@ -144,6 +139,14 @@ const ActiveCasesTab: React.FC<ActiveCasesTabProps> = ({ isActive, className }) 
       newFilters.clientId = values.clientId;
     } else {
       delete newFilters.clientId;
+    }
+    
+    if (values.txId) {
+      newFilters.txId = values.txId;
+      console.log('Adding txId filter:', values.txId);
+    } else {
+      delete newFilters.txId;
+      console.log('Removing txId filter');
     }
     
     // Date range filter
@@ -179,17 +182,26 @@ const ActiveCasesTab: React.FC<ActiveCasesTabProps> = ({ isActive, className }) 
       delete newFilters.riskLevel;
     }
     
+    // Assigned To filter
+    if (values.assignedTo) {
+      newFilters.assignedTo = values.assignedTo;
+    } else {
+      delete newFilters.assignedTo;
+    }
+    
+    console.log('Dispatching filters to API:', newFilters);
     dispatch(setFilters(newFilters));
   };
 
   return (
     <div className={cn("w-full", className)}>
-      <div className="flex justify-between items-center mb-4">
+      <div className="flex justify-between items-center mb-4 pb-4 border-b-2 border-gray-300">
         <h3 className="m-0 text-black dark:text-white">
           <FileSearchOutlined className="mr-2" />
           Active Cases Management ({totalTransactions})
         </h3>
-        <div>
+        <div className="flex items-center">
+          <div className="w-px h-6 bg-gray-400 mx-4"></div>
           <span className="mr-2.5 text-brand-primary-dark dark:text-white">
             Total Active Cases: <strong>{totalTransactions}</strong>
           </span>
@@ -207,7 +219,7 @@ const ActiveCasesTab: React.FC<ActiveCasesTabProps> = ({ isActive, className }) 
             onClick={handleClearFilters}
             size="small"
           >
-            Clear
+            Clear Filters
           </Button>
         }
       >
@@ -228,9 +240,6 @@ const ActiveCasesTab: React.FC<ActiveCasesTabProps> = ({ isActive, className }) 
               <Select.Option value={EComplianceTransactionStatus.UNREVIEWED}>Unreviewed</Select.Option>
               <Select.Option value={EComplianceTransactionStatus.IN_REVIEW}>In Review</Select.Option>
               <Select.Option value={EComplianceTransactionStatus.HOLD}>Hold</Select.Option>
-              {/* <Select.Option value={ETransactionStatus.APPROVED}>Approved</Select.Option> */}
-              {/* <Select.Option value={ETransactionStatus.CLOSED_WITH_NOTE}>Closed with note</Select.Option> */}
-              {/* <Select.Option value={ETransactionStatus.CLOSED_WITH_SAR}>Closed with SAR</Select.Option> */}
             </Select>
           </Form.Item>
 
@@ -248,15 +257,41 @@ const ActiveCasesTab: React.FC<ActiveCasesTabProps> = ({ isActive, className }) 
             </Select>
           </Form.Item>
           
-          <Form.Item name="clientId" style={{ minWidth: 110, marginBottom: 8 }}>
+          <Form.Item name="clientId" style={{ minWidth: 150, marginBottom: 8 }}>
+            <Input 
+              placeholder="Client ID (partial match)"
+              allowClear
+              size="small"
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                const values = form.getFieldsValue();
+                values.clientId = e.target.value;
+                handleFilterSubmit(values);
+              }}
+            />
+          </Form.Item>
+          
+          <Form.Item name="txId" style={{ minWidth: 200, marginBottom: 8 }}>
+            <Input 
+              placeholder="Transaction ID (partial match)"
+              allowClear
+              size="small"
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                const values = form.getFieldsValue();
+                values.txId = e.target.value;
+                handleFilterSubmit(values);
+              }}
+            />
+          </Form.Item>
+          
+          <Form.Item name="assignedTo" style={{ minWidth: 120, marginBottom: 8 }}>
             <Select 
-              placeholder="Client ID"
+              placeholder="Assigned To"
               allowClear
               size="small"
             >
-              {availableClientIds.map(clientId => (
-                <Select.Option key={clientId} value={clientId}>
-                  {clientId}
+              {organizationMembers.map(member => (
+                <Select.Option key={member.userId} value={member.userId}>
+                  {getUserDisplayName(member)}
                 </Select.Option>
               ))}
             </Select>

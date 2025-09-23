@@ -3,8 +3,9 @@ import { Form, Button, Select, Input, DatePicker, Card } from 'antd';
 import { FilterOutlined, ClearOutlined, FileSearchOutlined } from '@ant-design/icons';
 import { EComplianceTransactionStatus, TransactionFilters } from '../../../../typings/compliance';
 import { cn } from '../../../../lib/utils';
+import { getUserDisplayName } from '../../../../utils/display-labels';
 import ActiveCasesTable from '../active-cases/ActiveCasesTable';
-import { selectCurrentOrganization } from '../../../../store/slices/organizationsSlice';
+import { selectCurrentOrganization, selectActiveOrgMembers } from '../../../../store/slices/organizationsSlice';
 import { useAppDispatch, useAppSelector } from '../../../../store/hooks';
 import { 
   fetchComplianceTransactions, 
@@ -32,6 +33,7 @@ const ARCHIVED_STATUSES = [
 
 const ArchivedCasesTab: React.FC<ArchivedCasesTabProps> = ({ isActive, className }) => {
   const organization = useAppSelector(selectCurrentOrganization);
+  const organizationMembers = useAppSelector(selectActiveOrgMembers);
   const dispatch = useAppDispatch();
   
   // Use Redux store data
@@ -129,6 +131,13 @@ const ArchivedCasesTab: React.FC<ArchivedCasesTabProps> = ({ isActive, className
       delete newFilters.maxAmount;
     }
 
+    // Assigned To filter
+    if (values.assignedTo) {
+      newFilters.assignedTo = values.assignedTo;
+    } else {
+      delete newFilters.assignedTo;
+    }
+
     // Clean up undefined values
     Object.keys(newFilters).forEach(key => {
       if (newFilters[key as keyof TransactionFilters] === undefined) {
@@ -164,7 +173,7 @@ const ArchivedCasesTab: React.FC<ArchivedCasesTabProps> = ({ isActive, className
             onClick={handleClearFilters}
             size="small"
           >
-            Clear
+            Clear Filters
           </Button>
         }
       >
@@ -183,7 +192,7 @@ const ArchivedCasesTab: React.FC<ArchivedCasesTabProps> = ({ isActive, className
               onChange={(value) => handleFilterSubmit({ status: value })}
             >
               <Select.Option value={EComplianceTransactionStatus.APPROVED}>Approved</Select.Option>
-              <Select.Option value={EComplianceTransactionStatus.CLOSED_WITH_NOTE}>Closed with note</Select.Option>
+                <Select.Option value={EComplianceTransactionStatus.CLOSED_WITH_NOTE}>Approved with Note</Select.Option>
               <Select.Option value={EComplianceTransactionStatus.CLOSED_WITH_SAR}>Closed with SAR</Select.Option>
             </Select>
           </Form.Item>
@@ -211,6 +220,20 @@ const ArchivedCasesTab: React.FC<ArchivedCasesTabProps> = ({ isActive, className
               {availableClientIds.map(clientId => (
                 <Select.Option key={clientId} value={clientId}>
                   {clientId}
+                </Select.Option>
+              ))}
+            </Select>
+          </Form.Item>
+          
+          <Form.Item name="assignedTo" style={{ minWidth: 120, marginBottom: 8 }}>
+            <Select 
+              placeholder="Assigned To"
+              allowClear
+              size="small"
+            >
+              {organizationMembers.map(member => (
+                <Select.Option key={member.userId} value={member.userId}>
+                  {getUserDisplayName(member)}
                 </Select.Option>
               ))}
             </Select>

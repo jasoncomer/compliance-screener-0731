@@ -1,5 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { flowtraceService } from '../../services/flowtraceService';
+import { useFlowTraceInitialization } from '../../context/FlowTraceContext';
 import { generateUTXOKey, connectionInvolvesAddress, generateConnectionKey, findConnectionsForAddress, ensureConnectionKeys } from './utils/utxoKeyGeneration';
 import { useAttribution } from '../../context/AttributionContext';
 import { useAppSelector, useAppDispatch } from '../../store/hooks';
@@ -75,7 +77,22 @@ const mergeEdges = (existing: FTConnection[], incoming: FTConnection[]) => {
 }
 
 const FlowTracePage: React.FC = () => {
+  console.log('FlowTracePage component rendering');
+  
+  const [searchParams] = useSearchParams();
   const { autosaveInterval, isAutosaveEnabled } = useAutosave();
+  let initializationData = null;
+  let clearInitializationData = () => {};
+  
+  try {
+    const context = useFlowTraceInitialization();
+    initializationData = context.initializationData;
+    clearInitializationData = context.clearInitializationData;
+  } catch (error) {
+    console.warn('FlowTraceContext not available:', error);
+  }
+  
+  console.log('FlowTracePage hooks initialized');
   const [address, setAddress] = useState('');
   const [nodes, setNodes] = useState<FTNode[]>([]);
   const [connections, setConnections] = useState<FTConnection[]>([]);
@@ -142,6 +159,210 @@ const FlowTracePage: React.FC = () => {
       setHasUnsavedChanges(true);
     }
   }, [nodes, connections]);
+
+  // Prefetch attribution profile and logos for a list of addresses (non-blocking)
+  const prefetchProfilesAndLogos = async (addresses: string[]) => {
+    const unique = Array.from(new Set(addresses.filter(Boolean)));
+    if (!unique.length) return;
+    
+    
+    // Ensure SOT data is loaded first
+    if (Object.keys(itemsMap).length === 0) {
+      try {
+        await dispatch(fetchSOT()).unwrap();
+      } catch (error) {
+        return; // Don't proceed if SOT data can't be loaded
+      }
+    }
+    
+    // Fetch attribution data for all addresses at once (same as Risk Dashboard)
+    try {
+      await fetchAttributions(unique);
+    } catch (error) {
+    }
+  };
+  
+  // Function to fetch and set left panel data for an address
+  const fetchAndSetLeftPanelData = async (address: string) => {
+    setIsLeftPanelLoading(true);
+    try {
+
+      // Use the new optimized endpoint that replaces 15-20 API calls with 1
+      const optimizedResponse = await flowtraceService.expandNodeOptimized(address, {
+        includeRiskScores: true,
+        includeTransactions: true
+      });
+
+
+      // Extract data from optimized response
+      const { enhancedData, riskScores, summary } = optimizedResponse.data;
+      
+      const summary_data = {
+        balance: '0',
+        usdValue: 0
+      };
+
+      // Use client-side resolved entity data if available, fallback to API data
+      const attribution = attributions[address];
+      let profile;
+      
+      if (attribution && Object.keys(itemsMap).length > 0) {
+        // Use client-side resolution with O(1) hashmap lookup (same as node visualization)
+        const entitySOT = itemsMap[attribution.entity];
+        const beneficialOwnerSOT = attribution.bo ? itemsMap[attribution.bo] : undefined;
+        
+        const override = applyBeneficialOwnerOverride(
+          {
+            entity: attribution.entity,
+            bo: attribution.bo || '',
+            custodian: attribution.custodian || '',
+            script_type: attribution.script_type
+          },
+          entitySOT,
+          beneficialOwnerSOT,
+          Object.values(itemsMap)
+        );
+        
+        profile = {
+          entityId: attribution.entity,
+          entityType: override.entityType || 'wallet',
+          properName: override.displayTitle || attribution.entity,
+          riskScore: riskScores[address]?.overallRisk ? Math.round(riskScores[address].overallRisk * 100) : undefined,
+          logoUrl: override.logo ? `https://storage.googleapis.com/entity-logos/${attribution.entity}.jpg` : null,
+          bo: attribution.bo,
+          custodian: attribution.custodian
+        };
+        
+      } else {
+        // Fallback to API data
+        profile = {
+          entityId: enhancedData.find((item: any) => item.attribution?.entity)?.attribution?.entity,
+          entityType: enhancedData.find((item: any) => item.entityProfile?.entity_type)?.entityProfile?.entity_type,
+          properName: enhancedData.find((item: any) => item.entityProfile?.proper_name)?.entityProfile?.proper_name,
+          riskScore: riskScores[address]?.overallRisk ? Math.round(riskScores[address].overallRisk * 100) : undefined,
+          logoUrl: enhancedData.find((item: any) => item.entityProfile?.logo)?.entityProfile?.logo,
+          bo: enhancedData.find((item: any) => item.attribution?.bo)?.attribution?.bo,
+          custodian: enhancedData.find((item: any) => item.attribution?.custodian)?.attribution?.custodian
+        };
+        
+      }
+      
+      
+
+      // Use actual transaction count from the optimized response
+      const actualTxCount = summary.totalTransactions || 0;
+
+      // Update left panel data
+      const leftPanelData = {
+        address,
+        network: getBlockchainType(address) === 'bitcoin' ? 'Bitcoin' : 'Ethereum',
+        balance: summary_data.balance,
+        txCount: actualTxCount,
+        riskScore: profile.riskScore,
+        usdValue: summary_data.usdValue,
+        selectedEntity: {
+          label: profile.properName || profile.entityId || address,
+          address,
+          logoUrl: profile.logoUrl,
+          type: profile.entityType || 'wallet',
+          riskScore: profile.riskScore,
+          bo: profile.bo,
+          custodian: profile.custodian
+        }
+      };
+      
+      setLeftPanelData(leftPanelData);
+
+      // Also update the node with risk score data for visualization
+      setNodes((prev) => prev.map((n) => (n.id === address ? {
+        ...n,
+        risk: profile.riskScore,
+        balance: summary_data.balance,
+        txCount: actualTxCount,
+        usdValue: summary_data.usdValue
+      } : n)));
+    } catch (error) {
+    } finally {
+      setIsLeftPanelLoading(false);
+    }
+  };
+
+  // Core trace function that performs the actual address search and node addition
+  const performTrace = useCallback(async (addressToTrace: string) => {
+    setIsLoading(true);
+    try {
+      // Set both center node and current address to ensure left panel shows correct data
+      setCenterNodeId(addressToTrace);
+      setCurrentAddress(addressToTrace);
+      
+      // Clear any existing left panel data to prevent showing stale information
+      setLeftPanelData(null);
+      
+      // Fetch background data and hydrate once available (includes risk score)
+      await fetchAndSetLeftPanelData(addressToTrace);
+
+      // Add node to graph
+      const newNode: FTNode = {
+        id: addressToTrace,
+        label: addressToTrace, // Will be updated by prefetchProfilesAndLogos
+        x: 300,
+        y: 240,
+        type: 'wallet', // Will be updated by prefetchProfilesAndLogos
+        risk: 0, // Initialize with 0, will be updated by prefetchProfilesAndLogos
+      };
+
+      setNodes(prev => {
+        const exists = prev.find(n => n.id === addressToTrace);
+        if (exists) return prev;
+        return [...prev, newNode];
+      });
+
+      // Fetch entity profile and logo for the new node
+      prefetchProfilesAndLogos([addressToTrace]);
+      
+      // Mark as having unsaved changes
+      setHasUnsavedChanges(true);
+    } catch (error) {
+    } finally {
+      setIsLoading(false);
+    }
+  }, [fetchAndSetLeftPanelData, prefetchProfilesAndLogos]);
+
+  // Handle initial addresses from context
+  useEffect(() => {
+    console.log('FlowTrace context useEffect triggered');
+    console.log('Initialization data:', initializationData);
+    
+    if (initializationData && initializationData.addresses && initializationData.addresses.length > 0) {
+      console.log('FlowTrace initialized with context addresses:', initializationData.addresses);
+      
+      // Clear existing graph
+      setNodes([]);
+      setConnections([]);
+      
+      // Initialize FlowTrace with the first address
+      const firstAddress = initializationData.addresses[0];
+      setAddress(firstAddress);
+      
+      console.log('About to call performTrace with address:', firstAddress);
+      
+      // Start the investigation with the first address
+      try {
+        performTrace(firstAddress);
+        console.log('performTrace called successfully');
+      } catch (error) {
+        console.error('Error calling performTrace:', error);
+      }
+      
+      console.log(`FlowTrace initialized with transaction ${initializationData.txId} addresses:`, initializationData.addresses);
+      
+      // Clear the initialization data after use
+      clearInitializationData();
+    } else {
+      console.log('No initialization data available or empty addresses');
+    }
+  }, [initializationData, performTrace, clearInitializationData]);
+
 
   // Reset unsaved changes when workspace is loaded
   useEffect(() => {
@@ -510,134 +731,6 @@ const FlowTracePage: React.FC = () => {
     }
   }, [workspaceId, nodes, connections]);
 
-
-  // Function to fetch and set left panel data for an address
-  const fetchAndSetLeftPanelData = async (address: string) => {
-    setIsLeftPanelLoading(true);
-    try {
-
-      // Use the new optimized endpoint that replaces 15-20 API calls with 1
-      const optimizedResponse = await flowtraceService.expandNodeOptimized(address, {
-        includeRiskScores: true,
-        includeTransactions: true
-      });
-
-
-      // Extract data from optimized response
-      const { enhancedData, riskScores, summary } = optimizedResponse.data;
-      
-      const summary_data = {
-        balance: '0',
-        usdValue: 0
-      };
-
-      // Use client-side resolved entity data if available, fallback to API data
-      const attribution = attributions[address];
-      let profile;
-      
-      if (attribution && Object.keys(itemsMap).length > 0) {
-        // Use client-side resolution with O(1) hashmap lookup (same as node visualization)
-        const entitySOT = itemsMap[attribution.entity];
-        const beneficialOwnerSOT = attribution.bo ? itemsMap[attribution.bo] : undefined;
-        
-        const override = applyBeneficialOwnerOverride(
-          {
-            entity: attribution.entity,
-            bo: attribution.bo || '',
-            custodian: attribution.custodian || '',
-            script_type: attribution.script_type
-          },
-          entitySOT,
-          beneficialOwnerSOT,
-          Object.values(itemsMap)
-        );
-        
-        profile = {
-          entityId: attribution.entity,
-          entityType: override.entityType || 'wallet',
-          properName: override.displayTitle || attribution.entity,
-          riskScore: riskScores[address]?.overallRisk ? Math.round(riskScores[address].overallRisk * 100) : undefined,
-          logoUrl: override.logo ? `https://storage.googleapis.com/entity-logos/${attribution.entity}.jpg` : null,
-          bo: attribution.bo,
-          custodian: attribution.custodian
-        };
-        
-      } else {
-        // Fallback to API data
-        profile = {
-          entityId: enhancedData.find((item: any) => item.attribution?.entity)?.attribution?.entity,
-          entityType: enhancedData.find((item: any) => item.entityProfile?.entity_type)?.entityProfile?.entity_type,
-          properName: enhancedData.find((item: any) => item.entityProfile?.proper_name)?.entityProfile?.proper_name,
-          riskScore: riskScores[address]?.overallRisk ? Math.round(riskScores[address].overallRisk * 100) : undefined,
-          logoUrl: enhancedData.find((item: any) => item.entityProfile?.logo)?.entityProfile?.logo,
-          bo: enhancedData.find((item: any) => item.attribution?.bo)?.attribution?.bo,
-          custodian: enhancedData.find((item: any) => item.attribution?.custodian)?.attribution?.custodian
-        };
-        
-      }
-      
-      
-
-      // Use actual transaction count from the optimized response
-      const actualTxCount = summary.totalTransactions || 0;
-
-      // Update left panel data
-      const leftPanelData = {
-        address,
-        network: getBlockchainType(address) === 'bitcoin' ? 'Bitcoin' : 'Ethereum',
-        balance: summary_data.balance,
-        txCount: actualTxCount,
-        riskScore: profile.riskScore,
-        usdValue: summary_data.usdValue,
-        selectedEntity: {
-          label: profile.properName || profile.entityId || address,
-          address,
-          logoUrl: profile.logoUrl,
-          type: profile.entityType || 'wallet',
-          riskScore: profile.riskScore,
-          bo: profile.bo,
-          custodian: profile.custodian
-        }
-      };
-      
-      setLeftPanelData(leftPanelData);
-
-      // Also update the node with risk score data for visualization
-      setNodes((prev) => prev.map((n) => (n.id === address ? {
-        ...n,
-        risk: profile.riskScore,
-        balance: summary_data.balance,
-        txCount: actualTxCount,
-        usdValue: summary_data.usdValue
-      } : n)));
-    } catch (error) {
-    } finally {
-      setIsLeftPanelLoading(false);
-    }
-  };
-
-  // Prefetch attribution profile and logos for a list of addresses (non-blocking)
-  const prefetchProfilesAndLogos = async (addresses: string[]) => {
-    const unique = Array.from(new Set(addresses.filter(Boolean)));
-    if (!unique.length) return;
-    
-    
-    // Ensure SOT data is loaded first
-    if (Object.keys(itemsMap).length === 0) {
-      try {
-        await dispatch(fetchSOT()).unwrap();
-      } catch (error) {
-        return; // Don't proceed if SOT data can't be loaded
-      }
-    }
-    
-    // Fetch attribution data for all addresses at once (same as Risk Dashboard)
-    try {
-      await fetchAttributions(unique);
-    } catch (error) {
-    }
-  };
-
   // Fetch risk scores for newly added nodes (non-blocking)
   const prefetchRiskScores = async (addresses: string[]) => {
     const unique = Array.from(new Set(addresses.filter(Boolean)));
@@ -676,46 +769,40 @@ const FlowTracePage: React.FC = () => {
     }
   };
 
-  // Core trace function that performs the actual address search and node addition
-  const performTrace = useCallback(async (addressToTrace: string) => {
-    setIsLoading(true);
-    try {
-      // Set both center node and current address to ensure left panel shows correct data
-      setCenterNodeId(addressToTrace);
-      setCurrentAddress(addressToTrace);
+  // Handle URL parameters for transaction-based FlowTrace initialization
+  useEffect(() => {
+    console.log('FlowTrace URL parameter useEffect triggered');
+    const addressesParam = searchParams.get('addresses');
+    const txidParam = searchParams.get('txid');
+    
+    console.log('URL parameters:', { addressesParam, txidParam });
+    
+    if (addressesParam && addressesParam.trim()) {
+      const addresses = addressesParam.split(',').map(addr => addr.trim()).filter(addr => addr);
+      console.log('Parsed addresses:', addresses);
       
-      // Clear any existing left panel data to prevent showing stale information
-      setLeftPanelData(null);
-      
-      // Fetch background data and hydrate once available (includes risk score)
-      await fetchAndSetLeftPanelData(addressToTrace);
-
-      // Add node to graph
-      const newNode: FTNode = {
-        id: addressToTrace,
-        label: addressToTrace, // Will be updated by prefetchProfilesAndLogos
-        x: 300,
-        y: 240,
-        type: 'wallet', // Will be updated by prefetchProfilesAndLogos
-        risk: 0, // Initialize with 0, will be updated by prefetchProfilesAndLogos
-      };
-
-      setNodes(prev => {
-        const exists = prev.find(n => n.id === addressToTrace);
-        if (exists) return prev;
-        return [...prev, newNode];
-      });
-
-      // Fetch entity profile and logo for the new node
-      prefetchProfilesAndLogos([addressToTrace]);
-      
-      // Mark as having unsaved changes
-      setHasUnsavedChanges(true);
-    } catch (error) {
-    } finally {
-      setIsLoading(false);
+      if (addresses.length > 0) {
+        console.log('Clearing existing graph and initializing with addresses');
+        
+        // Clear existing graph
+        setNodes([]);
+        setConnections([]);
+        
+        // Initialize FlowTrace with the first address
+        const firstAddress = addresses[0];
+        setAddress(firstAddress);
+        
+        console.log('Starting investigation with first address:', firstAddress);
+        
+        // Start the investigation with the first address
+        performTrace(firstAddress);
+        
+        // If there are multiple addresses, we could expand them too
+        // For now, we'll start with the first one and let the user expand others
+        console.log(`FlowTrace initialized with transaction ${txidParam} addresses:`, addresses);
+      }
     }
-  }, [fetchAndSetLeftPanelData, prefetchProfilesAndLogos]);
+  }, [searchParams, performTrace]);
 
   // Function to handle node selection and update left panel
   const handleNodeSelection = useCallback(async (node: FTNode) => {
@@ -1342,6 +1429,8 @@ const FlowTracePage: React.FC = () => {
   }, [handleAddConnections, prefetchProfilesAndLogos, prefetchRiskScores])
 
   const isEmptyState = nodes.length === 0 && !isLoading;
+
+  console.log('FlowTracePage rendering with isEmptyState:', isEmptyState, 'nodes:', nodes.length, 'isLoading:', isLoading);
 
   return (
     <ViewWrapper

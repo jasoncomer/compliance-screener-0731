@@ -3,7 +3,7 @@ import { Card, Button, Row, Col, Space, Modal, Select, message } from 'antd';
 import { UserOutlined } from '@ant-design/icons';
 import { useAppSelector } from '../../../store/hooks';
 import { selectActiveOrgMembers } from '../../../store/slices/organizationsSlice';
-import { EMemberStatus, IOrganizationMember } from '../../../typings/organization';
+import { EMemberStatus } from '../../../typings/organization';
 import { getUserDisplayName } from '../../../utils/display-labels';
 import { useBulkUpdateTransactionAssignee } from '../../../hooks/useComplianceTransactions';
 
@@ -131,11 +131,11 @@ const BulkSelectComponent: React.FC<BulkSelectComponentProps> = ({
           onChange={(value) => setSelectedReviewer(value)}
           suffixIcon={<UserOutlined />}
         >
-          {organizationMembers.map(member => {
+          {(organizationMembers || []).map(member => {
             const isDisabled = member.status === EMemberStatus.PENDING;
             return (
               <Select.Option key={member.userId} value={member.userId} disabled={isDisabled}>
-                {getUserDisplayName(member as IOrganizationMember)}
+                {getUserDisplayName(member)}
               </Select.Option>
             );
           })}

@@ -1,29 +1,37 @@
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import {
   X,
   AlertTriangle,
   CheckCircle,
   Clock,
   User,
-  Calendar,
   Hash,
   Building2,
   Coins,
-  TrendingUp,
   FileText,
   Shield,
+  Bitcoin,
+  Eye,
 } from "lucide-react"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { useAppSelector, useAppDispatch } from "../../../../store/hooks"
+import { selectSotItemsMap, fetchSOT } from "../../../../store/slices/sotSlice"
+import { SOT } from "../../../../typings/interfaces"
+import { getEntityTags } from "../../../../utils/sotUtils"
+import { useAttribution } from "../../../../context/AttributionContext"
+import { useCryptoPrices } from "../../../../hooks/useCryptoPrices"
+import EntityQuickView from "../../../../components/EntityQuickView"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { IComplianceTransaction, EComplianceTransactionStatus } from "@/typings/compliance"
-import { getComplianceReportStatusColor } from "../../utils/compliance.utils"
+import { getComplianceReportStatusClassName } from "../../utils/compliance.utils"
 import { useTheme } from "@/context/ThemeContext"
+import TransactionRiskModal from "../modals/TransactionRiskModal"
 
 interface UnassignedTransactionModalProps {
   transaction: IComplianceTransaction | null
@@ -31,6 +39,8 @@ interface UnassignedTransactionModalProps {
   onClose: () => void
   onAssign: (reviewerId: string, notes?: string) => void
   teamMembers: { id: string; name: string; role: string }[]
+  onTransactionUpdate?: (updatedTransaction: IComplianceTransaction) => void
+  calculatedRiskScore?: number
 }
 
 export function UnassignedTransactionModal({
@@ -39,10 +49,45 @@ export function UnassignedTransactionModal({
   onClose,
   onAssign,
   teamMembers,
+  onTransactionUpdate,
+  calculatedRiskScore,
 }: UnassignedTransactionModalProps) {
+
+  const itemsMap = useAppSelector(selectSotItemsMap) || {};
+  const { attributions } = useAttribution();
+  const dispatch = useAppDispatch();
+  const { prices } = useCryptoPrices();
+  
+  // Fetch SOT data when modal opens
+  useEffect(() => {
+    if (isOpen && Object.keys(itemsMap).length === 0) {
+      console.log('Fetching SOT data for modal');
+      dispatch(fetchSOT());
+    }
+  }, [isOpen, itemsMap, dispatch]);
+  
+  // Debug SOT data (only when modal is open)
+  if (isOpen) {
+    console.log('SOT Data Debug:', { 
+      itemsMapKeys: Object.keys(itemsMap), 
+      itemsMapLength: Object.keys(itemsMap).length,
+      sampleItem: Object.values(itemsMap)[0]
+    });
+  }
   const { theme } = useTheme();
   const [selectedReviewer, setSelectedReviewer] = useState<string>("")
   const [assignmentNotes, setAssignmentNotes] = useState("")
+  const [isRiskModalOpen, setIsRiskModalOpen] = useState(false)
+  const [riskScoreUpdateTrigger, setRiskScoreUpdateTrigger] = useState(0)
+
+  // Debug: Log when risk modal opens
+  useEffect(() => {
+    console.log('Risk modal state changed:', {
+      isRiskModalOpen,
+      transactionId: transaction?.txId,
+      hasTransaction: !!transaction
+    });
+  }, [isRiskModalOpen, transaction?.txId]);
 
   const getStatusIcon = (status: EComplianceTransactionStatus) => {
     switch (status) {
@@ -66,7 +111,7 @@ export function UnassignedTransactionModal({
   }
 
   const getStatusColor = (status: EComplianceTransactionStatus) => {
-    return getComplianceReportStatusColor(status)
+    return getComplianceReportStatusClassName(status)
   }
 
   const getRiskLevel = (scores: number[]) => {
@@ -76,16 +121,61 @@ export function UnassignedTransactionModal({
     return { level: "LOW", color: "text-green-400" }
   }
 
+  const getChainTicker = (blockchain: string) => {
+    const tickerMap: Record<string, string> = {
+      'bitcoin': 'BTC',
+      'ethereum': 'ETH',
+      'litecoin': 'LTC',
+      'bitcoin-cash': 'BCH',
+      'dogecoin': 'DOGE',
+      'ripple': 'XRP',
+      'cardano': 'ADA',
+      'polkadot': 'DOT',
+      'chainlink': 'LINK',
+      'uniswap': 'UNI'
+    }
+    return tickerMap[blockchain.toLowerCase()] || blockchain.toUpperCase()
+  }
+
+  const getBlockchainIcon = (blockchain: string) => {
+    const iconMap: Record<string, React.ReactNode> = {
+      'bitcoin': <Bitcoin className="w-5 h-5 text-orange-500" />,
+      'ethereum': <Coins className="w-5 h-5 text-blue-500" />,
+      'litecoin': <Coins className="w-5 h-5 text-gray-500" />,
+      'bitcoin-cash': <Bitcoin className="w-5 h-5 text-green-500" />,
+      'dogecoin': <Coins className="w-5 h-5 text-yellow-500" />,
+      'ripple': <Coins className="w-5 h-5 text-blue-600" />,
+      'cardano': <Coins className="w-5 h-5 text-blue-700" />,
+      'polkadot': <Coins className="w-5 h-5 text-purple-500" />,
+      'chainlink': <Coins className="w-5 h-5 text-blue-400" />,
+      'uniswap': <Coins className="w-5 h-5 text-pink-500" />
+    }
+    return iconMap[blockchain.toLowerCase()] || <Coins className="w-5 h-5 text-gray-500" />
+  }
+
+
   const formatCurrency = (amount: number, blockchain: string) => {
-    // Mock conversion rate - in real app this would come from API
-    const btcToUsd = 45000
-    const ethToUsd = 3000
+    // Get the most recent recorded price (even if stale) from the prices object
+    const btcPriceData = prices['BTC'];
+    const ethPriceData = prices['ETH'];
+    
+    // Check if we have price data available
+    if (blockchain.toLowerCase() === "bitcoin" && !btcPriceData?.price) {
+      return "Pricing Currently Unavailable";
+    } else if (blockchain.toLowerCase() === "ethereum" && !ethPriceData?.price) {
+      return "Pricing Currently Unavailable";
+    }
+
+    const btcPrice = btcPriceData?.price;
+    const ethPrice = ethPriceData?.price;
 
     let usdValue = amount
     if (blockchain.toLowerCase() === "bitcoin") {
-      usdValue = amount * btcToUsd
+      // Convert from satoshis to BTC first, then to USD
+      usdValue = (amount / 100000000) * btcPrice
     } else if (blockchain.toLowerCase() === "ethereum") {
-      usdValue = amount * ethToUsd
+      // For Ethereum, amount is already in ETH units
+      usdValue = amount * ethPrice
     }
 
     return new Intl.NumberFormat("en-US", {
@@ -122,9 +212,15 @@ export function UnassignedTransactionModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className={`max-w-4xl max-h-[90vh] overflow-y-auto ${bgColor} ${borderColor} ${textColor}`}>
+      <DialogContent 
+        className={`max-w-4xl max-h-[90vh] overflow-y-auto ${bgColor} ${borderColor} ${textColor}`}
+        showCloseButton={false}
+      >
         <DialogHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
           <DialogTitle className={`text-xl font-semibold ${textColor}`}>Transaction Details</DialogTitle>
+          <DialogDescription className="sr-only">
+            Detailed view of transaction information, risk analysis, and assignment options
+          </DialogDescription>
           <div className="flex items-center gap-3">
             <Select value={selectedReviewer} onValueChange={setSelectedReviewer}>
               <SelectTrigger className={`w-48 ${selectBgColor} ${selectBorderColor} ${textColor}`}>
@@ -147,150 +243,215 @@ export function UnassignedTransactionModal({
           </div>
         </DialogHeader>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {/* Main Transaction Info */}
-          <div className="lg:col-span-2 space-y-6">
+          <div className="space-y-4">
             <Card className={`${cardBgColor} ${cardBorderColor}`}>
-              <CardHeader>
-                <CardTitle className={`flex items-center gap-2 ${textColor}`}>
+              <CardHeader className="pb-3">
+                <CardTitle className={`flex items-center gap-2 ${textColor} text-lg`}>
                   <Hash className="h-4 w-4" />
                   Transaction Information
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label className={`text-xs ${mutedTextColor} uppercase tracking-wide`}>Transaction ID</Label>
-                    <p className={`font-mono text-sm ${textColor} break-all mt-1`}>{transaction.txId}</p>
-                  </div>
-                  <div>
-                    <Label className={`text-xs ${mutedTextColor} uppercase tracking-wide`}>Client ID</Label>
-                    <p className={`text-sm ${textColor} mt-1`}>{transaction.clientId}</p>
-                  </div>
-                  <div>
-                    <Label className={`text-xs ${mutedTextColor} uppercase tracking-wide`}>Blockchain</Label>
-                    <p className={`text-sm ${textColor} mt-1 capitalize`}>{transaction.blockchain}</p>
-                  </div>
-                  <div>
-                    <Label className={`text-xs ${mutedTextColor} uppercase tracking-wide`}>Timestamp</Label>
-                    <p className={`text-sm ${textColor} mt-1`}>{transaction.timestamp.toLocaleString()}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className={`${cardBgColor} ${cardBorderColor}`}>
-              <CardHeader>
-                <CardTitle className={`flex items-center gap-2 ${textColor}`}>
-                  <Building2 className="h-4 w-4" />
-                  Counterparty Information
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex flex-wrap gap-2">
-                  {transaction.counterpartyEntities.map((entity, index) => (
-                    <Badge
-                      key={index}
-                      variant="outline"
-                      className="bg-orange-500/20 text-orange-400 border-orange-500/30"
+              <CardContent className="pt-0 space-y-5">
+                <div className="space-y-5">
+                  <div className="border-b border-gray-300 dark:border-gray-600 pb-3">
+                    <Label className={`text-xs font-bold ${mutedTextColor} uppercase tracking-wide block mb-2`}>Transaction ID</Label>
+                    <a 
+                      href={`https://app-staging.blockscout.ai/home/block-explorer/transaction/${transaction.txId}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={`font-mono text-sm ${textColor} break-all hover:text-blue-600 dark:hover:text-blue-400 underline cursor-pointer block`}
                     >
-                      {entity}
-                    </Badge>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className={`${cardBgColor} ${cardBorderColor}`}>
-              <CardHeader>
-                <CardTitle className={`flex items-center gap-2 ${textColor}`}>
-                  <Coins className="h-4 w-4" />
-                  Amount Details
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="flex justify-between items-center">
-                  <span className={mutedTextColor}>Amount</span>
-                  <span className={`text-lg font-semibold ${textColor}`}>
-                    {transaction.blockchain.toUpperCase()} {transaction.amount}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className={mutedTextColor}>Converted Amount</span>
-                  <span className="text-lg font-semibold text-green-400">
-                    {formatCurrency(transaction.amount, transaction.blockchain)}
-                  </span>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Status History */}
-            <Card className={`${cardBgColor} ${cardBorderColor}`}>
-              <CardHeader>
-                <CardTitle className={`flex items-center gap-2 ${textColor}`}>
-                  <Calendar className="h-4 w-4" />
-                  Status History
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {transaction.statusHistory.map((history, index) => (
-                    <div
-                      key={index}
-                      className={`flex items-center justify-between py-2 border-b ${isDark ? 'border-gray-700' : 'border-gray-200'} last:border-b-0`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <Badge className={`${getStatusColor(history.status)} flex items-center gap-1`}>
-                          {getStatusIcon(history.status)}
-                          {history.status.replace("_", " ")}
-                        </Badge>
-                        {history.reviewer && <span className={`text-sm ${mutedTextColor}`}>by {history.reviewer}</span>}
-                      </div>
-                      <span className={`text-xs ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>{history.timestamp.toLocaleString()}</span>
+                      {transaction.txId}
+                    </a>
+                  </div>
+                  
+                  <div className="border-b border-gray-300 dark:border-gray-600 pb-3">
+                    <Label className={`text-xs font-bold ${mutedTextColor} uppercase tracking-wide block mb-2`}>Client ID</Label>
+                    <p className={`text-sm ${textColor}`}>{transaction.clientId}</p>
+                  </div>
+                  
+                  <div className="border-b border-gray-300 dark:border-gray-600 pb-3">
+                    <Label className={`text-xs font-bold ${mutedTextColor} uppercase tracking-wide block mb-2`}>Blockchain</Label>
+                    <div className="flex items-center gap-2">
+                      {getBlockchainIcon(transaction.blockchain)}
+                      <p className={`text-sm ${textColor} capitalize`}>{transaction.blockchain}</p>
                     </div>
-                  ))}
+                  </div>
+                  
+                  <div className="border-b border-gray-300 dark:border-gray-600 pb-3">
+                    <Label className={`text-xs font-bold ${mutedTextColor} uppercase tracking-wide block mb-2`}>Timestamp</Label>
+                    <p className={`text-sm ${textColor}`}>{transaction.timestamp.toLocaleString()}</p>
+                  </div>
+                  
+                  <div className="border-b border-gray-300 dark:border-gray-600 pb-3">
+                    <Label className={`text-xs font-bold ${mutedTextColor} uppercase tracking-wide block mb-2`}>Amount</Label>
+                    <p className={`text-sm ${textColor}`}>
+                      {(transaction.amount / 100000000).toFixed(8)} {getChainTicker(transaction.blockchain)}
+                    </p>
+                  </div>
+                  
+                  <div className="pt-2">
+                    <Label className={`text-xs font-bold ${mutedTextColor} uppercase tracking-wide block mb-2`}>USD Value</Label>
+                    <p className="text-sm font-semibold text-green-400">
+                      {formatCurrency(transaction.amount, transaction.blockchain)}
+                    </p>
+                  </div>
                 </div>
               </CardContent>
             </Card>
+
+
+
           </div>
 
           {/* Sidebar */}
-          <div className="space-y-6">
-            {/* Current Status */}
+          <div className="flex flex-col space-y-4">
+            {/* Status & Risk - Combined */}
             <Card className={`${cardBgColor} ${cardBorderColor}`}>
-              <CardHeader>
-                <CardTitle className={textColor}>Current Status</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Badge className={`${getStatusColor(transaction.status)} flex items-center gap-2 w-fit`}>
-                  {getStatusIcon(transaction.status)}
-                  {transaction.status.replace("_", " ")}
-                </Badge>
-              </CardContent>
-            </Card>
-
-            {/* Risk Assessment */}
-            <Card className={`${cardBgColor} ${cardBorderColor}`}>
-              <CardHeader>
-                <CardTitle className={`flex items-center gap-2 ${textColor}`}>
-                  <TrendingUp className="h-4 w-4" />
-                  Risk Assessment
+              <CardHeader className="pb-2">
+                <CardTitle className={`flex items-center gap-2 ${textColor} text-lg`}>
+                  <Shield className="h-4 w-4" />
+                  Transaction Risk
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3">
+              <CardContent className="pt-0 space-y-1">
+                <div className="flex justify-between items-center">
+                  <span className={mutedTextColor}>Status</span>
+                  <Badge className={`${getStatusColor(transaction.status)} flex items-center gap-1`}>
+                    {getStatusIcon(transaction.status)}
+                    {transaction.status.replace("_", " ")}
+                  </Badge>
+                </div>
                 <div className="flex justify-between items-center">
                   <span className={mutedTextColor}>Risk Level</span>
                   <span className={`font-semibold ${riskLevel.color}`}>{riskLevel.level}</span>
                 </div>
-                <div className="space-y-2">
-                  <span className={`text-sm ${mutedTextColor}`}>Risk Scores</span>
-                  <div className="flex flex-wrap gap-1">
-                    {transaction.riskScores.map((score, index) => (
-                      <Badge key={index} variant="outline" className="text-xs">
-                        {score}
-                      </Badge>
-                    ))}
+                <div className="flex justify-between items-center">
+                  <span className={mutedTextColor}>Transaction Risk Score</span>
+                  <div className="flex gap-1 items-center">
+                    <span key={`overall-${riskScoreUpdateTrigger}`} className="font-semibold text-green-400">
+                      {calculatedRiskScore !== undefined ? calculatedRiskScore : (transaction.riskScores[0] || 0)}
+                    </span>
+                    <button
+                      onClick={() => {
+                        console.log('Eye icon clicked, opening risk modal for transaction:', transaction?.txId);
+                        setIsRiskModalOpen(true);
+                      }}
+                      className="ml-2 p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
+                      title="View detailed risk analysis"
+                    >
+                      <Eye className="h-4 w-4 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200" />
+                    </button>
                   </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Counterparty Information */}
+            <Card className={`${cardBgColor} ${cardBorderColor}`}>
+              <CardHeader className="pb-3">
+                <CardTitle className={`flex items-center gap-2 ${textColor} text-lg`}>
+                  <Building2 className="h-4 w-4" />
+                  Counterparty Information
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <div className="space-y-3">
+                  {transaction.counterpartyEntities.map((entity, index) => {
+                    // Get entity name from attributions
+                    const entityName = attributions[entity]?.entity || entity;
+                    
+                    // Debug logging
+                    console.log('Entity lookup:', { entity, entityName, itemsMapKeys: Object.keys(itemsMap) });
+                    
+                    // Find SOT data for this entity
+                    const getEntitySot = (entityId: string): SOT | null => {
+                      if (!itemsMap || Object.keys(itemsMap).length === 0) {
+                        return null;
+                      }
+                      // First try direct lookup by entity_id (since that's how it's indexed)
+                      if (itemsMap[entityId]) {
+                        return itemsMap[entityId];
+                      }
+                      // Fallback: search by proper_name if direct lookup fails
+                      return Object.values(itemsMap).find(sot => 
+                        sot.proper_name?.toLowerCase() === entityId.toLowerCase()
+                      ) || null;
+                    };
+                    
+                    const entitySot = getEntitySot(entityName);
+                    
+                    return (
+                      <div key={index} className="border border-gray-300 dark:border-gray-600 rounded p-2 bg-gray-100 dark:bg-gray-700">
+                        <div className="flex items-center justify-between mb-1">
+                          <div className="flex items-center gap-3">
+                            {entitySot?.logo && (
+                              <img 
+                                src={entitySot.logo} 
+                                alt={`${entitySot.proper_name} logo`}
+                                className="w-[30px] h-[30px] rounded-sm object-contain"
+                                onError={(e) => {
+                                  e.currentTarget.style.display = 'none';
+                                }}
+                              />
+                            )}
+                            <div className="flex items-center gap-2">
+                              <span className="text-lg font-semibold text-gray-900 dark:text-white">
+                                {entitySot?.proper_name || entityName}
+                              </span>
+                              {entitySot && (
+                                <EntityQuickView
+                                  entity={{
+                                    _id: entitySot._id,
+                                    proper_name: entitySot.proper_name,
+                                    entity_id: entitySot.entity_id
+                                  }}
+                                  sot={entitySot}
+                                  onViewFull={(sot) => {
+                                    // Handle view full profile - could navigate to entity details page
+                                    console.log('View full profile for entity:', sot.entity_id);
+                                  }}
+                                  onQuickView={(e, entityId) => {
+                                    e.stopPropagation();
+                                    // Handle quick view click
+                                    console.log('Quick view for entity:', entityId);
+                                  }}
+                                  popoverPlacement="right"
+                                  popoverWidth={450}
+                                />
+                              )}
+                            </div>
+                          </div>
+                          {entitySot && (
+                            <Badge
+                              variant="outline"
+                              className="bg-blue-100 text-blue-800 border-blue-200 text-xs"
+                            >
+                              {entitySot.entity_type}
+                            </Badge>
+                          )}
+                        </div>
+                        {entitySot && (() => {
+                          const tags = getEntityTags(entitySot);
+                          return tags.length > 0 && (
+                            <div className="flex flex-wrap gap-1">
+                              {tags.map((tag, tagIndex) => (
+                                <Badge
+                                  key={tagIndex}
+                                  variant="secondary"
+                                  className="text-xs bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300"
+                                >
+                                  {tag}
+                                </Badge>
+                              ))}
+                            </div>
+                          );
+                        })()}
+                      </div>
+                    );
+                  })}
                 </div>
               </CardContent>
             </Card>
@@ -314,31 +475,38 @@ export function UnassignedTransactionModal({
             )}
 
             {/* Assignment Section */}
-            {selectedReviewer && (
-              <Card className={`${cardBgColor} ${cardBorderColor}`}>
-                <CardHeader>
-                  <CardTitle className={textColor}>Assignment Notes</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <Textarea
-                    placeholder="Add notes for the assigned reviewer..."
-                    value={assignmentNotes}
-                    onChange={(e) => setAssignmentNotes(e.target.value)}
-                    className={`${textareaBgColor} ${textareaBorderColor} ${textColor} placeholder-gray-400`}
-                    rows={3}
-                  />
-                  <Button onClick={handleAssign} className="w-full">
-                    Assign Transaction
-                  </Button>
-                </CardContent>
-              </Card>
-            )}
+            <Card className={`${cardBgColor} ${cardBorderColor}`}>
+              <CardHeader className="pb-2">
+                <CardTitle className={`flex items-center gap-2 ${textColor} text-lg`}>
+                  <FileText className="h-4 w-4" />
+                  Assignment Notes
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <Textarea
+                  placeholder="Add notes for the assigned reviewer..."
+                  value={assignmentNotes}
+                  onChange={(e) => setAssignmentNotes(e.target.value)}
+                  className={`${textareaBgColor} ${textareaBorderColor} ${textColor} placeholder-gray-400`}
+                  rows={3}
+                />
+                <Button onClick={handleAssign} className="w-full" disabled={!selectedReviewer}>
+                  Assign Transaction
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* Spacer to push Notes to bottom */}
+            <div className="flex-1"></div>
 
             {/* Notes */}
             {transaction.notes && (
               <Card className={`${cardBgColor} ${cardBorderColor}`}>
                 <CardHeader>
-                  <CardTitle className={textColor}>Notes</CardTitle>
+                  <CardTitle className={`flex items-center gap-2 ${textColor} text-lg`}>
+                    <FileText className="h-4 w-4" />
+                    Notes
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <p className={`text-sm ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>{transaction.notes}</p>
@@ -348,6 +516,78 @@ export function UnassignedTransactionModal({
           </div>
         </div>
       </DialogContent>
+      
+      {/* Input Transaction Risk Modal */}
+        <TransactionRiskModal
+          visible={isRiskModalOpen}
+          onClose={() => {
+            console.log('Closing risk modal');
+            setIsRiskModalOpen(false);
+          }}
+          transaction={transaction}
+          loading={false}
+          showCounterPartyDetails={true}
+          counterpartyEntities={transaction?.counterpartyEntities || []}
+          attributions={attributions}
+          itemsMap={itemsMap}
+          storedRiskScores={transaction?.riskScores}
+          title="Input Transaction Risk Analysis"
+        onRiskScoreUpdate={(riskData) => {
+          console.log('Risk score update callback triggered:', {
+            hasTransaction: !!transaction,
+            hasRiskData: !!riskData,
+            transactionId: transaction?.txId,
+            currentRiskScores: transaction?.riskScores,
+            riskData: riskData ? {
+              overall: riskData.overallRisk,
+              entity: riskData.entityRisk?.aggregateScore,
+              jurisdiction: riskData.jurisdictionRisk?.aggregateScore,
+              transaction: riskData.transactionRisk?.aggregateScore
+            } : null
+          });
+
+          // Update the transaction's risk scores with the new calculated values
+          if (transaction && riskData) {
+            const newRiskScores = [
+              Math.round(riskData.overallRisk),
+              Math.round(riskData.entityRisk.aggregateScore),
+              Math.round(riskData.jurisdictionRisk.aggregateScore),
+              Math.round(riskData.transactionRisk.aggregateScore)
+            ];
+            
+            // Create updated transaction object
+            const updatedTransaction = {
+              ...transaction,
+              riskScores: newRiskScores
+            };
+            
+            // Trigger a re-render by updating the trigger state
+            setRiskScoreUpdateTrigger(prev => prev + 1);
+            
+            // Notify parent component of the update
+            if (onTransactionUpdate) {
+              console.log('Calling onTransactionUpdate with:', updatedTransaction);
+              onTransactionUpdate(updatedTransaction);
+            } else {
+              console.log('No onTransactionUpdate callback provided');
+            }
+            
+            console.log('Updated transaction risk scores:', {
+              txId: transaction.txId,
+              oldScores: transaction.riskScores,
+              newScores: newRiskScores,
+              riskData: {
+                overall: riskData.overallRisk,
+                entity: riskData.entityRisk.aggregateScore,
+                jurisdiction: riskData.jurisdictionRisk.aggregateScore,
+                transaction: riskData.transactionRisk.aggregateScore
+              }
+            });
+          } else {
+            console.log('Risk score update skipped - missing transaction or riskData');
+          }
+        }}
+      />
     </Dialog>
   )
 }

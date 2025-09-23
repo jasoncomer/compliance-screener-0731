@@ -90,6 +90,7 @@ import React from 'react';
 import FlowTracePage from '../features/flowtrace/FlowTracePage';
 
 const FlowTrace: React.FC = () => {
+  console.log('FlowTrace wrapper component rendering');
   return <FlowTracePage />;
 };
 

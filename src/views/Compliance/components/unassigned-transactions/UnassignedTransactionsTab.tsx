@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Form } from 'antd';
-import { TransactionFilters } from '../../../../typings/compliance';
+import { TransactionFilters, IComplianceTransaction } from '../../../../typings/compliance';
 import ComplianceHeaderActions from '../ComplianceHeaderActions';
 import UnassignedTransactionsTable from './UnassignedTransactionsTable';
 import { EntityModal } from '../../modals/EntityModal';
@@ -37,8 +37,38 @@ const UnassignedTransactionsTab: React.FC<UnassignedTransactionsTabProps> = ({ i
   const { data, isLoading: loading } = useComplianceTransactions(filters);
   
   // Memoize derived data to prevent unnecessary re-renders
-  const transactions = useMemo(() => data?.transactions || [], [data?.transactions]);
+  const rawTransactions = useMemo(() => data?.transactions || [], [data?.transactions]);
   const totalTransactions = useMemo(() => data?.total || 0, [data?.total]);
+
+  // Apply client-side filtering for fields that need partial matching
+  const transactions = useMemo(() => {
+    let filtered = rawTransactions;
+    
+    // Filter by txId (partial match)
+    if (filters.txId) {
+      filtered = filtered.filter(tx => 
+        tx.txId && tx.txId.toLowerCase().includes(filters.txId!.toLowerCase())
+      );
+    }
+    
+    // Filter by clientId (partial match)
+    if (filters.clientId) {
+      filtered = filtered.filter(tx => 
+        tx.clientId && tx.clientId.toLowerCase().includes(filters.clientId!.toLowerCase())
+      );
+    }
+    
+    return filtered;
+  }, [rawTransactions, filters.txId, filters.clientId]);
+
+  // Sync local transactions with fetched data
+  useEffect(() => {
+    console.log('Syncing local transactions with fetched data:', {
+      fetchedCount: transactions.length,
+      localCount: localTransactions.length
+    });
+    setLocalTransactions(transactions);
+  }, [transactions]);
   
   
   // Entity modal state
@@ -50,6 +80,9 @@ const UnassignedTransactionsTab: React.FC<UnassignedTransactionsTabProps> = ({ i
 
   // Track available filter options
   const [availableBlockchains, setAvailableBlockchains] = useState<string[]>([]);
+
+  // Local state for transactions to allow updates
+  const [localTransactions, setLocalTransactions] = useState<IComplianceTransaction[]>([]);
 
 
   // Update filters when dependencies change
@@ -132,6 +165,32 @@ const UnassignedTransactionsTab: React.FC<UnassignedTransactionsTabProps> = ({ i
     setSelectedRowKeys(selectedKeys);
   };
 
+  // Handle transaction updates from the table
+  const handleTransactionUpdate = (updatedTransaction: IComplianceTransaction) => {
+    console.log('Tab received transaction update:', {
+      transactionId: updatedTransaction._id,
+      newRiskScores: updatedTransaction.riskScores,
+      currentLocalTransactionsCount: localTransactions.length
+    });
+    
+    setLocalTransactions(prevTransactions => {
+      const updated = prevTransactions.map(tx => 
+        tx._id === updatedTransaction._id ? updatedTransaction : tx
+      );
+      
+      const updatedTx = updated.find(tx => tx._id === updatedTransaction._id);
+      console.log('Updated local transactions:', {
+        beforeCount: prevTransactions.length,
+        afterCount: updated.length,
+        updatedTransaction: updatedTx,
+        oldRiskScores: prevTransactions.find(tx => tx._id === updatedTransaction._id)?.riskScores,
+        newRiskScores: updatedTx?.riskScores
+      });
+      
+      return updated;
+    });
+  };
+
   // Handle clearing selection
   const handleClearSelection = () => {
     setSelectedRowKeys([]);
@@ -202,7 +261,8 @@ const UnassignedTransactionsTab: React.FC<UnassignedTransactionsTabProps> = ({ i
       <FilterPanelComponent
         form={form}
         availableBlockchains={availableBlockchains}
-        showStatusFilter={true}
+        showStatusFilter={false}
+        showAssignedToFilter={false}
         onFilterChange={handleFilterChange}
         onClearFilters={handleClearFilters}
         initialStatusFilter={initialStatusFilter}
@@ -211,7 +271,7 @@ const UnassignedTransactionsTab: React.FC<UnassignedTransactionsTabProps> = ({ i
 
       <div className="flex-1 min-h-0 overflow-hidden">
         <UnassignedTransactionsTable
-          transactions={transactions}
+          transactions={localTransactions}
           totalTransactions={totalTransactions}
           currentPage={currentPage}
           pageSize={pageSize}
@@ -221,6 +281,8 @@ const UnassignedTransactionsTab: React.FC<UnassignedTransactionsTabProps> = ({ i
           onSelectChange={handleSelectChange}
           sortBy={sortBy}
           sortOrder={sortOrder}
+          onTransactionUpdate={handleTransactionUpdate}
+          onUpdateLocalTransactions={setLocalTransactions}
         />
       </div>
       

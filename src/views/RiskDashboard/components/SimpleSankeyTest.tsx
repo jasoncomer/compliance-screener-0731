@@ -52,6 +52,7 @@ interface LinkModalData {
   sourceAttribution?: any
   targetAttribution?: any
   transactionId?: string
+  transactionCount?: number
   inputAddresses?: string[]
   outputAddresses?: string[]
 }
@@ -358,37 +359,46 @@ export const SimpleSankeyTest = ({
   // Logo state management for each node
   const [nodeLogos, setNodeLogos] = useState<Record<string, string | null>>({})
 
-  // Function to fetch logo for a single entity
+  // Function to fetch logo for a single entity using Image() to avoid CORS issues
   const fetchEntityLogo = async (entityId: string): Promise<string | null> => {
     if (!entityId) return null
     
-    try {
+    // Special case for mining rewards - use pickaxe emoji
+    if (entityId === 'mining_reward') {
+      return '⛏️' // Pickaxe emoji for mining rewards
+    }
+    
+    return new Promise((resolve) => {
       // Try JPG first
       const jpgUrl = `https://storage.googleapis.com/entity-logos/${entityId}.jpg`
-      const jpgResponse = await fetch(jpgUrl, { method: 'HEAD' })
-      if (jpgResponse.ok) {
-        return jpgUrl
+      const jpgImg = new Image()
+      
+      jpgImg.onload = () => resolve(jpgUrl)
+      jpgImg.onerror = () => {
+        // Try PNG fallback
+        const pngUrl = `https://storage.googleapis.com/entity-logos/${entityId}.png`
+        const pngImg = new Image()
+        
+        pngImg.onload = () => resolve(pngUrl)
+        pngImg.onerror = () => resolve(null)
+        pngImg.src = pngUrl
       }
       
-      // Try PNG fallback
-      const pngUrl = `https://storage.googleapis.com/entity-logos/${entityId}.png`
-      const pngResponse = await fetch(pngUrl, { method: 'HEAD' })
-      if (pngResponse.ok) {
-        return pngUrl
-      }
-      
-      return null
-    } catch (error) {
-      console.warn(`Failed to fetch logo for entity ${entityId}:`, error)
-      return null
-    }
+      jpgImg.src = jpgUrl
+    })
   }
 
   // Function to fetch logos for all nodes
   const fetchAllNodeLogos = async (nodes: SankeyNode[]) => {
+    console.log('🎨 Fetching logos for nodes:', nodes.length, 'nodes')
+    const entityNodes = nodes.filter(node => node.type === 'entity' && node.entityGroup)
+    console.log('🎨 Entity nodes to fetch logos for:', entityNodes.map(n => ({ id: n.id, entityGroup: n.entityGroup })))
+    
     const logoPromises = nodes.map(async (node) => {
       if (node.type === 'entity' && node.entityGroup) {
+        console.log('🎨 Fetching logo for entity:', node.entityGroup)
         const logoUrl = await fetchEntityLogo(node.entityGroup)
+        console.log('🎨 Logo result for', node.entityGroup, ':', logoUrl ? '✅ Found' : '❌ Not found')
         return { nodeId: node.id, logoUrl }
       }
       return { nodeId: node.id, logoUrl: null }
@@ -400,6 +410,7 @@ export const SimpleSankeyTest = ({
       logoMap[nodeId] = logoUrl
     })
     
+    console.log('🎨 Final logo map:', logoMap)
     setNodeLogos(logoMap)
   }
 
@@ -483,67 +494,115 @@ export const SimpleSankeyTest = ({
       const outputsToAddress = tx.outputs.filter(output => output.addr === address)
       const inputsFromAddress = tx.inputs.filter(input => input.addr === address)
       
+      console.log(`🔨 Address involvement:`, {
+        outputsToAddress: outputsToAddress.length,
+        inputsFromAddress: inputsFromAddress.length,
+        totalReceived: outputsToAddress.reduce((sum, output) => sum + output.amt, 0),
+        totalSent: inputsFromAddress.reduce((sum, input) => sum + input.amt, 0)
+      })
+      
       // Process incoming flows (when address receives)
       if (outputsToAddress.length > 0) {
         const totalReceived = outputsToAddress.reduce((sum, output) => sum + output.amt, 0)
         
-        // Get source addresses (excluding the current address)
-        const sourceAddresses = tx.inputs.filter(input => input.addr !== address)
+        // Check if this is a mining reward (coinbase) transaction
+        // Mining rewards are identified by having no real input transactions or coinbase flag
+        const isMiningReward = tx.coinbase === true || 
+          (tx.inputs && tx.inputs.length === 0) ||
+          (tx.inputs && tx.inputs.length > 0 && 
+           tx.inputs.every(input => !input.intxid || input.intxid === '0000000000000000000000000000000000000000000000000000000000000000'))
         
-        // Group by entity_id
-        const sourceEntityMap = new Map<string, { addresses: string[]; totalAmount: number }>()
-        
-        sourceAddresses.forEach(input => {
-          const entityId = resolveEntityId(input.addr, attributions)
-          const key = entityId || input.addr // Use entity_id or address as fallback
-          
-          
-          if (sourceEntityMap.has(key)) {
-            sourceEntityMap.get(key)!.addresses.push(input.addr)
-            sourceEntityMap.get(key)!.totalAmount += input.amt
-          } else {
-            sourceEntityMap.set(key, {
-              addresses: [input.addr],
-              totalAmount: input.amt
-            })
-          }
+        console.log('🔨 Mining reward check:', {
+          coinbase: tx.coinbase,
+          inputsCount: tx.inputs?.length || 0,
+          hasValidInputs: tx.inputs?.some(input => input.intxid && input.intxid !== '0000000000000000000000000000000000000000000000000000000000000000'),
+          isMiningReward
         })
         
-        
-        // Distribute received amount proportionally to entity groups
-        const totalSourceAmount = Array.from(sourceEntityMap.values()).reduce((sum, group) => sum + group.totalAmount, 0)
-        
-        sourceEntityMap.forEach((group, entityKey) => {
-          const proportion = group.totalAmount / totalSourceAmount
-          const receivedAmount = totalReceived * proportion
+        if (isMiningReward) {
+          console.log('🔨 Mining reward detected for address:', address, 'Amount:', totalReceived, 'TX:', tx.txid)
+          console.log('🔨 Transaction details:', { coinbase: tx.coinbase, inputs: tx.inputs, outputs: tx.outputs })
+          // For mining rewards, create a special "Mining Reward" entity
+          const miningRewardKey = "mining_reward"
+          const miningRewardAmount = totalReceived // The entire received amount is from mining
           
+          console.log('🔨 Adding mining reward to incoming flows:', { key: miningRewardKey, amount: miningRewardAmount })
           
-          // Get entity info for display
-          const firstAddress = group.addresses[0]
-          const { entityType, properName } = getEntityInfo(firstAddress, attributions, itemsMap)
-          const displayName = properName || firstAddress.slice(0, 8) + "..."
-          
-          const existing = incomingEntityFlows.get(entityKey)
+          const existing = incomingEntityFlows.get(miningRewardKey)
           
           if (existing) {
-            existing.amount += receivedAmount
+            existing.amount += miningRewardAmount
             existing.transactionIds.push(tx.txid)
-            // Add new addresses if not already present
-            group.addresses.forEach(addr => {
-              if (!existing.addresses.includes(addr)) {
-                existing.addresses.push(addr)
-              }
-            })
+            console.log('🔨 Updated existing mining reward flow:', existing)
           } else {
-            incomingEntityFlows.set(entityKey, {
-              amount: receivedAmount,
+            const newFlow = {
+              amount: miningRewardAmount,
               transactionIds: [tx.txid],
-              entityType,
-              properName: displayName,
-              addresses: [...group.addresses]
-            })
+              entityType: "Mining",
+              properName: "Mining Reward",
+              addresses: [] // Mining rewards don't have source addresses
+            }
+            incomingEntityFlows.set(miningRewardKey, newFlow)
+            console.log('🔨 Created new mining reward flow:', newFlow)
           }
-        })
+        } else {
+          // Regular transaction - process source addresses
+          const sourceAddresses = tx.inputs.filter(input => input.addr !== address)
+          
+          // Group by entity_id
+          const sourceEntityMap = new Map<string, { addresses: string[]; totalAmount: number }>()
+          
+          sourceAddresses.forEach(input => {
+            const entityId = resolveEntityId(input.addr, attributions)
+            const key = entityId || input.addr // Use entity_id or address as fallback
+            
+            
+            if (sourceEntityMap.has(key)) {
+              sourceEntityMap.get(key)!.addresses.push(input.addr)
+              sourceEntityMap.get(key)!.totalAmount += input.amt
+            } else {
+              sourceEntityMap.set(key, {
+                addresses: [input.addr],
+                totalAmount: input.amt
+              })
+            }
+          })
+          
+          // Distribute received amount proportionally to entity groups
+          const totalSourceAmount = Array.from(sourceEntityMap.values()).reduce((sum, group) => sum + group.totalAmount, 0)
+          
+          sourceEntityMap.forEach((group, entityKey) => {
+            const proportion = group.totalAmount / totalSourceAmount
+            const receivedAmount = totalReceived * proportion
+            
+            
+            // Get entity info for display
+            const firstAddress = group.addresses[0]
+            const { entityType, properName } = getEntityInfo(firstAddress, attributions, itemsMap)
+            const displayName = properName || firstAddress.slice(0, 8) + "..."
+            
+            const existing = incomingEntityFlows.get(entityKey)
+            
+            if (existing) {
+              existing.amount += receivedAmount
+              existing.transactionIds.push(tx.txid)
+              // Add new addresses if not already present
+              group.addresses.forEach(addr => {
+                if (!existing.addresses.includes(addr)) {
+                  existing.addresses.push(addr)
+                }
+              })
+            } else {
+              incomingEntityFlows.set(entityKey, {
+                amount: receivedAmount,
+                transactionIds: [tx.txid],
+                entityType,
+                properName: displayName,
+                addresses: [...group.addresses]
+              })
+            }
+          })
+        }
       }
       
       // Process outgoing flows (when address sends)
@@ -625,20 +684,37 @@ export const SimpleSankeyTest = ({
         
         // Group sources by entity_id
         const sourceEntityMap = new Map<string, { addresses: string[]; totalAmount: number }>()
-        sourceAddresses.forEach(input => {
-          const entityId = resolveEntityId(input.addr, attributions)
-          const key = entityId || input.addr
-          
-          if (sourceEntityMap.has(key)) {
-            sourceEntityMap.get(key)!.addresses.push(input.addr)
-            sourceEntityMap.get(key)!.totalAmount += input.amt
-          } else {
-            sourceEntityMap.set(key, {
-              addresses: [input.addr],
-              totalAmount: input.amt
-            })
-          }
-        })
+        
+        // Check if this is a mining reward transaction
+        const isMiningReward = tx.coinbase === true || 
+          (tx.inputs && tx.inputs.length === 0) ||
+          (tx.inputs && tx.inputs.length > 0 && 
+           tx.inputs.every(input => !input.intxid || input.intxid === '0000000000000000000000000000000000000000000000000000000000000000'))
+        
+        if (isMiningReward) {
+          console.log('🔨 Cospending mining reward detected for address:', address, 'Amount:', netFlow, 'TX:', tx.txid)
+          // For mining rewards in cospending, the source is mining
+          sourceEntityMap.set("mining_reward", {
+            addresses: [],
+            totalAmount: netFlow // The entire flow is from mining
+          })
+        } else {
+          // Regular transaction - process source addresses
+          sourceAddresses.forEach(input => {
+            const entityId = resolveEntityId(input.addr, attributions)
+            const key = entityId || input.addr
+            
+            if (sourceEntityMap.has(key)) {
+              sourceEntityMap.get(key)!.addresses.push(input.addr)
+              sourceEntityMap.get(key)!.totalAmount += input.amt
+            } else {
+              sourceEntityMap.set(key, {
+                addresses: [input.addr],
+                totalAmount: input.amt
+              })
+            }
+          })
+        }
         
         // Group destinations by entity_id
         const destEntityMap = new Map<string, { addresses: string[]; totalAmount: number }>()
@@ -669,12 +745,19 @@ export const SimpleSankeyTest = ({
             const flowAmount = netFlow * sourceProportion * destProportion
             
             // Get entity info for both source and destination
-            const sourceFirstAddress = sourceGroup.addresses[0]
-            const destFirstAddress = destGroup.addresses[0]
-            const { entityType: sourceEntityType, properName: sourceProperName } = getEntityInfo(sourceFirstAddress, attributions, itemsMap)
-            const { entityType: destEntityType, properName: destProperName } = getEntityInfo(destFirstAddress, attributions, itemsMap)
+            let sourceEntityType, sourceDisplayName
+            if (sourceEntityKey === "mining_reward") {
+              sourceEntityType = "Mining"
+              sourceDisplayName = "Mining Reward"
+            } else {
+              const sourceFirstAddress = sourceGroup.addresses[0]
+              const { entityType, properName } = getEntityInfo(sourceFirstAddress, attributions, itemsMap)
+              sourceEntityType = entityType
+              sourceDisplayName = properName || sourceFirstAddress.slice(0, 8) + "..."
+            }
             
-            const sourceDisplayName = sourceProperName || sourceFirstAddress.slice(0, 8) + "..."
+            const destFirstAddress = destGroup.addresses[0]
+            const { entityType: destEntityType, properName: destProperName } = getEntityInfo(destFirstAddress, attributions, itemsMap)
             const destDisplayName = destProperName || destFirstAddress.slice(0, 8) + "..."
             
             // Add to incoming flows (source to address)
@@ -719,6 +802,9 @@ export const SimpleSankeyTest = ({
     const totalInputTransactions = Array.from(incomingEntityFlows.values()).reduce((sum, flow) => sum + flow.transactionIds.length, 0)
     const totalOutputTransactions = Array.from(outgoingEntityFlows.values()).reduce((sum, flow) => sum + flow.transactionIds.length, 0)
     
+    console.log('🔨 Incoming entity flows map:', Array.from(incomingEntityFlows.entries()))
+    console.log('🔨 Outgoing entity flows map:', Array.from(outgoingEntityFlows.entries()))
+    
     // Limit flows to fit within 350px height (optimized for horizontal spacing)
     const maxFlowsPerDirection = 20 // Optimized for 350px height with increased node spacing
     
@@ -733,7 +819,9 @@ export const SimpleSankeyTest = ({
       .slice(0, maxFlowsPerDirection)
     
     // Create nodes and links for incoming entity flows
+    console.log('🔨 Processing incoming flows:', sortedIncomingFlows.length, 'flows')
     sortedIncomingFlows.forEach(([entityKey, flowData]) => {
+      console.log('🔨 Processing incoming entity:', entityKey, 'amount:', flowData.amount, 'type:', flowData.entityType)
       entityTypes.add(flowData.entityType)
       
       const sourceNode: SankeyNode = {
@@ -746,6 +834,7 @@ export const SimpleSankeyTest = ({
         color: "hsl(210, 80%, 60%)" // Blue for incoming nodes
       }
       
+      console.log('🔨 Created source node:', sourceNode)
       addNode(sourceNode)
       
       currentLinks.push({
@@ -907,12 +996,12 @@ export const SimpleSankeyTest = ({
     // Helper function to calculate node positioning with proper ordering and spacing
     const calculateNodePosition = (d: any): { y0: number; y1: number } => {
       if (d.name === "Address") {
-        // Center node - move down 50px from original D3 positioning, set to 150px height
+        // Center node - move down 100px from original D3 positioning, set to 150px height
         const originalCenterY = (d.y0 + d.y1) / 2
         const nodeHeight = 150
         return { 
-          y0: originalCenterY - (nodeHeight / 2) + 50, 
-          y1: originalCenterY + (nodeHeight / 2) + 50 
+          y0: originalCenterY - (nodeHeight / 2) + 100, 
+          y1: originalCenterY + (nodeHeight / 2) + 100 
         }
       }
       
@@ -1397,6 +1486,10 @@ export const SimpleSankeyTest = ({
             sourceAttribution = attributions[address]
           }
           
+          // Check if this is an aggregated edge (multiple transactions)
+          const isAggregated = d.transactionIds && d.transactionIds.length > 1
+          const transactionCount = d.transactionIds?.length || 0
+          
           const linkModalData: LinkModalData = {
             sourceName,
             targetName,
@@ -1407,7 +1500,8 @@ export const SimpleSankeyTest = ({
             targetEntityType,
             sourceAttribution: sourceAttribution,
             targetAttribution: targetAttribution,
-            transactionId: d.transactionIds?.[0] || "",
+            transactionId: isAggregated ? undefined : (d.transactionIds?.[0] || ""),
+            transactionCount: isAggregated ? transactionCount : undefined,
             inputAddresses: sourceNode.addresses || [],
             outputAddresses: targetNode.addresses || []
           }
@@ -1564,23 +1658,30 @@ export const SimpleSankeyTest = ({
         if (originalNode && originalNode.name === "Address") {
           // Handle center wallet node - calculate flow data from the actual Sankey links
           // Calculate total incoming from all links where this node is the target
-          const totalIncoming = links
-            .filter(link => link.target === "Address")
-            .reduce((sum, link) => sum + link.value, 0)
+          const incomingLinks = links.filter(link => link.target === "Address")
+          const totalIncoming = incomingLinks.reduce((sum, link) => sum + link.value, 0)
           
           // Calculate total outgoing from all links where this node is the source
-          const totalOutgoing = links
-            .filter(link => link.source === "Address")
-            .reduce((sum, link) => sum + link.value, 0)
+          const outgoingLinks = links.filter(link => link.source === "Address")
+          const totalOutgoing = outgoingLinks.reduce((sum, link) => sum + link.value, 0)
+          
           
           const netFlow = totalIncoming - totalOutgoing
           
+          console.log('🔍 Flow calculation debug:', {
+            totalIncomingSatoshis: totalIncoming,
+            totalOutgoingSatoshis: totalOutgoing,
+            netFlowSatoshis: netFlow,
+            totalIncomingBTC: totalIncoming / 100000000,
+            totalOutgoingBTC: totalOutgoing / 100000000,
+            netFlowBTC: netFlow / 100000000
+          })
           
           const centerWalletModalData: CenterWalletModalData = {
             address: address,
-            totalIncoming,
-            totalOutgoing,
-            netFlow,
+            totalIncoming, // Keep in satoshis - formatCurrency will convert
+            totalOutgoing, // Keep in satoshis - formatCurrency will convert
+            netFlow, // Keep in satoshis - formatCurrency will convert
             attribution: attributions[address]
           }
           
@@ -1614,7 +1715,10 @@ export const SimpleSankeyTest = ({
         }
       })
 
-    // Add entity logos to nodes
+    // Add entity logos to nodes (images and emojis)
+    console.log('🎨 Adding logos to D3 nodes, current nodeLogos:', nodeLogos)
+    
+    // Add image logos for regular entities
     nodeGroup.append("image")
       .attr("x", (d: any) => {
         const baseWidth = d.x1 - d.x0
@@ -1640,23 +1744,72 @@ export const SimpleSankeyTest = ({
         // Get the original node data to find the entity ID
         const originalNode = nodes[d.index]
         if (originalNode && originalNode.type === 'entity' && originalNode.entityGroup) {
-          return nodeLogos[originalNode.id] || ''
+          const logoUrl = nodeLogos[originalNode.id] || ''
+          // Only show image if it's a URL (not an emoji)
+          const isImageUrl = logoUrl && logoUrl.startsWith('http')
+          console.log('🎨 Setting image logo for node', originalNode.id, 'entity', originalNode.entityGroup, 'logoUrl:', logoUrl, 'isImageUrl:', isImageUrl)
+          return isImageUrl ? logoUrl : ''
         }
         return ''
       })
       .attr("opacity", (d: any) => {
-        // Only show logo if it exists
+        // Only show image if it's a URL (not an emoji)
         const originalNode = nodes[d.index]
         if (originalNode && originalNode.type === 'entity' && originalNode.entityGroup) {
-          return nodeLogos[originalNode.id] ? 1 : 0
+          const logoUrl = nodeLogos[originalNode.id] || ''
+          const isImageUrl = logoUrl && logoUrl.startsWith('http')
+          const hasLogo = !!logoUrl && isImageUrl
+          console.log('🎨 Image logo opacity for node', originalNode.id, ':', hasLogo ? 1 : 0)
+          return hasLogo ? 1 : 0
         }
         return 0
       })
       .style("pointer-events", "none") // Don't interfere with node clicks
       .on("error", function() {
         // Hide logo if it fails to load
+        console.log('🎨 Image logo failed to load, hiding')
         d3.select(this).attr("opacity", 0)
       })
+
+    // Add emoji logos for special entities (like mining rewards)
+    nodeGroup.append("text")
+      .attr("x", (d: any) => {
+        const baseWidth = d.x1 - d.x0
+        return baseWidth / 2 // Center horizontally within the node
+      })
+      .attr("y", (d: any) => {
+        const nodePosition = nodePositions.find((p: any) => p.index === d.index)
+        const nodeHeight = nodePosition ? nodePosition.position.y1 - nodePosition.position.y0 : d.y1 - d.y0
+        return nodeHeight / 2 + 6 // Center vertically within the node (6px offset for text baseline)
+      })
+      .attr("text-anchor", "middle")
+      .attr("dominant-baseline", "middle")
+      .attr("font-size", "16px")
+      .text((d: any) => {
+        // Get the original node data to find the entity ID
+        const originalNode = nodes[d.index]
+        if (originalNode && originalNode.type === 'entity' && originalNode.entityGroup) {
+          const logoUrl = nodeLogos[originalNode.id] || ''
+          // Only show emoji if it's not a URL (i.e., it's an emoji)
+          const isEmoji = logoUrl && !logoUrl.startsWith('http')
+          console.log('🎨 Setting emoji logo for node', originalNode.id, 'entity', originalNode.entityGroup, 'logoUrl:', logoUrl, 'isEmoji:', isEmoji)
+          return isEmoji ? logoUrl : ''
+        }
+        return ''
+      })
+      .attr("opacity", (d: any) => {
+        // Only show emoji if it's not a URL
+        const originalNode = nodes[d.index]
+        if (originalNode && originalNode.type === 'entity' && originalNode.entityGroup) {
+          const logoUrl = nodeLogos[originalNode.id] || ''
+          const isEmoji = logoUrl && !logoUrl.startsWith('http')
+          const hasLogo = !!logoUrl && isEmoji
+          console.log('🎨 Emoji logo opacity for node', originalNode.id, ':', hasLogo ? 1 : 0)
+          return hasLogo ? 1 : 0
+        }
+        return 0
+      })
+      .style("pointer-events", "none") // Don't interfere with node clicks
 
 
     // Add node labels (entity names only)
@@ -1688,11 +1841,14 @@ export const SimpleSankeyTest = ({
     
     
     if (centerNode) {
+      // Get the calculated position for the center node
+      const centerNodePosition = nodePositions.find((p: any) => p.index === centerNode.index)
+      const actualY0 = centerNodePosition ? centerNodePosition.position.y0 : centerNode.y0
       
       // Add the entity name label directly to the SVG
       svg.append("text")
         .attr("x", margin.left + centerNode.x0 + (centerNode.x1 - centerNode.x0) / 2)
-        .attr("y", margin.top + centerNode.y0 - 25)
+        .attr("y", margin.top + actualY0 - 25)
         .attr("text-anchor", "middle")
         .attr("fill", theme === 'dark' ? "#ffffff" : "#000000")
         .attr("font-size", "14px")
@@ -1963,6 +2119,16 @@ export const SimpleSankeyTest = ({
                   >
                     {linkModalData.transactionId}
                     </div>
+                  </div>
+                )}
+
+              {/* Transaction Count for Aggregated Edges */}
+              {linkModalData.transactionCount && (
+                  <div>
+                  <div className="text-sm font-medium text-muted-foreground mb-1">Transactions</div>
+                  <div className="p-2 rounded text-sm bg-muted border">
+                    {linkModalData.transactionCount} Transactions
+                  </div>
                   </div>
                 )}
 

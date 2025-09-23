@@ -2,6 +2,9 @@ import React, { useEffect } from 'react';
 import { Form, Button, Select, Input, DatePicker, Card } from 'antd';
 import { FilterOutlined, ClearOutlined } from '@ant-design/icons';
 import { EComplianceTransactionStatus, TransactionFilters } from '../../../typings/compliance';
+import { selectActiveOrgMembers } from '../../../store/slices/organizationsSlice';
+import { useAppSelector } from '../../../store/hooks';
+import { getUserDisplayName } from '../../../utils/display-labels';
 
 const { RangePicker } = DatePicker;
 
@@ -9,6 +12,8 @@ interface FilterPanelComponentProps {
   form: any;
   availableBlockchains: string[];
   showStatusFilter?: boolean;
+  showAssignedToFilter?: boolean;
+  statusOptions?: Array<{ value: EComplianceTransactionStatus; label: string; group: string }>;
   onFilterChange: (filters: TransactionFilters) => void;
   onClearFilters: () => void;
   initialStatusFilter?: string;
@@ -19,20 +24,27 @@ const FilterPanelComponent: React.FC<FilterPanelComponentProps> = ({
   form,
   availableBlockchains,
   showStatusFilter = true,
+  showAssignedToFilter = true,
+  statusOptions: customStatusOptions,
   onFilterChange,
   onClearFilters,
   initialStatusFilter,
   onClearFiltersExceptStatus
 }) => {
-  const statusOptions = [
+  const organizationMembers = useAppSelector(selectActiveOrgMembers);
+  // Default status options for all statuses
+  const defaultStatusOptions = [
     { value: EComplianceTransactionStatus.UNASSIGNED, label: 'Unassigned', group: 'Unassigned' },
     { value: EComplianceTransactionStatus.UNREVIEWED, label: 'Unreviewed', group: 'Active Cases' },
     { value: EComplianceTransactionStatus.IN_REVIEW, label: 'In Review', group: 'Active Cases' },
     { value: EComplianceTransactionStatus.HOLD, label: 'Hold', group: 'Active Cases' },
     { value: EComplianceTransactionStatus.APPROVED, label: 'Approved', group: 'Archived Cases' },
-    { value: EComplianceTransactionStatus.CLOSED_WITH_NOTE, label: 'Closed with Note', group: 'Archived Cases' },
+    { value: EComplianceTransactionStatus.CLOSED_WITH_NOTE, label: 'Approved with Note', group: 'Archived Cases' },
     { value: EComplianceTransactionStatus.CLOSED_WITH_SAR, label: 'Closed with SAR', group: 'Archived Cases' },
   ];
+
+  // Use custom status options if provided, otherwise use default
+  const statusOptions = customStatusOptions || defaultStatusOptions;
 
   useEffect(() => {
     console.log('useEffect', initialStatusFilter);
@@ -76,6 +88,14 @@ const FilterPanelComponent: React.FC<FilterPanelComponentProps> = ({
       newFilters.clientId = values.clientId;
     }
     
+    if (values.counterpartyEntity) {
+      newFilters.counterpartyEntity = values.counterpartyEntity;
+    }
+    
+    if (values.txId) {
+      newFilters.txId = values.txId;
+    }
+    
     if (values.dateRange && values.dateRange.length === 2 && values.dateRange[0] && values.dateRange[1]) {
       const startDate = values.dateRange[0].startOf('day');
       const endDate = values.dateRange[1].endOf('day');
@@ -96,6 +116,10 @@ const FilterPanelComponent: React.FC<FilterPanelComponentProps> = ({
     
     if (values.riskLevel) {
       newFilters.riskLevel = values.riskLevel;
+    }
+    
+    if (values.assignedTo) {
+      newFilters.assignedTo = values.assignedTo;
     }
     
     return newFilters;
@@ -125,7 +149,7 @@ const FilterPanelComponent: React.FC<FilterPanelComponentProps> = ({
           onClick={onClearFilters}
           size="small"
         >
-          Clear
+          Clear Filters
         </Button>
       }
     >
@@ -165,12 +189,72 @@ const FilterPanelComponent: React.FC<FilterPanelComponentProps> = ({
           </Select>
         </Form.Item>
         
+        <Form.Item name="clientId" style={{ minWidth: 150 }}>
+          <Input 
+            placeholder="Client ID (partial match)"
+            allowClear
+            size="small"
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+              const values = form.getFieldsValue();
+              values.clientId = e.target.value;
+              const filters = processFilterValues(values);
+              onFilterChange(filters);
+            }}
+          />
+        </Form.Item>
+        
+        {showAssignedToFilter && (
+          <Form.Item name="assignedTo" style={{ minWidth: 120 }}>
+            <Select 
+              placeholder="Assigned To"
+              allowClear
+              size="small"
+            >
+              {organizationMembers.map(member => (
+                <Select.Option key={member.userId} value={member.userId}>
+                  {getUserDisplayName(member)}
+                </Select.Option>
+              ))}
+            </Select>
+          </Form.Item>
+        )}
+        
+        <Form.Item name="counterpartyEntity" style={{ minWidth: 74 }}>
+          <Input 
+            placeholder="Counterparty Entity"
+            allowClear
+            size="small"
+          />
+        </Form.Item>
+        
+        <Form.Item name="txId" style={{ minWidth: 200 }}>
+          <Input 
+            placeholder="Transaction ID (partial match)"
+            allowClear
+            size="small"
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+              const values = form.getFieldsValue();
+              values.txId = e.target.value;
+              const filters = processFilterValues(values);
+              onFilterChange(filters);
+            }}
+          />
+        </Form.Item>
+        
         <Form.Item name="dateRange" style={{ marginBottom: 8 }}>
           <RangePicker 
             size="small" 
             placeholder={['From date', 'To date']} 
             onChange={handleDateRangeChange}
           />
+        </Form.Item>
+        
+        <Form.Item name="minAmount" style={{ width: 100 }}>
+          <Input type="number" placeholder="Min BTC" step="0.0001" min="0" size="small" />
+        </Form.Item>
+        
+        <Form.Item name="maxAmount" style={{ width: 100 }}>
+          <Input type="number" placeholder="Max BTC" step="0.0001" min="0" size="small" />
         </Form.Item>
         
         <Form.Item name="riskLevel" style={{ minWidth: 120 }}>
@@ -183,14 +267,6 @@ const FilterPanelComponent: React.FC<FilterPanelComponentProps> = ({
             <Select.Option value="medium">Medium (41-70)</Select.Option>
             <Select.Option value="low">Low ({'≤'}40)</Select.Option>
           </Select>
-        </Form.Item>
-        
-        <Form.Item name="minAmount" style={{ width: 100 }}>
-          <Input type="number" placeholder="Min BTC" step="0.0001" min="0" size="small" />
-        </Form.Item>
-        
-        <Form.Item name="maxAmount" style={{ width: 100 }}>
-          <Input type="number" placeholder="Max BTC" step="0.0001" min="0" size="small" />
         </Form.Item>
       </Form>
     </Card>

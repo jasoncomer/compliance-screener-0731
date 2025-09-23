@@ -1,16 +1,21 @@
-import React, { useState, useEffect } from 'react';
-import { Table } from 'antd';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Table, Spin } from 'antd';
 import type { ColumnType, TableRowSelection } from 'antd/es/table/interface';
 import { EComplianceTransactionStatus, IComplianceTransaction } from '../../../../typings/compliance';
 import { currencySymbols } from '../CurrencySelector';
 import { useAttribution } from '../../../../context/AttributionContext';
 import { truncateAddress } from '../../../../utils/crypto';
-import { getRiskScoreColor, getComplianceReportStatusColor } from '../../utils/compliance.utils';
+import { getComplianceReportStatusClassName } from '../../utils/compliance.utils';
+import { calculateSimpleRiskScore, calculateDetailedRiskAnalysis, InputTransactionRiskData } from '../../../../services/inputTransactionRiskService';
 import { getBlockchainLabel } from '../../../../utils/display-labels';
 import { useCryptoPrices } from '../../../../hooks/useCryptoPrices';
 import { Badge } from '@/components/ui/badge';
 import { UnassignedTransactionModal } from './UnassignedTransactionModal';
-import { getTransactionGroupClassWithHover } from '../../../../utils/transactionGrouping';
+import { blockchain } from '../../../../api/blockchain';
+import { useAppSelector } from '../../../../store/hooks';
+import { selectActiveOrgMembers } from '../../../../store/slices/organizationsSlice';
+import { getUserDisplayName } from '../../../../utils/display-labels';
+import { useUpdateTransactionAssignee } from '../../../../hooks/useComplianceTransactions';
 import '../../../../styles/transactionGrouping.css';
 
 interface TransactionsTableProps {
@@ -27,6 +32,10 @@ interface TransactionsTableProps {
   // Sorting props
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
+  // Transaction update callback
+  onTransactionUpdate?: (updatedTransaction: IComplianceTransaction) => void;
+  // Local transactions update callback
+  onUpdateLocalTransactions?: (updater: (prev: IComplianceTransaction[]) => IComplianceTransaction[]) => void;
 }
 
 const UnassignedTransactionsTable: React.FC<TransactionsTableProps> = ({
@@ -40,36 +49,162 @@ const UnassignedTransactionsTable: React.FC<TransactionsTableProps> = ({
   onSelectChange,
   sortBy = 'timestamp',
   sortOrder = 'desc',
+  onTransactionUpdate,
 }) => {
   const denom = 'USD';
   const { attributions } = useAttribution();
   const [isDetailsModalVisible, setIsDetailsModalVisible] = useState(false);
-  const [selectedTransactionId, setSelectedTransactionId] = useState<string | null>(null);
+  const [_selectedTransactionId, setSelectedTransactionId] = useState<string | null>(null);
   const [selectedTransactionData, setSelectedTransactionData] = useState<IComplianceTransaction | null>(null);
   const { getPrice, prices } = useCryptoPrices();
   const [btcPrice, setBtcPrice] = useState<number>(0);
+  
+  // State for calculated risk scores
+  const [calculatedRiskScores, setCalculatedRiskScores] = useState<Record<string, InputTransactionRiskData>>({});
+  const [riskCalculationLoading, setRiskCalculationLoading] = useState<Record<string, boolean>>({});
+  
+  // Get organization members for the assign dropdown
+  const organizationMembers = useAppSelector(selectActiveOrgMembers);
+  
+  // Convert organization members to team members format
+  const teamMembers = useMemo(() => {
+    return (organizationMembers || [])
+      .filter(member => member.userId) // Filter out members without valid IDs
+      .map(member => ({
+        id: member.userId!,
+        name: getUserDisplayName(member),
+        role: String(member.role || 'Member')
+      }));
+  }, [organizationMembers]);
+
+  // Assignment mutation
+  const updateAssigneeMutation = useUpdateTransactionAssignee();
+
+  // Handle assignment
+  const handleAssign = async (assigneeId: string, notes?: string) => {
+    if (!selectedTransactionData) return;
+    
+    try {
+      // Close the modal first
+      setIsDetailsModalVisible(false);
+      
+      // Clear the selected transaction data
+      setSelectedTransactionData(null);
+      
+      // Make the API call - this will update Redux store via the mutation
+      await updateAssigneeMutation.mutateAsync({
+        transactionId: selectedTransactionData._id,
+        assignee: assigneeId
+      });
+      
+      console.log('Transaction assigned successfully:', {
+        transactionId: selectedTransactionData._id,
+        assigneeId,
+        notes
+      });
+    } catch (error) {
+      console.error('Failed to assign transaction:', error);
+      
+      // If the API call fails, we could potentially restore the transaction
+      // For now, we'll let React Query handle the refetch
+    }
+  };
 
   // Update BTC price when prices change
   useEffect(() => {
-    const price = getPrice('BTC');
-    if (price !== null) {
-      setBtcPrice(price);
+    try {
+      const price = getPrice('BTC');
+      if (price !== null) {
+        setBtcPrice(price);
+      }
+    } catch (error) {
+      console.error('Error getting BTC price:', error);
     }
   }, [prices, getPrice]);
 
-  // Debug modal state changes
+  // Calculate risk scores for transactions
+  const calculateRiskForTransaction = async (transaction: IComplianceTransaction) => {
+    const txId = transaction._id;
+    
+    // Skip if already calculated or currently calculating
+    if (calculatedRiskScores[txId] || riskCalculationLoading[txId]) {
+      return;
+    }
+
+    setRiskCalculationLoading(prev => ({ ...prev, [txId]: true }));
+
+    try {
+      // Fetch transaction details to get input addresses
+      const txData = await blockchain.getTransaction(transaction.txId);
+      const inputAddresses = txData.inputs.map(input => input.addr).filter(Boolean);
+      
+      if (inputAddresses.length === 0) {
+        console.warn(`No input addresses found for transaction ${transaction.txId}`);
+        return;
+      }
+
+      // Calculate detailed risk analysis
+      const riskData = await calculateDetailedRiskAnalysis(inputAddresses);
+
+      setCalculatedRiskScores(prev => ({ ...prev, [txId]: riskData }));
+    } catch (error) {
+      console.error(`Error calculating risk for transaction ${transaction.txId}:`, error);
+    } finally {
+      setRiskCalculationLoading(prev => ({ ...prev, [txId]: false }));
+    }
+  };
+
+  // Calculate risk scores when transactions change
   useEffect(() => {
-    console.log('Modal state changed:', { isVisible: isDetailsModalVisible, transactionId: selectedTransactionId });
-  }, [isDetailsModalVisible, selectedTransactionId]);
+    if (transactions.length > 0) {
+      // Calculate risk for transactions that don't have calculated scores yet
+      transactions.forEach(transaction => {
+        if (!calculatedRiskScores[transaction._id] && !riskCalculationLoading[transaction._id]) {
+          calculateRiskForTransaction(transaction);
+        }
+      });
+    }
+  }, [transactions, calculatedRiskScores, riskCalculationLoading, attributions]);
+
 
   // Function to handle row click to show transaction details
   const handleRowClick = (record: IComplianceTransaction) => {
-    console.log('Row clicked:', record);
-    console.log('Setting transaction ID:', record._id);
     setSelectedTransactionId(record._id);
     setSelectedTransactionData(record);
     setIsDetailsModalVisible(true);
-    console.log('Modal should now be visible');
+  };
+
+  // Function to handle transaction updates from the modal
+  const handleTransactionUpdate = (updatedTransaction: IComplianceTransaction) => {
+    console.log('Table received transaction update:', {
+      transactionId: updatedTransaction._id,
+      newRiskScores: updatedTransaction.riskScores,
+      hasOnTransactionUpdate: !!onTransactionUpdate
+    });
+    
+    // Update the selected transaction data
+    setSelectedTransactionData(updatedTransaction);
+    
+    // If the transaction has updated risk scores, recalculate the risk
+    if (updatedTransaction.riskScores && updatedTransaction.riskScores.length > 0) {
+      // Clear any existing calculated risk for this transaction to force recalculation
+      setCalculatedRiskScores(prev => {
+        const newScores = { ...prev };
+        delete newScores[updatedTransaction._id];
+        return newScores;
+      });
+      
+      // Trigger recalculation
+      calculateRiskForTransaction(updatedTransaction);
+    }
+    
+    // Notify parent component if callback provided
+    if (onTransactionUpdate) {
+      console.log('Table calling parent onTransactionUpdate');
+      onTransactionUpdate(updatedTransaction);
+    } else {
+      console.log('Table has no parent onTransactionUpdate callback');
+    }
   };
 
   // Configure row selection
@@ -90,7 +225,7 @@ const UnassignedTransactionsTable: React.FC<TransactionsTableProps> = ({
       key: 'status',
       width: 120,
       render: (status: EComplianceTransactionStatus) => (
-        <Badge className={getComplianceReportStatusColor(status)}>
+        <Badge className={getComplianceReportStatusClassName(status)}>
           {status.replace(/_/g, ' ')}
         </Badge>
       ),
@@ -102,11 +237,11 @@ const UnassignedTransactionsTable: React.FC<TransactionsTableProps> = ({
       width: 100,
       sorter: false,
       render: (clientId: string) => (
-        <span className="text-white">{clientId}</span>
+        <span className="text-gray-900 dark:text-white">{clientId}</span>
       ),
     },
     {
-      title: 'Counterparty Entities',
+      title: 'Counterparty Entity',
       dataIndex: 'counterpartyEntities',
       key: 'counterpartyEntities',
       width: 170,
@@ -115,7 +250,7 @@ const UnassignedTransactionsTable: React.FC<TransactionsTableProps> = ({
           <span className="text-gray-400">N/A</span>
         );
         return (
-          <span className="text-gray-400">
+          <span className="text-gray-600 dark:text-gray-400">
             {counterpartyEntities.map((entity) => attributions[entity]?.entity || entity).join(', ')}
           </span>
         )
@@ -130,7 +265,7 @@ const UnassignedTransactionsTable: React.FC<TransactionsTableProps> = ({
       render: (txId: string) => {
         if (!txId) return null;
         return (
-          <span className="text-white">{truncateAddress(txId)}</span>
+          <span className="text-gray-900 dark:text-white">{truncateAddress(txId)}</span>
         )
       }
     },
@@ -141,7 +276,7 @@ const UnassignedTransactionsTable: React.FC<TransactionsTableProps> = ({
       width: 100,
       sorter: false,
       render: (blockchain: string) => (
-        <span className="text-white">{getBlockchainLabel(blockchain)}</span>
+        <span className="text-gray-900 dark:text-white">{getBlockchainLabel(blockchain)}</span>
       )
     },
     {
@@ -153,8 +288,8 @@ const UnassignedTransactionsTable: React.FC<TransactionsTableProps> = ({
       sortOrder: sortBy === 'amount' ? (sortOrder === 'asc' ? 'ascend' : 'descend') : null,
       render: (amount: number) => (
         <div className="flex flex-col">
-          <span className="text-white">BTC {(amount / 100000000)}</span>
-          <span className="text-sm text-gray-400">
+          <span className="text-gray-900 dark:text-white">BTC {(amount / 100000000)}</span>
+          <span className="text-sm text-gray-600 dark:text-gray-400">
             {currencySymbols[denom]}
             {((amount / 100000000) * btcPrice)
               .toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
@@ -168,7 +303,7 @@ const UnassignedTransactionsTable: React.FC<TransactionsTableProps> = ({
       key: 'timestamp',
       width: 180,
       render: (timestamp: string) => (
-        <span className="text-gray-400">{new Date(timestamp).toLocaleString()}</span>
+        <span className="text-gray-600 dark:text-gray-400">{new Date(timestamp).toLocaleString()}</span>
       ),
       sorter: true,
       sortOrder: sortBy === 'timestamp' ? (sortOrder === 'asc' ? 'ascend' : 'descend') : null,
@@ -180,21 +315,49 @@ const UnassignedTransactionsTable: React.FC<TransactionsTableProps> = ({
       width: 80,
       sorter: true,
       sortOrder: sortBy === 'riskScores' ? (sortOrder === 'asc' ? 'ascend' : 'descend') : null,
-      render: (scores: number[]) => {
+      render: (scores: number[], record: IComplianceTransaction) => {
+        const txId = record._id;
+        const calculatedRisk = calculatedRiskScores[txId];
+        const isLoading = riskCalculationLoading[txId];
+        
+        // Show loading spinner if calculating
+        if (isLoading) {
+          return (
+            <div className="flex items-center justify-center">
+              <Spin size="small" />
+            </div>
+          );
+        }
+        
+        // Use calculated risk score if available, otherwise fall back to stored scores
+        if (calculatedRisk) {
+          const riskData = calculateSimpleRiskScore([calculatedRisk.overallRisk]);
+          return (
+            <Badge className={riskData.className}>
+              {calculatedRisk.overallRisk}
+            </Badge>
+          );
+        }
+        
+        // Fallback to stored risk scores
         if (!scores || scores.length === 0) return 'N/A';
-        const score = scores.reduce((acc, curr) => acc + curr, 0) / scores.length;
+        const overallScore = scores[0] || 0;
+        const riskData = calculateSimpleRiskScore([overallScore]);
+        
         return (
-          <Badge className={`${getRiskScoreColor(score)} text-white`}>
-            {score}
+          <Badge className={riskData.className}>
+            {overallScore}
           </Badge>
         );
       }
     },
   ];
 
-  return (
-    <div className="w-full h-full flex flex-col overflow-hidden">
-      <Table
+  // Add error boundary for the table
+  try {
+    return (
+      <div className="w-full h-full flex flex-col overflow-hidden">
+        <Table
         className="compliance-table w-full flex-1"
         dataSource={transactions}
         columns={columns as ColumnType<IComplianceTransaction>[]}
@@ -210,7 +373,7 @@ const UnassignedTransactionsTable: React.FC<TransactionsTableProps> = ({
         }}
         loading={loading}
         onChange={onTableChange}
-        rowClassName={(record) => getTransactionGroupClassWithHover(record.txId)}
+        rowClassName={(_, index) => `table-row-${index % 2 === 0 ? 'even' : 'odd'}`}
         onRow={(record) => ({
           onClick: (event) => {
             const target = event.target as HTMLElement;
@@ -220,13 +383,11 @@ const UnassignedTransactionsTable: React.FC<TransactionsTableProps> = ({
           },
         })}
         scroll={{ 
-          x: 1000, // Reduced width from 1200px to 1000px
-          y: 'calc(100vh - 600px)' // Adjusted for the new layout structure
+          x: 1000,
+          y: 'calc(100vh - 600px)'
         }}
         style={{
-          // Disable any potential animations
-          transition: 'none',
-          animation: 'none'
+          minHeight: '400px'
         }}
       />
 
@@ -241,12 +402,24 @@ const UnassignedTransactionsTable: React.FC<TransactionsTableProps> = ({
         transaction={selectedTransactionData}
         isOpen={isDetailsModalVisible}
         onClose={() => setIsDetailsModalVisible(false)}
-        onAssign={() => {}}
-        teamMembers={[]}
+        onAssign={handleAssign}
+        teamMembers={teamMembers}
+        onTransactionUpdate={handleTransactionUpdate}
+        calculatedRiskScore={selectedTransactionData ? calculatedRiskScores[selectedTransactionData._id]?.overallRisk : undefined}
       />
 
     </div>
-  );
+    );
+  } catch (error) {
+    console.error('Error rendering UnassignedTransactionsTable:', error);
+    return (
+      <div className="w-full h-full flex flex-col overflow-hidden">
+        <div className="flex items-center justify-center h-64">
+          <div className="text-red-500">Error loading table. Please refresh the page.</div>
+        </div>
+      </div>
+    );
+  }
 };
 
 export default UnassignedTransactionsTable; 

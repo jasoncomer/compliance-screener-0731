@@ -10,8 +10,6 @@ import ArchivedCasesTab from './components/archived-cases/ArchivedCasesTab';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import { fetchMonitoredAddresses, selectAllAddresses } from '../../store/slices/monitoredAddressesSlice';
 
-const { TabPane } = Tabs;
-
 type TabKey = 'transactions' | 'active-cases' | 'addresses' | 'archived-cases';
 
 interface TabConfig {
@@ -107,16 +105,12 @@ const ComplianceScreener: React.FC = () => {
         activeKey={activeTab}
         onChange={handleTabChange}
         type="card"
-      >
-        {tabConfig.map(({ key, label, icon, component }) => (
-          <TabPane
-            key={key}
-            tab={createTabHeader(icon, label)}
-          >
-            {component}
-          </TabPane>
-        ))}
-      </Tabs>
+        items={tabConfig.map(({ key, label, icon, component }) => ({
+          key,
+          label: createTabHeader(icon, label),
+          children: component
+        }))}
+      />
     </ViewWrapper>
   );
 };
