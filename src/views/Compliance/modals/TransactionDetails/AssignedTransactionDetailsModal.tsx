@@ -36,9 +36,9 @@ import { selectActiveOrgMembersMap } from '../../../../store/slices/organization
 import { RootState } from '../../../../store/store';
 import { EComplianceTransactionStatus,IComplianceTransaction } from '../../../../typings/compliance';
 import { getUserDisplayName } from '../../../../utils/display-labels';
+import { TransactionRiskModal } from '../../components/modals/TransactionRiskModal';
 import { getComplianceReportStatusClassName } from '../../utils/compliance.utils';
 import CaseAssignmentHistoryModal from '../CaseAssignmentHistoryModal';
-import { TransactionRiskModal } from '../../components/modals/TransactionRiskModal';
 
 interface AssignedTransactionDetailsModalProps {
   isVisible: boolean;

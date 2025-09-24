@@ -75,13 +75,17 @@ const NewsFeed: React.FC<NewsFeedProps> = ({
   };
 
   const NewsCard: React.FC<{ article: NewsArticle }> = ({ article }) => (
-    <div className="mb-4 pb-4 border-b border-gray-200 last:border-b-0">
+    <div className={`mb-4 p-3 rounded-lg border ${
+      theme === 'dark' ? 'border-gray-600 bg-gray-800/50' : 'border-gray-200 bg-white'
+    }`}>
       <div className="flex items-start space-x-3">
         {article.logoUrl ? (
           <img
             src={article.logoUrl}
             alt="News source logo"
-            className="w-8 h-8 rounded-full object-cover bg-white border"
+            className={`w-8 h-8 rounded-full object-cover border ${
+              theme === 'dark' ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-200'
+            }`}
             style={{ minWidth: 32, minHeight: 32 }}
             onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
           />
@@ -142,7 +146,9 @@ const NewsFeed: React.FC<NewsFeedProps> = ({
   );
 
   const TweetCard: React.FC<{ tweet: Tweet }> = ({ tweet }) => (
-    <div className="mb-4 pb-4 border-b border-gray-200 last:border-b-0">
+    <div className={`mb-4 p-3 rounded-lg border ${
+      theme === 'dark' ? 'border-gray-600 bg-gray-800/50' : 'border-gray-200 bg-white'
+    }`}>
       <div className="flex items-start space-x-3">
         <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
           theme === 'dark' ? 'bg-blue-600' : 'bg-blue-500'
@@ -188,14 +194,16 @@ const NewsFeed: React.FC<NewsFeedProps> = ({
     return (
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full w-full">
         {/* Latest Tweets Column */}
-        <div className="flex flex-col border rounded-lg overflow-hidden h-full w-full">
+        <div className={`flex flex-col border rounded-lg overflow-hidden h-full w-full ${
+          theme === 'dark' ? 'border-gray-600' : 'border-gray-200'
+        }`}>
           <h4 className={`font-semibold text-sm p-3 border-b flex-shrink-0 flex items-center ${
-            theme === 'dark' ? 'text-white border-gray-600 bg-gray-800' : 'text-gray-900 border-gray-200 bg-gray-50'
+            theme === 'dark' ? 'text-white border-gray-600 bg-gray-800' : 'text-gray-900 border-gray-200 bg-white'
           }`}>
             <Twitter className="w-4 h-4 mr-2" />
             Latest Tweets ({data.tweets.length})
           </h4>
-          <div className="flex-1 overflow-y-auto overflow-x-hidden p-3">
+          <div className="flex-1 overflow-y-auto overflow-x-hidden p-3 bg-gray-300 dark:bg-gray-900">
             {data.tweets.length === 0 ? (
               <div className={`text-center py-8 ${
                 theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
@@ -214,14 +222,16 @@ const NewsFeed: React.FC<NewsFeedProps> = ({
         </div>
 
         {/* Latest News Column */}
-        <div className="flex flex-col border rounded-lg overflow-hidden h-full w-full">
+        <div className={`flex flex-col border rounded-lg overflow-hidden h-full w-full ${
+          theme === 'dark' ? 'border-gray-600' : 'border-gray-200'
+        }`}>
           <h4 className={`font-semibold text-sm p-3 border-b flex-shrink-0 flex items-center ${
-            theme === 'dark' ? 'text-white border-gray-600 bg-gray-800' : 'text-gray-900 border-gray-200 bg-gray-50'
+            theme === 'dark' ? 'text-white border-gray-600 bg-gray-800' : 'text-gray-900 border-gray-200 bg-white'
           }`}>
             <Globe className="w-4 h-4 mr-2" />
             Latest News ({data.news.length})
           </h4>
-          <div className="flex-1 overflow-y-auto overflow-x-hidden p-3">
+          <div className="flex-1 overflow-y-auto overflow-x-hidden p-3 bg-gray-300 dark:bg-gray-900">
             {data.news.length === 0 ? (
               <div className={`text-center py-8 ${
                 theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
@@ -360,9 +370,7 @@ const NewsFeed: React.FC<NewsFeedProps> = ({
                 onClick={() => setFilter(key as any)}
                 className={`px-3 py-1 text-xs rounded-md transition-colors ${
                   filter === key
-                    ? theme === 'dark'
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-blue-500 text-white'
+                    ? 'bg-orange-500 text-white'
                     : theme === 'dark'
                     ? 'text-gray-300 hover:bg-gray-700'
                     : 'text-gray-600 hover:bg-gray-100'

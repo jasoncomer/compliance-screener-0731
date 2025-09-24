@@ -330,13 +330,14 @@ const resolveEntityId = (address: string, attributions: any): string | null => {
 }
 
 
-export const SimpleSankeyTest = ({ 
-  address, 
+export const SimpleSankeyTest = ({
+  address,
   maxTransactions = 20
 }: SimpleSankeyTestProps) => {
-  try {
   const { theme } = useTheme()
+  const containerRef = useRef<HTMLDivElement>(null)
   const svgRef = useRef<SVGSVGElement>(null)
+  const [dimensions, setDimensions] = useState({ width: 1200, height: 350 })
   const [modalData, setModalData] = useState<WalletModalData | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [linkModalData, setLinkModalData] = useState<LinkModalData | null>(null)
@@ -902,6 +903,22 @@ export const SimpleSankeyTest = ({
     }
   }, [nodes])
 
+  // Handle responsive sizing
+  useEffect(() => {
+    const handleResize = () => {
+      if (containerRef.current) {
+        const containerWidth = containerRef.current.offsetWidth
+        // Ensure minimum width for readability, max for large screens
+        const width = Math.min(Math.max(containerWidth - 40, 800), 1400)
+        setDimensions({ width, height: 350 })
+      }
+    }
+
+    handleResize()
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
+
   useEffect(() => {
     if (!svgRef.current || links.length === 0) return
 
@@ -910,8 +927,8 @@ export const SimpleSankeyTest = ({
 
     const svg = d3.select(svgRef.current)
     const margin = { top: 20, right: 250, bottom: 20, left: 250 }
-    const width = 1400
-    const height = 350
+    const width = dimensions.width
+    const height = dimensions.height
     const chartWidth = width - margin.left - margin.right
     const chartHeight = height - margin.top - margin.bottom
 
@@ -1862,7 +1879,7 @@ export const SimpleSankeyTest = ({
 
 
 
-  }, [nodes, links, theme, centralEntityName])
+  }, [nodes, links, theme, centralEntityName, dimensions])
 
 
   return (
@@ -1887,13 +1904,15 @@ export const SimpleSankeyTest = ({
           </div>
         ) : links.length > 0 ? (
           <>
-            <div style={{ width: "100%", display: "flex", justifyContent: "center" }}>
-              <svg
-                ref={svgRef}
-                width={1400}
-                height={350}
-                style={{ background: 'transparent' }}
-              />
+            <div ref={containerRef} className="w-full overflow-x-auto">
+              <div style={{ minWidth: '800px', width: '100%', display: 'flex', justifyContent: 'center' }}>
+                <svg
+                  ref={svgRef}
+                  width={dimensions.width}
+                  height={dimensions.height}
+                  style={{ background: 'transparent' }}
+                />
+              </div>
             </div>
 
           </>
@@ -2358,19 +2377,4 @@ export const SimpleSankeyTest = ({
       )}
     </>
   )
-  } catch (error) {
-    console.error('SimpleSankeyTest error:', error)
-    return (
-      <div className="p-6 bg-red-100 border border-red-400 text-red-700 rounded">
-        <h4 className="text-xl font-semibold mb-2">Error in Sankey Component</h4>
-        <p>There was an error rendering the Sankey diagram: {error instanceof Error ? error.message : 'Unknown error'}</p>
-        <details className="mt-2">
-          <summary className="cursor-pointer">Show details</summary>
-          <pre className="mt-2 text-xs bg-red-50 p-2 rounded overflow-auto">
-            {error instanceof Error ? error.stack : JSON.stringify(error)}
-          </pre>
-        </details>
-      </div>
-    )
-  }
 } 

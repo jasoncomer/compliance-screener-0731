@@ -77,7 +77,7 @@ const CompactSOTView: React.FC<{
           <div className="flex">
             <span className="w-32 text-sm text-gray-600 dark:text-gray-400">Website:</span>
             <a
-              href={sot.url}
+              href={sot.url?.startsWith('http') ? sot.url : `https://${sot.url}`}
               target="_blank"
               rel="noopener noreferrer"
               className="flex-1 text-sm text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
@@ -247,7 +247,7 @@ const EntityQuickView: React.FC<EntityQuickViewProps> = ({
     if (!buttonRect) return {};
 
     const spacing = 4; // reduced spacing from button to minimize gap
-    let style: React.CSSProperties = {
+    const style: React.CSSProperties = {
       position: 'fixed',
       width: popoverWidth,
       zIndex: 9999,
@@ -297,7 +297,7 @@ const EntityQuickView: React.FC<EntityQuickViewProps> = ({
   const getBridgeStyle = () => {
     if (!buttonRect) return {};
 
-    let style: React.CSSProperties = {
+    const style: React.CSSProperties = {
       position: 'fixed',
       zIndex: 9998,
     };

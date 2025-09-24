@@ -3,7 +3,6 @@ import React, { useEffect } from 'react';
 import { Col,Form, Row } from 'antd';
 
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import {
   Select,
   SelectContent,
@@ -11,6 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 
 import { MonitoredAddress } from '../../../typings/compliance';
 

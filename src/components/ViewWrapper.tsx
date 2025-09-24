@@ -22,11 +22,11 @@ const ViewWrapper: React.FC<ViewWrapperProps> = ({
   
   
   return (
-    <div 
+    <div
       className={cn(
         "w-full min-h-full bg-background text-foreground font-['Inter']",
         "px-4 py-6 lg:px-6 lg:py-8",
-        fullWidth ? "max-w-none" : "max-w-7xl mx-auto",
+        fullWidth ? "max-w-full" : "max-w-7xl mx-auto",
         className
       )}
     >

@@ -188,6 +188,28 @@ pre {
 /* Dark mode input styling - simplified approach using Tailwind utilities */
 /* Input components should use Tailwind dark: modifiers directly in their classes */
 
+/* Leaflet popup dark mode styling */
+.dark .leaflet-popup-content-wrapper,
+body[data-theme="dark"] .leaflet-popup-content-wrapper {
+  background-color: #1f2937; /* gray-800 */
+  color: #f3f4f6; /* gray-100 */
+}
+
+.dark .leaflet-popup-tip,
+body[data-theme="dark"] .leaflet-popup-tip {
+  background-color: #1f2937; /* gray-800 */
+}
+
+.dark .leaflet-popup-close-button,
+body[data-theme="dark"] .leaflet-popup-close-button {
+  color: #9ca3af !important; /* gray-400 */
+}
+
+.dark .leaflet-popup-close-button:hover,
+body[data-theme="dark"] .leaflet-popup-close-button:hover {
+  color: #f3f4f6 !important; /* gray-100 */
+}
+
 
 @media (prefers-color-scheme: light) {
   pre {

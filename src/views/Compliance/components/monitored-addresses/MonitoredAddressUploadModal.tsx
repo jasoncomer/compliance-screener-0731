@@ -1,8 +1,9 @@
 import React from 'react';
 
 import { Upload } from 'lucide-react';
-import { Modal } from '@/components/ui/modal';
+
 import { Button } from '@/components/ui/button';
+import { Modal } from '@/components/ui/modal';
 
 interface UploadFile {
   uid: string;

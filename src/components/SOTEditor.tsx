@@ -513,7 +513,7 @@ const SOTEditor: React.FC<SOTEditorProps> = ({ sot, onSelectAssociatedSot }) => 
                   {sot.legal_info_url && (
                     <span style={{ marginTop: '48px', display: 'block' }}>
                       <strong>Legal Info: </strong>
-                      <a href={sot.legal_info_url} target="_blank" rel="noopener noreferrer">
+                      <a href={sot.legal_info_url?.startsWith('http') ? sot.legal_info_url : `https://${sot.legal_info_url}`} target="_blank" rel="noopener noreferrer">
                         <GlobalOutlined /> View Legal Information
                       </a>
                     </span>

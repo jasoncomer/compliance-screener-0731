@@ -28,10 +28,10 @@ import { selectTransactionById } from '../../../../store/slices/complianceTransa
 import { selectActiveOrgMembersMap } from '../../../../store/slices/organizationsSlice';
 import { IComplianceTransaction } from '../../../../typings/compliance';
 import { getUserDisplayName } from '../../../../utils/display-labels';
+import { TransactionRiskModal } from '../../components/modals/TransactionRiskModal';
 import { getComplianceReportStatusClassName } from '../../utils/compliance.utils';
 import CaseAssignmentHistoryModal from '../CaseAssignmentHistoryModal';
 import { EntityQuickViewModal } from '../EntityQuickViewModal';
-import { TransactionRiskModal } from '../../components/modals/TransactionRiskModal';
 
 interface TransactionDetailsModalProps {
   isVisible: boolean;

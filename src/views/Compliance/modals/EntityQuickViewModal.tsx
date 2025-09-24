@@ -1,14 +1,13 @@
 import React from 'react';
 
 import { Globe, Send, Twitter, User, X } from 'lucide-react';
+import { useSelector } from 'react-redux';
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-
+import { RootState } from '@/store/store';
 import { SOT } from '@/typings/interfaces';
 import { EEntityType } from '@/typings/SOT';
 import { getEntityTypeLabel } from '@/utils/display-labels';
-import { RootState } from '@/store/store';
-import { useSelector } from 'react-redux';
 
 interface EntityQuickViewModalProps {
   isVisible: boolean;
@@ -132,7 +131,7 @@ export const EntityQuickViewModal: React.FC<EntityQuickViewModalProps> = ({
             <div className="flex">
               <span className="w-36 text-sm font-medium text-gray-600 dark:text-gray-400">Website:</span>
               <a
-                href={sot.url}
+                href={sot.url?.startsWith('http') ? sot.url : `https://${sot.url}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex-1 text-sm text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"

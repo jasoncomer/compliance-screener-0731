@@ -1,6 +1,6 @@
 import React, { useMemo,useState } from 'react';
 
-import { Card, Tag, Tooltip,Typography } from 'antd';
+import { Tag, Tooltip } from 'antd';
 import L from 'leaflet';
 import { Globe, MapPin, Users } from 'lucide-react';
 import { MapContainer, Marker, Popup,TileLayer } from 'react-leaflet';
@@ -84,15 +84,16 @@ const getRiskLevel = (country: string): string => {
 };
 
 // Create custom markers with risk-based coloring
-const createCustomIcon = (country: string, count: number, isSelected: boolean) => {
+const createCustomIcon = (country: string, count: number, isSelected: boolean, isDarkTheme: boolean) => {
   const riskColor = getRiskColor(country);
   const isSpecialCase = ['Global', 'Darknet Entity', 'Risky Entity'].includes(country);
   const size = isSelected ? 24 : 20;
   const borderWidth = isSelected ? 3 : 2;
-  
+  const borderColor = isDarkTheme ? '#374151' : 'white'; // gray-700 for dark, white for light
+
   // Create a more transparent version of the color
   const transparentColor = riskColor + 'CC'; // Add 80% opacity
-  
+
   return L.divIcon({
     className: 'custom-marker',
     html: `
@@ -101,7 +102,7 @@ const createCustomIcon = (country: string, count: number, isSelected: boolean) =
         width: ${size}px;
         height: ${size}px;
         border-radius: 50%;
-        border: ${borderWidth}px solid white;
+        border: ${borderWidth}px solid ${borderColor};
         box-shadow: 0 2px 8px rgba(0,0,0,0.2);
         display: flex;
         align-items: center;
@@ -112,7 +113,7 @@ const createCustomIcon = (country: string, count: number, isSelected: boolean) =
         cursor: pointer;
         transition: all 0.2s ease;
         backdrop-filter: blur(4px);
-        ${isSpecialCase ? 'border: 2px solid #374151;' : ''}
+        ${isSpecialCase ? `border: 2px solid ${isDarkTheme ? '#6b7280' : '#374151'};` : ''}
       ">
         ${count > 1 ? count : '•'}
       </div>
@@ -121,8 +122,6 @@ const createCustomIcon = (country: string, count: number, isSelected: boolean) =
     iconAnchor: [size / 2, size / 2]
   });
 };
-
-const { Title } = Typography;
 
 interface GeographicPresenceProps {
   countries: string[];
@@ -182,13 +181,13 @@ const GeographicPresence: React.FC<GeographicPresenceProps> = ({ countries }) =>
     : 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
 
   return (
-    <Card className={`${theme === 'light' ? 'bg-white border-gray-200' : 'bg-gray-800 border-gray-700'} rounded-2xl`}>
+    <>
       <div className="flex items-center gap-2 mb-4">
         <Globe className="w-5 h-5 text-blue-500" />
-        <Title level={5} className={`${theme === 'light' ? 'text-gray-900' : 'text-white'} mb-0`}>
+        <h3 className={`text-lg font-semibold ${theme === 'light' ? 'text-gray-900' : 'text-white'} mb-0`}>
           Geographic Presence
-        </Title>
-        <div className="ml-auto flex items-center gap-4 text-sm text-gray-500">
+        </h3>
+        <div className={`ml-auto flex items-center gap-4 text-sm ${theme === 'light' ? 'text-gray-500' : 'text-gray-400'}`}>
           <div className="flex items-center gap-1">
             <Users className="w-4 h-4" />
             <span>{countriesWithCoordinates.length + countriesWithoutCoordinates.length} total</span>
@@ -236,18 +235,18 @@ const GeographicPresence: React.FC<GeographicPresenceProps> = ({ countries }) =>
               <Marker
                 key={country}
                 position={[coordinates[1], coordinates[0]]}
-                icon={createCustomIcon(country, count, isSelected)}
+                icon={createCustomIcon(country, count, isSelected, theme === 'dark')}
                 eventHandlers={{
                   click: () => setSelectedCountry(isSelected ? null : country),
                 }}
               >
                 <Popup>
                   <div className="text-center p-2">
-                    <h3 className="font-semibold text-gray-900 mb-1">{country}</h3>
-                    <p className="text-sm text-gray-600">
+                    <h3 className="font-semibold text-gray-900 dark:text-white mb-1">{country}</h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-300">
                       {count} {count === 1 ? 'reference' : 'references'}
                     </p>
-                    <div className="mt-2 text-xs text-gray-500">
+                    <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">
                       {isSpecialCase ? 'Special entity type' : 'Geographic presence'}
                     </div>
                     {riskScore > 0 && (
@@ -332,7 +331,7 @@ const GeographicPresence: React.FC<GeographicPresenceProps> = ({ countries }) =>
           </div>
         </div>
       )}
-    </Card>
+    </>
   );
 };
 

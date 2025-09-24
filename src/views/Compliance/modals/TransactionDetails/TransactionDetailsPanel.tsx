@@ -15,8 +15,8 @@ import { IComplianceTransaction } from '../../../../typings/compliance';
 import { EComplianceTransactionStatus } from '../../../../typings/compliance';
 import { SOT } from '../../../../typings/interfaces';
 import { getUserDisplayName } from '../../../../utils/display-labels';
-import { getComplianceReportStatusColor,getRiskScoreColor } from '../../utils/compliance.utils';
 import { TransactionRiskModal } from '../../components/modals/TransactionRiskModal';
+import { getComplianceReportStatusColor,getRiskScoreColor } from '../../utils/compliance.utils';
 
 // Status mapping for display labels
 const getStatusDisplayLabel = (status: EComplianceTransactionStatus): string => {

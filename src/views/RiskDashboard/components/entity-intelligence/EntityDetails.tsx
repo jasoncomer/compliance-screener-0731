@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { CalendarOutlined, CompassOutlined, DatabaseOutlined, EnvironmentOutlined, FileTextOutlined,GlobalOutlined, LinkOutlined, MailOutlined, PhoneOutlined, SendOutlined, TagOutlined, TeamOutlined, TwitterOutlined, UserOutlined, WarningOutlined } from '@ant-design/icons';
+import { CalendarOutlined, CompassOutlined, DatabaseOutlined, EnvironmentOutlined, FileTextOutlined, GlobalOutlined, LinkOutlined, MailOutlined, PhoneOutlined, SendOutlined, TagOutlined, TeamOutlined, TwitterOutlined, UserOutlined, WarningOutlined } from '@ant-design/icons';
 
 import { SimpleLogo } from '../../../../components/common/Logo';
 import EntityToggle from '../../../../components/EntityToggle';
@@ -81,9 +81,35 @@ const EntityDetails: React.FC<EntityDetailsProps> = ({
   const { theme } = useTheme();
 
   // Utility function to truncate long text
-  const truncateText = (text: string, maxLength: number = 50): string => {
+  const truncateText = (text: string | undefined | null, maxLength: number = 50): string => {
+    if (!text) return '';
     if (text.length <= maxLength) return text;
     return text.substring(0, maxLength) + '...';
+  };
+
+  // Utility function to ensure URL has protocol
+  const ensureProtocol = (url: string): string => {
+    if (!url) return '';
+    if (url.match(/^https?:\/\//)) return url;
+    return `https://${url}`;
+  };
+
+  // Utility function to format social media URLs
+  const formatSocialUrl = (platform: string, handle: string): string => {
+    if (!handle) return '';
+    // If it's already a full URL, return as is
+    if (handle.match(/^https?:\/\//)) return handle;
+    // Remove @ symbol if present
+    const cleanHandle = handle.replace('@', '');
+
+    switch (platform) {
+      case 'twitter':
+        return `https://twitter.com/${cleanHandle}`;
+      case 'telegram':
+        return `https://t.me/${cleanHandle}`;
+      default:
+        return handle;
+    }
   };
 
   // Check if we have meaningful entity data
@@ -92,19 +118,15 @@ const EntityDetails: React.FC<EntityDetailsProps> = ({
   if (!hasEntityData) {
     return (
       <div className="flex flex-col items-center justify-center h-full text-center">
-        <div className={`w-16 h-16 rounded-full flex items-center justify-center mb-4 ${
-          theme === 'dark' ? 'bg-gray-700' : 'bg-gray-100'
-        }`}>
-          <UserOutlined className={`text-2xl ${
-            theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
-          }`} />
+        <div className={`w-16 h-16 rounded-full flex items-center justify-center mb-4 ${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-100'
+          }`}>
+          <UserOutlined className={`text-2xl ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
+            }`} />
         </div>
-        <h4 className={`text-lg font-medium mb-2 ${
-          theme === 'dark' ? 'text-white' : 'text-gray-900'
-        }`}>No Entity Information</h4>
-        <p className={`text-sm ${
-          theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
-        }`}>
+        <h4 className={`text-lg font-medium mb-2 ${theme === 'dark' ? 'text-white' : 'text-gray-900'
+          }`}>No Entity Information</h4>
+        <p className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
+          }`}>
           No entity information available for this address
         </p>
       </div>
@@ -125,9 +147,8 @@ const EntityDetails: React.FC<EntityDetailsProps> = ({
 
   return (
     <>
-      <h4 className={`text-xl font-semibold mb-6 ${
-        theme === 'dark' ? 'text-white' : 'text-gray-900'
-      }`}>Entity Details</h4>
+      <h4 className={`text-xl font-semibold mb-6 ${theme === 'dark' ? 'text-white' : 'text-gray-900'
+        }`}>Entity Details</h4>
       {/* Header with logo and name */}
       <div className="flex items-center mb-6">
         <div className="mr-4">
@@ -139,12 +160,10 @@ const EntityDetails: React.FC<EntityDetailsProps> = ({
           />
         </div>
         <div className="flex-1">
-          <div className={`font-semibold text-lg ${
-            theme === 'dark' ? 'text-white' : 'text-gray-900'
-          }`}>{name}</div>
-          <div className={`text-sm ${
-            theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
-          }`}>{type}</div>
+          <div className={`font-semibold text-lg ${theme === 'dark' ? 'text-white' : 'text-gray-900'
+            }`}>{name}</div>
+          <div className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
+            }`}>{type}</div>
         </div>
         {/* View in VASP Explorer Button */}
         {entityId && (
@@ -157,7 +176,7 @@ const EntityDetails: React.FC<EntityDetailsProps> = ({
           </button>
         )}
       </div>
-      
+
       {/* Entity Toggle - Show when both custodial entity and beneficial owner exist */}
       {showToggle && onToggle && (
         <div className="mb-6">
@@ -169,7 +188,7 @@ const EntityDetails: React.FC<EntityDetailsProps> = ({
           />
         </div>
       )}
-      
+
       {/* Status Indicators */}
       {(isOfacSanctioned || isDead || isCentralized !== undefined || noKycRequired) && (
         <div className="mb-1 p-1">
@@ -198,49 +217,42 @@ const EntityDetails: React.FC<EntityDetailsProps> = ({
       <div className="space-y-4">
         {/* Entity ID */}
         {entityId && (
-          <div className={`text-sm ${
-            theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
-          }`}>
-            <span className={`font-medium ${
-              theme === 'dark' ? 'text-gray-200' : 'text-gray-700'
-            }`}>Entity ID:</span> {entityId}
+          <div className={`text-sm ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
+            }`}>
+            <span className={`font-medium ${theme === 'dark' ? 'text-gray-200' : 'text-gray-700'
+              }`}>Entity ID:</span> {entityId}
           </div>
         )}
-           
-            {/* Associated Countries */}
-            {countries.length > 0 && (
-              <div className={`text-sm ${
-                theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
+
+        {/* Associated Countries */}
+        {countries.length > 0 && (
+          <div className={`text-sm ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
+            }`}>
+            <span className={`font-medium flex items-center ${theme === 'dark' ? 'text-gray-200' : 'text-gray-700'
               }`}>
-                <span className={`font-medium flex items-center ${
-                  theme === 'dark' ? 'text-gray-200' : 'text-gray-700'
-                }`}>
-                  <CompassOutlined className="mr-1" />
-                  Associated Countries:
+              <CompassOutlined className="mr-1" />
+              Associated Countries:
+            </span>
+            <div className="flex flex-wrap gap-1 mt-1">
+              {countries.map(country =>
+                <span key={country} className={`px-2 py-1 rounded text-xs ${theme === 'dark'
+                    ? 'bg-gray-700 text-gray-300'
+                    : 'bg-gray-200 text-gray-700'
+                  }`}>
+                  {country}
                 </span>
-                <div className="flex flex-wrap gap-1 mt-1">
-                  {countries.map(country => 
-                    <span key={country} className={`px-2 py-1 rounded text-xs ${
-                      theme === 'dark' 
-                        ? 'bg-gray-700 text-gray-300' 
-                        : 'bg-gray-200 text-gray-700'
-                    }`}>
-                      {country}
-                    </span>
-                  )}
-                </div>
-              </div>
-            )}
+              )}
+            </div>
+          </div>
+        )}
 
 
         {/* Description */}
         {description && (
-          <div className={`text-sm ${
-            theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
-          }`}>
-            <span className={`font-medium flex items-center ${
-              theme === 'dark' ? 'text-gray-200' : 'text-gray-700'
+          <div className={`text-sm ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
             }`}>
+            <span className={`font-medium flex items-center ${theme === 'dark' ? 'text-gray-200' : 'text-gray-700'
+              }`}>
               <FileTextOutlined className="mr-1" />
               Description:
             </span>
@@ -251,17 +263,15 @@ const EntityDetails: React.FC<EntityDetailsProps> = ({
         )}
 
         {/* Two Column Layout for Lower Sections */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
           {/* Left Column */}
           <div className="space-y-6">
             {/* Leadership */}
             {(ceo || keyPersonnel) && (
-              <div className={`text-sm mt-6 ${
-                theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
-              }`}>
-                <span className={`font-medium flex items-center ${
-                  theme === 'dark' ? 'text-gray-200' : 'text-gray-700'
+              <div className={`text-sm ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
                 }`}>
+                <span className={`font-medium flex items-center ${theme === 'dark' ? 'text-gray-200' : 'text-gray-700'
+                  }`}>
                   <TeamOutlined className="mr-1" />
                   Leadership:
                 </span>
@@ -269,15 +279,17 @@ const EntityDetails: React.FC<EntityDetailsProps> = ({
                   {ceo && <div>CEO: {ceo}</div>}
                   {keyPersonnel && (
                     <div>
-                      Key Personnel: {keyPersonnel.split(',').map(person => 
-                        <span key={person.trim()} className={`inline-block px-2 py-1 rounded text-xs mr-1 mb-1 ${
-                          theme === 'dark' 
-                            ? 'bg-gray-700 text-gray-300' 
-                            : 'bg-gray-200 text-gray-700'
-                        }`}>
-                          {person.trim()}
-                        </span>
-                      )}
+                      <div className="mb-1">Key Personnel:</div>
+                      <div className="flex flex-wrap gap-1">
+                        {keyPersonnel.split(',').map(person =>
+                          <span key={person.trim()} className={`inline-block px-2 py-1 rounded text-xs ${theme === 'dark'
+                              ? 'bg-gray-700 text-gray-300'
+                              : 'bg-gray-200 text-gray-700'
+                            }`}>
+                            {person.trim()}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   )}
                 </div>
@@ -286,22 +298,21 @@ const EntityDetails: React.FC<EntityDetailsProps> = ({
 
             {/* Contact Information */}
             {(website || email || phone || address || ensAddress) && (
-              <div className={`text-sm ${
-                theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
-              }`}>
-                <span className={`font-medium ${
-                  theme === 'dark' ? 'text-gray-200' : 'text-gray-700'
-                }`}>Contact Information:</span>
+              <div className={`text-sm ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
+                }`}>
+                <span className={`font-medium ${theme === 'dark' ? 'text-gray-200' : 'text-gray-700'
+                  }`}>Contact Information:</span>
                 <div className="ml-4 mt-1 space-y-1">
                   {website && (
                     <div className="flex items-center">
                       <GlobalOutlined className="mr-2 flex-shrink-0" />
-                      <a 
-                        href={`https://${website}`} 
-                        target="_blank" 
+                      <a
+                        href={ensureProtocol(website)}
+                        target="_blank"
                         rel="noopener noreferrer"
                         className="text-brand-primary hover:text-brand-primary/80 transition-colors break-all"
                         title={website}
+                        aria-label={`Visit ${name} website`}
                       >
                         {truncateText(website, 30)}
                       </a>
@@ -310,10 +321,11 @@ const EntityDetails: React.FC<EntityDetailsProps> = ({
                   {email && (
                     <div className="flex items-center">
                       <MailOutlined className="mr-2 flex-shrink-0" />
-                      <a 
+                      <a
                         href={`mailto:${email}`}
                         className="text-brand-primary hover:text-brand-primary/80 transition-colors break-all"
                         title={email}
+                        aria-label={`Send email to ${email}`}
                       >
                         {truncateText(email, 40)}
                       </a>
@@ -336,10 +348,10 @@ const EntityDetails: React.FC<EntityDetailsProps> = ({
                     </div>
                   )}
                   {ensAddress && (
-                    <div className="flex items-center">
-                      <LinkOutlined className="mr-2 flex-shrink-0" />
+                    <div className="flex items-start">
+                      <LinkOutlined className="mr-2 flex-shrink-0 mt-0.5" />
                       <span className="break-all" title={ensAddress}>
-                        ENS: {truncateText(ensAddress, 35)}
+                        <span className="font-medium">ENS:</span> {truncateText(ensAddress, 40)}
                       </span>
                     </div>
                   )}
@@ -349,22 +361,21 @@ const EntityDetails: React.FC<EntityDetailsProps> = ({
 
             {/* Social Media */}
             {(twitter || telegram || socialMediaProfiles.length > 0) && (
-              <div className={`text-sm ${
-                theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
-              }`}>
-                <span className={`font-medium ${
-                  theme === 'dark' ? 'text-gray-200' : 'text-gray-700'
-                }`}>Social Media:</span>
+              <div className={`text-sm ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
+                }`}>
+                <span className={`font-medium ${theme === 'dark' ? 'text-gray-200' : 'text-gray-700'
+                  }`}>Social Media:</span>
                 <div className="ml-4 mt-1 space-y-1">
                   {twitter && (
                     <div className="flex items-center">
                       <TwitterOutlined className="mr-2 flex-shrink-0" />
-                      <a 
-                        href={`https://twitter.com/${twitter.replace('@', '')}`}
-                        target="_blank" 
+                      <a
+                        href={formatSocialUrl('twitter', twitter)}
+                        target="_blank"
                         rel="noopener noreferrer"
                         className="text-brand-primary hover:text-brand-primary/80 transition-colors break-all"
                         title={twitter}
+                        aria-label={`Visit ${name} on Twitter`}
                       >
                         {truncateText(twitter, 30)}
                       </a>
@@ -373,12 +384,13 @@ const EntityDetails: React.FC<EntityDetailsProps> = ({
                   {telegram && (
                     <div className="flex items-center">
                       <SendOutlined className="mr-2 flex-shrink-0" />
-                      <a 
-                        href={`https://t.me/${telegram.replace('@', '')}`}
-                        target="_blank" 
+                      <a
+                        href={formatSocialUrl('telegram', telegram)}
+                        target="_blank"
                         rel="noopener noreferrer"
                         className="text-brand-primary hover:text-brand-primary/80 transition-colors break-all"
                         title={telegram}
+                        aria-label={`Visit ${name} on Telegram`}
                       >
                         {truncateText(telegram, 30)}
                       </a>
@@ -387,12 +399,13 @@ const EntityDetails: React.FC<EntityDetailsProps> = ({
                   {socialMediaProfiles.map((profile, index) => (
                     <div key={index} className="flex items-center">
                       <span className="flex-shrink-0">{getSocialMediaIcon(profile)}</span>
-                      <a 
-                        href={profile.startsWith('http') ? profile : `https://${profile}`}
-                        target="_blank" 
+                      <a
+                        href={ensureProtocol(profile)}
+                        target="_blank"
                         rel="noopener noreferrer"
                         className="text-brand-primary hover:text-brand-primary/80 transition-colors ml-2 break-all"
                         title={profile}
+                        aria-label={`Visit social media profile`}
                       >
                         {truncateText(profile, 40)}
                       </a>
@@ -407,12 +420,10 @@ const EntityDetails: React.FC<EntityDetailsProps> = ({
           <div className="space-y-6">
             {/* Additional Information */}
             {(founded > 0) && (
-              <div className={`text-sm mt-6 ${
-                theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
-              }`}>
-                <span className={`font-medium ${
-                  theme === 'dark' ? 'text-gray-200' : 'text-gray-700'
-                }`}>Additional Information:</span>
+              <div className={`text-sm ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
+                }`}>
+                <span className={`font-medium ${theme === 'dark' ? 'text-gray-200' : 'text-gray-700'
+                  }`}>Additional Information:</span>
                 <div className="ml-4 mt-1 space-y-1">
                   {founded > 0 && (
                     <div className="flex items-center">
@@ -426,22 +437,19 @@ const EntityDetails: React.FC<EntityDetailsProps> = ({
 
             {/* Entity Tags */}
             {entityTags.length > 0 && (
-              <div className={`text-sm ${
-                theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
-              }`}>
-                <span className={`font-medium flex items-center ${
-                  theme === 'dark' ? 'text-gray-200' : 'text-gray-700'
+              <div className={`text-sm ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
                 }`}>
+                <span className={`font-medium flex items-center ${theme === 'dark' ? 'text-gray-200' : 'text-gray-700'
+                  }`}>
                   <TagOutlined className="mr-1" />
                   Entity Tags:
                 </span>
                 <div className="ml-4 mt-1 flex flex-wrap gap-1">
                   {entityTags.map((tag, index) => (
-                    <span key={index} className={`px-2 py-1 rounded text-xs ${
-                      theme === 'dark' 
-                        ? 'bg-gray-700 text-gray-300' 
+                    <span key={index} className={`px-2 py-1 rounded text-xs ${theme === 'dark'
+                        ? 'bg-gray-700 text-gray-300'
                         : 'bg-gray-200 text-gray-700'
-                    }`}>
+                      }`}>
                       {tag}
                     </span>
                   ))}
@@ -451,18 +459,17 @@ const EntityDetails: React.FC<EntityDetailsProps> = ({
 
             {/* Legal Information */}
             {legalInfoUrl && (
-              <div className={`text-sm ${
-                theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
-              }`}>
-                <span className={`font-medium ${
-                  theme === 'dark' ? 'text-gray-200' : 'text-gray-700'
-                }`}>Legal Information:</span>
+              <div className={`text-sm ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
+                }`}>
+                <span className={`font-medium ${theme === 'dark' ? 'text-gray-200' : 'text-gray-700'
+                  }`}>Legal Information:</span>
                 <div className="ml-4 mt-1">
-                  <a 
-                    href={legalInfoUrl}
-                    target="_blank" 
+                  <a
+                    href={ensureProtocol(legalInfoUrl)}
+                    target="_blank"
                     rel="noopener noreferrer"
                     className="text-brand-primary hover:text-brand-primary/80 transition-colors flex items-center"
+                    aria-label="View legal information document"
                   >
                     <GlobalOutlined className="mr-2" />
                     View Legal Information
@@ -473,12 +480,10 @@ const EntityDetails: React.FC<EntityDetailsProps> = ({
 
             {/* Notes */}
             {note && (
-              <div className={`text-sm ${
-                theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
-              }`}>
-                <span className={`font-medium ${
-                  theme === 'dark' ? 'text-gray-200' : 'text-gray-700'
-                }`}>Notes:</span> {note}
+              <div className={`text-sm ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
+                }`}>
+                <span className={`font-medium ${theme === 'dark' ? 'text-gray-200' : 'text-gray-700'
+                  }`}>Notes:</span> {note}
               </div>
             )}
           </div>
@@ -486,11 +491,9 @@ const EntityDetails: React.FC<EntityDetailsProps> = ({
 
         {/* Metadata - Full Width */}
         {(lastModifiedBy || lastUpdated || revisitSite) && (
-          <div className={`text-xs ${
-            theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
-          } mt-4 pt-3 border-t ${
-            theme === 'dark' ? 'border-gray-700' : 'border-gray-200'
-          }`}>
+          <div className={`text-xs ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
+            } mt-4 pt-3 border-t ${theme === 'dark' ? 'border-gray-700' : 'border-gray-200'
+            }`}>
             {lastModifiedBy && <div>Last modified by: {lastModifiedBy}</div>}
             {lastUpdated && <div>Updated: {new Date(lastUpdated).toLocaleString()}</div>}
             {revisitSite && <div>Flagged for review</div>}

@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 
-import { useParams, useSearchParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 
 import { api } from '../../../api/api';
 import { calculateRiskScore } from '../../../api/riskScoring';
@@ -8,7 +8,7 @@ import Pagination from '../../../components/common/Pagination';
 import { useAttribution } from '../../../context/AttributionContext';
 import { useToast } from '../../../hooks/use-toast';
 import { flowtraceService } from '../../../services/flowtraceService';
-import { useAppDispatch,useAppSelector } from '../../../store/hooks';
+import { useAppDispatch, useAppSelector } from '../../../store/hooks';
 import { fetchSOT } from '../../../store/slices/sotSlice';
 import { RootState } from '../../../store/store';
 import { BsBlock } from '../../../styles/Table';
@@ -26,6 +26,7 @@ import AddressSummary from './AddressSummary';
 const Address: React.FC = () => {
   const { address } = useParams();
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const { toast } = useToast();
   const [addrData, setAddrData] = React.useState<IBtcAddress>();
@@ -36,6 +37,7 @@ const Address: React.FC = () => {
   const [isLoadingAddressData, setIsLoadingAddressData] = React.useState<boolean>(false);
   const [isLoadingRiskScore, setIsLoadingRiskScore] = React.useState<boolean>(false);
   const [copySuccess, setCopySuccess] = React.useState<boolean>(false);
+  const copyTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
   const [riskScore, setRiskScore] = React.useState<RiskScoringResponse | null>(null);
   const [isRiskModalVisible, setIsRiskModalVisible] = React.useState<boolean>(false);
   const [addressNotFound, setAddressNotFound] = React.useState<boolean>(false);
@@ -78,6 +80,14 @@ const Address: React.FC = () => {
   useEffect(() => {
     // Fetch SOT data when component mounts
     dispatch(fetchSOT());
+
+    // Cleanup function for unmount
+    return () => {
+      // Clear copy timeout if component unmounts
+      if (copyTimeoutRef.current) {
+        clearTimeout(copyTimeoutRef.current);
+      }
+    };
   }, [dispatch]);
 
   useEffect(() => {
@@ -309,7 +319,12 @@ const Address: React.FC = () => {
     e.preventDefault();
     e.stopPropagation();
     if (!address) return;
-    
+
+    // Clear any existing timeout
+    if (copyTimeoutRef.current) {
+      clearTimeout(copyTimeoutRef.current);
+    }
+
     navigator.clipboard.writeText(address)
       .then(() => {
         setCopySuccess(true);
@@ -317,7 +332,10 @@ const Address: React.FC = () => {
           title: "Address copied",
           description: "The address has been copied to your clipboard.",
         });
-        setTimeout(() => setCopySuccess(false), 2000);
+        copyTimeoutRef.current = setTimeout(() => {
+          setCopySuccess(false);
+          copyTimeoutRef.current = null;
+        }, 2000);
       })
       .catch(err => {
         console.error('Failed to copy address: ', err);
@@ -341,10 +359,8 @@ const Address: React.FC = () => {
   };
 
   const clearDateFilter = () => {
-    const url = new URL(window.location.href);
-    url.searchParams.delete('date');
-    window.history.replaceState({}, '', url.toString());
-    window.location.reload();
+    // Navigate to the same route without the date parameter
+    navigate(`/blockchain/address/${address}`, { replace: true });
   };
 
   const renderDateFilterIndicator = () => {
@@ -355,7 +371,7 @@ const Address: React.FC = () => {
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
             <span className="text-sm font-medium text-blue-700 dark:text-blue-300">
-              📅 Filtered by date:
+              Filtered by date:
             </span>
             <span className="text-sm text-blue-600 dark:text-blue-400">
               {formatDateFilter(dateFilter)}

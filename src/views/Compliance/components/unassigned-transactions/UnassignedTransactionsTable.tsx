@@ -1,9 +1,8 @@
 import React, { useEffect, useMemo,useState } from 'react';
 
-import { DataTable, Column } from '@/components/ui/data-table';
-import { Spinner } from '@/components/ui/spinner';
-
 import { Badge } from '@/components/ui/badge';
+import { Column,DataTable } from '@/components/ui/data-table';
+import { Spinner } from '@/components/ui/spinner';
 
 import { blockchain } from '../../../../api/blockchain';
 import { useAttribution } from '../../../../context/AttributionContext';

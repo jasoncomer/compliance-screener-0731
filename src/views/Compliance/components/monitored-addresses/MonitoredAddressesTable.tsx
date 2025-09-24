@@ -1,7 +1,7 @@
 import React from 'react';
 
 import { Button } from '@/components/ui/button';
-import { DataTable, Column } from '@/components/ui/data-table';
+import { Column,DataTable } from '@/components/ui/data-table';
 
 import { MonitoredAddress } from '../../../../typings/compliance';
 

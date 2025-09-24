@@ -18,15 +18,16 @@
  */
 
 import React, { useEffect, useState } from 'react';
+
 import { Globe, Shield, TrendingUp, User } from 'lucide-react';
 
-import { Modal } from '@/components/ui/modal';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { DataTable, Column } from '@/components/ui/data-table';
-import { Spinner } from '@/components/ui/spinner';
 import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Column,DataTable } from '@/components/ui/data-table';
+import { Modal } from '@/components/ui/modal';
+import { Progress } from '@/components/ui/progress';
+import { Spinner } from '@/components/ui/spinner';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 import { blockchain } from '../../../../api/blockchain';
 import { calculateDetailedRiskAnalysis } from '../../../../services/inputTransactionRiskService';

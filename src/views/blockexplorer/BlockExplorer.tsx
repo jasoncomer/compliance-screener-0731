@@ -1,45 +1,23 @@
-import React, { useEffect,useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
-import { ArrowLeftRight, Box, Building, Globe, MessageSquare, Users,Wallet } from 'lucide-react';
-import { Route, Routes, useLocation,useNavigate } from 'react-router-dom';
+import { ArrowLeftRight, Box, Globe, Wallet } from 'lucide-react';
+import { Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 
 import EmptyState from '../../components/common/EmptyState';
 import NotesModal from '../../components/common/NotesModal';
 import SearchInput from '../../components/common/SearchInput';
 import ViewWrapper from '../../components/ViewWrapper';
 import { useAddress } from '../../hooks/useAddress';
-import { cn } from '../../lib/utils';
 import { determineInputType } from '../../utils/crypto';
 
 import Address from './address-page/Address';
+import EntityAndBeneficialOwnersSection from './components/EntityAndBeneficialOwnersSection';
+import NotesButton from './components/NotesButton';
 import BlockView from './BlockView';
 import TransactionView from './TransactionView';
 
-const EntityAndBeneficialOwnersSection: React.FC = () => (
-  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-2xl mb-6">
-    <div className="p-4 rounded-lg border border-border bg-card hover:shadow-md transition-shadow">
-      <div className="w-10 h-10 rounded-full bg-indigo-100 dark:bg-indigo-900/20 flex items-center justify-center mb-3 mx-auto">
-        <Building className="text-indigo-600 dark:text-indigo-400 w-5 h-5" />
-      </div>
-      <h3 className="font-medium text-foreground mb-2">Entity Intelligence</h3>
-      <p className="text-sm text-muted-foreground">
-        Explore entity relationships and corporate structures
-      </p>
-    </div>
 
-    <div className="p-4 rounded-lg border border-border bg-card hover:shadow-md transition-shadow">
-      <div className="w-10 h-10 rounded-full bg-emerald-100 dark:bg-emerald-900/20 flex items-center justify-center mb-3 mx-auto">
-        <Users className="text-emerald-600 dark:text-emerald-400 w-5 h-5" />
-      </div>
-      <h3 className="font-medium text-foreground mb-2">Beneficial Owners</h3>
-      <p className="text-sm text-muted-foreground">
-        Identify ultimate beneficial owners and control structures
-      </p>
-    </div>
-  </div>
-);
-
-const BlockExplorerEmptyState: React.FC = () => (
+const BlockExplorerEmptyState: React.FC = React.memo(() => (
   <EmptyState
     variant="initial"
     icon={<Globe className="w-12 h-12" />}
@@ -90,56 +68,15 @@ const BlockExplorerEmptyState: React.FC = () => (
       </>
     }
   />
-);
+));
+BlockExplorerEmptyState.displayName = 'BlockExplorerEmptyState';
 
-interface NotesButtonProps {
-  onClick: () => void;
-  title: string;
-  children: React.ReactNode;
-  className?: string;
-  newNotesCount?: number;
+type ContextType = 'general' | 'transaction' | 'address' | 'block';
+
+interface CurrentContext {
+  type: ContextType;
+  id?: string;
 }
-
-const NotesButton: React.FC<NotesButtonProps> = ({ onClick, title, children, className, newNotesCount = 0 }) => (
-  <div className="relative inline-block">
-    <button
-      type="button"
-      onClick={onClick}
-      title={title}
-      className={cn(
-        "relative h-9 px-4 rounded-lg bg-orange-500 text-white font-medium text-sm hover:bg-orange-600 transition-colors flex items-center gap-2",
-        className
-      )}
-    >
-      <MessageSquare className="w-4 h-4" />
-      {children}
-      {newNotesCount > 0 && (
-        <div 
-          style={{ 
-            position: 'absolute',
-            top: '-8px',
-            right: '-8px',
-            backgroundColor: '#A53D10',
-            color: 'white',
-            fontSize: '11px',
-            fontWeight: 'bold',
-            border: '2px solid white',
-            borderRadius: '10px',
-            minWidth: '18px',
-            height: '18px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 10,
-            boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
-          }}
-        >
-          {newNotesCount}
-        </div>
-      )}
-    </button>
-  </div>
-);
 
 const BlockExplorer: React.FC = () => {
   const navigate = useNavigate();
@@ -147,10 +84,9 @@ const BlockExplorer: React.FC = () => {
   const [searchValue, setSearchValue] = React.useState('');
   const [notesModalVisible, setNotesModalVisible] = useState(false);
   const [newNotesCount, setNewNotesCount] = useState(0);
-  const [currentContext, setCurrentContext] = useState<{
-    type: 'general' | 'transaction' | 'address' | 'block';
-    id?: string;
-  }>({ type: 'general' });
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchError, setSearchError] = useState<string | null>(null);
+  const [currentContext, setCurrentContext] = useState<CurrentContext>({ type: 'general' });
 
   // Get address data to access cospend_id
   const { data: addressData } = useAddress(currentContext.type === 'address' ? currentContext.id || '' : '');
@@ -176,37 +112,55 @@ const BlockExplorer: React.FC = () => {
     }
   }, [location.pathname]);
 
-  const onSearch = (value: string) => {
-    if (!value) return;
-
-    // fetch data based on type
-    const load = async () => {
-      const type = determineInputType(value);
-      if (!type) return;
-      navigate(`/home/block-explorer/${type}/${value}`);
-      setSearchValue(''); // Clear the input after navigation
+  const onSearch = useCallback(async (value: string) => {
+    if (!value) {
+      setSearchError('Please enter a search value');
+      return;
     }
 
-    load();
-  }
+    setIsSearching(true);
+    setSearchError(null);
 
-  const showNotesModal = () => {
+    try {
+      const type = determineInputType(value);
+      if (!type) {
+        setSearchError('Invalid input. Please enter a valid block number, transaction hash, or address.');
+        setIsSearching(false);
+        return;
+      }
+
+      navigate(`/home/block-explorer/${type}/${value}`);
+      setSearchValue(''); // Clear the input after navigation
+    } catch (error) {
+      setSearchError('An error occurred while searching. Please try again.');
+    } finally {
+      setIsSearching(false);
+    }
+  }, [navigate]);
+
+  const showNotesModal = useCallback(() => {
     setNotesModalVisible(true);
-  };
+  }, []);
 
-  const hideNotesModal = () => {
+  const hideNotesModal = useCallback(() => {
     setNotesModalVisible(false);
-  };
+  }, []);
 
-  const handleNewNotesCountChange = (count: number) => {
+  const handleNewNotesCountChange = useCallback((count: number) => {
     setNewNotesCount(count);
-  };
+  }, []);
 
-  const searchPlaceholder = 'Search by block number, tx hash or address';
+  const searchPlaceholder = useMemo(
+    () => 'Search by block number, tx hash or address',
+    []
+  );
 
-  const isEmptyState = !location.pathname.includes('/transaction/') &&
-    !location.pathname.includes('/address/') &&
-    !location.pathname.includes('/block/');
+  const isEmptyState = useMemo(
+    () => !location.pathname.includes('/transaction/') &&
+      !location.pathname.includes('/address/') &&
+      !location.pathname.includes('/block/'),
+    [location.pathname]
+  );
 
   return (
     <ViewWrapper
@@ -214,17 +168,22 @@ const BlockExplorer: React.FC = () => {
       title="Block Explorer"
       fullWidth={true}
     >
-      <div className="sticky top-[0] z-20 bg-white dark:bg-background border-b border-gray-200 dark:border-gray-700 pt-2 py-4 mb-2">
+      <div className="sticky top-[0] z-20 bg-background border-b border-border pt-2 py-4 mb-2">
         <div className="flex justify-between items-center gap-4">
           <div className="flex-1 max-w-2xl">
             <SearchInput
               placeholder={searchPlaceholder}
               value={searchValue}
-              onChange={(e) => setSearchValue(e.target.value)}
+              onChange={(e) => {
+                setSearchValue(e.target.value);
+                if (searchError) setSearchError(null);
+              }}
               onSearch={onSearch}
+              loading={isSearching}
+              error={!!searchError}
             />
           </div>
-          {(currentContext.type === 'transaction' || currentContext.type === 'address' || currentContext.type === 'block') && (
+          {currentContext.type !== 'general' && (
             <NotesButton
               onClick={showNotesModal}
               title="View Notes"
@@ -234,6 +193,11 @@ const BlockExplorer: React.FC = () => {
             </NotesButton>
           )}
         </div>
+        {searchError && (
+          <div className="mt-2 text-sm text-red-500 dark:text-red-400 text-center">
+            {searchError}
+          </div>
+        )}
       </div>
 
       {/* Main Content */}
@@ -250,7 +214,7 @@ const BlockExplorer: React.FC = () => {
       }
 
       {
-        (currentContext.type === 'transaction' || currentContext.type === 'address' || currentContext.type === 'block') && (
+        currentContext.type !== 'general' && (
           <NotesModal
             visible={notesModalVisible}
             onClose={hideNotesModal}
