@@ -1,16 +1,15 @@
 /**
- * TransactionRiskModal
- * 
  * A reusable risk analysis modal for compliance transactions.
  * This component provides comprehensive risk analysis with entity, transaction, and jurisdiction factors.
- * 
+ *
  * Key Features:
  * - Fetches transaction details and extracts input addresses
  * - Aggregates risk scores from multiple input addresses
  * - Provides comprehensive risk analysis with detailed factors
  * - Reusable across different compliance components
  * - Supports both stored and calculated risk scores
- * 
+ * - Uses shadcn/ui components for consistent theming
+ *
  * Usage:
  * - Unassigned transactions
  * - Active cases
@@ -18,23 +17,22 @@
  * - Entity exploration
  */
 
-import React, { useEffect,useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { Globe, Shield, TrendingUp, User } from 'lucide-react';
 
-import { GlobalOutlined, SafetyOutlined,TransactionOutlined, UserOutlined } from '@ant-design/icons';
-import { Card, Empty, Modal, Progress, Space, Spin,Statistic, Table, Tabs, Typography } from 'antd';
-
-import { colors } from '@/design-system/tokens';
+import { Modal } from '@/components/ui/modal';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { DataTable, Column } from '@/components/ui/data-table';
+import { Spinner } from '@/components/ui/spinner';
+import { Badge } from '@/components/ui/badge';
 
 import { blockchain } from '../../../../api/blockchain';
-import { useTheme } from '../../../../context/ThemeContext';
 import { calculateDetailedRiskAnalysis } from '../../../../services/inputTransactionRiskService';
 import { BtcTransaction } from '../../../../typings/BtcTransaction';
 import { IComplianceTransaction } from '../../../../typings/compliance';
 import { RiskFactor } from '../../../../typings/riskScoring';
-
-import './RiskScoreModal.css';
-
-const { Text } = Typography;
 
 interface TransactionRiskModalProps {
   visible: boolean;
@@ -42,18 +40,13 @@ interface TransactionRiskModalProps {
   transaction?: IComplianceTransaction | null;
   txId?: string;
   loading?: boolean;
-  // Optional props for future extensibility
   onRiskScoreUpdate?: (riskScores: AggregatedRiskScores) => void;
   showCounterPartyDetails?: boolean;
-  // Counter party information
   counterpartyEntities?: string[];
   attributions?: Record<string, { entity: string }>;
   itemsMap?: Record<string, any>;
-  // Stored risk scores from the transaction (if available)
   storedRiskScores?: number[];
-  // Modal title customization
   title?: string;
-  // Show refresh button
   showRefreshButton?: boolean;
 }
 
@@ -75,9 +68,9 @@ interface AggregatedRiskScores {
   analysisType: 'transaction';
 }
 
-const TransactionRiskModal: React.FC<TransactionRiskModalProps> = ({ 
-  visible, 
-  onClose, 
+export const TransactionRiskModal: React.FC<TransactionRiskModalProps> = ({
+  visible,
+  onClose,
   transaction,
   txId,
   loading = false,
@@ -86,11 +79,10 @@ const TransactionRiskModal: React.FC<TransactionRiskModalProps> = ({
   counterpartyEntities = [],
   attributions = {},
   itemsMap = {},
-  storedRiskScores = [],
+  storedRiskScores: _storedRiskScores = [],
   title = "Transaction Risk Analysis",
-  showRefreshButton = false
+  showRefreshButton: _showRefreshButton = false
 }) => {
-  const { theme } = useTheme();
   const [_, setBtcTransaction] = useState<BtcTransaction | null>(null);
   const [aggregatedRiskScores, setAggregatedRiskScores] = useState<AggregatedRiskScores | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -98,145 +90,149 @@ const TransactionRiskModal: React.FC<TransactionRiskModalProps> = ({
   // Get transaction ID from either transaction prop or txId prop
   const transactionId = transaction?.txId || txId;
 
-  // Fetch transaction details and aggregate risk scores
+  // Fetch transaction details and calculate risk scores
   useEffect(() => {
-    if (visible && transactionId) {
-      fetchTransactionAndAggregateRisk();
-    }
-  }, [visible, transactionId]);
+    const fetchTransactionData = async () => {
+      if (!transactionId || !visible) return;
 
-  const fetchTransactionAndAggregateRisk = async () => {
-    if (!transactionId) return;
-    
-    setIsLoading(true);
-    try {
-      // Fetch transaction details
-      const txData = await blockchain.getTransaction(transactionId);
-      setBtcTransaction(txData);
+      setIsLoading(true);
+      try {
+        // Fetch transaction details
+        const txData = await blockchain.getTransaction(transactionId);
+        setBtcTransaction(txData);
 
-      // Get input addresses
-      const inputAddresses = txData.inputs.map(input => input.addr).filter(Boolean);
-      
-      if (inputAddresses.length === 0) {
-        console.warn('No input addresses found for transaction');
-        return;
-      }
+        // Extract input addresses
+        const inputAddresses = txData.inputs
+          .map(input => input.addr)
+          .filter(Boolean);
 
-      // Always calculate detailed risk analysis to get factors, but use stored scores for display if available
-      console.log('Calculating detailed risk analysis for factors');
-      const detailedRisk = await calculateDetailedRiskAnalysis(inputAddresses);
+        if (inputAddresses.length === 0) {
+          console.warn('No input addresses found for transaction');
+          setIsLoading(false);
+          return;
+        }
 
-      let aggregatedRisk: AggregatedRiskScores;
-      
-      if (storedRiskScores && storedRiskScores.length >= 4) {
-        // Use stored risk scores but keep the detailed factors from calculation
-        console.log('Using stored risk scores with calculated factors:', storedRiskScores);
-        aggregatedRisk = {
-          overallRisk: storedRiskScores[0],
+        // Calculate detailed risk analysis
+        const riskData = await calculateDetailedRiskAnalysis(inputAddresses);
+
+        const aggregated: AggregatedRiskScores = {
+          overallRisk: riskData.overallRisk,
           entityRisk: {
-            aggregateScore: storedRiskScores[1],
-            factors: detailedRisk.entityRisk.factors
+            aggregateScore: riskData.entityRisk.aggregateScore,
+            factors: riskData.entityRisk.factors || []
           },
           jurisdictionRisk: {
-            aggregateScore: storedRiskScores[2],
-            factors: detailedRisk.jurisdictionRisk.factors
+            aggregateScore: riskData.jurisdictionRisk.aggregateScore,
+            factors: riskData.jurisdictionRisk.factors || []
           },
           transactionRisk: {
-            aggregateScore: storedRiskScores[3],
-            factors: detailedRisk.transactionRisk.factors
+            aggregateScore: riskData.transactionRisk.aggregateScore,
+            factors: riskData.transactionRisk.factors || []
           },
-          inputAddresses,
+          inputAddresses: inputAddresses,
           analysisType: 'transaction'
         };
-      } else {
-        // Use the calculated risk scores and factors
-        console.log('Using calculated risk scores and factors');
-        aggregatedRisk = detailedRisk;
-      }
 
-      setAggregatedRiskScores(aggregatedRisk);
-      
-      // Notify parent component of risk score update if callback provided
-      if (onRiskScoreUpdate) {
-        onRiskScoreUpdate(aggregatedRisk);
-      }
-    } catch (error) {
-      console.error('Error fetching transaction risk data:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+        setAggregatedRiskScores(aggregated);
 
+        // Notify parent if callback provided
+        if (onRiskScoreUpdate) {
+          onRiskScoreUpdate(aggregated);
+        }
+      } catch (error) {
+        console.error('Error fetching transaction data:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchTransactionData();
+  }, [transactionId, visible]);
+
+  // Helper function to get risk color based on score
   const getRiskColor = (score: number): string => {
-    if (score > 70) return '#cf1322';
-    if (score > 40) return '#faad14';
-    return '#3f8600';
+    if (score < 30) return 'text-green-600 dark:text-green-400';
+    if (score < 70) return 'text-yellow-600 dark:text-yellow-400';
+    return 'text-red-600 dark:text-red-400';
   };
 
-  const getRiskIcon = () => {
-    return <SafetyOutlined style={{ color: getRiskColor(70) }} />;
+  const getRiskColorForProgress = (score: number): string => {
+    if (score < 30) return '[&>div]:bg-green-600';
+    if (score < 70) return '[&>div]:bg-yellow-600';
+    return '[&>div]:bg-red-600';
   };
 
-  const getCounterPartyName = () => {
-    const entities = counterpartyEntities.length > 0 ? counterpartyEntities : (transaction?.counterpartyEntities || []);
-    
-    if (entities.length === 0) {
-      return 'Unknown';
-    }
+  const getRiskBadgeClass = (score: number): string => {
+    console.log('score', score);
+    if (score < 5) return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300';
+    if (score < 30) return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300';
+    if (score < 70) return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300';
+    return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300';
+  };
 
-    // Try to get proper names from attributions or itemsMap
-    const properNames = entities.map(entityId => {
-      // First try attributions
-      if (attributions[entityId]?.entity) {
-        return attributions[entityId].entity;
+  // Get counter party names
+  const getCounterPartyNames = () => {
+    const properNames = counterpartyEntities.map((entityId) => {
+      const attribution = attributions[entityId];
+      const item = itemsMap[entityId];
+
+      if (attribution?.entity) {
+        return attribution.entity;
+      } else if (item?.displayName) {
+        return item.displayName;
       }
-      
-      // Then try itemsMap
-      if (itemsMap[entityId]?.proper_name) {
-        return itemsMap[entityId].proper_name;
-      }
-      
-      // Fallback to entity ID
+
       return entityId;
     });
 
     return properNames.join(', ');
   };
 
-  const columns = [
+  // Define columns for risk factor tables
+  const riskFactorColumns: Column<RiskFactor>[] = [
     {
       title: 'Risk Factor',
       dataIndex: 'id',
       key: 'id',
-      render: (text: string, _record: RiskFactor) => (
-        <Space>
-          {getRiskIcon()}
-          <Text style={{ color: theme === 'light' ? '#374151' : '#e5e7eb' }}>{text}</Text>
-        </Space>
+      width: '175px',
+      render: (text: string) => (
+        <div className="flex items-center gap-2 whitespace-nowrap">
+          <Shield className="w-4 h-4 text-muted-foreground" />
+          <span className="text-foreground">{text}</span>
+        </div>
       ),
     },
     {
       title: 'Risk Score',
       dataIndex: 'score',
       key: 'score',
-      render: (score: number) => (
-        <Progress
-          percent={Math.round(score * 100)}
-          size="small"
-          status="normal"
-          strokeColor={getRiskColor(Math.round(score * 100))}
-          format={(percent) => `${percent}%`}
-        />
-      ),
+      width: '175px',
+      render: (score: number) => {
+        const percentage = Math.round(score * 100);
+        return (
+          <div className="flex items-center gap-2">
+            <Progress
+              value={percentage}
+              className={`h-3 w-20 ${getRiskColorForProgress(percentage)}`}
+            />
+            <Badge className={getRiskBadgeClass(percentage)} variant="outline">
+              {percentage}%
+            </Badge>
+          </div>
+        );
+      },
     },
     {
       title: 'Description',
       dataIndex: 'description',
       key: 'description',
-      render: (text: string) => <Text style={{ color: theme === 'light' ? '#6b7280' : '#9ca3af' }}>{text}</Text>,
+      render: (text: string) => (
+        <span className="text-muted-foreground">{text}</span>
+      ),
     },
   ];
 
+  // Render risk score cards
   const renderRiskScoreCards = () => {
     if (!aggregatedRiskScores) return null;
 
@@ -246,234 +242,200 @@ const TransactionRiskModal: React.FC<TransactionRiskModalProps> = ({
     const jurisdictionRiskScore = Math.round(aggregatedRiskScores.jurisdictionRisk.aggregateScore);
 
     return (
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '24px' }}>
-        <Card className={`${theme === 'light' ? 'bg-white border-gray-200' : 'bg-gray-800 border-gray-700'}`}>
-          <Statistic
-            title={<Text style={{ color: theme === 'light' ? '#374151' : '#e5e7eb' }}>Overall Risk Score</Text>}
-            value={overallRiskScore}
-            suffix="/100"
-            valueStyle={{
-              color: getRiskColor(overallRiskScore)
-            }}
-          />
-          <Progress 
-            percent={overallRiskScore}
-            status={overallRiskScore > 70 ? 'exception' : 'normal'} 
-            strokeColor={getRiskColor(overallRiskScore)}
-            format={(percent) => `${percent}%`}
-          />
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Overall Risk Score
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className={`text-2xl font-bold ${getRiskColor(overallRiskScore)}`}>
+              {overallRiskScore}<span className="text-base font-normal">/100</span>
+            </div>
+            <Progress
+              value={overallRiskScore}
+              className={`mt-2 h-3 ${getRiskColorForProgress(overallRiskScore)}`}
+            />
+          </CardContent>
         </Card>
-        
-        <Card className={`${theme === 'light' ? 'bg-white border-gray-200' : 'bg-gray-800 border-gray-700'}`}>
-          <Statistic
-            title={<Text style={{ color: theme === 'light' ? '#374151' : '#e5e7eb' }}>Transaction Risk</Text>}
-            value={transactionRiskScore}
-            suffix="/100"
-            valueStyle={{
-              color: getRiskColor(transactionRiskScore)
-            }}
-          />
-          <Progress 
-            percent={transactionRiskScore}
-            status={transactionRiskScore > 70 ? 'exception' : 'normal'} 
-            strokeColor={getRiskColor(transactionRiskScore)}
-            format={(percent) => `${percent}%`}
-          />
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Transaction Risk
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className={`text-2xl font-bold ${getRiskColor(transactionRiskScore)}`}>
+              {transactionRiskScore}<span className="text-base font-normal">/100</span>
+            </div>
+            <Progress
+              value={transactionRiskScore}
+              className={`mt-2 h-3 ${getRiskColorForProgress(transactionRiskScore)}`}
+            />
+          </CardContent>
         </Card>
-        
-        <Card className={`${theme === 'light' ? 'bg-white border-gray-200' : 'bg-gray-800 border-gray-700'}`}>
-          <Statistic
-            title={<Text style={{ color: theme === 'light' ? '#374151' : '#e5e7eb' }}>Entity Risk</Text>}
-            value={entityRiskScore}
-            suffix="/100"
-            valueStyle={{
-              color: getRiskColor(entityRiskScore)
-            }}
-          />
-          <Progress 
-            percent={entityRiskScore}
-            status={entityRiskScore > 70 ? 'exception' : 'normal'} 
-            strokeColor={getRiskColor(entityRiskScore)}
-            format={(percent) => `${percent}%`}
-          />
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Entity Risk
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className={`text-2xl font-bold ${getRiskColor(entityRiskScore)}`}>
+              {entityRiskScore}<span className="text-base font-normal">/100</span>
+            </div>
+            <Progress
+              value={entityRiskScore}
+              className={`mt-2 h-3 ${getRiskColorForProgress(entityRiskScore)}`}
+            />
+          </CardContent>
         </Card>
-        
-        <Card className={`${theme === 'light' ? 'bg-white border-gray-200' : 'bg-gray-800 border-gray-700'}`}>
-          <Statistic
-            title={<Text style={{ color: theme === 'light' ? '#374151' : '#e5e7eb' }}>Jurisdiction Risk</Text>}
-            value={jurisdictionRiskScore}
-            suffix="/100"
-            valueStyle={{
-              color: getRiskColor(jurisdictionRiskScore)
-            }}
-          />
-          <Progress 
-            percent={jurisdictionRiskScore}
-            status={jurisdictionRiskScore > 70 ? 'exception' : 'normal'} 
-            strokeColor={getRiskColor(jurisdictionRiskScore)}
-            format={(percent) => `${percent}%`}
-          />
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Jurisdiction Risk
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className={`text-2xl font-bold ${getRiskColor(jurisdictionRiskScore)}`}>
+              {jurisdictionRiskScore}<span className="text-base font-normal">/100</span>
+            </div>
+            <Progress
+              value={jurisdictionRiskScore}
+              className={`mt-2 h-3 ${getRiskColorForProgress(jurisdictionRiskScore)}`}
+            />
+          </CardContent>
         </Card>
       </div>
     );
   };
 
-  const tabItems = [
-    {
-      key: 'entity',
-      label: (
-        <span style={{ color: theme === 'light' ? '#374151' : '#e5e7eb' }}>
-          <UserOutlined style={{ marginRight: 8 }} />
-          Entity Risk Factors
-        </span>
-      ),
-      children: (
-        <Table
-          dataSource={aggregatedRiskScores?.entityRisk.factors || []}
-          columns={columns}
-          pagination={false}
-          size="small"
-          rowKey="id"
-          locale={{
-            emptyText: (
-              <Empty
-                image={<TransactionOutlined style={{ fontSize: 40, color: colors.attribution.hover }} />}
-                description="No entity risk factors found for this transaction"
-              />
-            )
-          }}
-        />
-      ),
-    },
-    {
-      key: 'transaction',
-      label: (
-        <span style={{ color: theme === 'light' ? '#374151' : '#e5e7eb' }}>
-          <TransactionOutlined style={{ marginRight: 8 }} />
-          Transaction Risk Factors
-        </span>
-      ),
-      children: (
-        <Table
-          dataSource={aggregatedRiskScores?.transactionRisk.factors || []}
-          columns={columns}
-          pagination={false}
-          size="small"
-          rowKey="id"
-          locale={{
-            emptyText: (
-              <Empty
-                image={<TransactionOutlined style={{ fontSize: 40, color: colors.attribution.hover }} />}
-                description="No transaction risk factors were found for this transaction"
-              />
-            )
-          }}
-        />
-      ),
-    },
-    {
-      key: 'jurisdiction',
-      label: (
-        <span style={{ color: theme === 'light' ? '#374151' : '#e5e7eb' }}>
-          <GlobalOutlined style={{ marginRight: 8 }} />
-          Jurisdiction Risk Factors
-        </span>
-      ),
-      children: (
-        <Table
-          dataSource={aggregatedRiskScores?.jurisdictionRisk.factors || []}
-          columns={columns}
-          pagination={false}
-          size="small"
-          rowKey="id"
-          locale={{
-            emptyText: (
-              <Empty
-                image={<GlobalOutlined style={{ fontSize: 40, color: colors.attribution.hover }} />}
-                description="No jurisdiction risk factors were found for this transaction"
-              />
-            )
-          }}
-        />
-      ),
-    },
-  ];
-
   return (
     <Modal
-      title={
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <SafetyOutlined style={{ color: colors.attribution.hover }} />
-            <span style={{ color: theme === 'light' ? '#374151' : '#e5e7eb' }}>{title}</span>
+      open={visible}
+      onClose={onClose}
+      title={title}
+      size="xl"
+      className="max-w-6xl"
+      zIndex={60}
+    >
+      {(isLoading || loading) ? (
+        <div className="flex items-center justify-center py-12">
+          <Spinner size="large" tip="Analyzing transaction risk..." />
+        </div>
+      ) : (
+        <div className="flex flex-col h-full min-h-[650px]">
+          <div className="flex-1 space-y-6">
+          {/* Counter party details */}
+          {showCounterPartyDetails && counterpartyEntities.length > 0 && (
+            <div className="p-4 bg-muted/50 rounded-lg">
+              <div className="text-sm text-muted-foreground">Counter Party Entities</div>
+              <div className="text-foreground font-medium mt-1">
+                {getCounterPartyNames()}
+              </div>
+            </div>
+          )}
+
+          {/* Risk score cards */}
+          {renderRiskScoreCards()}
+
+          {/* Risk factor tabs */}
+          {aggregatedRiskScores && (
+            <Tabs defaultValue="entity" className="w-full">
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="entity" className="flex items-center gap-2">
+                  <User className="w-4 h-4" />
+                  Entity Risk Factors
+                </TabsTrigger>
+                <TabsTrigger value="transaction" className="flex items-center gap-2">
+                  <TrendingUp className="w-4 h-4" />
+                  Transaction Risk Factors
+                </TabsTrigger>
+                <TabsTrigger value="jurisdiction" className="flex items-center gap-2">
+                  <Globe className="w-4 h-4" />
+                  Jurisdiction Risk Factors
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="entity" className="mt-4">
+                <DataTable
+                  dataSource={aggregatedRiskScores.entityRisk.factors || []}
+                  columns={riskFactorColumns}
+                  pagination={false}
+                  size="small"
+                  rowKey="id"
+                  locale={{
+                    emptyText: (
+                      <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
+                        <User className="w-12 h-8 mb-2" />
+                        <span>No entity risk factors found for this transaction</span>
+                      </div>
+                    )
+                  }}
+                />
+              </TabsContent>
+
+              <TabsContent value="transaction" className="mt-4">
+                <DataTable
+                  dataSource={aggregatedRiskScores.transactionRisk.factors || []}
+                  columns={riskFactorColumns}
+                  pagination={false}
+                  size="small"
+                  rowKey="id"
+                  locale={{
+                    emptyText: (
+                      <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
+                        <TrendingUp className="w-12 h-8 mb-2" />
+                        <span>No transaction risk factors were found for this transaction</span>
+                      </div>
+                    )
+                  }}
+                />
+              </TabsContent>
+
+              <TabsContent value="jurisdiction" className="mt-4">
+                <DataTable
+                  dataSource={aggregatedRiskScores.jurisdictionRisk.factors || []}
+                  columns={riskFactorColumns}
+                  pagination={false}
+                  size="small"
+                  rowKey="id"
+                  locale={{
+                    emptyText: (
+                      <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
+                        <Globe className="w-12 h-8 mb-2" />
+                        <span>No jurisdiction risk factors were found for this transaction</span>
+                      </div>
+                    )
+                  }}
+                />
+              </TabsContent>
+            </Tabs>
+          )}
+
           </div>
-          {showRefreshButton && (
-            <button
-              onClick={fetchTransactionAndAggregateRisk}
-              disabled={isLoading}
-              style={{
-                marginLeft: '16px',
-                padding: '4px 8px',
-                border: '1px solid #d9d9d9',
-                borderRadius: '4px',
-                background: 'white',
-                cursor: isLoading ? 'not-allowed' : 'pointer',
-                opacity: isLoading ? 0.6 : 1
-              }}
-            >
-              {isLoading ? 'Refreshing...' : 'Refresh'}
-            </button>
+
+          {/* Input addresses - floating at bottom */}
+          {aggregatedRiskScores && aggregatedRiskScores.inputAddresses.length > 0 && (
+            <div className="pt-4 mt-auto border-t border-gray-200 dark:border-gray-800">
+              <div className="text-sm text-muted-foreground mb-2">
+                Input Addresses ({aggregatedRiskScores.inputAddresses.length})
+              </div>
+              <div className="space-y-1 max-h-24 overflow-y-auto">
+                {aggregatedRiskScores.inputAddresses.map((address, index) => (
+                  <div key={index} className="font-mono text-xs text-foreground">
+                    {address}
+                  </div>
+                ))}
+              </div>
+            </div>
           )}
         </div>
-      }
-      open={visible}
-      onCancel={onClose}
-      footer={null}
-      width={1000}
-      style={{ top: 20 }}
-      styles={{
-        body: {
-          backgroundColor: theme === 'light' ? '#ffffff' : '#111827', 
-          color: theme === 'light' ? '#374151' : '#e5e7eb',
-          maxHeight: '80vh',
-          overflowY: 'auto'
-        }
-      }}
-      className={`risk-score-modal ${theme === 'light' ? 'light-theme' : 'dark-theme'}`}
-    >
-      <Spin spinning={isLoading || loading}>
-        <div style={{ marginBottom: 16 }}>
-          <Text style={{ color: theme === 'light' ? '#6b7280' : '#9ca3af' }}>Transaction ID: </Text>
-          <Text style={{ color: theme === 'light' ? '#374151' : '#e5e7eb' }}>
-            <code>{transactionId}</code>
-          </Text>
-        </div>
-
-        {aggregatedRiskScores && (
-          <>
-            {showCounterPartyDetails && (
-              <div style={{ marginBottom: 16 }}>
-                <Text style={{ color: theme === 'light' ? '#6b7280' : '#9ca3af' }}>Counter Party: </Text>
-                <Text style={{ color: theme === 'light' ? '#374151' : '#e5e7eb' }}>
-                  {getCounterPartyName()}
-                </Text>
-              </div>
-            )}
-
-            {renderRiskScoreCards()}
-
-            <Card className={`${theme === 'light' ? 'bg-white border-gray-200' : 'bg-gray-800 border-gray-700'}`}>
-              <Tabs
-                defaultActiveKey="entity"
-                items={tabItems}
-                style={{ color: theme === 'light' ? '#374151' : '#e5e7eb' }}
-              />
-            </Card>
-          </>
-        )}
-      </Spin>
+      )}
     </Modal>
   );
 };
-
-export default TransactionRiskModal;

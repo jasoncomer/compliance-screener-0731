@@ -22,9 +22,9 @@ import { getBlockchainLabel } from '../../../../utils/display-labels';
 import AssignedTransactionDetailsModal from '../../modals/TransactionDetails/AssignedTransactionDetailsModal';
 import { getComplianceReportStatusClassName } from '../../utils/compliance.utils';
 import { currencySymbols } from '../CurrencySelector';
-import TransactionRiskModal from '../modals/TransactionRiskModal';
 
 import '../../../../styles/transactionGrouping.css';
+import { TransactionRiskModal } from '../modals/TransactionRiskModal';
 
 // Status mapping for display labels
 const getStatusDisplayLabel = (status: EComplianceTransactionStatus): string => {

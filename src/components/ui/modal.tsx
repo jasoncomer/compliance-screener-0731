@@ -23,6 +23,7 @@ export interface ModalProps {
   destroyOnClose?: boolean
   afterClose?: () => void
   afterOpen?: () => void
+  zIndex?: number
 }
 
 const sizeClasses = {
@@ -49,6 +50,7 @@ export const Modal: React.FC<ModalProps> = ({
   destroyOnClose = false,
   afterClose,
   afterOpen,
+  zIndex,
 }) => {
   const [isVisible, setIsVisible] = React.useState(false)
   const [shouldRender, setShouldRender] = React.useState(false)
@@ -105,10 +107,11 @@ export const Modal: React.FC<ModalProps> = ({
       <div
         className={cn(
           "fixed inset-0 bg-black/50 transition-opacity",
-          Z_INDEX.modalBackdrop,
+          zIndex ? "" : Z_INDEX.modalBackdrop,
           ANIMATIONS.duration.base,
           isVisible ? "opacity-100" : "opacity-0"
         )}
+        style={zIndex ? { zIndex: zIndex } : undefined}
         onClick={handleBackdropClick}
         aria-hidden="true"
       />
@@ -117,9 +120,10 @@ export const Modal: React.FC<ModalProps> = ({
       <div
         className={cn(
           "fixed inset-0 overflow-y-auto",
-          Z_INDEX.modal,
+          zIndex ? "" : Z_INDEX.modal,
           "pointer-events-none"
         )}
+        style={zIndex ? { zIndex: zIndex + 10 } : undefined}
       >
         <div
           className={cn(

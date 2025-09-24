@@ -8,7 +8,7 @@ import { colors } from '@/design-system/tokens'
 import { useTheme } from '../../../context/ThemeContext';
 import { calculateSimpleRiskScore } from '../../../services/inputTransactionRiskService';
 import { IComplianceTransaction } from '../../../typings/compliance';
-import TransactionRiskModal from '../components/modals/TransactionRiskModal';
+import { TransactionRiskModal } from '../components/modals/TransactionRiskModal';
 
 interface EntityModalProps {
   visible: boolean;

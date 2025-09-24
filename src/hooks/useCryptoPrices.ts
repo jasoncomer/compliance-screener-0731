@@ -25,15 +25,15 @@ export const useCryptoPrices = () => {
     queryKey: cryptoPricesQueryKeys.all,
     queryFn: async () => {
       const response = await api.crypto.getPrices();
-      
+
       const newPrices: CryptoPrices = {};
-      Object.entries(response.data).forEach(([symbol, data]: [string, any]) => {
+      Object.entries(response).forEach(([symbol, data]: [string, any]) => {
         newPrices[symbol] = {
           price: data.price,
           lastUpdated: Date.now(),
         };
       });
-      
+
       return newPrices;
     },
     staleTime: CACHE_DURATION,

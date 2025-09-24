@@ -312,30 +312,30 @@ const SideNav: React.FC<SideNavProps> = ({ theme, collapsed, onCollapse }) => {
                 )}
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuContent align="end" className="w-56 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
               {user?.email.includes('@blockscout.ai') && (
                 <>
-                  <DropdownMenuItem 
+                  <DropdownMenuItem
                     onClick={() => handleUserMenuClick('admin')}
-                    className="hover:bg-orange-50 hover:text-orange-600 focus:bg-orange-50 focus:text-orange-600 font-['Inter']"
+                    className="cursor-pointer hover:bg-orange-50 dark:hover:bg-gray-700 hover:text-orange-600 dark:hover:text-white focus:bg-orange-50 dark:focus:bg-gray-700 focus:text-orange-600 dark:focus:text-white font-['Inter']"
                   >
                     <Users className="mr-2 h-4 w-4" />
                     Admin Panel
                   </DropdownMenuItem>
-                  <DropdownMenuSeparator />
+                  <DropdownMenuSeparator className="bg-gray-200 dark:bg-gray-700" />
                 </>
               )}
-              <DropdownMenuItem 
+              <DropdownMenuItem
                 onClick={() => handleUserMenuClick('settings')}
-                className="hover:bg-orange-50 hover:text-orange-600 focus:bg-orange-50 focus:text-orange-600 font-['Inter']"
+                className="cursor-pointer hover:bg-orange-50 dark:hover:bg-gray-700 hover:text-orange-600 dark:hover:text-white focus:bg-orange-50 dark:focus:bg-gray-700 focus:text-orange-600 dark:focus:text-white font-['Inter']"
               >
                 <Settings className="mr-2 h-4 w-4" />
                 Settings
               </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem 
+              <DropdownMenuSeparator className="bg-gray-200 dark:bg-gray-700" />
+              <DropdownMenuItem
                 onClick={() => handleUserMenuClick('logout')}
-                className="hover:bg-orange-50 hover:text-orange-600 focus:bg-orange-50 focus:text-orange-600 font-['Inter']"
+                className="cursor-pointer hover:bg-orange-50 dark:hover:bg-gray-700 hover:text-orange-600 dark:hover:text-white focus:bg-orange-50 dark:focus:bg-gray-700 focus:text-orange-600 dark:focus:text-white font-['Inter']"
               >
                 <LogOut className="mr-2 h-4 w-4" />
                 Logout

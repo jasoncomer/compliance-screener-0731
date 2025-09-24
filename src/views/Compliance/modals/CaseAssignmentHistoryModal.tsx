@@ -119,13 +119,13 @@ export const CaseAssignmentHistoryModal: React.FC<CaseAssignmentHistoryModalProp
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'assigned':
-        return <UserCheck className="h-4 w-4 text-green-600" />;
+        return <UserCheck className="h-4 w-4 text-green-600 dark:text-green-400" />;
       case 'unassigned':
-        return <UserX className="h-4 w-4 text-red-600" />;
+        return <UserX className="h-4 w-4 text-red-600 dark:text-red-400" />;
       case 'reassigned':
-        return <ArrowRight className="h-4 w-4 text-blue-600" />;
+        return <ArrowRight className="h-4 w-4 text-blue-600 dark:text-blue-400" />;
       default:
-        return <User className="h-4 w-4 text-gray-600" />;
+        return <User className="h-4 w-4 text-gray-600 dark:text-gray-400" />;
     }
   };
 
@@ -188,8 +188,8 @@ export const CaseAssignmentHistoryModal: React.FC<CaseAssignmentHistoryModalProp
             {assignmentHistory.length === 0 ? (
               <Card>
                 <CardContent className="flex flex-col items-center justify-center py-8">
-                  <History className="h-12 w-12 text-gray-400 mb-4" />
-                  <p className="text-gray-500 text-center">
+                  <History className="h-12 w-12 text-gray-400 dark:text-gray-500 mb-4" />
+                  <p className="text-gray-500 dark:text-gray-400 text-center">
                     No assignment history available for this case.
                   </p>
                 </CardContent>
@@ -207,12 +207,12 @@ export const CaseAssignmentHistoryModal: React.FC<CaseAssignmentHistoryModalProp
                         <div className="flex items-center justify-between mb-2">
                           <div className="flex items-center gap-2">
                             {getStatusBadge(entry.status)}
-                            <span className="text-sm text-gray-500">
+                            <span className="text-sm text-gray-500 dark:text-gray-400">
                               {formatDate(entry.assignedAt)}
                             </span>
                           </div>
                           {entry.unassignedAt && (
-                            <span className="text-xs text-gray-400">
+                            <span className="text-xs text-gray-400 dark:text-gray-500">
                               Duration: {getDuration(entry.assignedAt, entry.unassignedAt)}
                             </span>
                           )}
@@ -221,24 +221,24 @@ export const CaseAssignmentHistoryModal: React.FC<CaseAssignmentHistoryModalProp
                         <div className="space-y-1">
                           {entry.assignedTo ? (
                             <div className="flex items-center gap-2">
-                              <User className="h-4 w-4 text-gray-400" />
-                              <span className="text-sm text-gray-600">Assigned to:</span>
-                              <span className="font-medium text-gray-900">
+                              <User className="h-4 w-4 text-gray-400 dark:text-gray-500" />
+                              <span className="text-sm text-gray-600 dark:text-gray-400">Assigned to:</span>
+                              <span className="font-medium text-gray-900 dark:text-gray-100">
                                 {getUserDisplayName(organizationMembers[entry.assignedTo]) || 'Unknown User'}
                               </span>
                             </div>
                           ) : (
                             <div className="flex items-center gap-2">
-                              <UserX className="h-4 w-4 text-gray-400" />
-                              <span className="text-sm text-gray-600">Unassigned</span>
+                              <UserX className="h-4 w-4 text-gray-400 dark:text-gray-500" />
+                              <span className="text-sm text-gray-600 dark:text-gray-400">Unassigned</span>
                             </div>
                           )}
 
                           {entry.assignedBy && (
                             <div className="flex items-center gap-2">
-                              <Clock className="h-4 w-4 text-gray-400" />
-                              <span className="text-sm text-gray-600">Assigned by:</span>
-                              <span className="font-medium text-gray-900">
+                              <Clock className="h-4 w-4 text-gray-400 dark:text-gray-500" />
+                              <span className="text-sm text-gray-600 dark:text-gray-400">Assigned by:</span>
+                              <span className="font-medium text-gray-900 dark:text-gray-100">
                                 {getUserDisplayName(organizationMembers[entry.assignedBy]) || 'Unknown User'}
                               </span>
                             </div>
@@ -246,9 +246,9 @@ export const CaseAssignmentHistoryModal: React.FC<CaseAssignmentHistoryModalProp
 
                           {entry.unassignedAt && (
                             <div className="flex items-center gap-2">
-                              <Clock className="h-4 w-4 text-gray-400" />
-                              <span className="text-sm text-gray-600">Unassigned on:</span>
-                              <span className="text-sm text-gray-900">
+                              <Clock className="h-4 w-4 text-gray-400 dark:text-gray-500" />
+                              <span className="text-sm text-gray-600 dark:text-gray-400">Unassigned on:</span>
+                              <span className="text-sm text-gray-900 dark:text-gray-100">
                                 {formatDate(entry.unassignedAt)}
                               </span>
                             </div>
@@ -256,7 +256,7 @@ export const CaseAssignmentHistoryModal: React.FC<CaseAssignmentHistoryModalProp
                         </div>
 
                         {entry.notes && (
-                          <div className="mt-2 p-2 bg-gray-50 rounded text-sm text-gray-600">
+                          <div className="mt-2 p-2 bg-gray-50 dark:bg-gray-800 rounded text-sm text-gray-600 dark:text-gray-400">
                             {entry.notes}
                           </div>
                         )}
@@ -265,7 +265,7 @@ export const CaseAssignmentHistoryModal: React.FC<CaseAssignmentHistoryModalProp
                   </CardContent>
                   
                   {index < assignmentHistory.length - 1 && (
-                    <div className="absolute left-6 top-full w-px h-4 bg-gray-200" />
+                    <div className="absolute left-6 top-full w-px h-4 bg-gray-200 dark:bg-gray-700" />
                   )}
                 </Card>
               ))

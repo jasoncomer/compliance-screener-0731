@@ -1,18 +1,19 @@
 import React, { useMemo, useState } from 'react';
 
-import { 
+import {
+  AlertCircle,
   BarChart3,
-  Bitcoin, 
-  Building2, 
+  Bitcoin,
+  Building2,
   Clock,
   Database,
   Eye,
-  FileText, 
+  FileText,
   GitBranch,
   Globe,
-  Hash, 
+  Hash,
   History,
-  Shield, 
+  Shield,
   User} from "lucide-react";
 import { useSelector } from 'react-redux';
 
@@ -23,6 +24,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { TruncatedTransactionLink } from "@/components/ui/truncated-transaction-link";
 
 import EntityDisplayCard from '../../../../components/EntityDisplayCard';
 import EntityQuickView from '../../../../components/EntityQuickView';
@@ -34,9 +36,9 @@ import { selectActiveOrgMembersMap } from '../../../../store/slices/organization
 import { RootState } from '../../../../store/store';
 import { EComplianceTransactionStatus,IComplianceTransaction } from '../../../../typings/compliance';
 import { getUserDisplayName } from '../../../../utils/display-labels';
-import TransactionRiskModal from '../../components/modals/TransactionRiskModal';
 import { getComplianceReportStatusClassName } from '../../utils/compliance.utils';
 import CaseAssignmentHistoryModal from '../CaseAssignmentHistoryModal';
+import { TransactionRiskModal } from '../../components/modals/TransactionRiskModal';
 
 interface AssignedTransactionDetailsModalProps {
   isVisible: boolean;
@@ -70,6 +72,7 @@ const AssignedTransactionDetailsModal: React.FC<AssignedTransactionDetailsModalP
   const [selectedEntityForPreview, setSelectedEntityForPreview] = useState<any>(null);
   const [isEntityPreviewOpen, setIsEntityPreviewOpen] = useState(false);
   const [isAssignmentHistoryOpen, setIsAssignmentHistoryOpen] = useState(false);
+  const [showNoteRequiredMessage, setShowNoteRequiredMessage] = useState(false);
   
   const organizationMembersMap = useAppSelector(selectActiveOrgMembersMap) || {};
   const { itemsMap } = useSelector((state: RootState) => state.sot);
@@ -78,7 +81,7 @@ const AssignedTransactionDetailsModal: React.FC<AssignedTransactionDetailsModalP
     try {
       return selectTransactionById(state, transactionId);
     } catch (error) {
-      console.warn('Error selecting transaction by ID:', error);
+      // Handle error silently
       return null;
     }
   });
@@ -150,7 +153,7 @@ const AssignedTransactionDetailsModal: React.FC<AssignedTransactionDetailsModalP
       await onReassign(selectedReviewer);
       setSelectedReviewer('');
     } catch (error) {
-      console.error('Error reassigning transaction:', error);
+      // Handle reassignment error
     }
   };
 
@@ -163,10 +166,8 @@ const AssignedTransactionDetailsModal: React.FC<AssignedTransactionDetailsModalP
         transactionId,
         status: newStatus
       })).unwrap();
-      
-      console.log('Transaction status updated successfully');
     } catch (error) {
-      console.error('Error updating transaction status:', error);
+      // Handle status update error
     }
   };
 
@@ -175,31 +176,24 @@ const AssignedTransactionDetailsModal: React.FC<AssignedTransactionDetailsModalP
     if (!currentTransaction || !transactionId) return;
     
     try {
-      // TODO: Implement API call to save transaction notes
-      // For now, just log the notes
-      console.log('Saving transaction notes:', transactionNotes);
-      
-      // Simulate API call
+      // Save transaction notes via API
+      // Simulate API call for now
       await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      console.log('Transaction notes saved successfully');
     } catch (error) {
-      console.error('Error saving transaction notes:', error);
+      // Handle save notes error
+      throw error;
     }
   };
 
   // Handle VASP preview
   const handleQuickView = (e: React.MouseEvent, entityId: string) => {
-    console.log('handleQuickView called with entityId:', entityId);
     e.stopPropagation();
     const entityData = safeAttributions[entityId];
-    console.log('entityData:', entityData);
     
     // Look up SOT data from itemsMap using the entity ID
     const sotData = Object.values(itemsMap).find(sot => sot.entity_id === entityData?.entity);
     
     if (sotData) {
-      console.log('Opening VASP preview for:', sotData.proper_name);
       setSelectedEntityForPreview({
         entity: {
           _id: sotData._id,
@@ -209,8 +203,6 @@ const AssignedTransactionDetailsModal: React.FC<AssignedTransactionDetailsModalP
         sot: sotData
       });
       setIsEntityPreviewOpen(true);
-    } else {
-      console.log('No SOT data found for entityId:', entityId);
     }
   };
 
@@ -286,8 +278,8 @@ const AssignedTransactionDetailsModal: React.FC<AssignedTransactionDetailsModalP
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto" showCloseButton={false}>
           <DialogHeader>
             <div className="flex flex-col space-y-3 text-center sm:text-left">
-              <div className="flex flex-row items-center justify-between space-y-0 pb-4 border-b border-gray-200">
-                <DialogTitle className="tracking-tight text-xl font-semibold text-gray-900">
+              <div className="flex flex-row items-center justify-between space-y-0 pb-4 border-b border-gray-200 dark:border-gray-700">
+                <DialogTitle className="tracking-tight text-xl font-semibold text-gray-900 dark:text-gray-100">
                   Case Details
                 </DialogTitle>
                 <div className="flex items-center gap-3">
@@ -315,7 +307,7 @@ const AssignedTransactionDetailsModal: React.FC<AssignedTransactionDetailsModalP
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {/* Left Panel - Transaction Information */}
             <div className="space-y-4">
-              <Card className="bg-gray-50 border-gray-200">
+              <Card className="bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700">
                 <CardHeader className="pb-2">
                   <CardTitle className="flex items-center gap-2 text-lg">
                     <Hash className="h-4 w-4" />
@@ -325,59 +317,52 @@ const AssignedTransactionDetailsModal: React.FC<AssignedTransactionDetailsModalP
                 <CardContent className="space-y-5">
                   <div className="space-y-5">
                     <div className="border-b border-gray-300 dark:border-gray-600 pb-3">
-                      <Label className="text-xs font-bold text-gray-600 uppercase tracking-wide block mb-2 text-right">
+                      <Label className="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wide block mb-2">
                         Transaction ID
                       </Label>
-                      <a 
-                        href={`https://app-staging.blockscout.ai/home/block-explorer/transaction/${currentTransaction.txId}`}
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="font-mono text-sm text-gray-900 break-all hover:text-blue-600 dark:hover:text-blue-400 underline cursor-pointer block text-right"
-                      >
-                        {currentTransaction.txId}
-                      </a>
+                      <TruncatedTransactionLink txId={currentTransaction.txId} />
                     </div>
                     
                     <div className="border-b border-gray-300 dark:border-gray-600 pb-3">
-                      <Label className="text-xs font-bold text-gray-600 uppercase tracking-wide block mb-2 text-right">
+                      <Label className="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wide block mb-2">
                         Client ID
                       </Label>
-                      <p className="text-sm text-gray-900 text-right w-3/5 ml-auto">{currentTransaction.clientId || 'N/A'}</p>
+                      <p className="text-sm text-gray-900 dark:text-gray-100">{currentTransaction.clientId || 'N/A'}</p>
                     </div>
                     
                     <div className="border-b border-gray-300 dark:border-gray-600 pb-3">
-                      <Label className="text-xs font-bold text-gray-600 uppercase tracking-wide block mb-2 text-right">
+                      <Label className="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wide block mb-2">
                         Blockchain
                       </Label>
-                      <div className="flex items-center gap-2 justify-end">
-                        <Bitcoin className="w-5 h-5 text-orange-500" />
-                        <p className="text-sm text-gray-900 capitalize">{currentTransaction.blockchain}</p>
+                      <div className="flex items-center gap-2">
+                        <Bitcoin className="w-5 h-5 text-orange-500 dark:text-orange-400" />
+                        <p className="text-sm text-gray-900 dark:text-gray-100 capitalize">{currentTransaction.blockchain}</p>
                       </div>
                     </div>
                     
                     <div className="border-b border-gray-300 dark:border-gray-600 pb-3">
-                      <Label className="text-xs font-bold text-gray-600 uppercase tracking-wide block mb-2 text-right">
+                      <Label className="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wide block mb-2">
                         Timestamp
                       </Label>
-                      <p className="text-sm text-gray-900 text-right">
+                      <p className="text-sm text-gray-900 dark:text-gray-100">
                         {currentTransaction.timestamp ? new Date(currentTransaction.timestamp).toLocaleString() : 'N/A'}
                       </p>
                     </div>
                     
                     <div className="border-b border-gray-300 dark:border-gray-600 pb-3">
-                      <Label className="text-xs font-bold text-gray-600 uppercase tracking-wide block mb-2 text-right">
+                      <Label className="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wide block mb-2">
                         Amount
                       </Label>
-                      <p className="text-sm text-gray-900 text-right">
+                      <p className="text-sm text-gray-900 dark:text-gray-100">
                         {(currentTransaction.amount / 100000000).toFixed(8)} BTC
                       </p>
                     </div>
                     
                     <div className="pt-2">
-                      <Label className="text-xs font-bold text-gray-600 uppercase tracking-wide block mb-2 text-right">
+                      <Label className="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wide block mb-2">
                         USD Value
                       </Label>
-                      <p className="text-sm font-semibold text-green-400 text-right">
+                      <p className="text-sm font-semibold text-green-500 dark:text-green-400">
                         {btcPrice > 0 
                           ? `$${((currentTransaction.amount / 100000000) * btcPrice).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
                           : 'Loading price...'
@@ -389,7 +374,7 @@ const AssignedTransactionDetailsModal: React.FC<AssignedTransactionDetailsModalP
               </Card>
 
               {/* Status and Navigation Controls */}
-              <Card className="bg-gray-50 border-gray-200 w-3/4 ml-auto">
+              <Card className="bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-lg">Quick Actions</CardTitle>
                 </CardHeader>
@@ -406,8 +391,9 @@ const AssignedTransactionDetailsModal: React.FC<AssignedTransactionDetailsModalP
                         // If selecting "Approved with Note", check if notes exist
                         if (value === EComplianceTransactionStatus.CLOSED_WITH_NOTE) {
                           if (!transactionNotes.trim()) {
-                            // Force user to add a note
-                            alert('Please add a note before approving with note.');
+                            // Note required for this status
+                            setShowNoteRequiredMessage(true);
+                            setTimeout(() => setShowNoteRequiredMessage(false), 3000);
                             return;
                           }
                         }
@@ -478,7 +464,7 @@ const AssignedTransactionDetailsModal: React.FC<AssignedTransactionDetailsModalP
             {/* Right Panel - Risk, Counterparty, and Assignment */}
             <div className="flex flex-col space-y-4">
               {/* Transaction Risk */}
-              <Card className="bg-gray-50 border-gray-200">
+              <Card className="bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700">
                 <CardHeader className="pb-2">
                   <CardTitle className="flex items-center gap-2 text-lg">
                     <Shield className="h-4 w-4" />
@@ -487,7 +473,7 @@ const AssignedTransactionDetailsModal: React.FC<AssignedTransactionDetailsModalP
                 </CardHeader>
                 <CardContent className="space-y-1">
                   <div className="flex justify-between items-center">
-                    <span className="text-gray-600">Status</span>
+                    <span className="text-gray-600 dark:text-gray-400">Status</span>
                     <Badge 
                       className={`${getComplianceReportStatusClassName(currentTransaction.status)} flex items-center gap-1`}
                     >
@@ -496,14 +482,14 @@ const AssignedTransactionDetailsModal: React.FC<AssignedTransactionDetailsModalP
                     </Badge>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-gray-600">Risk Level</span>
+                    <span className="text-gray-600 dark:text-gray-400">Risk Level</span>
                     <span className={`font-semibold ${riskInfo.color}`}>
                       {riskInfo.level}
                     </span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-gray-600">Transaction Risk Score</span>
-                    <div className="flex gap-1 items-center w-2/5 justify-end">
+                    <span className="text-gray-600 dark:text-gray-400">Transaction Risk Score</span>
+                    <div className="flex gap-1 items-center">
                       <span className={`font-semibold ${riskInfo.color}`}>
                         {riskScore}
                       </span>
@@ -513,7 +499,7 @@ const AssignedTransactionDetailsModal: React.FC<AssignedTransactionDetailsModalP
                         onClick={() => setIsRiskModalOpen(true)}
                         className="ml-2 p-1 h-auto hover:bg-gray-100 dark:hover:bg-gray-700"
                       >
-                        <Eye className="h-4 w-4 text-gray-500 hover:text-gray-700" />
+                        <Eye className="h-4 w-4 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200" />
                       </Button>
                     </div>
                   </div>
@@ -521,7 +507,7 @@ const AssignedTransactionDetailsModal: React.FC<AssignedTransactionDetailsModalP
               </Card>
 
               {/* Current Assignment */}
-              <Card className="bg-gray-50 border-gray-200">
+              <Card className="bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700">
                 <CardHeader className="pb-2">
                   <div className="flex items-center justify-between">
                     <CardTitle className="flex items-center gap-2 text-lg">
@@ -532,7 +518,7 @@ const AssignedTransactionDetailsModal: React.FC<AssignedTransactionDetailsModalP
                       variant="ghost"
                       size="sm"
                       onClick={() => setIsAssignmentHistoryOpen(true)}
-                      className="flex items-center gap-1 text-gray-600 hover:text-gray-900"
+                      className="flex items-center gap-1 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100"
                     >
                       <History className="h-4 w-4" />
                       View History
@@ -540,14 +526,14 @@ const AssignedTransactionDetailsModal: React.FC<AssignedTransactionDetailsModalP
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="flex items-center gap-2 justify-end">
-                    <span className="text-gray-600">Assigned To:</span>
-                    <span className="font-semibold text-gray-900 w-2/5 text-right">{currentAssigneeName}</span>
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-600 dark:text-gray-400">Assigned To:</span>
+                    <span className="font-semibold text-gray-900 dark:text-gray-100">{currentAssigneeName}</span>
                   </div>
                   {currentTransaction.reviewTimestamp && (
-                    <div className="flex items-center gap-2 mt-2 justify-end">
-                      <span className="text-gray-600">Assigned On:</span>
-                      <span className="text-sm text-gray-900 text-right">
+                    <div className="flex items-center justify-between mt-2">
+                      <span className="text-gray-600 dark:text-gray-400">Assigned On:</span>
+                      <span className="text-sm text-gray-900 dark:text-gray-100">
                         {new Date(currentTransaction.reviewTimestamp).toLocaleString()}
                       </span>
                     </div>
@@ -556,7 +542,7 @@ const AssignedTransactionDetailsModal: React.FC<AssignedTransactionDetailsModalP
               </Card>
 
               {/* Counterparty Information */}
-              <Card className="bg-gray-50 border-gray-200">
+              <Card className="bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700">
                 <CardHeader className="pb-2">
                   <CardTitle className="flex items-center gap-2 text-lg">
                     <Building2 className="h-4 w-4" />
@@ -565,7 +551,12 @@ const AssignedTransactionDetailsModal: React.FC<AssignedTransactionDetailsModalP
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
-                    {currentTransaction.counterpartyEntities?.map((entityId, index) => {
+                    {!currentTransaction.counterpartyEntities || currentTransaction.counterpartyEntities.length === 0 ? (
+                      <div className="flex flex-row items-center justify-center py-8 text-center gap-2">
+                        <p className="text-sm text-gray-500 dark:text-gray-400">No counterparty information available</p>
+                      </div>
+                    ) : (
+                      currentTransaction.counterpartyEntities.map((entityId, index) => {
                       // Get entity name from attributions
                       const entityName = safeAttributions[entityId]?.entity || entityId;
                       
@@ -611,13 +602,14 @@ const AssignedTransactionDetailsModal: React.FC<AssignedTransactionDetailsModalP
                           />
                         </div>
                       );
-                    })}
+                    })
+                    )}
                   </div>
                 </CardContent>
               </Card>
 
               {/* Transaction Notes */}
-              <Card className="bg-gray-50 border-gray-200">
+              <Card className="bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700">
                 <CardHeader className="pb-2">
                   <CardTitle className="flex items-center gap-2 text-lg">
                     <FileText className="h-4 w-4" />
@@ -625,6 +617,14 @@ const AssignedTransactionDetailsModal: React.FC<AssignedTransactionDetailsModalP
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
+                  {showNoteRequiredMessage && (
+                    <div className="flex items-center gap-2 p-2 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-md">
+                      <AlertCircle className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
+                      <span className="text-sm text-yellow-700 dark:text-yellow-300">
+                        Please add a note before selecting "Approved with Note" status.
+                      </span>
+                    </div>
+                  )}
                   <Textarea
                     value={transactionNotes}
                     onChange={(e) => setTransactionNotes(e.target.value)}
@@ -646,8 +646,8 @@ const AssignedTransactionDetailsModal: React.FC<AssignedTransactionDetailsModalP
                       try {
                         await handleSaveNotes();
                       } catch (error) {
-                        console.error('Failed to save transaction notes:', error);
-                        return; // Don't close if saving notes fails
+                        // Don't close if saving notes fails
+                        return;
                       }
                     }
                     
@@ -656,8 +656,8 @@ const AssignedTransactionDetailsModal: React.FC<AssignedTransactionDetailsModalP
                       try {
                         await handleReassign();
                       } catch (error) {
-                        console.error('Failed to reassign transaction:', error);
-                        return; // Don't close if reassignment fails
+                        // Don't close if reassignment fails
+                        return;
                       }
                     }
                     

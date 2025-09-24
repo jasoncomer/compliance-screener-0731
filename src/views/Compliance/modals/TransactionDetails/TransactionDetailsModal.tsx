@@ -1,14 +1,14 @@
 import React, { FC, useMemo, useState } from 'react';
 
-import { 
-  Bitcoin, 
-  Building2, 
+import {
+  Bitcoin,
+  Building2,
   Clock,
   Eye,
-  FileText, 
-  Hash, 
+  FileText,
+  Hash,
   History,
-  Shield, 
+  Shield,
   User} from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
@@ -18,6 +18,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { TruncatedTransactionLink } from "@/components/ui/truncated-transaction-link";
 
 import EntityDisplayCard from '../../../../components/EntityDisplayCard';
 import { useAttribution } from '../../../../context/AttributionContext';
@@ -27,9 +28,10 @@ import { selectTransactionById } from '../../../../store/slices/complianceTransa
 import { selectActiveOrgMembersMap } from '../../../../store/slices/organizationsSlice';
 import { IComplianceTransaction } from '../../../../typings/compliance';
 import { getUserDisplayName } from '../../../../utils/display-labels';
-import TransactionRiskModal from '../../components/modals/TransactionRiskModal';
 import { getComplianceReportStatusClassName } from '../../utils/compliance.utils';
 import CaseAssignmentHistoryModal from '../CaseAssignmentHistoryModal';
+import { EntityQuickViewModal } from '../EntityQuickViewModal';
+import { TransactionRiskModal } from '../../components/modals/TransactionRiskModal';
 
 interface TransactionDetailsModalProps {
   isVisible: boolean;
@@ -49,7 +51,7 @@ export const TransactionDetailsModal: FC<TransactionDetailsModalProps> = React.m
   calculatedRiskScore,
 }) => {
   const { attributions } = useAttribution();
-  const { getPrice } = useCryptoPrices();
+  const { getPrice, isLoading: isPriceLoading } = useCryptoPrices();
   const organizationMembers = useAppSelector(selectActiveOrgMembersMap);
   
   // State for assignment
@@ -57,6 +59,8 @@ export const TransactionDetailsModal: FC<TransactionDetailsModalProps> = React.m
   const [assignmentNotes, setAssignmentNotes] = useState<string>('');
   const [isRiskModalOpen, setIsRiskModalOpen] = useState(false);
   const [isAssignmentHistoryOpen, setIsAssignmentHistoryOpen] = useState(false);
+  const [selectedEntityId, setSelectedEntityId] = useState<string | null>(null);
+  const [isEntityModalOpen, setIsEntityModalOpen] = useState(false);
   
   // Try to get transaction from props first, then fall back to Redux store
   const transactionFromStore = useAppSelector(state => 
@@ -87,7 +91,9 @@ export const TransactionDetailsModal: FC<TransactionDetailsModalProps> = React.m
 
   // Get BTC price for conversion
   const btcPrice = getPrice('BTC') || 0;
+  console.log('BTC Price from hook:', btcPrice); // Debug log
   const usdValue = transaction ? (transaction.amount ? ((transaction.amount / 100000000) * btcPrice) : 0) : 0;
+  console.log('USD Value calculated:', usdValue); // Debug log
 
   // Handle assignment
   const handleAssign = () => {
@@ -164,14 +170,7 @@ export const TransactionDetailsModal: FC<TransactionDetailsModalProps> = React.m
                       <Label className="text-xs font-bold text-gray-600 uppercase tracking-wide block mb-2">
                         Transaction ID
                       </Label>
-                      <a 
-                        href={`https://app-staging.blockscout.ai/home/block-explorer/transaction/${transaction.txId}`}
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="font-mono text-sm text-gray-900 break-all hover:text-blue-600 dark:hover:text-blue-400 underline cursor-pointer block"
-                      >
-                        {transaction.txId}
-                      </a>
+                      <TruncatedTransactionLink txId={transaction.txId} />
                     </div>
                     
                     <div className="border-b border-gray-300 dark:border-gray-600 pb-3">
@@ -213,9 +212,15 @@ export const TransactionDetailsModal: FC<TransactionDetailsModalProps> = React.m
                       <Label className="text-xs font-bold text-gray-600 uppercase tracking-wide block mb-2">
                         USD Value
                       </Label>
-                      <p className="text-sm font-semibold text-green-400">
-                        ${usdValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                      </p>
+                      {isPriceLoading ? (
+                        <p className="text-sm text-gray-500">Loading price...</p>
+                      ) : btcPrice === 0 ? (
+                        <p className="text-sm text-gray-500">Pricing Currently Unavailable</p>
+                      ) : (
+                        <p className="text-sm font-semibold text-green-400">
+                          ${usdValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </p>
+                      )}
                     </div>
                   </div>
                 </CardContent>
@@ -282,7 +287,8 @@ export const TransactionDetailsModal: FC<TransactionDetailsModalProps> = React.m
                             <EntityDisplayCard
                               entityId={entityId}
                               onQuickView={() => {
-                                console.log('Quick view entity:', entityId);
+                                setSelectedEntityId(entityId);
+                                setIsEntityModalOpen(true);
                               }}
                             />
                           </div>
@@ -295,7 +301,8 @@ export const TransactionDetailsModal: FC<TransactionDetailsModalProps> = React.m
                             entityId={entityId}
                             entityName={entitySot}
                             onQuickView={() => {
-                              console.log('Quick view entity:', entityId);
+                              setSelectedEntityId(entityId);
+                              setIsEntityModalOpen(true);
                             }}
                             onViewFull={() => {
                               console.log('View full entity:', entitySot);
@@ -383,6 +390,16 @@ export const TransactionDetailsModal: FC<TransactionDetailsModalProps> = React.m
         isVisible={isAssignmentHistoryOpen}
         onClose={() => setIsAssignmentHistoryOpen(false)}
         transaction={transaction}
+      />
+
+      {/* Entity Quick View Modal */}
+      <EntityQuickViewModal
+        isVisible={isEntityModalOpen}
+        onClose={() => {
+          setIsEntityModalOpen(false);
+          setSelectedEntityId(null);
+        }}
+        entityId={selectedEntityId}
       />
     </>
   );

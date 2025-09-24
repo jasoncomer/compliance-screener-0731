@@ -169,7 +169,7 @@ const UnassignedTransactionsTable: React.FC<TransactionsTableProps> = ({
         }
       });
     }
-  }, [transactions, calculatedRiskScores, riskCalculationLoading, attributions]);
+  }, [transactions, attributions]);
 
 
   // Function to handle row click to show transaction details

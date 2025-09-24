@@ -1,5 +1,5 @@
 
-import { useEffect,useState } from "react"
+import { useEffect, useState } from "react"
 
 import {
   AlertTriangle,
@@ -23,18 +23,20 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
+import { TruncatedTransactionLink } from "@/components/ui/truncated-transaction-link"
 import { useTheme } from "@/context/ThemeContext"
-import { EComplianceTransactionStatus,IComplianceTransaction } from "@/typings/compliance"
+import { EComplianceTransactionStatus, IComplianceTransaction } from "@/typings/compliance"
 
 import EntityQuickView from "../../../../components/EntityQuickView"
 import { useAttribution } from "../../../../context/AttributionContext"
 import { useCryptoPrices } from "../../../../hooks/useCryptoPrices"
-import { useAppDispatch,useAppSelector } from "../../../../store/hooks"
-import { fetchSOT,selectSotItemsMap } from "../../../../store/slices/sotSlice"
+import { useAppDispatch, useAppSelector } from "../../../../store/hooks"
+import { fetchSOT, selectSotItemsMap } from "../../../../store/slices/sotSlice"
 import { SOT } from "../../../../typings/interfaces"
 import { getEntityTags } from "../../../../utils/sotUtils"
 import { getComplianceReportStatusClassName } from "../../utils/compliance.utils"
-import TransactionRiskModal from "../modals/TransactionRiskModal"
+import { TransactionRiskModal } from "../modals/TransactionRiskModal"
+
 
 interface UnassignedTransactionModalProps {
   transaction: IComplianceTransaction | null
@@ -60,7 +62,7 @@ export function UnassignedTransactionModal({
   const { attributions } = useAttribution();
   const dispatch = useAppDispatch();
   const { prices } = useCryptoPrices();
-  
+
   // Fetch SOT data when modal opens
   useEffect(() => {
     if (isOpen && Object.keys(itemsMap).length === 0) {
@@ -68,15 +70,7 @@ export function UnassignedTransactionModal({
       dispatch(fetchSOT());
     }
   }, [isOpen, itemsMap, dispatch]);
-  
-  // Debug SOT data (only when modal is open)
-  if (isOpen) {
-    console.log('SOT Data Debug:', { 
-      itemsMapKeys: Object.keys(itemsMap), 
-      itemsMapLength: Object.keys(itemsMap).length,
-      sampleItem: Object.values(itemsMap)[0]
-    });
-  }
+
   const { theme } = useTheme();
   const [selectedReviewer, setSelectedReviewer] = useState<string>("")
   const [assignmentNotes, setAssignmentNotes] = useState("")
@@ -161,7 +155,7 @@ export function UnassignedTransactionModal({
     // Get the most recent recorded price (even if stale) from the prices object
     const btcPriceData = prices['BTC'];
     const ethPriceData = prices['ETH'];
-    
+
     // Check if we have price data available
     if (blockchain.toLowerCase() === "bitcoin" && !btcPriceData?.price) {
       return "Pricing Currently Unavailable";
@@ -215,7 +209,7 @@ export function UnassignedTransactionModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent 
+      <DialogContent
         className={`max-w-4xl max-h-[90vh] overflow-y-auto ${bgColor} ${borderColor} ${textColor}`}
         showCloseButton={false}
       >
@@ -260,21 +254,14 @@ export function UnassignedTransactionModal({
                 <div className="space-y-5">
                   <div className="border-b border-gray-300 dark:border-gray-600 pb-3">
                     <Label className={`text-xs font-bold ${mutedTextColor} uppercase tracking-wide block mb-2`}>Transaction ID</Label>
-                    <a 
-                      href={`https://app-staging.blockscout.ai/home/block-explorer/transaction/${transaction.txId}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className={`font-mono text-sm ${textColor} break-all hover:text-blue-600 dark:hover:text-blue-400 underline cursor-pointer block`}
-                    >
-                      {transaction.txId}
-                    </a>
+                    <TruncatedTransactionLink txId={transaction.txId} />
                   </div>
-                  
+
                   <div className="border-b border-gray-300 dark:border-gray-600 pb-3">
                     <Label className={`text-xs font-bold ${mutedTextColor} uppercase tracking-wide block mb-2`}>Client ID</Label>
                     <p className={`text-sm ${textColor}`}>{transaction.clientId}</p>
                   </div>
-                  
+
                   <div className="border-b border-gray-300 dark:border-gray-600 pb-3">
                     <Label className={`text-xs font-bold ${mutedTextColor} uppercase tracking-wide block mb-2`}>Blockchain</Label>
                     <div className="flex items-center gap-2">
@@ -282,19 +269,19 @@ export function UnassignedTransactionModal({
                       <p className={`text-sm ${textColor} capitalize`}>{transaction.blockchain}</p>
                     </div>
                   </div>
-                  
+
                   <div className="border-b border-gray-300 dark:border-gray-600 pb-3">
                     <Label className={`text-xs font-bold ${mutedTextColor} uppercase tracking-wide block mb-2`}>Timestamp</Label>
                     <p className={`text-sm ${textColor}`}>{transaction.timestamp.toLocaleString()}</p>
                   </div>
-                  
+
                   <div className="border-b border-gray-300 dark:border-gray-600 pb-3">
                     <Label className={`text-xs font-bold ${mutedTextColor} uppercase tracking-wide block mb-2`}>Amount</Label>
                     <p className={`text-sm ${textColor}`}>
                       {(transaction.amount / 100000000).toFixed(8)} {getChainTicker(transaction.blockchain)}
                     </p>
                   </div>
-                  
+
                   <div className="pt-2">
                     <Label className={`text-xs font-bold ${mutedTextColor} uppercase tracking-wide block mb-2`}>USD Value</Label>
                     <p className="text-sm font-semibold text-green-400">
@@ -365,10 +352,7 @@ export function UnassignedTransactionModal({
                   {transaction.counterpartyEntities.map((entity, index) => {
                     // Get entity name from attributions
                     const entityName = attributions[entity]?.entity || entity;
-                    
-                    // Debug logging
-                    console.log('Entity lookup:', { entity, entityName, itemsMapKeys: Object.keys(itemsMap) });
-                    
+
                     // Find SOT data for this entity
                     const getEntitySot = (entityId: string): SOT | null => {
                       if (!itemsMap || Object.keys(itemsMap).length === 0) {
@@ -379,20 +363,20 @@ export function UnassignedTransactionModal({
                         return itemsMap[entityId];
                       }
                       // Fallback: search by proper_name if direct lookup fails
-                      return Object.values(itemsMap).find(sot => 
+                      return Object.values(itemsMap).find(sot =>
                         sot.proper_name?.toLowerCase() === entityId.toLowerCase()
                       ) || null;
                     };
-                    
+
                     const entitySot = getEntitySot(entityName);
-                    
+
                     return (
                       <div key={index} className="border border-gray-300 dark:border-gray-600 rounded p-2 bg-gray-100 dark:bg-gray-700">
                         <div className="flex items-center justify-between mb-1">
                           <div className="flex items-center gap-3">
                             {entitySot?.logo && (
-                              <img 
-                                src={entitySot.logo} 
+                              <img
+                                src={entitySot.logo}
                                 alt={`${entitySot.proper_name} logo`}
                                 className="w-[30px] h-[30px] rounded-sm object-contain"
                                 onError={(e) => {
@@ -519,36 +503,23 @@ export function UnassignedTransactionModal({
           </div>
         </div>
       </DialogContent>
-      
-      {/* Input Transaction Risk Modal */}
-        <TransactionRiskModal
-          visible={isRiskModalOpen}
-          onClose={() => {
-            console.log('Closing risk modal');
-            setIsRiskModalOpen(false);
-          }}
-          transaction={transaction}
-          loading={false}
-          showCounterPartyDetails={true}
-          counterpartyEntities={transaction?.counterpartyEntities || []}
-          attributions={attributions}
-          itemsMap={itemsMap}
-          storedRiskScores={transaction?.riskScores}
-          title="Input Transaction Risk Analysis"
-        onRiskScoreUpdate={(riskData) => {
-          console.log('Risk score update callback triggered:', {
-            hasTransaction: !!transaction,
-            hasRiskData: !!riskData,
-            transactionId: transaction?.txId,
-            currentRiskScores: transaction?.riskScores,
-            riskData: riskData ? {
-              overall: riskData.overallRisk,
-              entity: riskData.entityRisk?.aggregateScore,
-              jurisdiction: riskData.jurisdictionRisk?.aggregateScore,
-              transaction: riskData.transactionRisk?.aggregateScore
-            } : null
-          });
 
+      {/* Input Transaction Risk Modal */}
+      <TransactionRiskModal
+        visible={isRiskModalOpen}
+        onClose={() => {
+          console.log('Closing risk modal');
+          setIsRiskModalOpen(false);
+        }}
+        transaction={transaction}
+        loading={false}
+        showCounterPartyDetails={true}
+        counterpartyEntities={transaction?.counterpartyEntities || []}
+        attributions={attributions}
+        itemsMap={itemsMap}
+        storedRiskScores={transaction?.riskScores}
+        title="Input Transaction Risk Analysis"
+        onRiskScoreUpdate={(riskData) => {
           // Update the transaction's risk scores with the new calculated values
           if (transaction && riskData) {
             const newRiskScores = [
@@ -557,16 +528,16 @@ export function UnassignedTransactionModal({
               Math.round(riskData.jurisdictionRisk.aggregateScore),
               Math.round(riskData.transactionRisk.aggregateScore)
             ];
-            
+
             // Create updated transaction object
             const updatedTransaction = {
               ...transaction,
               riskScores: newRiskScores
             };
-            
+
             // Trigger a re-render by updating the trigger state
             setRiskScoreUpdateTrigger(prev => prev + 1);
-            
+
             // Notify parent component of the update
             if (onTransactionUpdate) {
               console.log('Calling onTransactionUpdate with:', updatedTransaction);
@@ -574,18 +545,6 @@ export function UnassignedTransactionModal({
             } else {
               console.log('No onTransactionUpdate callback provided');
             }
-            
-            console.log('Updated transaction risk scores:', {
-              txId: transaction.txId,
-              oldScores: transaction.riskScores,
-              newScores: newRiskScores,
-              riskData: {
-                overall: riskData.overallRisk,
-                entity: riskData.entityRisk.aggregateScore,
-                jurisdiction: riskData.jurisdictionRisk.aggregateScore,
-                transaction: riskData.transactionRisk.aggregateScore
-              }
-            });
           } else {
             console.log('Risk score update skipped - missing transaction or riskData');
           }
