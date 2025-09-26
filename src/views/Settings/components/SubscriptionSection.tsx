@@ -255,10 +255,10 @@ const SubscriptionSection: React.FC<SubscriptionSectionProps> = ({ theme }) => {
               const priceObj = tier.prices.find(p => p.billingPeriod === billingPeriod);
               return (
                 <Col xs={24} sm={24} md={8} lg={8} xl={8} xxl={8} key={String(tier.id)}>
-                  <Card 
-                    title={tier.name} 
-                    bordered 
-                    style={{ 
+                  <Card
+                    title={tier.name}
+                    bordered
+                    style={{
                       height: '100%',
                       borderColor: currentTier?.id === tier.id ? '#1890ff' : undefined,
                       boxShadow: currentTier?.id === tier.id ? '0 0 10px rgba(24,144,255,0.2)' : undefined,
@@ -267,11 +267,13 @@ const SubscriptionSection: React.FC<SubscriptionSectionProps> = ({ theme }) => {
                       display: 'flex',
                       flexDirection: 'column'
                     }}
-                    bodyStyle={{
-                      flex: 1,
-                      display: 'flex',
-                      flexDirection: 'column',
-                      padding: '16px'
+                    styles={{
+                      body: {
+                        flex: 1,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        padding: '16px'
+                      }
                     }}
                   >
                     {currentTier?.id === tier.id && (

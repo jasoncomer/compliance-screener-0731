@@ -187,11 +187,13 @@ const RiskScoreModal: React.FC<RiskScoreModalProps> = ({ riskScores, visible, on
       footer={null}
       width={1000}
       style={{ top: 20 }}
-      bodyStyle={{ 
-        backgroundColor: colors.white, 
-        color: colors.gray[800],
-        maxHeight: '80vh',
-        overflowY: 'auto'
+      styles={{
+        body: {
+          backgroundColor: colors.white,
+          color: colors.gray[800],
+          maxHeight: '80vh',
+          overflowY: 'auto'
+        }
       }}
     >
       <div style={{ marginBottom: '16px' }}>

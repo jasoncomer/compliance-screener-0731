@@ -4,6 +4,7 @@ import { useParams } from 'react-router-dom';
 
 import { api } from '../../api/api';
 import Pagination from '../../components/common/Pagination';
+import { BlockLoader } from '../../components/ui/blockchain-loader';
 import { useAttribution } from '../../context/AttributionContext';
 import { useToast } from '../../hooks/use-toast';
 import { BsBlock } from '../../styles/Table';
@@ -111,7 +112,11 @@ const BlockView: React.FC = () => {
       });
   };
 
-  if (isLoading) return <div>Loading...</div>;
+  if (isLoading && !blockData) return (
+    <div className="flex items-center justify-center min-h-[400px]">
+      <BlockLoader blockNumber={block ? Number(block) : undefined} />
+    </div>
+  );
   if (error) return <div className="text-red-500 p-4 text-center">{error}</div>;
   if (!blockData) return <div className="text-red-500 p-4 text-center">Block not found</div>;
 
@@ -126,9 +131,11 @@ const BlockView: React.FC = () => {
       <div className="w-full">
         <BsBlock className="font-mono">
           <h3>Transactions ({totalTxs.toLocaleString()})</h3>
-          <hr />
+
           {isLoading ? (
-            <div className="text-center p-8">Loading...</div>
+            <div className="flex items-center justify-center p-8">
+              <BlockLoader blockNumber={blockData.number} />
+            </div>
           ) : (
             <>
               {transactions.map(tx => <BtcTransactionTable key={tx._id} transaction={tx} />)}

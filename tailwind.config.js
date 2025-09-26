@@ -104,6 +104,7 @@ export default {
       animation: {
         fadeIn: 'fadeIn 0.5s cubic-bezier(0.3, 0, 0.7, 1) forwards',
         fadeOut: 'fadeOut 0.5s cubic-bezier(0.3, 0, 0.7, 1) forwards',
+        'fade-in-up': 'fadeInUp 0.3s ease-out forwards',
         'slide-in': 'slideIn 0.3s ease-out',
         'spin': 'spin 0.8s linear infinite',
       },
@@ -126,6 +127,16 @@ export default {
           to: {
             opacity: '0',
             transform: 'translateY(-10px)',
+          },
+        },
+        fadeInUp: {
+          from: {
+            opacity: '0',
+            transform: 'translateY(8px)',
+          },
+          to: {
+            opacity: '1',
+            transform: 'translateY(0)',
           },
         },
         slideIn: {

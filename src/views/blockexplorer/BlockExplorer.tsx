@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 
 import { ArrowLeftRight, Box, Globe, Wallet } from 'lucide-react';
 import { Route, Routes, useLocation, useNavigate } from 'react-router-dom';
@@ -7,7 +7,6 @@ import EmptyState from '../../components/common/EmptyState';
 import NotesModal from '../../components/common/NotesModal';
 import SearchInput from '../../components/common/SearchInput';
 import ViewWrapper from '../../components/ViewWrapper';
-import { useAddress } from '../../hooks/useAddress';
 import { determineInputType } from '../../utils/crypto';
 
 import Address from './address-page/Address';
@@ -81,60 +80,63 @@ interface CurrentContext {
 const BlockExplorer: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const [searchValue, setSearchValue] = React.useState('');
+  const [searchState, setSearchState] = useState({
+    value: '',
+    isSearching: false,
+    error: null as string | null
+  });
   const [notesModalVisible, setNotesModalVisible] = useState(false);
   const [newNotesCount, setNewNotesCount] = useState(0);
-  const [isSearching, setIsSearching] = useState(false);
-  const [searchError, setSearchError] = useState<string | null>(null);
   const [currentContext, setCurrentContext] = useState<CurrentContext>({ type: 'general' });
 
-  // Get address data to access cospend_id
-  const { data: addressData } = useAddress(currentContext.type === 'address' ? currentContext.id || '' : '');
-  const cospendId = addressData?.cospend_id;
 
   useEffect(() => {
-    // Parse the current URL to determine context
+    // Simpler context detection based on route patterns
     const path = location.pathname;
-    const pathParts = path.split('/');
 
-    // Check if we're viewing a transaction, address, or block
-    if (pathParts.includes('transaction') && pathParts.length > 4) {
-      const txId = pathParts[pathParts.length - 1];
+    if (path.includes('/transaction/')) {
+      const txId = path.split('/transaction/')[1];
       setCurrentContext({ type: 'transaction', id: txId });
-    } else if (pathParts.includes('address') && pathParts.length > 4) {
-      const address = pathParts[pathParts.length - 1];
+    } else if (path.includes('/address/')) {
+      const address = path.split('/address/')[1];
       setCurrentContext({ type: 'address', id: address });
-    } else if (pathParts.includes('block') && pathParts.length > 4) {
-      const blockNumber = pathParts[pathParts.length - 1];
+    } else if (path.includes('/block/')) {
+      const blockNumber = path.split('/block/')[1];
       setCurrentContext({ type: 'block', id: blockNumber });
     } else {
       setCurrentContext({ type: 'general' });
+      // Clear search state when returning to empty state
+      setSearchState({ value: '', isSearching: false, error: null });
     }
   }, [location.pathname]);
 
   const onSearch = useCallback(async (value: string) => {
     if (!value) {
-      setSearchError('Please enter a search value');
+      setSearchState(prev => ({ ...prev, error: 'Please enter a search value' }));
       return;
     }
 
-    setIsSearching(true);
-    setSearchError(null);
+    setSearchState(prev => ({ ...prev, isSearching: true, error: null }));
 
     try {
       const type = determineInputType(value);
       if (!type) {
-        setSearchError('Invalid input. Please enter a valid block number, transaction hash, or address.');
-        setIsSearching(false);
+        setSearchState(prev => ({
+          ...prev,
+          isSearching: false,
+          error: 'Invalid input. Please enter a valid block number, transaction hash, or address.'
+        }));
         return;
       }
 
       navigate(`/home/block-explorer/${type}/${value}`);
-      setSearchValue(''); // Clear the input after navigation
+      setSearchState({ value: '', isSearching: false, error: null }); // Reset search state
     } catch (error) {
-      setSearchError('An error occurred while searching. Please try again.');
-    } finally {
-      setIsSearching(false);
+      setSearchState(prev => ({
+        ...prev,
+        isSearching: false,
+        error: 'An error occurred while searching. Please try again.'
+      }));
     }
   }, [navigate]);
 
@@ -150,37 +152,35 @@ const BlockExplorer: React.FC = () => {
     setNewNotesCount(count);
   }, []);
 
-  const searchPlaceholder = useMemo(
-    () => 'Search by block number, tx hash or address',
-    []
-  );
+  const searchPlaceholder = 'Search by block number, tx hash or address';
 
-  const isEmptyState = useMemo(
-    () => !location.pathname.includes('/transaction/') &&
-      !location.pathname.includes('/address/') &&
-      !location.pathname.includes('/block/'),
-    [location.pathname]
-  );
+  const isEmptyState = !location.pathname.includes('/transaction/') &&
+    !location.pathname.includes('/address/') &&
+    !location.pathname.includes('/block/');
 
   return (
     <ViewWrapper
       icon={<Globe className="w-8 h-8 text-orange-500" />}
       title="Block Explorer"
       fullWidth={true}
+      className="bg-gray-200 dark:bg-gray-900"
     >
-      <div className="sticky top-[0] z-20 bg-background border-b border-border pt-2 py-4 mb-2">
+      <div className="sticky top-[0] z-20 pt-2 py-2 mb-2 border-b bg-gray-200 dark:bg-gray-900">
         <div className="flex justify-between items-center gap-4">
           <div className="flex-1 max-w-2xl">
             <SearchInput
               placeholder={searchPlaceholder}
-              value={searchValue}
+              value={searchState.value}
               onChange={(e) => {
-                setSearchValue(e.target.value);
-                if (searchError) setSearchError(null);
+                setSearchState(prev => ({
+                  ...prev,
+                  value: e.target.value,
+                  error: prev.error ? null : prev.error
+                }));
               }}
               onSearch={onSearch}
-              loading={isSearching}
-              error={!!searchError}
+              loading={searchState.isSearching}
+              error={!!searchState.error}
             />
           </div>
           {currentContext.type !== 'general' && (
@@ -193,9 +193,9 @@ const BlockExplorer: React.FC = () => {
             </NotesButton>
           )}
         </div>
-        {searchError && (
+        {searchState.error && (
           <div className="mt-2 text-sm text-red-500 dark:text-red-400 text-center">
-            {searchError}
+            {searchState.error}
           </div>
         )}
       </div>
@@ -222,7 +222,6 @@ const BlockExplorer: React.FC = () => {
             transactionId={currentContext.type === 'transaction' ? currentContext.id : undefined}
             address={currentContext.type === 'address' ? currentContext.id : undefined}
             blockNumber={currentContext.type === 'block' ? currentContext.id : undefined}
-            cospendId={currentContext.type === 'address' ? cospendId : undefined}
             onNewNotesCountChange={handleNewNotesCountChange}
           />
         )

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-import { ExternalLink, Copy, Check } from 'lucide-react';
+import { Check,Copy, ExternalLink } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 

@@ -29,7 +29,7 @@ const BtcTransactionSummary: React.FC<BtcTransactionSummaryProps> = ({ transacti
   return (
     <BsBlock>
       <h3>Summary</h3>
-      <hr />
+
       <SummaryWrapper>
         <div className="flex flex-1 flex-col p-2.5">
           <span className="mt-2.5 flex justify-between">

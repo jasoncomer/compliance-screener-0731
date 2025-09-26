@@ -85,7 +85,6 @@ const getRelatedEntities = async (entityId: string): Promise<RelatedEntitiesResp
 
   const request = (async () => {
     try {
-      console.log(`Fetching related entities for: ${entityId}`);
       const response = await axiosInstance.get(`/attribution/entity/${entityId}/unique-values`);
       return response.data;
     } catch (error: any) {

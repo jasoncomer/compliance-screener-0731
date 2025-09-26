@@ -1,159 +1,149 @@
-import React, { useState } from 'react';
-
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import styled from 'styled-components';
 
-import { Theme } from '../../../context/ThemeContext';
+import { Check, Copy } from 'lucide-react';
+
+import { TransactionLink } from '../../../components/ui/TransactionLink';
 import useWindowSize from '../../../hooks/useWindowSize';
+import { cn } from '../../../lib/utils';
 import { BsBlock } from '../../../styles/Table';
 import { BtcTransaction } from '../../../typings/BtcTransaction';
-import { satsToBTC, truncateAddress } from '../../../utils/crypto';
+import { satsToBTC } from '../../../utils/crypto';
 
 import BtcTransactionInputsOutputs from './BtcTransactionTableInputsOutputs';
 
-const HeaderWrapper = styled.div<{ theme?: { theme: Theme } }>`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 10px;
-  border-radius: 4px;
-  margin-bottom: 10px;
-  background-color: ${props => props.theme?.theme === 'dark' ? 'transparent' : '#f5f5f5'};
-`;
-
-const HeaderItem = styled.div<{ theme?: { theme: Theme } }>`
-  display: flex;
-  flex-direction: column;
-  font-family: monospace;
-  color: ${props => props.theme?.theme === 'dark' ? '#ffffff' : '#000000'};
-
-  span:first-child {
-    font-weight: bold;
-    margin-bottom: 4px;
-  }
-
-  a {
-    color: ${props => props.theme?.theme === 'dark' ? '#ffffff' : '#000000'};
-    &:hover {
-      color: ${props => props.theme?.theme === 'dark' ? '#e87e4f' : '#b6420f'};
-    }
-  }
-`;
-
-const CopyButton = styled.span`
-  cursor: pointer;
-  color: #888;
-  font-size: 18px;
-  display: flex;
-  align-items: center;
-  flex-shrink: 0;
-  margin-right: 8px;
-  &:hover {
-    color: ${props => props.theme?.theme === 'dark' ? '#ffffff' : '#000000'};
-  }
-`;
-
-const CopyAlert = styled.div<{ theme?: { theme: Theme } }>`
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background-color: ${props => props.theme?.theme === 'dark' ? '#2a2a2a' : '#f5f5f5'};
-  padding: 8px 16px;
-  border-radius: 4px;
-  z-index: 1000;
-`;
-
-const TransactionHashContainer = styled.div`
-  display: flex;
-  align-items: center;
-`;
 
 interface BtcTransactionHeaderProps {
   txHash: string;
   blockHeight: number;
   date: string;
   fee: number;
-  theme?: { theme: Theme };
   isSmallScreen: boolean;
 }
 
-const BtcTransactionHeader: React.FC<BtcTransactionHeaderProps> = ({ 
-  txHash, 
-  blockHeight, 
-  date, 
-  fee, 
-  theme,
-  isSmallScreen 
+const BtcTransactionHeader: React.FC<BtcTransactionHeaderProps> = React.memo(({
+  txHash,
+  blockHeight,
+  date,
+  fee,
+  isSmallScreen
 }) => {
   const [copySuccess, setCopySuccess] = useState<boolean>(false);
   const [showCopyAlert, setShowCopyAlert] = useState<boolean>(false);
 
-  const copyToClipboard = (e: React.MouseEvent) => {
+  // Clean up timers on unmount
+  useEffect(() => {
+    let successTimer: NodeJS.Timeout;
+    let alertTimer: NodeJS.Timeout;
+
+    if (copySuccess) {
+      successTimer = setTimeout(() => setCopySuccess(false), 1000);
+    }
+    if (showCopyAlert) {
+      alertTimer = setTimeout(() => setShowCopyAlert(false), 1000);
+    }
+
+    return () => {
+      clearTimeout(successTimer);
+      clearTimeout(alertTimer);
+    };
+  }, [copySuccess, showCopyAlert]);
+
+  const copyToClipboard = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    
+
     navigator.clipboard.writeText(txHash)
       .then(() => {
         setCopySuccess(true);
         setShowCopyAlert(true);
-        setTimeout(() => setCopySuccess(false), 2000);
-        setTimeout(() => setShowCopyAlert(false), 2000);
       })
       .catch(err => {
         console.error('Failed to copy transaction hash: ', err);
       });
-  };
+  }, [txHash]);
 
   return (
-    <HeaderWrapper theme={theme} className="dark:bg-gray-800 dark:text-white">
-      <HeaderItem theme={theme} className="dark:text-white" style={{ fontFamily: 'monospace' }} >
-        <span>Transaction Hash:</span>
-        <TransactionHashContainer>
-          <CopyButton onClick={copyToClipboard} title="Copy transaction hash">
-            {copySuccess ? '✓' : '⧉'}
-          </CopyButton>
-          <Link to={`/home/block-explorer/transaction/${txHash}`} className="dark:text-white" style={{ fontFamily: 'monospace' }}>
-            {isSmallScreen ? truncateAddress(txHash) : txHash}
-          </Link>
-        </TransactionHashContainer>
-      </HeaderItem>
-      <HeaderItem theme={theme} className="dark:text-white" style={{fontFamily: 'monospace'}}>
-        <span>Block Height:</span>
-        <span className="dark:text-white" style={{ fontFamily: 'monospace' }}>{blockHeight.toLocaleString()}</span>
-      </HeaderItem>
-      <HeaderItem theme={theme} className="dark:text-white" style={{fontFamily: 'monospace'}}>
-        <span>Fee:</span>
-        <span className="dark:text-white" style={{ fontFamily: 'monospace' }}>{satsToBTC(fee).toFixed(8)} BTC</span>
-      </HeaderItem>
-      <HeaderItem theme={theme} className="dark:text-white" style={{fontFamily: 'monospace'}}>
-        <span>Date:</span>
-        <span>{date}</span>
-      </HeaderItem>
-      {showCopyAlert && <CopyAlert theme={theme}>Transaction hash copied</CopyAlert>}
-    </HeaderWrapper>
+    <div className={cn(
+      "flex justify-between items-center p-2.5 rounded mb-2.5",
+      "bg-gray-50 dark:bg-gray-800"
+    )}>
+      <div className="flex flex-col font-mono text-foreground text-sm">
+        <span className="font-bold mb-1">Transaction Hash:</span>
+        <div className="flex items-center">
+          <button
+            onClick={copyToClipboard}
+            title="Copy transaction hash"
+            className={cn(
+              "cursor-pointer text-gray-500 text-lg flex items-center flex-shrink-0 mr-2",
+              "hover:text-foreground transition-colors"
+            )}
+          >
+            {copySuccess ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
+          </button>
+          <TransactionLink
+            txid={txHash}
+            className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
+            truncate={isSmallScreen}
+          />
+        </div>
+      </div>
+      <div className="flex flex-col font-mono text-foreground text-sm">
+        <span className="font-bold mb-1">Block Height:</span>
+        <Link
+          to={`/home/block-explorer/block/${blockHeight}`}
+          className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
+        >
+          {blockHeight.toLocaleString()}
+        </Link>
+      </div>
+      <div className="flex flex-col font-mono text-foreground text-sm">
+        <span className="font-bold mb-1">Fee:</span>
+        <span className="text-foreground">{satsToBTC(fee).toFixed(8)} BTC</span>
+      </div>
+      <div className="flex flex-col font-mono text-foreground text-sm">
+        <span className="font-bold mb-1">Date:</span>
+        <span className="text-foreground">{date}</span>
+      </div>
+      {showCopyAlert && (
+        <div className={cn(
+          "fixed top-4 left-1/2 -translate-x-1/2",
+          "bg-orange-500 text-white px-8 py-4 rounded-md shadow-lg z-[1000]",
+          "text-lg animate-fadeIn"
+        )}>
+          Transaction hash copied
+        </div>
+      )}
+    </div>
   );
-};
+});
+
+BtcTransactionHeader.displayName = 'BtcTransactionHeader';
 
 interface BtcTransactionTableProps {
   transaction: BtcTransaction;
-  theme?: { theme: Theme };
 }
 
-const BtcTransactionTable: React.FC<BtcTransactionTableProps> = ({ transaction, theme }) => {
+const BtcTransactionTable: React.FC<BtcTransactionTableProps> = ({ transaction }) => {
   const { width } = useWindowSize();
 
-  if (!transaction) return null;
   const isSmallScreen = width < 1080;
 
+  // Memoize date formatting
+  const formattedDate = useMemo(
+    () => transaction ? new Date(transaction.timestamp * 1000).toLocaleString() : '',
+    [transaction]
+  );
+
+  if (!transaction) return null;
+
   return (
-    <BsBlock>
+    <BsBlock className="relative">
       <BtcTransactionHeader
         txHash={transaction.txid}
         blockHeight={transaction.block}
         fee={transaction.fee_amt}
-        date={new Date(transaction.timestamp * 1000).toLocaleString()}
-        theme={theme}
+        date={formattedDate}
         isSmallScreen={isSmallScreen}
       />
 

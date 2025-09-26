@@ -1752,8 +1752,6 @@ export const NetworkGraph = forwardRef<NetworkGraphHandle, NetworkGraphProps>(({
     }
   };
 
-
-
   return (
     <>
       <canvas
@@ -1764,10 +1762,6 @@ export const NetworkGraph = forwardRef<NetworkGraphHandle, NetworkGraphProps>(({
         onPointerUp={onPointerUp}
         onDoubleClick={onDoubleClick}
       />
-      
-
     </>
   );
 });
-
-

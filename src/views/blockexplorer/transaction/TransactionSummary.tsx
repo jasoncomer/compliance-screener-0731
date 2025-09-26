@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 
 import { 
   ArrowLeftRight,
@@ -20,7 +20,7 @@ interface TransactionSummaryProps {
   onCopyClick: (e: React.MouseEvent) => void;
 }
 
-const TransactionSummary: React.FC<TransactionSummaryProps> = ({
+const TransactionSummary: React.FC<TransactionSummaryProps> = React.memo(({
   transaction,
   copySuccess,
   onCopyClick
@@ -29,14 +29,14 @@ const TransactionSummary: React.FC<TransactionSummaryProps> = ({
   const outputAmount = transaction.output_amt || 0;
   const fee = inputAmount - outputAmount;
 
-  const truncateHash = (hash: string) => {
-    if (!hash) return '';
-    return `${hash.slice(0, 8)}...${hash.slice(-8)}`;
-  };
+  const truncatedHash = useMemo(() => {
+    if (!transaction.txid) return '';
+    return `${transaction.txid.slice(0, 8)}...${transaction.txid.slice(-8)}`;
+  }, [transaction.txid]);
 
-  const formatTimestamp = (timestamp: number) => {
-    return new Date(timestamp * 1000).toLocaleString();
-  };
+  const formattedTimestamp = useMemo(() => {
+    return new Date(transaction.timestamp * 1000).toLocaleString();
+  }, [transaction.timestamp]);
 
   const getTransactionTypeIcon = () => {
     if (transaction.coinbase) {
@@ -78,7 +78,7 @@ const TransactionSummary: React.FC<TransactionSummaryProps> = ({
                 {copySuccess ? <CheckCircle className="w-3 h-3 text-green-600" /> : <Copy className="w-3 h-3 text-gray-500" />}
               </button>
             </div>
-            <div className="text-lg font-bold break-all mb-1 font-mono">{truncateHash(transaction.txid)}</div>
+            <div className="text-lg font-bold break-all mb-1 font-mono">{truncatedHash}</div>
             
             {/* Transaction Type */}
             <div className="mb-1 p-1 bg-orange-50 dark:bg-orange-900/20 rounded border border-orange-200 dark:border-orange-800">
@@ -138,7 +138,7 @@ const TransactionSummary: React.FC<TransactionSummaryProps> = ({
               </div>
               <div className="flex justify-between items-center p-1 bg-gray-50 dark:bg-background rounded">
                 <span className="text-gray-600 dark:text-gray-300 text-xs">Timestamp</span>
-                <span className="font-bold text-xs">{formatTimestamp(transaction.timestamp)}</span>
+                <span className="font-bold text-xs">{formattedTimestamp}</span>
               </div>
               <div className="flex justify-between items-center p-1 bg-gray-50 dark:bg-background rounded">
                 <span className="text-gray-600 dark:text-gray-300 text-xs">Inputs</span>
@@ -185,6 +185,8 @@ const TransactionSummary: React.FC<TransactionSummaryProps> = ({
       </div>
     </div>
   );
-};
+});
+
+TransactionSummary.displayName = 'TransactionSummary';
 
 export default TransactionSummary;

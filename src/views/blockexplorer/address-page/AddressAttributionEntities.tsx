@@ -10,13 +10,9 @@ import { useAppSelector } from '../../../store/hooks';
 import { selectCurrentOrganization } from '../../../store/slices/organizationsSlice';
 import { RootState } from '../../../store/store';
 import { EEntityType } from '../../../typings/SOT';
-import { capitalizeFirstLetter,getEntityTypeLabel } from '../../../utils/display-labels';
+import { capitalizeFirstLetter, getEntityTypeLabel } from '../../../utils/display-labels';
 
-import {
-  EntitiesContainer,
-  EntityInfo,
-  EntityRow,
-} from './AddressStyles';
+// Removed AddressStyles import - using inline styles
 
 interface AddressAttributionEntitiesProps {
   address: string | undefined;
@@ -37,16 +33,16 @@ const AddressAttributionEntities: React.FC<AddressAttributionEntitiesProps> = ({
   // Function to get the display name for an entity
   const getEntityDisplayName = (entityId: string) => {
     if (!entityId) return '';
-    
+
     // Get the entity from the SOT data
     const entity = Object.values(itemsMap).find(sot => sot.entity_id === entityId);
-    
+
     // If allowCSAM is false and the entity is CSAM-related, show "CSAM Related Entity"
-    if (organization?.settings.allowCSAM === false && 
-        (entity?.entity_type === "csam" || entityId.toLowerCase().includes('csam'))) {
+    if (organization?.settings.allowCSAM === false &&
+      (entity?.entity_type === "csam" || entityId.toLowerCase().includes('csam'))) {
       return 'CSAM Related Entity';
     }
-    
+
     // Return proper_name if available, otherwise entity_id
     return entity?.proper_name || entityId;
   };
@@ -78,24 +74,24 @@ const AddressAttributionEntities: React.FC<AddressAttributionEntitiesProps> = ({
     // The EntityQuickView component handles the quick view display
   };
 
-    // Render entity with hover functionality
+  // Render entity with hover functionality
   const renderEntityWithHover = (entityId: string, label: string, defaultType?: string) => {
     const sot = getEntitySot(entityId);
     const displayName = getEntityDisplayName(entityId);
     const entityType = getEntityType(entityId) || defaultType || '';
-    
+
     return (
-      <EntityRow>
+      <div className="flex gap flex-1 min-w-0">
         <SimpleLogo
           entityId={entityId}
           entityType={entityType}
           size="default"
           shape="circle"
         />
-        <EntityInfo>
+        <div className="flex gap-12 items-start">
           <div className="field-group">
             <div className='label'>{capitalizeFirstLetter(label)}</div>
-            <div className="entity-name" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div className="entity-name flex items-center gap-2">
               <span>{displayName}</span>
               {sot && (
                 <EntityQuickView
@@ -119,8 +115,8 @@ const AddressAttributionEntities: React.FC<AddressAttributionEntitiesProps> = ({
               {entityType}
             </div>
           </div>
-        </EntityInfo>
-      </EntityRow>
+        </div>
+      </div>
     );
   };
 
@@ -129,46 +125,25 @@ const AddressAttributionEntities: React.FC<AddressAttributionEntitiesProps> = ({
   }
 
   return (
-    <EntitiesContainer>
+    <>
       {attributions[address]?.entity && (
-        <Card
-          className={cn(
-            "flex-1 mr-2 h-fit max-h-[120px] rounded-lg border-0 p-3",
-            "bg-gray-100 dark:bg-gray-900"
-          )}
-        >
-          <div className="!bg-transparent dark:!bg-transparent !p-0 !mb-0">
-            {renderEntityWithHover(attributions[address].entity, 'Entity')}
-          </div>
+        <Card className={cn("flex-1 h-fit max-h-[120px] rounded-lg border-0 p-3 bg-gray-100 dark:bg-gray-900")}>
+          {renderEntityWithHover(attributions[address].entity, 'Entity')}
         </Card>
       )}
 
       {attributions[address]?.bo && (attributions[address]?.bo !== attributions[address]?.entity) && (
-        <Card
-          className={cn(
-            "flex-1 ml-2 h-fit max-h-[120px] rounded-lg border-0 p-3",
-            "bg-gray-100 dark:bg-gray-900"
-          )}
-        >
-          <div className="!bg-transparent dark:!bg-transparent !p-0 !mb-0">
-            {renderEntityWithHover(attributions[address].bo, 'Beneficial Owner')}
-          </div>
+        <Card className={cn("flex-1 h-fit max-h-[120px] rounded-lg border-0 p-3 bg-gray-100 dark:bg-gray-900")}>
+          {renderEntityWithHover(attributions[address].bo, 'Beneficial Owner')}
         </Card>
       )}
 
       {attributions[address]?.custodian && (
-        <Card
-          className={cn(
-            "flex-1 ml-2 h-fit max-h-[120px] rounded-lg border-0 p-3",
-            "bg-gray-100 dark:bg-gray-900"
-          )}
-        >
-          <div className="!bg-transparent dark:!bg-transparent !p-0 !mb-0">
-            {renderEntityWithHover(attributions[address].custodian, 'Custodian', 'Custodian')}
-          </div>
+        <Card className={cn("flex-1 h-fit max-h-[120px] rounded-lg border-0 p-3 bg-gray-100 dark:bg-gray-900")}>
+          {renderEntityWithHover(attributions[address].custodian, 'Custodian', 'Custodian')}
         </Card>
       )}
-    </EntitiesContainer>
+    </>
   );
 };
 

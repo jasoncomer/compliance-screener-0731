@@ -52,11 +52,29 @@ export function generateUTXOKey(input: UTXOKeyGenerationInput): string {
   // Determine index (input or output)
   const index = originalInputIndex ?? originalOutputIndex ?? 0;
   
+  // Check if this is a coinbase transaction (mining reward)
+  // Only treat as coinbase if inputs is explicitly an empty array or contains the coinbase marker
+  const isCoinbase = (inputs !== undefined && inputs.length === 0) ||
+                     (inputs !== undefined && inputs.some(input => input.intxid_n === 0xffffffff));
+
   // Determine source and destination addresses
   let normalizedSourceAddress: string;
   let normalizedDestinationAddress: string;
-  
-  if (sourceAddress && destinationAddress) {
+
+  if (isCoinbase) {
+    // Coinbase transactions have no source address (it's newly minted bitcoin)
+    normalizedSourceAddress = 'coinbase';
+    // For coinbase, the destination could be specified or extracted from outputs
+    if (destinationAddress) {
+      normalizedDestinationAddress = normalizeAddress(destinationAddress, inputs, outputs, txHash);
+    } else if (address) {
+      normalizedDestinationAddress = normalizeAddress(address, inputs, outputs, txHash);
+    } else if (outputs && outputs[0]?.addr) {
+      normalizedDestinationAddress = normalizeAddress(outputs[0].addr, inputs, outputs, txHash);
+    } else {
+      normalizedDestinationAddress = 'coinbase';
+    }
+  } else if (sourceAddress && destinationAddress) {
     // New format: explicit source and destination
     normalizedSourceAddress = normalizeAddress(sourceAddress, inputs, outputs, txHash);
     normalizedDestinationAddress = normalizeAddress(destinationAddress, inputs, outputs, txHash);
@@ -66,7 +84,7 @@ export function generateUTXOKey(input: UTXOKeyGenerationInput): string {
     normalizedSourceAddress = normalizedAddress;
     normalizedDestinationAddress = normalizedAddress;
   } else {
-    throw new Error('Either address (legacy) or both sourceAddress and destinationAddress are required');
+    throw new Error('Address is required for UTXO key generation');
   }
   
   // Normalize amount
@@ -108,23 +126,32 @@ function normalizeAddress(
  * Normalizes amount for UTXO key generation
  */
 function normalizeAmount(
-  amount?: string | number, 
-  inputs?: Array<{ amt?: number }>, 
+  amount?: string | number,
+  inputs?: Array<{ amt?: number }>,
   outputs?: Array<{ amt?: number }>
 ): string {
-  if (amount !== undefined && amount !== null) {
-    return Number(amount).toFixed(8);
+  // First check if amount is provided directly
+  if (amount !== undefined && amount !== null && amount !== '') {
+    const numAmount = Number(amount);
+    if (isNaN(numAmount) || numAmount < 0) {
+      throw new Error('Invalid amount for UTXO key generation');
+    }
+    return numAmount.toFixed(8);
   }
-  
+
+  // Check inputs/outputs for satoshi amounts
   const inputAmount = inputs?.[0]?.amt;
   const outputAmount = outputs?.[0]?.amt;
-  const utxoAmount = inputAmount || outputAmount;
-  
-  if (utxoAmount !== undefined) {
-    return Number(utxoAmount).toFixed(8);
+  const utxoAmount = inputAmount ?? outputAmount;
+
+  if (utxoAmount !== undefined && utxoAmount !== null) {
+    // Convert satoshis to BTC (divide by 100,000,000)
+    const btcAmount = utxoAmount / 100000000;
+    return btcAmount.toFixed(8);
   }
-  
-  return '0.00000000';
+
+  // No amount found
+  throw new Error('Amount is required for UTXO key generation');
 }
 
 /**
@@ -272,11 +299,16 @@ export function validateUTXOKey(utxoKey: string): boolean {
       return false;
     }
     
-    // Validate amount (should be a valid number)
+    // Validate amount (should be a valid number with 8 decimal places)
     if (isNaN(parseFloat(amount))) {
       return false;
     }
-    
+
+    // Check if amount has exactly 8 decimal places
+    if (!amount.match(/^\d+\.\d{8}$/)) {
+      return false;
+    }
+
     return true;
   }
   
@@ -299,11 +331,16 @@ export function validateUTXOKey(utxoKey: string): boolean {
       return false;
     }
     
-    // Validate amount
+    // Validate amount (should be a valid number with 8 decimal places)
     if (isNaN(parseFloat(amount))) {
       return false;
     }
-    
+
+    // Check if amount has exactly 8 decimal places
+    if (!amount.match(/^\d+\.\d{8}$/)) {
+      return false;
+    }
+
     return true;
   }
   
@@ -330,6 +367,8 @@ export function matchUTXOKey(key1: string, key2: string): boolean {
     if (parts1.length === 5 && parts2.length === 5) {
       return parts1[0] === parts2[0] && // txHash
              parts1[1] === parts2[1] && // index
+             parts1[2] === parts2[2] && // sourceAddress
+             parts1[3] === parts2[3] && // destAddress
              parts1[4] === parts2[4];   // amount
     }
     
@@ -337,6 +376,7 @@ export function matchUTXOKey(key1: string, key2: string): boolean {
     if (parts1.length === 4 && parts2.length === 4) {
       return parts1[0] === parts2[0] && // txHash
              parts1[1] === parts2[1] && // index
+             parts1[2] === parts2[2] && // address
              parts1[3] === parts2[3];   // amount
     }
     

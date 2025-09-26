@@ -347,7 +347,7 @@ const EntityQuickView: React.FC<EntityQuickViewProps> = ({
         onMouseEnter={handleButtonMouseEnter}
         onMouseLeave={handleButtonMouseLeave}
       >
-        <Eye className="h-4 w-4" />
+        <Eye className="h-4 w-4 text-gray-500 dark:text-gray-400" />
       </button>
       {/* Render popover using React Portal to escape modal context */}
       {typeof document !== 'undefined' && ReactDOM.createPortal(popoverContent, document.body)}

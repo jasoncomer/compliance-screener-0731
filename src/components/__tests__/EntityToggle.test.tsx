@@ -1,24 +1,25 @@
 import { fireEvent,render, screen } from '@testing-library/react';
+import { vi, describe, it, beforeEach, expect } from 'vitest';
 
 import '@testing-library/jest-dom';
 
 import EntityToggle from '../EntityToggle';
 
 // Mock the theme context
-jest.mock('../context/ThemeContext', () => ({
+vi.mock('../context/ThemeContext', () => ({
   useTheme: () => ({ theme: 'light' })
 }));
 
 describe('EntityToggle', () => {
   const defaultProps = {
     isBeneficialOwner: false,
-    onToggle: jest.fn(),
+    onToggle: vi.fn(),
     custodialEntityName: 'Custodial Entity',
     beneficialOwnerName: 'Beneficial Owner'
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('renders with correct initial state', () => {
@@ -38,7 +39,7 @@ describe('EntityToggle', () => {
   });
 
   it('calls onToggle when switch is clicked', () => {
-    const onToggle = jest.fn();
+    const onToggle = vi.fn();
     render(<EntityToggle {...defaultProps} onToggle={onToggle} />);
     
     const switchElement = screen.getByRole('switch');

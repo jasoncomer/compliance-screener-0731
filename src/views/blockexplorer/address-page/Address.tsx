@@ -1,25 +1,25 @@
-import React, { useEffect } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef } from 'react';
 
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 
-import { api } from '../../../api/api';
-import { calculateRiskScore } from '../../../api/riskScoring';
 import Pagination from '../../../components/common/Pagination';
+import { AddressLoader } from '../../../components/ui/blockchain-loader';
 import { useAttribution } from '../../../context/AttributionContext';
 import { useToast } from '../../../hooks/use-toast';
+import { useAddress } from '../../../hooks/useAddress';
+import { useAddressBlockStats } from '../../../hooks/useAddressBlockStats';
+import { useAddressSummary } from '../../../hooks/useAddressSummary';
+import { useAddressTransactions } from '../../../hooks/useAddressTransactions';
+import { useRiskScore } from '../../../hooks/useRiskScore';
 import { flowtraceService } from '../../../services/flowtraceService';
 import { useAppDispatch, useAppSelector } from '../../../store/hooks';
 import { fetchSOT } from '../../../store/slices/sotSlice';
 import { RootState } from '../../../store/store';
-import { BsBlock } from '../../../styles/Table';
-import { IBtcAddress } from '../../../typings/BtcAddress';
 import { BtcTransaction } from '../../../typings/BtcTransaction';
-import { RiskScoringResponse } from '../../../typings/riskScoring';
 import { getTagColor } from '../../../utils/tag-colors';
 import RiskScoreModal from '../../RiskDashboard/components/risk-analysis/RiskScoreModal';
 import BtcTransactionTable from '../transaction/BtcTransactionTable';
 
-import AddressLoading from './AddressLoading';
 import AddressNotFound from './AddressNotFound';
 import AddressSummary from './AddressSummary';
 
@@ -29,282 +29,199 @@ const Address: React.FC = () => {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const { toast } = useToast();
-  const [addrData, setAddrData] = React.useState<IBtcAddress>();
-  const [txs, setTxs] = React.useState<BtcTransaction[]>([]);
-  const [totalTxs, setTotalTxs] = React.useState<number>(0);
+
+  // UI State
   const [currentPage, setCurrentPage] = React.useState<number>(1);
-  const [isLoading, setIsLoading] = React.useState<boolean>(false);
-  const [isLoadingAddressData, setIsLoadingAddressData] = React.useState<boolean>(false);
-  const [isLoadingRiskScore, setIsLoadingRiskScore] = React.useState<boolean>(false);
   const [copySuccess, setCopySuccess] = React.useState<boolean>(false);
-  const copyTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
-  const [riskScore, setRiskScore] = React.useState<RiskScoringResponse | null>(null);
+  const copyTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [isRiskModalVisible, setIsRiskModalVisible] = React.useState<boolean>(false);
-  const [addressNotFound, setAddressNotFound] = React.useState<boolean>(false);
-  
+  const [dateFilteredTxs, setDateFilteredTxs] = React.useState<BtcTransaction[]>([]);
+  const [dateFilteredTotal, setDateFilteredTotal] = React.useState<number>(0);
+
   // Get date filter from URL parameters
   const dateFilter = searchParams.get('date');
-
   const itemsPerPage = 20;
+
+  // Context and Redux
   const { fetchAttributions, attributions } = useAttribution();
   const { itemsMap } = useAppSelector((state: RootState) => state.sot);
 
-  const [summary, setSummary] = React.useState<{
-    balance: number;
-    total_received: number;
-    total_spent: number;
-  }>({
-    balance: 0,
-    total_received: 0,
-    total_spent: 0
-  });
-  const [blockStats, setBlockStats] = React.useState<{
-    totalBlocks: number;
-    firstBlock: {
-      blockNumber: number;
-      transactionCount: number;
-      totalValue: number;
-    } | null;
-    lastBlock: {
-      blockNumber: number;
-      transactionCount: number;
-      totalValue: number;
-    } | null;
-  }>({
-    totalBlocks: 0,
-    firstBlock: null,
-    lastBlock: null
-  });
+  // React Query Hooks
+  const { data: addrData, isLoading: isLoadingAddress, error: addressError } = useAddress(address || '');
+  const { data: blockStats } = useAddressBlockStats(address || '');
+  const { data: summary } = useAddressSummary(address || '');
+  const {
+    data: transactionsData,
+    isLoading: isLoadingTransactions
+  } = useAddressTransactions(address || '', currentPage, itemsPerPage);
+  const { riskScore, isLoading: isLoadingRiskScore } = useRiskScore(address || '');
+
+  // Calculate derived values with memoization to fix ESLint warning
+  const txs = useMemo(
+    () => dateFilter ? dateFilteredTxs : (transactionsData?.txs || []),
+    [dateFilter, dateFilteredTxs, transactionsData?.txs]
+  );
+  const totalTxs = dateFilter ? dateFilteredTotal : (transactionsData?.pagination?.totalTxs || 0);
   const totalPages = Math.ceil(totalTxs / itemsPerPage);
 
-  useEffect(() => {
-    // Fetch SOT data when component mounts
-    dispatch(fetchSOT());
+  // Check for address not found
+  const addressNotFound = !isLoadingAddress && (addressError || (!addrData && address));
 
-    // Cleanup function for unmount
-    return () => {
-      // Clear copy timeout if component unmounts
-      if (copyTimeoutRef.current) {
-        clearTimeout(copyTimeoutRef.current);
-      }
-    };
+  // Show initial loading only while fetching critical address data
+  const showInitialLoader = isLoadingAddress && !addrData;
+
+  // Fetch SOT data when component mounts
+  useEffect(() => {
+    dispatch(fetchSOT());
   }, [dispatch]);
 
+  // Cleanup copy timeout on unmount or address change
   useEffect(() => {
-    const getAddressStats = async () => {
-      if (!address) return;
-      const blockStatsData = await api.blockchain.getAddressBlockStats(address);
-      setBlockStats(blockStatsData);
-    };
-    
-    const fetchAddress = async () => {
-      try {
-        if (!address) return;
-        setIsLoading(true);
-        setIsLoadingAddressData(true);
-        setAddressNotFound(false);
-        
-        // First try to get address data to check if address exists
-        const { data } = await api.blockchain.getAddress(address);
-        
-        // Check if we got valid address data
-        if (!data || !data.addr) {
-          setAddressNotFound(true);
-          return;
-        }
-        
-        setAddrData(data);
-        
-        // Try to get address stats, but don't fail if it doesn't exist
-        try {
-          await getAddressStats();
-        } catch (statsError) {
-          console.error('Error fetching address stats:', statsError);
-          // Don't throw here, just log the error and continue
-        }
-        
-        let txs: BtcTransaction[] = [];
-        let pagination: { totalTxs: number; totalPages: number; currentPage: number; limit: number };
-        
-        if (dateFilter) {
-          // If date filter is applied, fetch all transactions to find all for that date
-          const allTransactionsResponse = await flowtraceService.fetchAllTransactions(address, 1000);
-          txs = allTransactionsResponse.txs || [];
-          pagination = {
-            totalTxs: allTransactionsResponse.total || txs.length,
-            totalPages: 1,
-            currentPage: 1,
-            limit: txs.length
-          };
-        } else {
-          // Normal pagination for regular view
-          const response = await api.blockchain.getAddressTransactions(address, {
-            page: currentPage,
-            limit: itemsPerPage
-          });
-          txs = response.txs;
-          pagination = response.pagination;
-        }
-        
-        // Filter transactions by date if date filter is provided
-        let filteredTxs = txs;
-        let filteredTotalTxs = pagination.totalTxs;
-        
-        if (dateFilter) {
-          // Parse the date filter in local timezone to avoid timezone shift
-          const [year, month, day] = dateFilter.split('-').map(Number);
-          const filterDate = new Date(year, month - 1, day); // month is 0-indexed
-          
-          filteredTxs = txs.filter(tx => {
-            const txDate = new Date(tx.timestamp * 1000);
-            const txDateLocal = new Date(txDate.getFullYear(), txDate.getMonth(), txDate.getDate());
-            
-            const isInRange = txDateLocal.getTime() === filterDate.getTime();
-            
-            return isInRange;
-          });
-          filteredTotalTxs = filteredTxs.length;
-        }
-        
-        setTxs(filteredTxs);
-        setTotalTxs(filteredTotalTxs);
-        const uniqueAddresses = new Set([
-          address,
-          ...txs.flatMap(tx => tx.inputs.map(i => i.addr)),
-          ...txs.flatMap(tx => tx.outputs.map(o => o.addr))
-        ]);
-        fetchAttributions(Array.from(uniqueAddresses));
-
-        // get total received and spent and balance
-        try {
-          const tmpSummary = await api.blockchain.getAddressSummary(address);
-          if (tmpSummary) {
-            setSummary({
-              balance: tmpSummary.balance || 0,
-              total_received: tmpSummary.total_received || 0,
-              total_spent: tmpSummary.total_spent || 0
-            });
-          }
-        } catch (summaryError) {
-          console.error('Error fetching address summary:', summaryError);
-          // Set default values if summary fails
-          setSummary({
-            balance: 0,
-            total_received: 0,
-            total_spent: 0
-          });
-        }
-      } catch (error: any) {
-        console.error('Error fetching address data:', error);
-        
-        // Check if it's a 404 or address not found error
-        if (error?.response?.status === 404 || 
-            error?.response?.data?.message?.toLowerCase().includes('not found') ||
-            error?.response?.data?.message?.toLowerCase().includes('address not found') ||
-            error?.message?.toLowerCase().includes('cannot read properties of undefined') ||
-            error?.message?.toLowerCase().includes('balance')) {
-          setAddressNotFound(true);
-        }
-      } finally {
-        setIsLoadingAddressData(false);
+    return () => {
+      if (copyTimeoutRef.current) {
+        clearTimeout(copyTimeoutRef.current);
+        copyTimeoutRef.current = null;
       }
     };
+  }, [address]);
 
-    fetchAddress();
-  }, [address, currentPage, fetchAttributions, dateFilter]);
-
+  // Handle date filtering
   useEffect(() => {
-    const fetchRiskScore = async () => {
-      if (!address) return;
+    const fetchDateFilteredTransactions = async () => {
+      if (!address || !dateFilter) {
+        setDateFilteredTxs([]);
+        setDateFilteredTotal(0);
+        return;
+      }
+
       try {
-        setIsLoadingRiskScore(true);
-        const scores = await calculateRiskScore(address, 'address');
-        
-        // Apply BO override logic if attribution data is available
-        if (attributions[address] && Object.keys(itemsMap).length > 0) {
-          const attribution = attributions[address];
-          
-          if (attribution.bo && attribution.bo !== attribution.entity) {
-            const entitySOT = itemsMap[attribution.entity];
-            const beneficialOwnerSOT = itemsMap[attribution.bo];
-            
-            if (beneficialOwnerSOT) {
-              // Import the BO override function
-              const { applyBeneficialOwnerOverride } = await import('../../../utils/entityUtils');
-              
-              // Apply BO override logic
-              const override = applyBeneficialOwnerOverride(
-                {
-                  entity: attribution.entity,
-                  bo: attribution.bo || '',
-                  custodian: attribution.custodian || '',
-                  script_type: attribution.script_type
-                },
-                entitySOT,
-                beneficialOwnerSOT,
-                scores.riskScores,
-                address
-              );
-              
-              // Update the risk score with BO override
-              if (override.riskScore !== undefined) {
-                scores.overallRisk = override.riskScore / 100; // Convert back to 0-1 range
-              }
-              
-              // Add BO information to the response for display
-              scores.boInfo = {
-                entityName: override.entityName,
-                entityType: override.entityType,
-                entityTags: override.entityTags,
-                ofac: override.ofac,
-                isBeneficialOwnerOverride: override.isBeneficialOwnerOverride
-              };
-            }
-          }
-        }
-        
-        setRiskScore(scores);
+        // Fetch all transactions for date filtering
+        const allTransactionsResponse = await flowtraceService.fetchAllTransactions(address, 1000);
+        const allTxs = allTransactionsResponse.txs || [];
+
+        // Parse date in UTC to ensure consistent filtering
+        const [year, month, day] = dateFilter.split('-').map(Number);
+        const startOfDay = new Date(Date.UTC(year, month - 1, day, 0, 0, 0));
+        const endOfDay = new Date(Date.UTC(year, month - 1, day, 23, 59, 59));
+
+        const filtered = allTxs.filter(tx => {
+          const txTime = tx.timestamp * 1000;
+          return txTime >= startOfDay.getTime() && txTime <= endOfDay.getTime();
+        });
+
+        setDateFilteredTxs(filtered);
+        setDateFilteredTotal(filtered.length);
       } catch (error) {
-        console.error('Error fetching risk score:', error);
-      } finally {
-        setIsLoadingRiskScore(false);
-        // Only set main loading to false when both address data and risk score are complete
-        setIsLoading(false);
+        console.error('Error fetching date-filtered transactions:', error);
+        setDateFilteredTxs([]);
+        setDateFilteredTotal(0);
       }
     };
 
-    // Only fetch risk score when address, attributions, and itemsMap are available
-    if (address && Object.keys(attributions).length > 0 && Object.keys(itemsMap).length > 0) {
-      fetchRiskScore();
-    } else if (address && !isLoadingAddressData) {
-      // If we can't fetch risk score but address data is loaded, set loading to false
-      setIsLoading(false);
+    if (dateFilter) {
+      fetchDateFilteredTransactions();
     }
-  }, [address, attributions, itemsMap]);
+  }, [address, dateFilter]);
 
-  // Handle case where address data is loaded but risk score can't be fetched
+  // Fetch attributions for visible transactions only
   useEffect(() => {
-    if (address && !isLoadingAddressData && !isLoadingRiskScore && 
-        (Object.keys(attributions).length === 0 || Object.keys(itemsMap).length === 0)) {
-      setIsLoading(false);
-    }
-  }, [address, isLoadingAddressData, isLoadingRiskScore, attributions, itemsMap]);
+    if (!address || txs.length === 0) return;
 
-  const handlePageChange = (newPage: number) => {
+    // Only fetch attributions for addresses visible on current page
+    const visibleAddresses = new Set<string>();
+
+    // Add current address
+    if (address) visibleAddresses.add(address);
+
+    // Add addresses from visible transactions (limit to current page)
+    const pageTransactions = txs.slice(0, itemsPerPage);
+    pageTransactions.forEach(tx => {
+      tx.inputs.forEach(input => {
+        if (input.addr) visibleAddresses.add(input.addr);
+      });
+      tx.outputs.forEach(output => {
+        if (output.addr) visibleAddresses.add(output.addr);
+      });
+    });
+
+    fetchAttributions(Array.from(visibleAddresses));
+  }, [address, txs, fetchAttributions]);
+
+  // Apply BO override to risk score if needed
+  const getRiskScoreWithOverride = useCallback(async () => {
+    if (!riskScore || !address || !attributions[address] || Object.keys(itemsMap).length === 0) {
+      return riskScore;
+    }
+
+    const attribution = attributions[address];
+    if (!attribution.bo || attribution.bo === attribution.entity) {
+      return riskScore;
+    }
+
+    const entitySOT = itemsMap[attribution.entity];
+    const beneficialOwnerSOT = itemsMap[attribution.bo];
+
+    if (!beneficialOwnerSOT) {
+      return riskScore;
+    }
+
+    try {
+      const { applyBeneficialOwnerOverride } = await import('../../../utils/entityUtils');
+
+      const override = applyBeneficialOwnerOverride(
+        {
+          entity: attribution.entity,
+          bo: attribution.bo || '',
+          custodian: attribution.custodian || '',
+          script_type: attribution.script_type
+        },
+        entitySOT,
+        beneficialOwnerSOT,
+        riskScore.riskScores,
+        address
+      );
+
+      const updatedScore = { ...riskScore };
+      if (override.riskScore !== undefined) {
+        updatedScore.overallRisk = override.riskScore / 100;
+      }
+
+      updatedScore.boInfo = {
+        entityName: override.entityName,
+        entityType: override.entityType,
+        entityTags: override.entityTags,
+        ofac: override.ofac,
+        isBeneficialOwnerOverride: override.isBeneficialOwnerOverride
+      };
+
+      return updatedScore;
+    } catch (error) {
+      console.error('Error applying BO override:', error);
+      return riskScore;
+    }
+  }, [riskScore, address, attributions, itemsMap]);
+
+  // Use the processed risk score with BO override
+  const [processedRiskScore, setProcessedRiskScore] = React.useState(riskScore);
+
+  useEffect(() => {
+    getRiskScoreWithOverride().then(setProcessedRiskScore);
+  }, [getRiskScoreWithOverride]);
+
+  const handlePageChange = useCallback((newPage: number) => {
     if (newPage >= 1 && newPage <= totalPages) {
       setCurrentPage(newPage);
     }
-  };
+  }, [totalPages]);
 
-  const handleRiskScoreClick = () => {
+  const handleRiskScoreClick = useCallback(() => {
     setIsRiskModalVisible(true);
-  };
+  }, []);
 
-  // Function to get entity tags
-  const getEntityTags = (entityId: string): string[] => {
+  // Memoized function to get entity tags
+  const getEntityTags = useCallback((entityId: string): string[] => {
     if (!entityId) return [];
     const entity = Object.values(itemsMap).find(sot => sot.entity_id === entityId);
-    // Combine all entity tag fields
     const tags: string[] = [];
     for (let i = 1; i <= 5; i++) {
       const tag = entity?.[`entity_tag${i}` as keyof typeof entity];
@@ -313,9 +230,9 @@ const Address: React.FC = () => {
       }
     }
     return tags;
-  };
+  }, [itemsMap]);
 
-  const copyToClipboard = (e: React.MouseEvent) => {
+  const copyToClipboard = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     if (!address) return;
@@ -323,6 +240,7 @@ const Address: React.FC = () => {
     // Clear any existing timeout
     if (copyTimeoutRef.current) {
       clearTimeout(copyTimeoutRef.current);
+      copyTimeoutRef.current = null;
     }
 
     navigator.clipboard.writeText(address)
@@ -345,23 +263,24 @@ const Address: React.FC = () => {
           variant: "destructive",
         });
       });
-  };
+  }, [address, toast]);
 
-  const formatDateFilter = (dateString: string): string => {
-    const [year, month, day] = dateString.split('-').map(Number);
-    const filterDate = new Date(year, month - 1, day);
+  const formatDateFilter = useMemo(() => {
+    if (!dateFilter) return '';
+    const [year, month, day] = dateFilter.split('-').map(Number);
+    const filterDate = new Date(Date.UTC(year, month - 1, day));
     return filterDate.toLocaleDateString('en-US', {
       weekday: 'long',
       year: 'numeric',
       month: 'long',
-      day: 'numeric'
+      day: 'numeric',
+      timeZone: 'UTC'
     });
-  };
+  }, [dateFilter]);
 
-  const clearDateFilter = () => {
-    // Navigate to the same route without the date parameter
+  const clearDateFilter = useCallback(() => {
     navigate(`/blockchain/address/${address}`, { replace: true });
-  };
+  }, [navigate, address]);
 
   const renderDateFilterIndicator = () => {
     if (!dateFilter) return null;
@@ -374,7 +293,7 @@ const Address: React.FC = () => {
               Filtered by date:
             </span>
             <span className="text-sm text-blue-600 dark:text-blue-400">
-              {formatDateFilter(dateFilter)}
+              {formatDateFilter}
             </span>
           </div>
           <button
@@ -388,9 +307,13 @@ const Address: React.FC = () => {
     );
   };
 
-  // Show loading state while fetching data
-  if (isLoading) {
-    return <AddressLoading address={address || ''} />;
+  // Show loading state only for initial address fetch
+  if (showInitialLoader) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <AddressLoader address={address || ''} />
+      </div>
+    );
   }
 
   // Show not found state if address was not found
@@ -402,10 +325,22 @@ const Address: React.FC = () => {
     <div className="flex flex-col w-full">
       <AddressSummary
         address={address}
-        summary={summary}
-        blockStats={blockStats}
+        summary={summary ? {
+          balance: summary.balance || 0,
+          total_received: summary.total_received || 0,
+          total_spent: summary.total_spent || 0
+        } : {
+          balance: 0,
+          total_received: 0,
+          total_spent: 0
+        }}
+        blockStats={blockStats || {
+          totalBlocks: 0,
+          firstBlock: null,
+          lastBlock: null
+        }}
         addrData={addrData}
-        riskScore={riskScore}
+        riskScore={processedRiskScore || riskScore}
         isLoadingRiskScore={isLoadingRiskScore}
         onRiskScoreClick={handleRiskScoreClick}
         copySuccess={copySuccess}
@@ -420,31 +355,47 @@ const Address: React.FC = () => {
       {renderDateFilterIndicator()}
 
       <div className="w-full">
-        <BsBlock>
-
-          <h3>
-            Transactions ({totalTxs.toLocaleString()})
-            {dateFilter && (
-              <span className="text-sm font-normal text-gray-500 dark:text-gray-400 ml-2">
-                (filtered)
-              </span>
-            )}
-          </h3>
-          <hr />
-          {txs.map(tx => <BtcTransactionTable key={tx._id} transaction={tx} />)}
-          <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={handlePageChange}
-          />
-        </BsBlock>
+        <h3>
+          Transactions ({totalTxs.toLocaleString()})
+          {dateFilter && (
+            <span className="text-sm font-normal text-gray-500 dark:text-gray-400 ml-2">
+              (filtered)
+            </span>
+          )}
+          {isLoadingTransactions && !dateFilter && (
+            <span className="text-sm font-normal text-gray-500 dark:text-gray-400 ml-2">
+              Loading...
+            </span>
+          )}
+        </h3>
+        
+        {isLoadingTransactions && !dateFilter ? (
+          // Show loading skeleton while transactions are loading
+          <div className="space-y-4 p-4">
+            {[...Array(5)].map((_, i) => (
+              <div key={i} className="animate-pulse">
+                <div className="h-20 bg-gray-200 dark:bg-gray-700 rounded"></div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          // Show transactions when loaded
+          <>
+            {txs.map(tx => <BtcTransactionTable key={tx._id} transaction={tx} />)}
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={handlePageChange}
+            />
+          </>
+        )}
       </div>
-      
+
       {/* Risk Score Modal */}
       <RiskScoreModal
         visible={isRiskModalVisible}
         onClose={() => setIsRiskModalVisible(false)}
-        riskScores={riskScore}
+        riskScores={processedRiskScore || riskScore}
         address={address || ''}
         loading={isLoadingRiskScore}
       />

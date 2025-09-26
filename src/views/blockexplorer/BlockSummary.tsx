@@ -44,7 +44,7 @@ const BlockSummary: React.FC<BlockSummaryProps> = ({
   };
 
   return (
-    <div className="w-full bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-none">
+    <div className="w-full dark:bg-gray-900 border-b border-gray-200 dark:border-none">
       <div className="px-4 py-2">
         <div className="flex flex-wrap gap-3 justify-start">
           {/* Block Hash Card */}

@@ -21,7 +21,8 @@ describe('UTXO Key Generation', () => {
       };
       
       const result = generateUTXOKey(input);
-      expect(result).toBe('abc123def456::0::1a1zp1ep5qgefi2dmptftl5slmv7divfna::0.00100000');
+      // New format includes both source and destination (same address for legacy format)
+      expect(result).toBe('abc123def456::0::1a1zp1ep5qgefi2dmptftl5slmv7divfna::1a1zp1ep5qgefi2dmptftl5slmv7divfna::0.00100000');
     });
 
     it('should generate correct key for output UTXO with all parameters', () => {
@@ -34,7 +35,8 @@ describe('UTXO Key Generation', () => {
       };
       
       const result = generateUTXOKey(input);
-      expect(result).toBe('abc123def456::1::bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh::0.00500000');
+      // New format includes both source and destination (same address for legacy format)
+      expect(result).toBe('abc123def456::1::bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh::bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh::0.00500000');
     });
 
     it('should normalize address to lowercase', () => {
@@ -167,15 +169,15 @@ describe('UTXO Key Generation', () => {
 
   describe('matchUTXOKey', () => {
     it('should match identical keys', () => {
-      const key1 = 'abc123def456::0::1a1zp1ep5qgefi2dmptftl5slmv7divfna::0.00100000';
-      const key2 = 'abc123def456::0::1a1zp1ep5qgefi2dmptftl5slmv7divfna::0.00100000';
+      const key1 = 'abc123def456::0::1a1zp1ep5qgefi2dmptftl5slmv7divfna::1a1zp1ep5qgefi2dmptftl5slmv7divfna::0.00100000';
+      const key2 = 'abc123def456::0::1a1zp1ep5qgefi2dmptftl5slmv7divfna::1a1zp1ep5qgefi2dmptftl5slmv7divfna::0.00100000';
       
       expect(matchUTXOKey(key1, key2)).toBe(true);
     });
 
     it('should match new format keys', () => {
-      const key1 = 'abc123def456::0::1a1zp1ep5qgefi2dmptftl5slmv7divfna::0.00100000';
-      const key2 = 'abc123def456::0::1a1zp1ep5qgefi2dmptftl5slmv7divfna::0.00100000';
+      const key1 = 'abc123def456::0::1a1zp1ep5qgefi2dmptftl5slmv7divfna::1a1zp1ep5qgefi2dmptftl5slmv7divfna::0.00100000';
+      const key2 = 'abc123def456::0::1a1zp1ep5qgefi2dmptftl5slmv7divfna::1a1zp1ep5qgefi2dmptftl5slmv7divfna::0.00100000';
       
       expect(matchUTXOKey(key1, key2)).toBe(true);
     });
@@ -188,7 +190,7 @@ describe('UTXO Key Generation', () => {
     });
 
     it('should match mixed format keys (new vs old)', () => {
-      const newFormat = 'abc123def456::0::1a1zp1ep5qgefi2dmptftl5slmv7divfna::0.00100000';
+      const newFormat = 'abc123def456::0::1a1zp1ep5qgefi2dmptftl5slmv7divfna::1a1zp1ep5qgefi2dmptftl5slmv7divfna::0.00100000';
       const oldFormat = 'abc123def456::0::1a1zp1ep5qgefi2dmptftl5slmv7divfna';
       
       expect(matchUTXOKey(newFormat, oldFormat)).toBe(true);
@@ -196,35 +198,35 @@ describe('UTXO Key Generation', () => {
     });
 
     it('should not match different transaction hashes', () => {
-      const key1 = 'abc123def456::0::1a1zp1ep5qgefi2dmptftl5slmv7divfna::0.00100000';
-      const key2 = 'def456abc123::0::1a1zp1ep5qgefi2dmptftl5slmv7divfna::0.00100000';
+      const key1 = 'abc123def456::0::1a1zp1ep5qgefi2dmptftl5slmv7divfna::1a1zp1ep5qgefi2dmptftl5slmv7divfna::0.00100000';
+      const key2 = 'def456abc123::0::1a1zp1ep5qgefi2dmptftl5slmv7divfna::1a1zp1ep5qgefi2dmptftl5slmv7divfna::0.00100000';
       
       expect(matchUTXOKey(key1, key2)).toBe(false);
     });
 
     it('should not match different indices', () => {
-      const key1 = 'abc123def456::0::1a1zp1ep5qgefi2dmptftl5slmv7divfna::0.00100000';
-      const key2 = 'abc123def456::1::1a1zp1ep5qgefi2dmptftl5slmv7divfna::0.00100000';
+      const key1 = 'abc123def456::0::1a1zp1ep5qgefi2dmptftl5slmv7divfna::1a1zp1ep5qgefi2dmptftl5slmv7divfna::0.00100000';
+      const key2 = 'abc123def456::1::1a1zp1ep5qgefi2dmptftl5slmv7divfna::1a1zp1ep5qgefi2dmptftl5slmv7divfna::0.00100000';
       
       expect(matchUTXOKey(key1, key2)).toBe(false);
     });
 
     it('should not match different addresses', () => {
-      const key1 = 'abc123def456::0::1a1zp1ep5qgefi2dmptftl5slmv7divfna::0.00100000';
-      const key2 = 'abc123def456::0::bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh::0.00100000';
+      const key1 = 'abc123def456::0::1a1zp1ep5qgefi2dmptftl5slmv7divfna::1a1zp1ep5qgefi2dmptftl5slmv7divfna::0.00100000';
+      const key2 = 'abc123def456::0::bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh::bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh::0.00100000';
       
       expect(matchUTXOKey(key1, key2)).toBe(false);
     });
 
     it('should not match different amounts', () => {
-      const key1 = 'abc123def456::0::1a1zp1ep5qgefi2dmptftl5slmv7divfna::0.00100000';
-      const key2 = 'abc123def456::0::1a1zp1ep5qgefi2dmptftl5slmv7divfna::0.00500000';
+      const key1 = 'abc123def456::0::1a1zp1ep5qgefi2dmptftl5slmv7divfna::1a1zp1ep5qgefi2dmptftl5slmv7divfna::0.00100000';
+      const key2 = 'abc123def456::0::1a1zp1ep5qgefi2dmptftl5slmv7divfna::1a1zp1ep5qgefi2dmptftl5slmv7divfna::0.00500000';
       
       expect(matchUTXOKey(key1, key2)).toBe(false);
     });
 
     it('should handle invalid keys gracefully', () => {
-      const validKey = 'abc123def456::0::1a1zp1ep5qgefi2dmptftl5slmv7divfna::0.00100000';
+      const validKey = 'abc123def456::0::1a1zp1ep5qgefi2dmptftl5slmv7divfna::1a1zp1ep5qgefi2dmptftl5slmv7divfna::0.00100000';
       const invalidKey = 'invalid-key';
       
       expect(matchUTXOKey(validKey, invalidKey)).toBe(false);
@@ -239,7 +241,8 @@ describe('UTXO Key Generation', () => {
     });
 
     it('should validate old format keys', () => {
-      const validKey = 'abc123def456789012345678901234567890123456789012345678901234567890::0::1a1zp1ep5qgefi2dmptftl5slmv7divfna';
+      // Old format with 4 parts (txHash::index::address::amount)
+      const validKey = 'abc123def456789012345678901234567890123456789012345678901234567890::0::1a1zp1ep5qgefi2dmptftl5slmv7divfna::0.00100000';
       expect(validateUTXOKey(validKey)).toBe(true);
     });
 
@@ -259,6 +262,7 @@ describe('UTXO Key Generation', () => {
     });
 
     it('should reject keys with invalid amount format', () => {
+      // Amount should have exactly 8 decimal places - this has only 3
       const invalidKey = 'abc123def456789012345678901234567890123456789012345678901234567890::0::1a1zp1ep5qgefi2dmptftl5slmv7divfna::0.001';
       expect(validateUTXOKey(invalidKey)).toBe(false);
     });

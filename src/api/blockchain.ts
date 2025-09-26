@@ -7,12 +7,8 @@ import { axiosInstance } from "./api";
 
 
 const getAttributions = async (addresses: string[]): Promise<{ data: IAttribution[], referenceData: IReferenceAttribution[] }> => {
-  try {
-    const res = await axiosInstance.post(`/blockchain/attributions`, { addresses });
-    return res.data;
-  } catch (error) {
-    throw error;
-  }
+  const res = await axiosInstance.post(`/blockchain/attributions`, { addresses });
+  return res.data;
 };
 
 const getAddressSummary = async (address: string): Promise<IBtcAddressSummary> => {
@@ -26,30 +22,25 @@ const getTransaction = async (txHash: string) => {
 };
 
 const getBlock = async (height: number) => {
-  try {
-    // Validate block height
-    if (!Number.isInteger(height) || height < 0) {
-      throw new Error('Invalid block height');
-    }
-
-    const url = `/blockchain/block/${height}`;
-
-    const res = await axiosInstance.get(url);
-    
-    // Check if response is null or empty
-    if (!res.data) {
-      throw new Error('Block not found or no data available');
-    }
-
-    // Validate the response data structure
-    if (typeof res.data._id !== 'string' || typeof res.data.hash !== 'string') {
-      throw new Error('Invalid block data structure received from API');
-    }
-
-    return res.data;
-  } catch (error: any) {
-    throw error;
+  if (!Number.isInteger(height) || height < 0) {
+    throw new Error('Invalid block height');
   }
+
+  const url = `/blockchain/block/${height}`;
+
+  const res = await axiosInstance.get(url);
+
+  // Check if response is null or empty
+  if (!res.data) {
+    throw new Error('Block not found or no data available');
+  }
+
+  // Validate the response data structure
+  if (typeof res.data._id !== 'string' || typeof res.data.hash !== 'string') {
+    throw new Error('Invalid block data structure received from API');
+  }
+
+  return res.data;
 };
 
 interface GetAddressResponseData {

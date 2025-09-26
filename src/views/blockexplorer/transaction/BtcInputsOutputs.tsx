@@ -1,302 +1,154 @@
-import React, { useCallback,useState } from 'react';
+import React, { memo, useCallback, useMemo, useState } from 'react';
 
+import { Check, Copy } from 'lucide-react';
 import { useSelector } from 'react-redux';
-import { Link } from 'react-router-dom';
-import styled from 'styled-components';
 
-import { colors } from '@/design-system/tokens'
+import EntityQuickView from '@/components/EntityQuickView';
+import { useAttribution } from '@/context/AttributionContext';
+import { cn } from '@/lib/utils';
+import { selectCurrentOrganization } from '@/store/slices/organizationsSlice';
+import { RootState } from '@/store/store';
+import { BtcTransaction } from '@/typings/BtcTransaction';
+import { satsToBTC, truncateAddress } from '@/utils/crypto';
 
-import EntityQuickView from '../../../components/EntityQuickView';
-import { useAttribution } from '../../../context/AttributionContext';
-import { selectCurrentOrganization } from '../../../store/slices/organizationsSlice';
-import { RootState } from '../../../store/store';
-import { BtcTransaction } from '../../../typings/BtcTransaction';
-import { satsToBTC, truncateAddress } from '../../../utils/crypto';
-
+import BtcTxAddress from './components/BtcTxAddress';
+import CospendTooltip from './components/CospendTooltip';
 
 interface BtcInputsOutputsProps {
   data: BtcTransaction['inputs'] | BtcTransaction['outputs'];
   type: 'inputs' | 'outputs';
 }
 
-const Amount = styled.span`
-  font-family: monospace;
-`;
-
-const Wrapper = styled.div`
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  overflow-x: auto;
-  padding: 0 8px; /* Add padding for scrollbar */
-
-  div {
-    display: flex;
-    flex-direction: row;
-  }
-  .row-container {
-    display: grid;
-    grid-template-columns: minmax(300px, 2fr) minmax(180px, 1fr) minmax(100px, 1fr) minmax(120px, 1fr);
-    gap: 8px;
-    align-items: center;
-    padding: 2px 0;
-    width: 100%;
-    min-width: 0; /* Allow grid to shrink below minimum content size */
-  }
-  .attributed {
-    color: ${colors.attribution};
-    font-weight: bold;
-    &:hover {
-      color: ${colors.attribution.hover};
-    }
-  }
-  .address {
-    font-family: monospace;
-    color: ${colors.brand.primary};
-    text-decoration: none;
-    text-align: left;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    &:hover {
-      color: ${colors.semantic.info};
-      text-decoration: underline;
-    }
-  }
-  .address.highlighted {
-    color: hsl(var(--foreground));
-    text-decoration: none;
-    font-weight: 600;
-  }
-  .address-container {
-    display: flex;
-    align-items: center;
-    width: 100%;
-    min-width: 0; /* Allow container to shrink */
-  }
-  .address-wrapper {
-    display: flex;
-    align-items: center;
-    width: 100%;
-    min-width: 0; /* Allow wrapper to shrink */
-  }
-  .copy-button {
-    cursor: pointer;
-    color: #888;
-    margin-right: 8px;
-    font-size: 18px;
-    display: flex;
-    align-items: center;
-    flex-shrink: 0;
-    &:hover {
-      color: ${colors.brand.primary};
-    }
-  }
-  .copy-alert {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background-color: ${colors.brand.primary};
-    color: #ffffff;
-    padding: 15px 30px;
-    border-radius: 6px;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
-    z-index: 1000;
-    font-size: 18px;
-    animation: fadeIn 0.3s, fadeOut 0.3s 1.7s;
-  }
-  .cospend-tooltip {
-    background-color: #222;
-    color: #ffffff;
-    padding: 12px 20px;
-    border-radius: 6px;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
-    z-index: 1000;
-    font-size: 14px;
-    font-family: monospace;
-    animation: fadeIn .5s;
-    pointer-events: auto;
-    white-space: nowrap;
-
-    &:after {
-      content: '';
-      position: absolute;
-      bottom: -6px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 0;
-      height: 0;
-      border-left: 6px solid transparent;
-      border-right: 6px solid transparent;
-      border-top: 6px solid #222;
-
-    }
-  }
-  .tooltip-content {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    pointer-events: auto;
-  }
-  .tooltip-content .copy-button {
-    background: none;
-    border: none;
-    color: #888;
-    font-size: 18px;
-    cursor: pointer;
-    padding: 4px 8px;
-    margin: 0;
-    transition: color 0.2s ease;
-    &:hover {
-      color: ${colors.brand.primary};
-    }
-    &:active {
-      transform: scale(0.95);
-    }
-  }
-  .entity-id {
-    min-width: 100px;
-  font-family: monospace;
-    color: ${colors.attribution};
-    text-align: left;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-  .cospend-id {
-    min-width: 150px;
-    font-family: monospace;
-    color: ${colors.attribution.reference};
-    text-align: left;
-    margin-right: 50px;
-  }
-  .script-type {
-    font-family: monospace;
-    color: ${colors.gray[600]};
-    text-align: left;
-  }
-  .amount {
-    font-family: monospace;
-    text-align: right;
-  }
-  @keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
-  }
-  @keyframes fadeOut {
-    from { opacity: 1; }
-    to { opacity: 0; }
-  }
-`;
-
-const Row = styled.div`
-  width: 100%;
-`;
-
-const ToggleButton = styled.button`
-  margin: 8px 0;
-  color: #333;
-  padding: 4px 8px;
-  background-color: #f0f0f0;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 14px;
-  align-self: flex-start;
-
-  &:hover {
-    background-color: #e0e0e0;
-  }
-  
-  @media (prefers-color-scheme: dark) {
-    color: #ffffff;
-    background-color: hsl(222.2 84% 4.9%);
-    border: 1px solid #374151;
-    
-    &:hover {
-      background-color: hsl(222.2 84% 6%);
-    }
-  }
-`;
-
-interface BtcTxAddressProps {
-  address: string;
+interface InputOutputRowProps {
+  item: BtcTransaction['inputs'][0] | BtcTransaction['outputs'][0];
+  entityDisplayName: string;
+  boDisplayName: string;
+  shouldShowBO: boolean;
+  displayEntityId: string;
+  scriptType: string | undefined;
+  sot: any;
+  cospendId?: string;
+  renderAmt: (amt: number) => string;
+  onViewFullProfile: (sot: any) => void;
+  onQuickView: (e: React.MouseEvent, entityId: string) => void;
+  index: number;
 }
 
-const BtcTxAddress: React.FC<BtcTxAddressProps> = ({ address }) => {
-  const url = window.location.href;
-  const currAddress = url.split('/').pop();
+const InputOutputRow = memo(({
+  item,
+  entityDisplayName,
+  boDisplayName,
+  shouldShowBO,
+  displayEntityId,
+  scriptType,
+  sot,
+  cospendId,
+  renderAmt,
+  onViewFullProfile,
+  onQuickView,
+  index
+}: InputOutputRowProps) => {
   const [copySuccess, setCopySuccess] = useState(false);
   const [showCopyAlert, setShowCopyAlert] = useState(false);
-
-  const displayAddress = address.length >= 42 ? truncateAddress(address) : address;
 
   const copyToClipboard = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    navigator.clipboard.writeText(address)
+    navigator.clipboard.writeText(item.addr)
       .then(() => {
         setCopySuccess(true);
         setShowCopyAlert(true);
-        setTimeout(() => setCopySuccess(false), 2000);
-        setTimeout(() => setShowCopyAlert(false), 2000);
+        setTimeout(() => {
+          setCopySuccess(false);
+        }, 1000);
+        setTimeout(() => {
+          setShowCopyAlert(false);
+        }, 1000);
       })
       .catch(err => {
         console.error('Failed to copy address: ', err);
       });
   };
-
-  if (address === currAddress) {
-    return (
-      <>
-        <div className="address-container">
-          <div className="address-wrapper">
-            <span className="copy-button" onClick={copyToClipboard} title="Copy address">
-              {copySuccess ? '✓' : '⧉'}
-            </span>
-            <span className="address highlighted" title={address}>
-              {displayAddress}
-            </span>
-          </div>
-        </div>
-        {showCopyAlert && <div className="copy-alert">Address copied</div>}
-      </>
-    );
-  }
-
   return (
     <>
-      <div className="address-container">
-        <div className="address-wrapper">
-          <span className="copy-button" onClick={copyToClipboard} title="Copy address">
-            {copySuccess ? '✓' : '⧉'}
-          </span>
-          <Link
-            className="address"
-            to={`/home/block-explorer/address/${address}`}
-            title={address}
+      <div className={cn(
+        "grid grid-cols-[1fr_160px_70px_120px] gap-2 items-center py-0.5 w-full min-w-0 px-2",
+        index % 2 === 0 ? "bg-gray-50 dark:bg-gray-800/50" : "bg-white dark:bg-gray-900/50"
+      )}>
+        <div className="flex items-center w-full min-w-0">
+          <button
+            onClick={copyToClipboard}
+            title="Copy address"
+            className={cn(
+              "cursor-pointer text-gray-400 mr-2 text-lg flex items-center flex-shrink-0",
+              "hover:text-orange-500 transition-colors duration-200",
+              "dark:text-gray-500 dark:hover:text-orange-400"
+            )}
           >
-            {displayAddress}
-          </Link>
+            {copySuccess ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
+          </button>
+          <CospendTooltip address={item.addr} cospendId={cospendId}>
+            {({ onMouseEnter, onMouseLeave }) => (
+              <div
+                onMouseEnter={(e) => onMouseEnter(item.addr, e.currentTarget, e)}
+                onMouseLeave={onMouseLeave}
+                className="w-full min-w-0"
+              >
+                <BtcTxAddress address={item.addr} />
+              </div>
+            )}
+          </CospendTooltip>
         </div>
+
+      <div className="flex items-center gap-2 min-w-[100px] overflow-hidden">
+        <span
+          className="font-mono text-sm text-left text-ellipsis whitespace-nowrap overflow-hidden"
+          title={shouldShowBO ? boDisplayName : entityDisplayName || '-'}
+        >
+          {displayEntityId}
+        </span>
+        {sot && (
+          <EntityQuickView
+            entity={{
+              _id: sot._id,
+              proper_name: sot.proper_name,
+              entity_id: sot.entity_id
+            }}
+            sot={sot}
+            onViewFull={onViewFullProfile}
+            onQuickView={onQuickView}
+            popoverPlacement="right"
+            popoverWidth={450}
+          />
+        )}
       </div>
-      {showCopyAlert && <div className="copy-alert">Address copied</div>}
+
+      <span className="font-mono text-sm text-gray-600 text-left dark:text-gray-400">
+        {scriptType || '-'}
+      </span>
+
+        <span className="font-mono text-sm text-right">
+          {renderAmt(item.amt)}
+        </span>
+      </div>
+      {showCopyAlert && (
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 bg-orange-500 text-white px-8 py-4 rounded-md shadow-lg z-[1000] text-lg animate-fadeIn">
+          Address copied
+        </div>
+      )}
     </>
   );
-};
+});
+
+InputOutputRow.displayName = 'InputOutputRow';
 
 const BtcInputsOutputs: React.FC<BtcInputsOutputsProps> = ({ data, type }) => {
   const [isExpanded, setIsExpanded] = useState(false);
+
   const displayData = isExpanded ? data : data.slice(0, 5);
   const showToggle = data.length > 5;
   const { attributions } = useAttribution();
-  const [hoveredAddress, setHoveredAddress] = useState<string | null>(null);
-  const [isTooltipHovered, setIsTooltipHovered] = useState(false);
-  const [copySuccess, setCopySuccess] = useState(false);
-  const [tooltipPosition, setTooltipPosition] = useState({ top: 0, left: 0 });
   const organization = useSelector(selectCurrentOrganization);
-
   const { itemsMap } = useSelector((state: RootState) => state.sot);
 
   const renderAmt = useCallback((amt: number) => {
@@ -304,176 +156,105 @@ const BtcInputsOutputs: React.FC<BtcInputsOutputsProps> = ({ data, type }) => {
     return sats.toFixed(8);
   }, []);
 
-  // Show mining reward message if no inputs and type is 'inputs'
-  if (type === 'inputs' && data.length === 0) {
-    return (
-      <Wrapper>
-        <span style={{ color: '#ffffff', fontFamily: 'monospace', fontSize: '1.1em', padding: '12px 0' }}> ⛏️ Mining Reward</span>
-      </Wrapper>
-    );
-  }
-
-  const toggleExpand = () => {
-    setIsExpanded(!isExpanded);
-  };
-
-  const copyCospendId = (cospendId: string) => {
-    navigator.clipboard.writeText(cospendId)
-      .then(() => {
-        setCopySuccess(true);
-        setTimeout(() => setCopySuccess(false), 2000);
-      })
-      .catch(err => {
-        console.error('Failed to copy cospend ID: ', err);
-      });
-  };
-
-  // Handle mouse leave for both address and tooltip
-  const handleMouseLeave = () => {
-    // Use a small timeout to prevent tooltip from disappearing when moving between address and tooltip
-    setTimeout(() => {
-      if (!isTooltipHovered) {
-        setHoveredAddress(null);
-      }
-    }, 100);
-  };
-
-  const handleMouseEnter = (address: string, event: React.MouseEvent<HTMLDivElement>) => {
-    const rect = event.currentTarget.getBoundingClientRect();
-    setTooltipPosition({
-      top: rect.top - 10, // Position above the address with a small gap
-      left: rect.left + (rect.width / 2) // Center horizontally
-    });
-    setHoveredAddress(address);
-  };
-
-  // Function to format entity ID with truncation if needed
-  const formatEntityId = (entityId: string | undefined, bo: string | undefined) => {
+  const formatEntityId = useCallback((entityId: string | undefined, bo: string | undefined) => {
     if (!entityId) return '-';
-    // If beneficial owner exists and is different from entity, show that instead
     const displayId = (bo && bo !== entityId) ? bo : entityId;
     return displayId.length > 42 ? truncateAddress(displayId) : displayId;
-  };
+  }, []);
 
-  const getEntityDisplayName = (entityId: string) => {
+  const getEntityDisplayName = useCallback((entityId: string) => {
     if (!entityId) return '';
 
-    // Get the entity from the SOT data
     const entity = Object.values(itemsMap).find(sot => sot.entity_id === entityId);
     const entityType = entity?.entity_type;
 
-    // If allowCSAM is false and the entity is CSAM-related, show "CSAM Related Entity"
     if (organization?.settings.allowCSAM === false && entityType === "csam") {
       return 'CSAM Related Entity';
     }
 
-    // Return proper_name if available, otherwise entity_id
     return entity?.proper_name || entityId;
-  };
+  }, [itemsMap, organization?.settings.allowCSAM]);
 
-  // Function to get SOT data for an entity
-  const getEntitySot = (entityId: string) => {
+  const getEntitySot = useCallback((entityId: string) => {
     if (!entityId) return null;
     return Object.values(itemsMap).find(sot => sot.entity_id === entityId) || null;
-  };
+  }, [itemsMap]);
 
-  // Handle view full profile
-  const handleViewFullProfile = (sot: any) => {
-    // Navigate to VASP Explorer with the entity in the same tab
+  const handleViewFullProfile = useCallback((sot: any) => {
     window.location.href = `/home/blockham?entity=${sot.entity_id}`;
-  };
+  }, []);
 
-  // Handle quick view click
-  const handleQuickView = (e: React.MouseEvent, _entityId: string) => {
+  const handleQuickView = useCallback((e: React.MouseEvent, _entityId: string) => {
     e.stopPropagation();
-    // The EntityQuickView component handles the quick view display
-  };
+  }, []);
+
+  const toggleExpand = useCallback(() => {
+    setIsExpanded(prev => !prev);
+  }, []);
+
+  // Memoize row data processing
+  const processedRows = useMemo(() => {
+    return displayData.map(item => {
+      const attribution = attributions[item.addr];
+      const entityDisplayName = getEntityDisplayName(attribution?.entity);
+      const boDisplayName = getEntityDisplayName(attribution?.bo);
+      const shouldShowBO = !!(attribution?.bo && attribution?.bo !== attribution?.entity);
+      const primaryEntityId = shouldShowBO ? attribution?.bo : attribution?.entity;
+      const displayEntityId = formatEntityId(entityDisplayName, boDisplayName);
+      const scriptType = attribution?.script_type;
+      const sot = getEntitySot(primaryEntityId);
+      const cospendId = attribution?.cospend_id;
+
+      return {
+        item,
+        entityDisplayName,
+        boDisplayName,
+        shouldShowBO,
+        displayEntityId,
+        scriptType,
+        sot,
+        cospendId
+      };
+    });
+  }, [displayData, attributions, getEntityDisplayName, formatEntityId, getEntitySot]);
+
+  // Show mining reward message if no inputs and type is 'inputs'
+  if (type === 'inputs' && data.length === 0) {
+    return (
+      <div className="flex flex-col w-full">
+        <span className="text-white font-mono text-lg py-3">⛏️ Mining Reward</span>
+      </div>
+    );
+  }
 
   return (
-    <Wrapper>
-      {displayData.map((
-        item: BtcTransaction['inputs'][0] | BtcTransaction['outputs'][0], 
-        index: number,
-      ) => {
-        const entityDisplayName = getEntityDisplayName(attributions[item.addr]?.entity);
-        const boDisplayName = getEntityDisplayName(attributions[item.addr]?.bo);
-        const shouldShowBO = attributions[item.addr]?.bo && attributions[item.addr]?.bo !== attributions[item.addr]?.entity;
-        const primaryEntityId = shouldShowBO ? attributions[item.addr]?.bo : attributions[item.addr]?.entity;
-        const displayEntityId = formatEntityId(entityDisplayName, boDisplayName);
-        const scriptType = attributions[item.addr]?.script_type;
-        const sot = getEntitySot(primaryEntityId);
+    <div className="flex flex-col w-full">
+      {processedRows.map((rowData, index) => (
+        <InputOutputRow
+          key={index}
+          {...rowData}
+          index={index}
+          renderAmt={renderAmt}
+          onViewFullProfile={handleViewFullProfile}
+          onQuickView={handleQuickView}
+        />
+      ))}
 
-        return (
-          <Row key={index} className="row-container">
-            <div
-              className="address-container"
-              onMouseEnter={(e) => handleMouseEnter(item.addr, e)}
-              onMouseLeave={handleMouseLeave}
-            >
-              <BtcTxAddress address={item.addr} />
-            </div>
-
-            <div className="entity-id" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span title={shouldShowBO ? boDisplayName : entityDisplayName || '-'}>
-                {displayEntityId}
-              </span>
-              {sot && (
-                <EntityQuickView
-                  entity={{
-                    _id: sot._id,
-                    proper_name: sot.proper_name,
-                    entity_id: sot.entity_id
-                  }}
-                  sot={sot}
-                  onViewFull={handleViewFullProfile}
-                  onQuickView={handleQuickView}
-                  popoverPlacement="right"
-                  popoverWidth={450}
-                />
-              )}
-            </div>
-
-            <span className="script-type">{scriptType || '-'}</span>
-            <Amount className="amount">{renderAmt(item.amt)}</Amount>
-          </Row>
-        );
-      })}
       {showToggle && (
-        <ToggleButton onClick={toggleExpand}>
-          {isExpanded ? 'Show Less' : `Show All (${data.length})`}
-        </ToggleButton>
-      )}
-
-      {/* Cospend ID Tooltip */}
-      {hoveredAddress && attributions[hoveredAddress]?.cospend_id && (
-        <div
-          className="cospend-tooltip"
-          style={{
-            position: 'fixed',
-            top: `${tooltipPosition.top}px`,
-            left: `${tooltipPosition.left + 50}px`,
-            transform: 'translate(-50%, -100%)'
-          }}
-          onMouseEnter={() => setIsTooltipHovered(true)}
-          onMouseLeave={() => {
-            setIsTooltipHovered(false);
-            setHoveredAddress(null);
-          }}
+        <button
+          onClick={toggleExpand}
+          className={cn(
+            "my-2 text-gray-700 px-2 py-1 bg-gray-100 border border-gray-300",
+            "rounded cursor-pointer text-sm self-start transition-colors duration-200",
+            "hover:bg-gray-200",
+            "dark:text-white dark:bg-gray-900 dark:border-gray-700 dark:hover:bg-gray-800"
+          )}
         >
-          <div className="tooltip-content">
-            <span>Cospend ID: {attributions[hoveredAddress].cospend_id}</span>
-            <button
-              className="copy-button"
-              onClick={() => copyCospendId(attributions[hoveredAddress].cospend_id || '')}
-              title="Copy cospend ID"
-            >
-              {copySuccess ? '✓' : '⧉'}
-            </button>
-          </div>
-        </div>
+          {isExpanded ? 'Show Less' : `Show All (${data.length})`}
+        </button>
       )}
-    </Wrapper>
+    </div>
   );
 };
 
-export default BtcInputsOutputs;
+export default memo(BtcInputsOutputs);

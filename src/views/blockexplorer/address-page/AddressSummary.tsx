@@ -1,13 +1,17 @@
 import React from 'react';
 
 import {
+  Activity,
   AlertTriangle,
+  ArrowDownRight,
+  ArrowUpRight,
   Bitcoin,
   CheckCircle,
   Clock,
   Copy,
-  TrendingDown,
-  TrendingUp,
+  Hash,
+  Shield,
+  Wallet,
   XCircle
 } from 'lucide-react';
 
@@ -110,157 +114,193 @@ const AddressSummary: React.FC<AddressSummaryProps> = ({
 
   return (
     <>
-      {/* Main Cards - scrollable */}
-      <div className="py-2">
-        <div className="flex flex-wrap gap-3 justify-start">
-          {/* Address Card */}
-          <div className="flex flex-col bg-gradient-to-br from-slate-100 to-gray-200 dark:from-background dark:to-background shadow-md rounded-2xl p-2 flex-1 min-w-[250px] text-gray-900 dark:text-gray-100 relative border border-slate-200 dark:border-gray-700 min-h-[160px] max-h-[200px]">
-            <div className="absolute top-2 right-2 opacity-10 text-2xl select-none pointer-events-none">#</div>
-            <div className="flex items-center gap-1 mb-1">
-              {address && attributions[address]?.entity ? (
-                <SimpleLogo
-                  entityId={attributions[address].entity}
-                  entityType={getEntityType()}
-                  size="small"
-                  shape="circle"
-                />
-              ) : (
-                <Bitcoin className="w-4 h-4 text-orange-600 dark:text-orange-400" />
-              )}
-              <span className="text-xs font-medium text-gray-700 dark:text-gray-300">{truncateAddress(address || '')}</span>
-              <button
-                onClick={onCopyClick}
-                className="p-0.5 hover:bg-gray-300 dark:hover:bg-gray-600 rounded transition-colors"
-                title="Copy full address"
-              >
-                {copySuccess ? <CheckCircle className="w-3 h-3 text-green-600" /> : <Copy className="w-3 h-3 text-gray-500" />}
-              </button>
-            </div>
-            <div className="text-lg font-bold break-all mb-1">{getDisplayName()}</div>
-
-            {/* Entity Type */}
-            {address && attributions[address]?.entity && (
-              <div className="mb-1 p-1 bg-orange-50 dark:bg-orange-900/20 rounded border border-orange-200 dark:border-orange-800">
-                <div className="text-xs font-medium text-orange-700 dark:text-orange-300">Entity Type</div>
-                <div className="text-xs text-orange-600 dark:text-orange-400 truncate">
-                  {getEntityType()}
-                </div>
+      {/* Main Cards - Modern Minimalistic Design */}
+      <div className="flex flex-wrap gap-4 justify-start">
+        {/* Address Card */}
+        <div className="flex flex-col bg-white dark:bg-gray-900 shadow-sm hover:shadow-md transition-shadow rounded-xl p-5 flex-1 min-w-[280px] text-gray-900 dark:text-gray-100 relative border border-gray-200 dark:border-gray-700 min-h-[160px]">
+          <div className="absolute top-4 right-4">
+            <Wallet className="w-5 h-5 text-gray-300 dark:text-gray-700" />
+          </div>
+          <div className="flex items-center gap-2 mb-3">
+            {address && attributions[address]?.entity ? (
+              <SimpleLogo
+                entityId={attributions[address].entity}
+                entityType={getEntityType()}
+                size="small"
+                shape="circle"
+              />
+            ) : (
+              <div className="p-2 bg-orange-50 dark:bg-orange-900/10 rounded-lg">
+                <Bitcoin className="w-5 h-5 text-orange-500" />
               </div>
             )}
-
-            {/* Tags section with proper overflow handling */}
-            <div className="flex items-start gap-1 mt-auto">
-              <div className="flex gap-1 flex-wrap overflow-hidden">
-                {address && attributions[address] && getEntityTags(attributions[address]?.entity || '').slice(0, 5).map(tag => {
-                  const tagColor = getTagColor(tag.toLowerCase());
-                  return (
-                    <Badge
-                      key={tag}
-                      className={cn(
-                        "text-xs px-2 py-0 flex-shrink-0",
-                        tagColor === 'red' && "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400",
-                        tagColor === 'orange' && "bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400",
-                        tagColor === 'yellow' && "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400",
-                        tagColor === 'green' && "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400",
-                        tagColor === 'blue' && "bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400",
-                        tagColor === 'purple' && "bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400",
-                        !tagColor && "bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400"
-                      )}
-                    >
-                      {tag.toUpperCase()}
-                    </Badge>
-                  );
-                })}
+            <div className="flex-1">
+              <div className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Address</div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-mono text-gray-700 dark:text-gray-300">{truncateAddress(address || '')}</span>
+                <button
+                  onClick={onCopyClick}
+                  className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors"
+                  title="Copy full address"
+                >
+                  {copySuccess ? <CheckCircle className="w-3.5 h-3.5 text-green-500" /> : <Copy className="w-3.5 h-3.5 text-gray-400" />}
+                </button>
               </div>
             </div>
           </div>
+          <div className="text-xl font-semibold mb-3">{getDisplayName()}</div>
 
-          {/* Balance Flow Card */}
-          <div className="flex flex-col justify-between bg-gradient-to-br from-slate-50 to-gray-100 dark:from-background dark:to-background shadow-md rounded-2xl p-5 flex-1 min-w-[250px] text-gray-900 dark:text-gray-100 border border-slate-200 dark:border-gray-700 min-h-[160px] max-h-[200px]">
-            <div className="flex items-center gap-1 mb-1">
-              <TrendingUp className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-              <span className="text-xs font-medium">Transaction Flows</span>
-            </div>
-            <div className="text-lg font-bold mb-1">{satsToBTC(summary?.balance || 0)} <span className="text-xs font-semibold">BTC</span></div>
-            <div className="flex flex-col gap-1 mt-1">
-              <div className="flex justify-between items-center bg-green-50 dark:bg-green-900/20 rounded px-2 py-1 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-800">
-                <span className="flex items-center gap-1 font-medium text-xs"><TrendingUp className="w-3 h-3" /> Received</span>
-                <span className="font-bold text-xs">{satsToBTC(summary?.total_received || 0)} BTC</span>
+          {/* Entity Type */}
+          {address && attributions[address]?.entity && (
+            <div className="mb-3 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+              <div className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Entity Type</div>
+              <div className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                {getEntityType()}
               </div>
-              <div className="flex justify-between items-center bg-red-50 dark:bg-red-900/20 rounded px-2 py-1 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800">
-                <span className="flex items-center gap-1 font-medium text-xs"><TrendingDown className="w-3 h-3" /> Spent</span>
-                <span className="font-bold text-xs">{satsToBTC(summary?.total_spent || 0)} BTC</span>
+            </div>
+          )}
+
+          {/* Tags section */}
+          <div className="flex items-start gap-2 mt-auto">
+            <div className="flex gap-2 flex-wrap">
+              {address && attributions[address] && getEntityTags(attributions[address]?.entity || '').slice(0, 5).map(tag => {
+                const tagColor = getTagColor(tag.toLowerCase());
+                return (
+                  <Badge
+                    key={tag}
+                    className={cn(
+                      "text-xs px-2.5 py-0.5 font-medium",
+                      tagColor === 'red' && "bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-400 border-red-200 dark:border-red-800",
+                      tagColor === 'orange' && "bg-orange-50 text-orange-700 dark:bg-orange-900/20 dark:text-orange-400 border-orange-200 dark:border-orange-800",
+                      tagColor === 'yellow' && "bg-yellow-50 text-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800",
+                      tagColor === 'green' && "bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400 border-green-200 dark:border-green-800",
+                      tagColor === 'blue' && "bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400 border-blue-200 dark:border-blue-800",
+                      tagColor === 'purple' && "bg-purple-50 text-purple-700 dark:bg-purple-900/20 dark:text-purple-400 border-purple-200 dark:border-purple-800",
+                      !tagColor && "bg-gray-50 text-gray-700 dark:bg-gray-800 dark:text-gray-400 border-gray-200 dark:border-gray-700"
+                    )}
+                  >
+                    {tag.toUpperCase()}
+                  </Badge>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
+        {/* Balance Flow Card */}
+        <div className="flex flex-col bg-white dark:bg-gray-900 shadow-sm hover:shadow-md transition-shadow rounded-xl p-5 flex-1 min-w-[280px] text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-700 min-h-[160px]">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <div className="p-2 bg-blue-50 dark:bg-blue-900/10 rounded-lg">
+                <Activity className="w-5 h-5 text-blue-500" />
+              </div>
+              <div>
+                <div className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Balance</div>
+                <div className="text-2xl font-bold">{satsToBTC(summary?.balance || 0)} <span className="text-sm font-normal text-gray-500">BTC</span></div>
               </div>
             </div>
           </div>
-
-          {/* Activity Timeline Card */}
-          <div className="flex flex-col justify-between bg-gradient-to-br from-slate-50 to-gray-100 dark:from-background dark:to-background shadow-md rounded-2xl p-6 flex-1 min-w-[250px] text-gray-900 dark:text-gray-100 border border-slate-200 dark:border-gray-700 min-h-[160px] max-h-[200px]">
-            <div className="flex items-center gap-1 mb-1">
-              <Clock className="w-4 h-4 text-purple-600 dark:text-purple-400" />
-              <span className="text-xs font-medium">Blockchain Activity</span>
+          <div className="flex flex-col gap-3 mt-auto">
+            <div className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-900/10 rounded-lg">
+              <div className="flex items-center gap-2">
+                <ArrowUpRight className="w-4 h-4 text-green-600 dark:text-green-400" />
+                <span className="text-sm font-medium text-green-700 dark:text-green-300">Received</span>
+              </div>
+              <span className="text-sm font-semibold text-green-700 dark:text-green-300">{satsToBTC(summary?.total_received || 0)} BTC</span>
             </div>
-            <div className="flex flex-col gap-1 mt-1">
-              <div className="flex justify-between items-center p-1 bg-gray-50 dark:bg-background rounded">
-                <span className="text-gray-600 dark:text-gray-300 text-xs">First Block</span>
-                <span className="font-bold text-xs">{blockStats.firstBlock ? blockStats.firstBlock.blockNumber.toLocaleString() : 'N/A'}</span>
+            <div className="flex items-center justify-between p-3 bg-red-50 dark:bg-red-900/10 rounded-lg">
+              <div className="flex items-center gap-2">
+                <ArrowDownRight className="w-4 h-4 text-red-600 dark:text-red-400" />
+                <span className="text-sm font-medium text-red-700 dark:text-red-300">Spent</span>
               </div>
-              <div className="flex justify-between items-center p-1 bg-gray-50 dark:bg-background rounded">
-                <span className="text-gray-600 dark:text-gray-300 text-xs">Last Block</span>
-                <span className="font-bold text-xs">{blockStats.lastBlock ? blockStats.lastBlock.blockNumber.toLocaleString() : 'N/A'}</span>
-              </div>
-              <div className="flex justify-between items-center p-1 bg-gray-50 dark:bg-background rounded">
-                <span className="text-gray-600 dark:text-gray-300 text-xs">Script Type</span>
-                <span className="font-bold text-xs">{addrData?.script_type || 'N/A'}</span>
-              </div>
+              <span className="text-sm font-semibold text-red-700 dark:text-red-300">{satsToBTC(summary?.total_spent || 0)} BTC</span>
             </div>
           </div>
+        </div>
 
-          {/* Risk Score Card */}
-          <div className="flex flex-col justify-between bg-gradient-to-br from-slate-50 to-gray-100 dark:from-background dark:to-background shadow-md rounded-2xl p-5 flex-1 min-w-[200px] text-gray-900 dark:text-gray-100 items-center border border-slate-200 dark:border-gray-700 min-h-[160px] max-h-[200px]">
-            <div className="flex items-center gap-1 mb-1">
-              <AlertTriangle className="w-4 h-4 text-orange-600 dark:text-orange-400" />
-              <span className="text-xs font-medium">Risk Assessment</span>
+        {/* Activity Timeline Card */}
+        <div className="flex flex-col bg-white dark:bg-gray-900 shadow-sm hover:shadow-md transition-shadow rounded-xl p-5 flex-1 min-w-[280px] text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-700 min-h-[160px]">
+          <div className="flex items-center gap-2 mb-4">
+            <div className="p-2 bg-purple-50 dark:bg-purple-900/10 rounded-lg">
+              <Clock className="w-5 h-5 text-purple-500" />
             </div>
-            <div className="flex flex-col items-center justify-center flex-1">
-              {isLoadingRiskScore ? (
-                <div className="text-orange-500 font-semibold text-sm">Loading...</div>
-              ) : riskScore ? (
-                <div className="flex flex-col items-center cursor-pointer" onClick={onRiskScoreClick}>
-                  <div className="flex items-center gap-1 mb-1">
+            <div className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Activity Timeline</div>
+          </div>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+              <div className="flex items-center gap-2">
+                <Hash className="w-4 h-4 text-gray-400" />
+                <span className="text-sm text-gray-600 dark:text-gray-400">First Block</span>
+              </div>
+              <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">{blockStats.firstBlock ? blockStats.firstBlock.blockNumber.toLocaleString() : 'N/A'}</span>
+            </div>
+            <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+              <div className="flex items-center gap-2">
+                <Hash className="w-4 h-4 text-gray-400" />
+                <span className="text-sm text-gray-600 dark:text-gray-400">Last Block</span>
+              </div>
+              <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">{blockStats.lastBlock ? blockStats.lastBlock.blockNumber.toLocaleString() : 'N/A'}</span>
+            </div>
+            <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+              <span className="text-sm text-gray-600 dark:text-gray-400">Script Type</span>
+              <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">{addrData?.script_type || 'N/A'}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Risk Score Card */}
+        <div className="flex flex-col bg-white dark:bg-gray-900 shadow-sm hover:shadow-md transition-shadow rounded-xl p-5 flex-1 min-w-[240px] text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-700 min-h-[160px]">
+          <div className="flex items-center gap-2 mb-4">
+            <div className="p-2 bg-orange-50 dark:bg-orange-900/10 rounded-lg">
+              <Shield className="w-5 h-5 text-orange-500" />
+            </div>
+            <div className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Risk Assessment</div>
+          </div>
+          <div className="flex flex-col items-center justify-center flex-1">
+            {isLoadingRiskScore ? (
+              <div className="text-gray-400 font-medium text-sm animate-pulse">Analyzing...</div>
+            ) : riskScore ? (
+              <div className="flex flex-col items-center cursor-pointer group" onClick={onRiskScoreClick}>
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="p-2 rounded-full bg-gray-50 dark:bg-gray-800">
                     {getRiskIcon(riskScore.overallRisk * 100)}
-                    <span className="text-xl font-extrabold" style={{ color: getRiskColor(riskScore.overallRisk * 100) }}>{Math.round(riskScore.overallRisk * 100)}%</span>
                   </div>
-                  <span className="text-xs text-gray-600 dark:text-gray-400 underline cursor-pointer hover:text-orange-600 dark:hover:text-orange-400">View Details</span>
-
-                  {/* BO Override Information */}
-                  {riskScore.boInfo?.isBeneficialOwnerOverride && (
-                    <div className="mt-2 text-center">
-                      <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">
-                        Risk from Beneficial Owner:
-                      </div>
-                      <div className="text-xs font-medium text-gray-700 dark:text-gray-300">
-                        {riskScore.boInfo.entityName}
-                      </div>
-                      {riskScore.boInfo.ofac && (
-                        <div className="mt-1">
-                          <Badge variant="destructive" className="text-xs">OFAC SANCTIONED</Badge>
-                        </div>
-                      )}
-                    </div>
-                  )}
+                  <span className="text-3xl font-bold" style={{ color: getRiskColor(riskScore.overallRisk * 100) }}>{Math.round(riskScore.overallRisk * 100)}%</span>
                 </div>
-              ) : (
-                <div className="text-gray-500 font-semibold text-sm">N/A</div>
-              )}
-            </div>
+                <span className="text-xs text-gray-500 dark:text-gray-400 group-hover:text-orange-500 dark:group-hover:text-orange-400 transition-colors">View Details →</span>
+
+                {/* BO Override Information */}
+                {riskScore.boInfo?.isBeneficialOwnerOverride && (
+                  <div className="mt-3 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg text-center w-full">
+                    <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">
+                      Risk from Beneficial Owner
+                    </div>
+                    <div className="text-xs font-semibold text-gray-700 dark:text-gray-300">
+                      {riskScore.boInfo.entityName}
+                    </div>
+                    {riskScore.boInfo.ofac && (
+                      <div className="mt-2">
+                        <Badge variant="destructive" className="text-xs px-2 py-0.5">OFAC SANCTIONED</Badge>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="flex flex-col items-center">
+                <div className="p-3 rounded-full bg-gray-50 dark:bg-gray-800 mb-2">
+                  <Shield className="w-6 h-6 text-gray-300 dark:text-gray-600" />
+                </div>
+                <div className="text-gray-400 font-medium text-sm">Not Available</div>
+              </div>
+            )}
           </div>
         </div>
       </div>
 
       {/* Attribution Section - sticky */}
       {address && attributions[address] && (
-        <div className="sticky top-[65px] w-full z-10 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 px-8 py-4">
+        <div className="sticky top-[60px] z-10 my-4 border border-gray-200 dark:border-gray-700 rounded-lg">
           <AddressAttributionEntities address={address} />
         </div>
       )}

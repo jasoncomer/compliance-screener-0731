@@ -1,24 +1,22 @@
-import { render, screen } from '@testing-library/react';
+import { vi, describe, it, expect } from 'vitest';
+import { render } from '@testing-library/react';
+import * as RTL from '@testing-library/react';
+const screen = RTL.screen;
 
 import '@testing-library/jest-dom';
+import React from 'react';
+
+// Mock the EntityDetails component before importing EntityHeightMeasurer
+vi.mock('../../views/RiskDashboard/components/entity-intelligence/EntityDetails', () => ({
+  default: ({ name, type }: { name: string; type: string }) =>
+    React.createElement('div', { 'data-testid': 'entity-details' }, [
+      React.createElement('h4', { key: 'title' }, 'Entity Details'),
+      React.createElement('div', { key: 'name' }, `Name: ${name}`),
+      React.createElement('div', { key: 'type' }, `Type: ${type}`)
+    ])
+}));
 
 import EntityHeightMeasurer from '../EntityHeightMeasurer';
-
-// Mock the theme context
-jest.mock('../context/ThemeContext', () => ({
-  useTheme: () => ({ theme: 'light' })
-}));
-
-// Mock the EntityDetails component
-jest.mock('../views/RiskDashboard/components/entity-intelligence/EntityDetails', () => ({
-  EntityDetails: ({ name, type }: { name: string; type: string }) => (
-    <div data-testid="entity-details">
-      <h4>Entity Details</h4>
-      <div>Name: {name}</div>
-      <div>Type: {type}</div>
-    </div>
-  )
-}));
 
 describe('EntityHeightMeasurer', () => {
   const mockCustodialProps = {

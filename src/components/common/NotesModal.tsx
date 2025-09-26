@@ -391,21 +391,21 @@ const NotesModal: React.FC<NotesModalProps> = ({
       await fetchNotes();
       
       // Recalculate unseen count after adding note
-      if (currentUser && currentUser._id && currentOrganization && (transactionId || address)) {
-        const contextId = getContextId(transactionId, address);
-        if (contextId) {
-          try {
-            const response = await notesApi.getUnseenCount(
-              currentOrganization._id,
-              type,
-              contextId
-            );
-            setUnseenNotesCount(response.data.count);
-          } catch (error) {
-            if (process.env.NODE_ENV === 'development') console.error('Failed to recalculate unseen count:', error);
-          }
-        }
-      }
+      // if (currentUser && currentUser._id && currentOrganization && (transactionId || address)) {
+      //   const contextId = getContextId(transactionId, address);
+      //   if (contextId) {
+      //     try {
+      //       const response = await notesApi.getUnseenCount(
+      //         currentOrganization._id,
+      //         type,
+      //         contextId
+      //       );
+      //       setUnseenNotesCount(response.data.count);
+      //     } catch (error) {
+      //       if (process.env.NODE_ENV === 'development') console.error('Failed to recalculate unseen count:', error);
+      //     }
+      //   }
+      // }
       
       message.success('Note added successfully');
     } catch (error) {
