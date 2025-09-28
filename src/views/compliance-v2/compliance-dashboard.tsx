@@ -22,13 +22,13 @@ export function ComplianceDashboard() {
 
       <div className="p-6">
         <Tabs defaultValue="monitoring" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4 bg-gray-800">
-            <TabsTrigger value={EComplianceTab.UNASSIGNED_TRANSACTIONS} className="data-[state=active]:bg-red-600">
+          <TabsList className="grid w-full grid-cols-4 bg-transparent gap-0 p-0">
+            <TabsTrigger value={EComplianceTab.UNASSIGNED_TRANSACTIONS} className="data-[state=active]:bg-red-600 border border-gray-600 bg-gray-800 hover:bg-gray-700 data-[state=active]:border-red-500 data-[state=active]:text-white">
               Unassigned Transactions
             </TabsTrigger>
-            <TabsTrigger value={EComplianceTab.ACTIVE_CASES}>Active Cases</TabsTrigger>
-            <TabsTrigger value={EComplianceTab.MONITORED_ADDRESSES}>Monitored Addresses</TabsTrigger>
-            <TabsTrigger value={EComplianceTab.ARCHIVED_CASES}>Archived Cases</TabsTrigger>
+            <TabsTrigger value={EComplianceTab.ACTIVE_CASES} className="border border-gray-600 bg-gray-800 hover:bg-gray-700 data-[state=active]:bg-gray-700 data-[state=active]:border-gray-500 data-[state=active]:text-white">Active Cases</TabsTrigger>
+            <TabsTrigger value={EComplianceTab.MONITORED_ADDRESSES} className="border border-gray-600 bg-gray-800 hover:bg-gray-700 data-[state=active]:bg-gray-700 data-[state=active]:border-gray-500 data-[state=active]:text-white">Monitored Addresses</TabsTrigger>
+            <TabsTrigger value={EComplianceTab.ARCHIVED_CASES} className="border border-gray-600 bg-gray-800 hover:bg-gray-700 data-[state=active]:bg-gray-700 data-[state=active]:border-gray-500 data-[state=active]:text-white">Archived Cases</TabsTrigger>
           </TabsList>
 
           <TabsContent value={EComplianceTab.UNASSIGNED_TRANSACTIONS}>
