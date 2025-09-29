@@ -1,1 +1,0 @@
-export type SettingSection = 'profile' | 'preferences' | 'notifications' | 'security' | 'organization' | 'subscription'; 
