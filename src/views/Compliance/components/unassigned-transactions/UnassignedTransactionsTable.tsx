@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo,useState } from 'react';
 
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Column,DataTable } from '@/components/ui/data-table';
 import { Spinner } from '@/components/ui/spinner';
 
@@ -19,6 +20,7 @@ import { getComplianceReportStatusClassName } from '../../utils/compliance.utils
 import { currencySymbols } from '../CurrencySelector';
 
 import { UnassignedTransactionModal } from './UnassignedTransactionModal';
+import CreateCaseModal from '../cases/CreateCaseModal';
 
 import '../../../../styles/transactionGrouping.css';
 
@@ -60,6 +62,8 @@ const UnassignedTransactionsTable: React.FC<TransactionsTableProps> = ({
   const [isDetailsModalVisible, setIsDetailsModalVisible] = useState(false);
   const [_selectedTransactionId, setSelectedTransactionId] = useState<string | null>(null);
   const [selectedTransactionData, setSelectedTransactionData] = useState<IComplianceTransaction | null>(null);
+  const [isCreateCaseModalVisible, setIsCreateCaseModalVisible] = useState(false);
+  const [caseTransactionData, setCaseTransactionData] = useState<IComplianceTransaction | null>(null);
   const { getPrice, prices } = useCryptoPrices();
   const [btcPrice, setBtcPrice] = useState<number>(0);
   
@@ -85,7 +89,7 @@ const UnassignedTransactionsTable: React.FC<TransactionsTableProps> = ({
   const updateAssigneeMutation = useUpdateTransactionAssignee();
 
   // Handle assignment
-  const handleAssign = async (assigneeId: string, notes?: string) => {
+  const handleAssign = async (assigneeId: string, notes?: string, status?: string) => {
     if (!selectedTransactionData) return;
     
     try {
@@ -98,13 +102,15 @@ const UnassignedTransactionsTable: React.FC<TransactionsTableProps> = ({
       // Make the API call - this will update Redux store via the mutation
       await updateAssigneeMutation.mutateAsync({
         transactionId: selectedTransactionData._id,
-        assignee: assigneeId
+        assignee: assigneeId,
+        status: status
       });
       
       console.log('Transaction assigned successfully:', {
         transactionId: selectedTransactionData._id,
         assigneeId,
-        notes
+        notes,
+        status
       });
     } catch (error) {
       console.error('Failed to assign transaction:', error);
@@ -213,6 +219,7 @@ const UnassignedTransactionsTable: React.FC<TransactionsTableProps> = ({
 
   // Configure row selection
   const rowSelection = {
+    type: "checkbox" as const,
     selectedRowKeys,
     onChange: (keys: React.Key[]) => onSelectChange(keys),
   };
@@ -347,6 +354,27 @@ const UnassignedTransactionsTable: React.FC<TransactionsTableProps> = ({
         );
       }
     },
+    {
+      title: 'Actions',
+      key: 'actions',
+      width: 120,
+      render: (_, record: IComplianceTransaction) => (
+        <div className="flex space-x-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={(e) => {
+              e.stopPropagation();
+              setCaseTransactionData(record);
+              setIsCreateCaseModalVisible(true);
+            }}
+            disabled={record.status === 'UNASSIGNED'}
+          >
+            Create Case
+          </Button>
+        </div>
+      ),
+    },
   ];
 
   // Add error boundary for the table
@@ -399,6 +427,18 @@ const UnassignedTransactionsTable: React.FC<TransactionsTableProps> = ({
         teamMembers={teamMembers}
         onTransactionUpdate={handleTransactionUpdate}
         calculatedRiskScore={selectedTransactionData ? calculatedRiskScores[selectedTransactionData._id]?.overallRisk : undefined}
+      />
+
+      <CreateCaseModal
+        isOpen={isCreateCaseModalVisible}
+        onClose={() => {
+          setIsCreateCaseModalVisible(false);
+          setCaseTransactionData(null);
+        }}
+        transactionId={caseTransactionData?._id || ''}
+        transactionTxId={caseTransactionData?.txId || ''}
+        clientId={caseTransactionData?.clientId || ''}
+        amount={caseTransactionData?.amount || 0}
       />
 
     </div>

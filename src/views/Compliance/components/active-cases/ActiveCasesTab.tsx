@@ -124,12 +124,12 @@ const ActiveCasesTab: React.FC<ActiveCasesTabProps> = ({ isActive, className }) 
       <div className="flex justify-between items-center mb-4 pb-4 border-b-2 border-gray-300">
         <h3 className="m-0 text-black dark:text-white flex items-center">
           <FileSearch className="mr-2 h-5 w-5" />
-          Active Cases Management ({totalTransactions})
+          Case Management ({totalTransactions})
         </h3>
         <div className="flex items-center">
           <div className="w-px h-6 bg-gray-400 mx-4"></div>
           <span className="mr-2.5 text-brand-primary-dark dark:text-white">
-            Total Active Cases: <strong>{totalTransactions}</strong>
+            Total Cases: <strong>{totalTransactions}</strong>
           </span>
         </div>
       </div>
@@ -158,6 +158,7 @@ const ActiveCasesTab: React.FC<ActiveCasesTabProps> = ({ isActive, className }) 
           pageSize={pageSize}
           loading={loading}
           onTableChange={handleTableChange}
+          isActiveCasesTab={true}
         />
       </ErrorBoundary>
     </div>

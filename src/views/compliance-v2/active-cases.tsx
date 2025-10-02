@@ -604,65 +604,53 @@ export default function ActiveCases() {
                               <TabsContent value="timeline" className="space-y-4">
                                 <Card className="bg-gray-800 border-gray-700">
                                   <CardHeader>
-                                    <CardTitle className="text-white text-lg">Case Timeline</CardTitle>
-                                    <CardDescription>Chronological history of case activities</CardDescription>
+                                    <CardTitle className="text-white text-lg flex items-center gap-2">
+                                      <Clock className="h-5 w-5" />
+                                      Case Timeline
+                                    </CardTitle>
                                   </CardHeader>
                                   <CardContent>
                                     <div className="space-y-4">
                                       {[
                                         {
-                                          time: "2 hours ago",
-                                          action: "Risk score updated to 92",
+                                          time: "2025-06-12 14:30",
+                                          action: "Case created",
                                           user: "System",
-                                          type: "system",
+                                          details: "Automated case creation based on risk threshold breach",
                                         },
                                         {
-                                          time: "4 hours ago",
-                                          action: "Evidence uploaded: OFAC Match Screenshot",
-                                          user: "Sarah Chen",
-                                          type: "evidence",
+                                          time: "2025-06-12 15:45",
+                                          action: "Assigned to officer",
+                                          user: "Sarah Johnson",
+                                          details: "Case assigned to compliance officer for review",
                                         },
                                         {
-                                          time: "6 hours ago",
-                                          action: "Case status changed to Under Review",
-                                          user: "Sarah Chen",
-                                          type: "status",
+                                          time: "2025-06-13 09:15",
+                                          action: "Evidence uploaded",
+                                          user: "Sarah Johnson",
+                                          details: "Blockchain analysis report uploaded",
                                         },
                                         {
-                                          time: "1 day ago",
-                                          action: "Case assigned to Sarah Chen",
-                                          user: "System",
-                                          type: "assignment",
-                                        },
-                                        {
-                                          time: "1 day ago",
-                                          action: "Case created from flagged transaction",
-                                          user: "System",
-                                          type: "creation",
+                                          time: "2025-06-13 11:20",
+                                          action: "Status updated",
+                                          user: "Sarah Johnson",
+                                          details: "Case status changed to 'Under Review'",
                                         },
                                       ].map((event, index) => (
-                                        <div
-                                          key={index}
-                                          className="flex items-start gap-3 p-3 bg-gray-900 rounded border"
-                                        >
-                                          <div
-                                            className={`w-3 h-3 rounded-full mt-2 ${
-                                              event.type === "system"
-                                                ? "bg-blue-500"
-                                                : event.type === "evidence"
-                                                  ? "bg-green-500"
-                                                  : event.type === "status"
-                                                    ? "bg-yellow-500"
-                                                    : event.type === "assignment"
-                                                      ? "bg-purple-500"
-                                                      : "bg-gray-500"
-                                            }`}
-                                          />
-                                          <div className="flex-1">
-                                            <div className="text-white">{event.action}</div>
-                                            <div className="text-sm text-gray-400">
-                                              {event.user} • {event.time}
+                                        <div key={index} className="flex gap-4">
+                                          <div className="flex flex-col items-center">
+                                            <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                                            {index < 3 && (
+                                              <div className="w-px h-16 bg-gray-600 mt-2"></div>
+                                            )}
+                                          </div>
+                                          <div className="flex-1 pb-8">
+                                            <div className="flex items-center gap-2 mb-1">
+                                              <span className="text-white font-medium">{event.action}</span>
+                                              <span className="text-gray-400 text-sm">{event.time}</span>
                                             </div>
+                                            <div className="text-gray-400 text-sm mb-1">by {event.user}</div>
+                                            <div className="text-gray-500 text-sm">{event.details}</div>
                                           </div>
                                         </div>
                                       ))}
@@ -674,60 +662,43 @@ export default function ActiveCases() {
                               <TabsContent value="actions" className="space-y-4">
                                 <Card className="bg-gray-800 border-gray-700">
                                   <CardHeader>
-                                    <CardTitle className="text-white text-lg">Case Actions</CardTitle>
+                                    <CardTitle className="text-white text-lg flex items-center gap-2">
+                                      <MessageSquare className="h-5 w-5" />
+                                      Case Actions
+                                    </CardTitle>
                                   </CardHeader>
                                   <CardContent className="space-y-4">
-                                    <div>
-                                      <Label className="text-gray-400">Update Status</Label>
-                                      <Select>
-                                        <SelectTrigger className="bg-gray-900 border-gray-600 mt-1">
-                                          <SelectValue placeholder="Select new status..." />
-                                        </SelectTrigger>
-                                        <SelectContent className="bg-gray-800 border-gray-700">
-                                          <SelectItem value="under_review">Under Review</SelectItem>
-                                          <SelectItem value="escalated">Escalated</SelectItem>
-                                          <SelectItem value="pending_review">Pending Review</SelectItem>
-                                          <SelectItem value="awaiting_response">Awaiting Response</SelectItem>
-                                          <SelectItem value="closed">Closed</SelectItem>
-                                        </SelectContent>
-                                      </Select>
-                                    </div>
-
-                                    <div>
-                                      <Label className="text-gray-400">Reassign Case</Label>
-                                      <Select>
-                                        <SelectTrigger className="bg-gray-900 border-gray-600 mt-1">
-                                          <SelectValue placeholder="Select officer..." />
-                                        </SelectTrigger>
-                                        <SelectContent className="bg-gray-800 border-gray-700">
-                                          <SelectItem value="sarah">Sarah Chen - Senior Analyst</SelectItem>
-                                          <SelectItem value="michael">
-                                            Michael Rodriguez - Compliance Officer
-                                          </SelectItem>
-                                          <SelectItem value="emma">Emma Thompson - AML Specialist</SelectItem>
-                                          <SelectItem value="david">David Kim - Investigation Lead</SelectItem>
-                                        </SelectContent>
-                                      </Select>
-                                    </div>
-
-                                    <div>
-                                      <Label className="text-gray-400">Add Note</Label>
-                                      <Textarea
-                                        className="bg-gray-900 border-gray-600 mt-1"
-                                        placeholder="Add investigation notes, findings, or updates..."
-                                        rows={3}
-                                      />
-                                    </div>
-
-                                    <div className="grid grid-cols-2 gap-4 pt-4">
-                                      <Button className="bg-green-600 hover:bg-green-700">
+                                    <div className="grid grid-cols-2 gap-4">
+                                      <Button variant="outline" className="border-gray-600 text-gray-300">
+                                        <MessageSquare className="h-4 w-4 mr-2" />
+                                        Add Note
+                                      </Button>
+                                      <Button variant="outline" className="border-gray-600 text-gray-300">
+                                        <User className="h-4 w-4 mr-2" />
+                                        Reassign Case
+                                      </Button>
+                                      <Button variant="outline" className="border-gray-600 text-gray-300">
+                                        <FileText className="h-4 w-4 mr-2" />
+                                        Generate Report
+                                      </Button>
+                                      <Button variant="outline" className="border-gray-600 text-gray-300">
                                         <CheckCircle className="h-4 w-4 mr-2" />
                                         Close Case
                                       </Button>
-                                      <Button variant="destructive">
-                                        <AlertTriangle className="h-4 w-4 mr-2" />
-                                        Escalate Case
-                                      </Button>
+                                    </div>
+                                    <div className="space-y-3">
+                                      <Label className="text-gray-400">Add a note</Label>
+                                      <Textarea
+                                        placeholder="Add a note about this case..."
+                                        rows={3}
+                                        className="min-h-[80px]"
+                                      />
+                                      <div className="flex gap-2">
+                                        <Button size="sm">Save Note</Button>
+                                        <Button size="sm" variant="outline">
+                                          Cancel
+                                        </Button>
+                                      </div>
                                     </div>
                                   </CardContent>
                                 </Card>

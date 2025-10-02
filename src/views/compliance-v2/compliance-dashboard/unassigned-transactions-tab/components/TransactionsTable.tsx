@@ -2,6 +2,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { truncateAddressIfNeeded } from "@/utils/generic"
 
 import { Transaction } from "../../components/types"
 
@@ -63,7 +64,7 @@ export default function TransactionsTable({ transactions }: TransactionsTablePro
                   </Badge>
                 </TableCell>
                 <TableCell className="text-white">{transaction.clientId}</TableCell>
-                <TableCell className="text-gray-400">{transaction.counterpartyEntities}</TableCell>
+                <TableCell className="text-gray-400">{truncateAddressIfNeeded(transaction.counterpartyEntities, 20)}</TableCell>
                 <TableCell className="text-white">{transaction.blockchain}</TableCell>
                 <TableCell>
                   <div className="flex flex-col">

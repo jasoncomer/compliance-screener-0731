@@ -1,4 +1,5 @@
-import { AlertTriangle, CheckCircle, Clock, Shield } from "lucide-react"
+import { AlertTriangle, CheckCircle, Clock, Shield, FileText } from "lucide-react"
+import { useState } from "react"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -6,12 +7,17 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 import { Transaction } from "../../components/types"
+import { CaseReportSection } from "@/components/CaseReportSection"
+import { useAppSelector } from "@/store/hooks"
+import { selectCurrentOrganization } from "@/store/slices/organizationsSlice"
 
 interface ActionsTabProps {
   transaction: Transaction
 }
 
-export default function ActionsTab({ transaction: _transaction }: ActionsTabProps) {
+export default function ActionsTab({ transaction }: ActionsTabProps) {
+  const currentOrganization = useAppSelector(selectCurrentOrganization);
+  
   return (
     <div className="space-y-4">
       <Card className="bg-gray-800 border-gray-700">
@@ -83,14 +89,12 @@ export default function ActionsTab({ transaction: _transaction }: ActionsTabProp
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
-            <Button variant="outline" className="w-full justify-start border-gray-600 text-gray-300">
-              <svg className="h-4 w-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                <path
-                  fillRule="evenodd"
-                  d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 0v12h8V4H6z"
-                  clipRule="evenodd"
-                />
-              </svg>
+            <Button 
+              variant="outline" 
+              className="w-full justify-start border-gray-600 text-gray-300 hover:bg-indigo-600 hover:text-white hover:border-indigo-600"
+              onClick={handleGenerateSAR}
+            >
+              <FileText className="h-4 w-4 mr-2" />
               Generate SAR Report
             </Button>
             <Button variant="outline" className="w-full justify-start border-gray-600 text-gray-300">
@@ -116,6 +120,13 @@ export default function ActionsTab({ transaction: _transaction }: ActionsTabProp
           </div>
         </CardContent>
       </Card>
+
+      {/* Case Report Section */}
+      <CaseReportSection
+        caseId={transaction.id || 'default-case-id'}
+        transactionId={transaction.txId} // Using actual Bitcoin transaction hash
+        organizationId={currentOrganization?._id || 'default-org-id'}
+      />
     </div>
   )
 }

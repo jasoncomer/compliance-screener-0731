@@ -13,20 +13,32 @@ import { selectCurrentOrganization } from '../../store/slices/organizationsSlice
 const { TextArea } = Input;
 const { Text } = Typography;
 
-const PanelContainer = styled.div<{ $themeMode: string; $expanded: boolean }>`
-  position: fixed;
-  top: 70px;
-  right: 20px;
-  width: 450px;
-  max-height: ${props => props.$expanded ? '400px' : '95px'};
+const PanelContainer = styled.div<{ $themeMode: string; $expanded: boolean; $inline?: boolean }>`
+  ${props => props.$inline ? `
+    position: relative;
+    width: 100%;
+    max-height: none;
+    background: transparent;
+    border-radius: 0;
+    box-shadow: none;
+    z-index: auto;
+    overflow: visible;
+    transition: none;
+  ` : `
+    position: fixed;
+    top: 70px;
+    right: 20px;
+    width: 450px;
+    max-height: ${props.$expanded ? '400px' : '95px'};
+    background: ${props.$themeMode === 'dark' ? '#1f1f1f' : '#ffffff'};
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 100;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+  `}
   display: flex;
   flex-direction: column;
-  background: ${({ $themeMode }) => $themeMode === 'dark' ? '#1f1f1f' : '#ffffff'};
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  z-index: 100;
-  overflow: hidden;
-  transition: max-height 0.3s ease;
 `;
 
 const NoteItem = styled.div<{ $themeMode: string; $isLatest?: boolean; $isEditing?: boolean }>`
@@ -151,9 +163,10 @@ interface NotesPanelProps {
   transactionId?: string;
   address?: string;
   type?: 'general' | 'transaction' | 'address';
+  inline?: boolean; // New prop to control positioning
 }
 
-const NotesPanel: React.FC<NotesPanelProps> = ({ transactionId, address, type = 'general' }) => {
+const NotesPanel: React.FC<NotesPanelProps> = ({ transactionId, address, type = 'general', inline = false }) => {
   const { theme } = useTheme();
   const { user: currentUser } = useAppContext();
   const [notes, setNotes] = useState<INote[]>([]);
@@ -290,7 +303,7 @@ const NotesPanel: React.FC<NotesPanelProps> = ({ transactionId, address, type = 
   };
 
   return (
-    <PanelContainer $themeMode={theme} $expanded={expanded}>      
+    <PanelContainer $themeMode={theme} $expanded={expanded} $inline={inline}>      
       <NotesContainer 
         ref={notesContainerRef} 
         id="notes-container" 

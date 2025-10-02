@@ -122,15 +122,21 @@ const TopCounterparties: React.FC<TopCounterpartiesProps> = ({
   }, [incoming, outgoing, counterpartyMode]);
 
   const filteredData = useMemo(() => {
+    let data;
     switch(activeTab) {
       case 'inflow':
-        return allCounterparties.filter(c => c.direction === 'inflow');
+        data = allCounterparties.filter(c => c.direction === 'inflow');
+        break;
       case 'outflow':
-        return allCounterparties.filter(c => c.direction === 'outflow');
+        data = allCounterparties.filter(c => c.direction === 'outflow');
+        break;
       case 'all':
       default:
-        return allCounterparties;
+        data = allCounterparties;
+        break;
     }
+    // Limit to maximum 5 entities for "Top 5 Counterparties"
+    return data.slice(0, 5);
   }, [activeTab, allCounterparties]);
 
   return (
@@ -141,7 +147,7 @@ const TopCounterparties: React.FC<TopCounterpartiesProps> = ({
           <h4 className={`text-lg font-semibold ${
             theme === 'dark' ? 'text-white' : 'text-gray-900'
           }`}>
-            Top Counterparties
+            Top 5 Counterparties
           </h4>
           <div className="flex space-x-2">
             <button
@@ -420,75 +426,6 @@ const TopCounterparties: React.FC<TopCounterpartiesProps> = ({
                 </div>
               </div>
 
-              {/* Recent Transactions */}
-              <div>
-                <h4 className={`text-lg font-semibold mb-4 ${
-                  theme === 'dark' ? 'text-white' : 'text-gray-900'
-                }`}>Recent Transactions</h4>
-                <div className="overflow-x-auto">
-                  <div className="max-h-64 overflow-y-auto">
-                    <table className="w-full">
-                    <thead>
-                      <tr className={`border-b ${
-                        theme === 'dark' ? 'border-gray-700' : 'border-gray-200'
-                      }`}>
-                        <th className={`text-left py-2 px-2 text-xs font-semibold ${
-                          theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
-                        }`}>Time</th>
-                        <th className={`text-left py-2 px-2 text-xs font-semibold ${
-                          theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
-                        }`}>Direction</th>
-                        <th className={`text-left py-2 px-2 text-xs font-semibold ${
-                          theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
-                        }`}>Amount</th>
-                        <th className={`text-left py-2 px-2 text-xs font-semibold ${
-                          theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
-                        }`}>USD Value</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {getCounterpartyTransactions(selectedCounterparty.address).map((tx, index) => (
-                        <tr 
-                          key={index}
-                          className={`border-b ${
-                            theme === 'dark' ? 'border-gray-700' : 'border-gray-200'
-                          }`}
-                        >
-                          <td className={`py-2 px-2 text-xs ${
-                            theme === 'dark' ? 'text-gray-300' : 'text-gray-700'
-                          }`}>
-                            {formatTime(tx.time)}
-                          </td>
-                          <td className="py-2 px-2">
-                            <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium ${
-                              tx.direction === 'inflow' 
-                                ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300' 
-                                : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300'
-                            }`}>
-                              {tx.direction === 'inflow' ? (
-                                <ArrowUpRight className="w-3 h-3" />
-                              ) : (
-                                <ArrowDownRight className="w-3 h-3" />
-                              )}
-                            </span>
-                          </td>
-                          <td className={`py-2 px-2 text-xs font-mono ${
-                            theme === 'dark' ? 'text-gray-300' : 'text-gray-700'
-                          }`}>
-                            {tx.description}
-                          </td>
-                          <td className={`py-2 px-2 text-xs ${
-                            theme === 'dark' ? 'text-gray-300' : 'text-gray-700'
-                          }`}>
-                            {tx.usd}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                  </div>
-                </div>
-              </div>
             </div>
 
             {/* Modal Footer */}

@@ -21,6 +21,7 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { CaseReportSection } from "@/components/CaseReportSection"
 import {
   Dialog,
   DialogContent,
@@ -59,93 +60,57 @@ interface Case {
 const mockActiveCases = [
   {
     id: "CASE-2025-001",
-    title: "Suspicious High-Value Bitcoin Transfers",
-    clientId: "12312323",
+    title: "Genesis Block Address Activity",
+    clientId: "5665456546",
     assignedTo: "Sarah Chen",
-    priority: "CRITICAL",
+    priority: "HIGH",
     status: "UNDER_REVIEW",
-    riskScore: 92,
-    totalAmount: "$45,230.00",
-    transactionCount: 8,
-    createdDate: "2025-06-12",
+    riskScore: 30,
+    totalAmount: "$650,000.00",
+    transactionCount: 2,
+    createdDate: "2025-08-20",
     lastActivity: "2 hours ago",
-    dueDate: "2025-06-14",
-    description: "Multiple high-value transactions to addresses flagged in OFAC sanctions list",
-    tags: ["AML", "Sanctions", "High-Risk"],
+    dueDate: "2025-08-27",
+    description: "Investigation into transactions from the Bitcoin Genesis Block address - potential historical significance and current activity",
+    tags: ["Genesis", "Historical", "Bitcoin"],
     evidence: 3,
     notes: 7,
   },
   {
     id: "CASE-2025-002",
-    title: "Rapid Transaction Velocity Pattern",
-    clientId: "45678901",
+    title: "Cryptocurrency Mixer Service Investigation",
+    clientId: "5665456546",
     assignedTo: "Michael Rodriguez",
-    priority: "HIGH",
+    priority: "CRITICAL",
     status: "ESCALATED",
-    riskScore: 78,
-    totalAmount: "$12,450.00",
-    transactionCount: 23,
-    createdDate: "2025-06-11",
+    riskScore: 90,
+    totalAmount: "$2,600,000.00",
+    transactionCount: 2,
+    createdDate: "2025-08-18",
     lastActivity: "4 hours ago",
-    dueDate: "2025-06-15",
-    description: "Unusual transaction velocity pattern suggesting potential structuring activity",
-    tags: ["Structuring", "Velocity", "Pattern"],
+    dueDate: "2025-08-25",
+    description: "Monitoring mixer service input address for potential money laundering and privacy coin mixing activities",
+    tags: ["Mixer", "Privacy", "Laundering"],
     evidence: 5,
     notes: 12,
   },
   {
     id: "CASE-2025-003",
-    title: "Cross-Chain Bridge Anomaly",
-    clientId: "78901234",
+    title: "DeFi Protocol Exploit Investigation",
+    clientId: "1234567890",
     assignedTo: "Emma Thompson",
     priority: "MEDIUM",
     status: "PENDING_REVIEW",
-    riskScore: 65,
-    totalAmount: "$8,750.00",
-    transactionCount: 4,
-    createdDate: "2025-06-10",
+    riskScore: 68,
+    totalAmount: "$18,750.00",
+    transactionCount: 2,
+    createdDate: "2025-08-19",
     lastActivity: "1 day ago",
-    dueDate: "2025-06-16",
-    description: "Suspicious cross-chain bridging activity with privacy coin involvement",
-    tags: ["Cross-Chain", "Privacy", "Bridge"],
+    dueDate: "2025-08-26",
+    description: "Investigation into Ethereum address involved in DeFi protocol exploit - tracking stolen funds",
+    tags: ["DeFi", "Exploit", "Ethereum"],
     evidence: 2,
     notes: 4,
-  },
-  {
-    id: "CASE-2025-004",
-    title: "PEP-Related Transaction Investigation",
-    clientId: "34567890",
-    assignedTo: "David Kim",
-    priority: "HIGH",
-    status: "AWAITING_RESPONSE",
-    riskScore: 85,
-    totalAmount: "$67,890.00",
-    transactionCount: 12,
-    createdDate: "2025-06-09",
-    lastActivity: "6 hours ago",
-    dueDate: "2025-06-13",
-    description: "Transactions involving politically exposed person requiring enhanced due diligence",
-    tags: ["PEP", "EDD", "Political"],
-    evidence: 8,
-    notes: 15,
-  },
-  {
-    id: "CASE-2025-005",
-    title: "Mixer Service Detection",
-    clientId: "56789012",
-    assignedTo: "Sarah Chen",
-    priority: "CRITICAL",
-    status: "INVESTIGATION",
-    riskScore: 95,
-    totalAmount: "$23,100.00",
-    transactionCount: 6,
-    createdDate: "2025-06-08",
-    lastActivity: "30 minutes ago",
-    dueDate: "2025-06-12",
-    description: "Funds traced through cryptocurrency mixing service",
-    tags: ["Mixer", "Obfuscation", "Critical"],
-    evidence: 12,
-    notes: 23,
   },
 ]
 
@@ -210,6 +175,7 @@ export default function ActiveCases() {
       case_.assignedTo.toLowerCase().includes(searchTerm.toLowerCase())
     return matchesStatus && matchesPriority && matchesSearch
   })
+
 
   return (
     <div className="space-y-6">
@@ -402,12 +368,13 @@ export default function ActiveCases() {
                             </div>
 
                             <Tabs defaultValue="overview" className="w-full">
-                              <TabsList className="grid w-full grid-cols-5 bg-gray-800">
+                              <TabsList className="grid w-full grid-cols-6 bg-gray-800">
                                 <TabsTrigger value="overview">Overview</TabsTrigger>
                                 <TabsTrigger value="transactions">Transactions</TabsTrigger>
                                 <TabsTrigger value="evidence">Evidence</TabsTrigger>
                                 <TabsTrigger value="timeline">Timeline</TabsTrigger>
                                 <TabsTrigger value="actions">Actions</TabsTrigger>
+                                <TabsTrigger value="case-report">Case Report</TabsTrigger>
                               </TabsList>
 
                               <TabsContent value="overview" className="space-y-4">
@@ -604,65 +571,53 @@ export default function ActiveCases() {
                               <TabsContent value="timeline" className="space-y-4">
                                 <Card className="bg-gray-800 border-gray-700">
                                   <CardHeader>
-                                    <CardTitle className="text-white text-lg">Case Timeline</CardTitle>
-                                    <CardDescription>Chronological history of case activities</CardDescription>
+                                    <CardTitle className="text-white text-lg flex items-center gap-2">
+                                      <Clock className="h-5 w-5" />
+                                      Case Timeline
+                                    </CardTitle>
                                   </CardHeader>
                                   <CardContent>
                                     <div className="space-y-4">
                                       {[
                                         {
-                                          time: "2 hours ago",
-                                          action: "Risk score updated to 92",
+                                          time: "2025-06-12 14:30",
+                                          action: "Case created",
                                           user: "System",
-                                          type: "system",
+                                          details: "Automated case creation based on risk threshold breach",
                                         },
                                         {
-                                          time: "4 hours ago",
-                                          action: "Evidence uploaded: OFAC Match Screenshot",
-                                          user: "Sarah Chen",
-                                          type: "evidence",
+                                          time: "2025-06-12 15:45",
+                                          action: "Assigned to officer",
+                                          user: "Sarah Johnson",
+                                          details: "Case assigned to compliance officer for review",
                                         },
                                         {
-                                          time: "6 hours ago",
-                                          action: "Case status changed to Under Review",
-                                          user: "Sarah Chen",
-                                          type: "status",
+                                          time: "2025-06-13 09:15",
+                                          action: "Evidence uploaded",
+                                          user: "Sarah Johnson",
+                                          details: "Blockchain analysis report uploaded",
                                         },
                                         {
-                                          time: "1 day ago",
-                                          action: "Case assigned to Sarah Chen",
-                                          user: "System",
-                                          type: "assignment",
-                                        },
-                                        {
-                                          time: "1 day ago",
-                                          action: "Case created from flagged transaction",
-                                          user: "System",
-                                          type: "creation",
+                                          time: "2025-06-13 11:20",
+                                          action: "Status updated",
+                                          user: "Sarah Johnson",
+                                          details: "Case status changed to 'Under Review'",
                                         },
                                       ].map((event, index) => (
-                                        <div
-                                          key={index}
-                                          className="flex items-start gap-3 p-3 bg-gray-900 rounded border"
-                                        >
-                                          <div
-                                            className={`w-3 h-3 rounded-full mt-2 ${
-                                              event.type === "system"
-                                                ? "bg-blue-500"
-                                                : event.type === "evidence"
-                                                  ? "bg-green-500"
-                                                  : event.type === "status"
-                                                    ? "bg-yellow-500"
-                                                    : event.type === "assignment"
-                                                      ? "bg-purple-500"
-                                                      : "bg-gray-500"
-                                            }`}
-                                          />
-                                          <div className="flex-1">
-                                            <div className="text-white">{event.action}</div>
-                                            <div className="text-sm text-gray-400">
-                                              {event.user} • {event.time}
+                                        <div key={index} className="flex gap-4">
+                                          <div className="flex flex-col items-center">
+                                            <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                                            {index < 3 && (
+                                              <div className="w-px h-16 bg-gray-600 mt-2"></div>
+                                            )}
+                                          </div>
+                                          <div className="flex-1 pb-8">
+                                            <div className="flex items-center gap-2 mb-1">
+                                              <span className="text-white font-medium">{event.action}</span>
+                                              <span className="text-gray-400 text-sm">{event.time}</span>
                                             </div>
+                                            <div className="text-gray-400 text-sm mb-1">by {event.user}</div>
+                                            <div className="text-gray-500 text-sm">{event.details}</div>
                                           </div>
                                         </div>
                                       ))}
@@ -674,63 +629,50 @@ export default function ActiveCases() {
                               <TabsContent value="actions" className="space-y-4">
                                 <Card className="bg-gray-800 border-gray-700">
                                   <CardHeader>
-                                    <CardTitle className="text-white text-lg">Case Actions</CardTitle>
+                                    <CardTitle className="text-white text-lg flex items-center gap-2">
+                                      <MessageSquare className="h-5 w-5" />
+                                      Case Actions
+                                    </CardTitle>
                                   </CardHeader>
                                   <CardContent className="space-y-4">
-                                    <div>
-                                      <Label className="text-gray-400">Update Status</Label>
-                                      <Select>
-                                        <SelectTrigger className="bg-gray-900 border-gray-600 mt-1">
-                                          <SelectValue placeholder="Select new status..." />
-                                        </SelectTrigger>
-                                        <SelectContent className="bg-gray-800 border-gray-700">
-                                          <SelectItem value="under_review">Under Review</SelectItem>
-                                          <SelectItem value="escalated">Escalated</SelectItem>
-                                          <SelectItem value="pending_review">Pending Review</SelectItem>
-                                          <SelectItem value="awaiting_response">Awaiting Response</SelectItem>
-                                          <SelectItem value="closed">Closed</SelectItem>
-                                        </SelectContent>
-                                      </Select>
-                                    </div>
-
-                                    <div>
-                                      <Label className="text-gray-400">Reassign Case</Label>
-                                      <Select>
-                                        <SelectTrigger className="bg-gray-900 border-gray-600 mt-1">
-                                          <SelectValue placeholder="Select officer..." />
-                                        </SelectTrigger>
-                                        <SelectContent className="bg-gray-800 border-gray-700">
-                                          <SelectItem value="sarah">Sarah Chen - Senior Analyst</SelectItem>
-                                          <SelectItem value="michael">
-                                            Michael Rodriguez - Compliance Officer
-                                          </SelectItem>
-                                          <SelectItem value="emma">Emma Thompson - AML Specialist</SelectItem>
-                                          <SelectItem value="david">David Kim - Investigation Lead</SelectItem>
-                                        </SelectContent>
-                                      </Select>
-                                    </div>
-
-                                    <div>
-                                      <Label className="text-gray-400">Add Note</Label>
-                                      <Textarea
-                                        className="bg-gray-900 border-gray-600 mt-1"
-                                        placeholder="Add investigation notes, findings, or updates..."
-                                        rows={3}
-                                      />
-                                    </div>
-
-                                    <div className="grid grid-cols-2 gap-4 pt-4">
-                                      <Button className="bg-green-600 hover:bg-green-700">
+                                    <div className="grid grid-cols-2 gap-4">
+                                      <Button variant="outline" className="border-gray-600 text-gray-300">
+                                        <MessageSquare className="h-4 w-4 mr-2" />
+                                        Add Note
+                                      </Button>
+                                      <Button variant="outline" className="border-gray-600 text-gray-300">
+                                        <User className="h-4 w-4 mr-2" />
+                                        Reassign Case
+                                      </Button>
+                                      <Button variant="outline" className="border-gray-600 text-gray-300">
                                         <CheckCircle className="h-4 w-4 mr-2" />
                                         Close Case
                                       </Button>
-                                      <Button variant="destructive">
-                                        <AlertTriangle className="h-4 w-4 mr-2" />
-                                        Escalate Case
-                                      </Button>
+                                    </div>
+                                    <div className="space-y-3">
+                                      <Label className="text-gray-400">Add a note</Label>
+                                      <Textarea
+                                        placeholder="Add a note about this case..."
+                                        rows={3}
+                                        className="min-h-[80px]"
+                                      />
+                                      <div className="flex gap-2">
+                                        <Button size="sm">Save Note</Button>
+                                        <Button size="sm" variant="outline">
+                                          Cancel
+                                        </Button>
+                                      </div>
                                     </div>
                                   </CardContent>
                                 </Card>
+                              </TabsContent>
+
+                              <TabsContent value="case-report" className="space-y-4">
+                                <CaseReportSection
+                                  caseId={selectedCase?.id || 'default-case-id'}
+                                  transactionId={selectedCase?.transaction?.txId || 'default-tx-id'}
+                                  organizationId={selectedCase?.organizationId || 'default-org-id'}
+                                />
                               </TabsContent>
                             </Tabs>
                           </div>
@@ -744,6 +686,7 @@ export default function ActiveCases() {
           </Table>
         </CardContent>
       </Card>
+
     </div>
   )
 }

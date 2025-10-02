@@ -25,6 +25,8 @@ import Admin from './views/Admin';
 import Alerts from './views/Alerts';
 import BlockExplorer from './views/blockexplorer/BlockExplorer';
 import ComplianceScreener from './views/Compliance/ComplianceScreener';
+import ClientOverviewPage from './views/Compliance/ClientOverviewPage';
+import MonitoredAddressesPage from './views/Compliance/MonitoredAddressesPage';
 import { ComplianceDashboard } from "./views/compliance-v2/compliance-dashboard";
 import FlowTrace from './views/Flowtrace/FlowTracePage';
 import Home from "./views/Home";
@@ -133,6 +135,10 @@ function App() {
           }>
             <Route index element={<BlockExplorer />} />
             <Route path="compliance-screener" element={<ComplianceScreener />} />
+            <Route path="compliance-screener/active-cases" element={<ComplianceScreener />} />
+            <Route path="compliance-screener/archived-cases" element={<ComplianceScreener />} />
+            <Route path="compliance-screener/client-overview" element={<ClientOverviewPage />} />
+            <Route path="compliance-screener/addresses" element={<MonitoredAddressesPage />} />
             <Route path="compliance-dashboard" element={<ComplianceDashboard />} />
             <Route path="admin" element={<Admin />} />
             <Route path="alerts" element={<Alerts />} />

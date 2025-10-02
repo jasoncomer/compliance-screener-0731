@@ -1,10 +1,11 @@
 import React, { useCallback, useEffect, useMemo,useRef, useState } from 'react';
 
-import { AlertCircle,BarChart3 } from 'lucide-react';
+import { AlertCircle,BarChart3, StickyNote } from 'lucide-react';
 
 import AddressSearchInput from '../../components/common/AddressSearchInput';
 import EmptyState from '../../components/common/EmptyState';
 import EntityHeightMeasurer from '../../components/EntityHeightMeasurer';
+import NotesPanel from '../../components/common/NotesPanel';
 import ViewWrapper from '../../components/ViewWrapper';
 import { useAttribution } from '../../context/AttributionContext';
 import { useTheme } from '../../context/ThemeContext';
@@ -1247,6 +1248,23 @@ const RiskDashboard: React.FC = React.memo(() => {
           />
         </div>
       )}
+
+          {/* Notes Section - Full Width */}
+          {address && (
+            <div className="rounded-2xl border p-6 bg-gray-50 dark:bg-background border-gray-200 dark:border-gray-700">
+              <div className="flex items-center space-x-3 mb-6">
+                <div className="w-10 h-10 bg-yellow-100 dark:bg-yellow-900/30 rounded-xl flex items-center justify-center">
+                  <StickyNote className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
+                </div>
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Address Notes</h2>
+              </div>
+              <NotesPanel 
+                type="address"
+                address={address}
+                inline={true}
+              />
+            </div>
+          )}
         </div>
       )}
 

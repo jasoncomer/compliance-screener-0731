@@ -31,7 +31,7 @@ const ViewWrapper: React.FC<ViewWrapperProps> = ({
       )}
     >
       {title && (
-        <header className="mb-6 lg:mb-8">
+        <header className="mb-3 lg:mb-4">
           <div className="flex items-center gap-3 mb-2">
             {icon && (
               <div className="flex items-center justify-center w-8 h-8">

@@ -124,6 +124,7 @@ const ArchivedCasesTab: React.FC<ArchivedCasesTabProps> = ({ isActive, className
         ]}
         availableBlockchains={availableBlockchains}
         availableClientIds={availableClientIds}
+        showTransactionIdFilter={true}
         defaultStatus={ARCHIVED_STATUSES}
         onFilterChange={handleFilterChange}
         onClearFilters={handleClearFilters}

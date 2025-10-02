@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 
-import { Database, FileSearch, History, Search, Table } from 'lucide-react';
+import { Database, FileSearch, History, Search, Table, Users, Briefcase } from 'lucide-react';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
@@ -12,8 +13,9 @@ import ActiveCasesTab from './components/active-cases/ActiveCasesTab';
 import ArchivedCasesTab from './components/archived-cases/ArchivedCasesTab';
 import MonitoredAddressesTab from './components/monitored-addresses/MonitoredAddressesTab';
 import UnassignedTransactionsTab from './components/unassigned-transactions/UnassignedTransactionsTab';
+import ClientOverviewTab from './components/client-overview/ClientOverviewTab';
 
-type TabKey = 'transactions' | 'active-cases' | 'addresses' | 'archived-cases';
+type TabKey = 'transactions' | 'active-cases' | 'archived-cases';
 
 interface TabConfig {
   key: TabKey;
@@ -24,8 +26,24 @@ interface TabConfig {
 
 const ComplianceScreener: React.FC = () => {
   const dispatch = useAppDispatch();
+  const navigate = useNavigate();
+  const location = useLocation();
   const monitoredAddresses = useAppSelector(selectAllAddresses);
-  const [activeTab, setActiveTab] = useState<TabKey>('transactions');
+  
+  // Determine active tab from URL
+  const getActiveTabFromUrl = (): TabKey => {
+    const path = location.pathname;
+    if (path.includes('/active-cases')) return 'active-cases';
+    if (path.includes('/archived-cases')) return 'archived-cases';
+    return 'transactions'; // default
+  };
+  
+  const [activeTab, setActiveTab] = useState<TabKey>(getActiveTabFromUrl());
+
+  // Update active tab when URL changes
+  useEffect(() => {
+    setActiveTab(getActiveTabFromUrl());
+  }, [location.pathname]);
 
   // Load monitored addresses from Redux store
   useEffect(() => {
@@ -34,7 +52,17 @@ const ComplianceScreener: React.FC = () => {
 
   // Handle tab change
   const handleTabChange = (activeKey: string) => {
-    setActiveTab(activeKey as TabKey);
+    const newTab = activeKey as TabKey;
+    setActiveTab(newTab);
+    
+    // Navigate to the appropriate URL
+    if (newTab === 'active-cases') {
+      navigate('/home/compliance-screener/active-cases');
+    } else if (newTab === 'archived-cases') {
+      navigate('/home/compliance-screener/archived-cases');
+    } else {
+      navigate('/home/compliance-screener');
+    }
   };
 
   // Handle addresses change - memoized to prevent unnecessary re-renders
@@ -45,7 +73,7 @@ const ComplianceScreener: React.FC = () => {
   const getTabDescription = (tab: TabKey): string => {
     switch (tab) {
       case 'active-cases':
-        return 'This page shows transactions under investigation that require compliance review or escalation.';
+        return 'This page manages all active compliance cases with full case lifecycle tracking and assignment.';
       case 'archived-cases':
         return 'This page shows completed and archived compliance cases for reference and auditing.';
       case 'transactions':
@@ -61,33 +89,22 @@ const ComplianceScreener: React.FC = () => {
     {
       key: 'transactions',
       label: 'Unassigned Transactions',
-      icon: <Table className="w-4 h-4" />,
+      icon: <Table className="w-4 h-4 text-orange-500" />,
       component: <UnassignedTransactionsTab initialStatusFilter="UNASSIGNED" />,
     },
     {
       key: 'active-cases',
-      label: 'Active Cases',
-      icon: <FileSearch className="w-4 h-4" />,
+      label: 'Case Management',
+      icon: <FileSearch className="w-4 h-4 text-orange-500" />,
       component: <ActiveCasesTab isActive={activeTab === 'active-cases'} />,
-    },
-    {
-      key: 'addresses',
-      label: 'Monitored Addresses',
-      icon: <Database className="w-4 h-4" />,
-      component: (
-        <MonitoredAddressesTab
-          addresses={monitoredAddresses}
-          onAddressesChange={handleAddressesChange}
-        />
-      ),
     },
     {
       key: 'archived-cases',
       label: 'Archived Cases',
-      icon: <History className="w-4 h-4" />,
+      icon: <History className="w-4 h-4 text-orange-500" />,
       component: <ArchivedCasesTab isActive={activeTab === 'archived-cases'} />,
     },
-  ], [monitoredAddresses, activeTab, handleAddressesChange]);
+  ], [activeTab]);
 
   return (
     <ViewWrapper
@@ -97,7 +114,7 @@ const ComplianceScreener: React.FC = () => {
       fullWidth={true}
     >
       <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-        <TabsList className="grid w-full grid-cols-4 h-auto">
+        <TabsList className="grid w-full grid-cols-3 h-auto">
           {tabConfig.map(({ key, label, icon }) => (
             <TabsTrigger
               key={key}

@@ -1,5 +1,5 @@
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 
 import {
   Activity,
@@ -10,7 +10,6 @@ import {
   Clock,
   Copy,
   DollarSign,
-  ExternalLink,
   Eye,
   Filter,
   Plus,
@@ -38,124 +37,32 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
 
-interface Address {
-  id: string
-  address: string
-  blockchain: string
-  label: string
-  category: string
-  riskScore: number
-  status: string
-  alertsEnabled: boolean
-  dateAdded: string
-  lastActivity: string
-  totalTransactions: number
-  totalVolume: string
-  tags: string[]
-  notes: string
-  alertThreshold: number
-  monitoringReason: string
-  addedBy: string
+import { useAppDispatch, useAppSelector } from "@/store/hooks"
+import { 
+  fetchMonitoredAddresses, 
+  deleteMonitoredAddress, 
+  selectAllAddresses,
+  selectIsLoading 
+} from "@/store/slices/monitoredAddressesSlice"
+import { MonitoredAddress } from "@/typings/compliance"
+
+// Helper function to get category from risk score
+const getCategoryFromRiskScore = (riskScore: number): string => {
+  if (riskScore >= 90) return "CRITICAL"
+  if (riskScore >= 70) return "HIGH_RISK"
+  if (riskScore >= 50) return "MEDIUM"
+  return "LOW"
 }
 
-// Mock data for monitored addresses
-const mockMonitoredAddresses = [
-  {
-    id: "ADDR-001",
-    address: "1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa",
-    blockchain: "Bitcoin",
-    label: "Suspicious Exchange Wallet",
-    category: "HIGH_RISK",
-    riskScore: 95,
-    status: "ACTIVE",
-    alertsEnabled: true,
-    dateAdded: "2025-06-01",
-    lastActivity: "2 hours ago",
-    totalTransactions: 1247,
-    totalVolume: "$2,450,000",
-    tags: ["Exchange", "High-Volume", "Sanctions"],
-    notes: "Flagged for potential sanctions evasion activities",
-    alertThreshold: 10000,
-    monitoringReason: "OFAC sanctions match",
-    addedBy: "Sarah Chen",
-  },
-  {
-    id: "ADDR-002",
-    address: "3J98t1WpEZ73CNmQviecrnyiWrnqRhWNLy",
-    blockchain: "Bitcoin",
-    label: "Mixer Service Input",
-    category: "CRITICAL",
-    riskScore: 98,
-    status: "ACTIVE",
-    alertsEnabled: true,
-    dateAdded: "2025-05-28",
-    lastActivity: "15 minutes ago",
-    totalTransactions: 892,
-    totalVolume: "$1,890,000",
-    tags: ["Mixer", "Privacy", "Critical"],
-    notes: "Known cryptocurrency mixing service - high priority monitoring",
-    alertThreshold: 5000,
-    monitoringReason: "Cryptocurrency mixer detection",
-    addedBy: "Michael Rodriguez",
-  },
-  {
-    id: "ADDR-003",
-    address: "0x742d35Cc6634C0532925a3b8D4C9db96DfB3f681",
-    blockchain: "Ethereum",
-    label: "DeFi Protocol Exploit",
-    category: "MEDIUM",
-    riskScore: 72,
-    status: "ACTIVE",
-    alertsEnabled: false,
-    dateAdded: "2025-06-05",
-    lastActivity: "1 day ago",
-    totalTransactions: 156,
-    totalVolume: "$340,000",
-    tags: ["DeFi", "Exploit", "Investigation"],
-    notes: "Address involved in recent DeFi protocol exploit",
-    alertThreshold: 25000,
-    monitoringReason: "Security incident investigation",
-    addedBy: "Emma Thompson",
-  },
-  {
-    id: "ADDR-004",
-    address: "bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh",
-    blockchain: "Bitcoin",
-    label: "PEP-Related Wallet",
-    category: "HIGH_RISK",
-    riskScore: 85,
-    status: "PAUSED",
-    alertsEnabled: true,
-    dateAdded: "2025-05-15",
-    lastActivity: "3 days ago",
-    totalTransactions: 45,
-    totalVolume: "$125,000",
-    tags: ["PEP", "Political", "Enhanced-DD"],
-    notes: "Wallet associated with politically exposed person",
-    alertThreshold: 15000,
-    monitoringReason: "PEP association",
-    addedBy: "David Kim",
-  },
-  {
-    id: "ADDR-005",
-    address: "0x8ba1f109551bD432803012645Hac136c22C501e3",
-    blockchain: "Ethereum",
-    label: "Ransomware Payment Address",
-    category: "CRITICAL",
-    riskScore: 99,
-    status: "ACTIVE",
-    alertsEnabled: true,
-    dateAdded: "2025-06-10",
-    lastActivity: "6 hours ago",
-    totalTransactions: 23,
-    totalVolume: "$89,000",
-    tags: ["Ransomware", "Criminal", "Law-Enforcement"],
-    notes: "Address linked to ransomware payments - law enforcement coordination",
-    alertThreshold: 1000,
-    monitoringReason: "Criminal activity",
-    addedBy: "Sarah Chen",
-  },
-]
+// Helper function to get mock risk score for display (since real data doesn't have this)
+const getMockRiskScore = (address: string): number => {
+  // Simple hash-based risk score for demo purposes
+  let hash = 0
+  for (let i = 0; i < address.length; i++) {
+    hash = ((hash << 5) - hash + address.charCodeAt(i)) & 0xffffffff
+  }
+  return Math.abs(hash) % 100
+}
 
 const addressStats = [
   { label: "Total Monitored", value: 247, change: "+12", icon: Target },
@@ -165,12 +72,23 @@ const addressStats = [
 ]
 
 export default function MonitoredAddresses() {
-  const [selectedAddress, setSelectedAddress] = useState<Address | null>(null)
+  const dispatch = useAppDispatch()
+  const monitoredAddresses = useAppSelector(selectAllAddresses)
+  const loading = useAppSelector(selectIsLoading)
+  
+  const [selectedAddress, setSelectedAddress] = useState<MonitoredAddress | null>(null)
   const [filterCategory, setFilterCategory] = useState("all")
   const [filterStatus, setFilterStatus] = useState("all")
   const [filterBlockchain, setFilterBlockchain] = useState("all")
   const [searchTerm, setSearchTerm] = useState("")
   const [showAddDialog, setShowAddDialog] = useState(false)
+  const [deleteConfirmVisible, setDeleteConfirmVisible] = useState(false)
+  const [addressToDelete, setAddressToDelete] = useState<string | null>(null)
+
+  // Load monitored addresses on component mount
+  useEffect(() => {
+    dispatch(fetchMonitoredAddresses())
+  }, [dispatch])
 
   const getCategoryColor = (category: string) => {
     switch (category) {
@@ -220,14 +138,39 @@ export default function MonitoredAddresses() {
     }
   }
 
-  const filteredAddresses = mockMonitoredAddresses.filter((addr) => {
-    const matchesCategory = filterCategory === "all" || addr.category === filterCategory
-    const matchesStatus = filterStatus === "all" || addr.status === filterStatus
-    const matchesBlockchain = filterBlockchain === "all" || addr.blockchain === filterBlockchain
+  // Handle delete functionality
+  const handleDeleteAddress = (id: string) => {
+    setAddressToDelete(id)
+    setDeleteConfirmVisible(true)
+  }
+
+  const confirmDelete = async () => {
+    if (!addressToDelete) return
+
+    try {
+      await dispatch(deleteMonitoredAddress(addressToDelete)).unwrap()
+      setDeleteConfirmVisible(false)
+      setAddressToDelete(null)
+    } catch (error) {
+      console.error('Failed to delete address:', error)
+      // Show error message to user
+      alert(`Failed to delete address: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    }
+  }
+
+  // Filter addresses based on current filters
+  const filteredAddresses = monitoredAddresses.filter((addr) => {
+    const riskScore = getMockRiskScore(addr.address)
+    const category = getCategoryFromRiskScore(riskScore)
+    
+    const matchesCategory = filterCategory === "all" || category === filterCategory
+    const matchesStatus = filterStatus === "all" || "ACTIVE" === filterStatus
+    const matchesBlockchain = filterBlockchain === "all" || addr.blockchain.toLowerCase() === filterBlockchain.toLowerCase()
     const matchesSearch =
       addr.address.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      addr.label.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      addr.tags.some((tag) => tag.toLowerCase().includes(searchTerm.toLowerCase()))
+      (addr.clientId && addr.clientId.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (addr.notes && addr.notes.toLowerCase().includes(searchTerm.toLowerCase()))
+    
     return matchesCategory && matchesStatus && matchesBlockchain && matchesSearch
   })
 
@@ -424,86 +367,86 @@ export default function MonitoredAddresses() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredAddresses.map((address) => (
-                <TableRow key={address.id} className="border-gray-700 hover:bg-gray-800">
-                  <TableCell>
-                    <div className="flex flex-col space-y-1">
-                      <div className="flex items-center gap-2">
-                        <div className={`w-3 h-3 rounded-full ${getBlockchainColor(address.blockchain)}`}></div>
-                        <code className="text-blue-400 text-sm font-mono">
-                          {address.address.slice(0, 12)}...{address.address.slice(-8)}
-                        </code>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="h-6 w-6 p-0"
-                          onClick={() => copyToClipboard(address.address)}
-                        >
-                          <Copy className="h-3 w-3" />
-                        </Button>
-                      </div>
-                      <div className="text-xs text-gray-400">{address.blockchain}</div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex flex-col">
-                      <span className="text-white font-medium">{address.label}</span>
-                      <div className="flex flex-wrap gap-1 mt-1">
-                        {address.tags.slice(0, 2).map((tag, index) => (
-                          <Badge key={index} variant="outline" className="text-xs">
-                            {tag}
-                          </Badge>
-                        ))}
-                        {address.tags.length > 2 && (
-                          <Badge variant="outline" className="text-xs">
-                            +{address.tags.length - 2}
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge className={getCategoryColor(address.category)}>{address.category.replace("_", " ")}</Badge>
-                  </TableCell>
-                  <TableCell>
-                    <Badge className={`${getRiskScoreColor(address.riskScore)} text-white`}>{address.riskScore}</Badge>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <Badge className={getStatusColor(address.status)}>{address.status}</Badge>
-                      {address.alertsEnabled && <Bell className="h-3 w-3 text-yellow-400" />}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex flex-col">
-                      <span className="text-white">{address.totalTransactions} txns</span>
-                      <span className="text-xs text-gray-400">{address.lastActivity}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex flex-col">
-                      <span className="text-white font-medium">{address.totalVolume}</span>
-                      <span className="text-xs text-gray-400">Total volume</span>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <Dialog>
-                        <DialogTrigger asChild>
+              {filteredAddresses.map((address) => {
+                const riskScore = getMockRiskScore(address.address)
+                const category = getCategoryFromRiskScore(riskScore)
+                
+                return (
+                  <TableRow key={address._id} className="border-gray-700 hover:bg-gray-800">
+                    <TableCell>
+                      <div className="flex flex-col space-y-1">
+                        <div className="flex items-center gap-2">
+                          <div className={`w-3 h-3 rounded-full ${getBlockchainColor(address.blockchain)}`}></div>
+                          <code className="text-blue-400 text-sm font-mono">
+                            {address.address.slice(0, 12)}...{address.address.slice(-8)}
+                          </code>
                           <Button
-                            variant="outline"
                             size="sm"
-                            onClick={() => setSelectedAddress(address)}
-                            className="border-gray-600 text-gray-300 hover:bg-gray-700"
+                            variant="ghost"
+                            className="h-6 w-6 p-0"
+                            onClick={() => copyToClipboard(address.address)}
                           >
-                            <Eye className="h-4 w-4" />
+                            <Copy className="h-3 w-3" />
                           </Button>
-                        </DialogTrigger>
+                        </div>
+                        <div className="text-xs text-gray-400">{address.blockchain}</div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex flex-col">
+                        <span className="text-white font-medium">{address.clientId || 'Unlabeled'}</span>
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {address.notes && (
+                            <Badge variant="outline" className="text-xs">
+                              {address.notes.slice(0, 20)}...
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge className={getCategoryColor(category)}>{category.replace("_", " ")}</Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Badge className={`${getRiskScoreColor(riskScore)} text-white`}>{riskScore}</Badge>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <Badge className={getStatusColor("ACTIVE")}>
+                          ACTIVE
+                        </Badge>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex flex-col">
+                        <span className="text-white">-</span>
+                        <span className="text-xs text-gray-400">No data</span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex flex-col">
+                        <span className="text-white font-medium">-</span>
+                        <span className="text-xs text-gray-400">No data</span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setSelectedAddress(address)}
+                              className="border-gray-600 text-gray-300 hover:bg-gray-700"
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                          </DialogTrigger>
                         <DialogContent className="bg-gray-900 border-gray-700 text-white max-w-4xl max-h-[90vh] overflow-y-auto">
                           <DialogHeader>
                             <DialogTitle className="flex items-center gap-2">
                               <Target className="h-5 w-5 text-blue-400" />
-                              Address Monitoring - {selectedAddress?.id}
+                              Address Monitoring - {selectedAddress?._id}
                             </DialogTitle>
                             <DialogDescription className="text-gray-400">
                               Comprehensive monitoring and analysis for blockchain address
@@ -516,28 +459,28 @@ export default function MonitoredAddresses() {
                                 <div className="flex items-center gap-4">
                                   <div className="flex flex-col">
                                     <span className="text-sm text-gray-400">Category</span>
-                                    <Badge className={getCategoryColor(selectedAddress.category)}>
-                                      {selectedAddress.category.replace("_", " ")}
+                                    <Badge className={getCategoryColor(getCategoryFromRiskScore(getMockRiskScore(selectedAddress.address)))}>
+                                      {getCategoryFromRiskScore(getMockRiskScore(selectedAddress.address)).replace("_", " ")}
                                     </Badge>
                                   </div>
                                   <div className="flex flex-col">
                                     <span className="text-sm text-gray-400">Risk Score</span>
                                     <Badge
-                                      className={`${getRiskScoreColor(selectedAddress.riskScore)} text-white text-lg px-3 py-1`}
+                                      className={`${getRiskScoreColor(getMockRiskScore(selectedAddress.address))} text-white text-lg px-3 py-1`}
                                     >
-                                      {selectedAddress.riskScore}/100
+                                      {getMockRiskScore(selectedAddress.address)}/100
                                     </Badge>
                                   </div>
                                   <div className="flex flex-col">
                                     <span className="text-sm text-gray-400">Status</span>
-                                    <Badge className={getStatusColor(selectedAddress.status)}>
-                                      {selectedAddress.status}
+                                    <Badge className={getStatusColor("ACTIVE")}>
+                                      ACTIVE
                                     </Badge>
                                   </div>
                                 </div>
                                 <div className="text-right">
                                   <div className="text-sm text-gray-400">Added</div>
-                                  <div className="text-white">{selectedAddress.dateAdded}</div>
+                                  <div className="text-white">N/A</div>
                                 </div>
                               </div>
 
@@ -574,8 +517,8 @@ export default function MonitoredAddresses() {
                                           </div>
                                         </div>
                                         <div>
-                                          <Label className="text-gray-400 text-sm">Label</Label>
-                                          <p className="text-white mt-1">{selectedAddress.label}</p>
+                                          <Label className="text-gray-400 text-sm">Client ID</Label>
+                                          <p className="text-white mt-1">{selectedAddress.clientId || 'N/A'}</p>
                                         </div>
                                         <div>
                                           <Label className="text-gray-400 text-sm">Blockchain</Label>
@@ -587,14 +530,8 @@ export default function MonitoredAddresses() {
                                           </div>
                                         </div>
                                         <div>
-                                          <Label className="text-gray-400 text-sm">Tags</Label>
-                                          <div className="flex flex-wrap gap-1 mt-1">
-                                            {selectedAddress.tags.map((tag, index) => (
-                                              <Badge key={index} variant="outline">
-                                                {tag}
-                                              </Badge>
-                                            ))}
-                                          </div>
+                                          <Label className="text-gray-400 text-sm">Notes</Label>
+                                          <p className="text-white mt-1">{selectedAddress.notes || 'No notes available'}</p>
                                         </div>
                                       </CardContent>
                                     </Card>
@@ -605,21 +542,21 @@ export default function MonitoredAddresses() {
                                       </CardHeader>
                                       <CardContent className="space-y-4">
                                         <div>
-                                          <Label className="text-gray-400 text-sm">Monitoring Reason</Label>
-                                          <p className="text-white mt-1">{selectedAddress.monitoringReason}</p>
+                                          <Label className="text-gray-400 text-sm">Organization ID</Label>
+                                          <p className="text-white mt-1">{selectedAddress.organizationId || 'N/A'}</p>
                                         </div>
                                         <div>
-                                          <Label className="text-gray-400 text-sm">Added By</Label>
-                                          <p className="text-white mt-1">{selectedAddress.addedBy}</p>
+                                          <Label className="text-gray-400 text-sm">Created At</Label>
+                                          <p className="text-white mt-1">N/A</p>
                                         </div>
                                         <div>
-                                          <Label className="text-gray-400 text-sm">Date Added</Label>
-                                          <p className="text-white mt-1">{selectedAddress.dateAdded}</p>
+                                          <Label className="text-gray-400 text-sm">Updated At</Label>
+                                          <p className="text-white mt-1">N/A</p>
                                         </div>
                                         <div>
-                                          <Label className="text-gray-400 text-sm">Alert Threshold</Label>
+                                          <Label className="text-gray-400 text-sm">Status</Label>
                                           <p className="text-white mt-1">
-                                            ${selectedAddress.alertThreshold.toLocaleString()}
+                                            Active
                                           </p>
                                         </div>
                                       </CardContent>
@@ -638,7 +575,7 @@ export default function MonitoredAddresses() {
                                             <span className="text-gray-400">Total Transactions</span>
                                           </div>
                                           <div className="text-2xl font-bold text-white">
-                                            {selectedAddress.totalTransactions.toLocaleString()}
+                                            -
                                           </div>
                                         </div>
                                         <div className="text-center">
@@ -647,7 +584,7 @@ export default function MonitoredAddresses() {
                                             <span className="text-gray-400">Total Volume</span>
                                           </div>
                                           <div className="text-2xl font-bold text-white">
-                                            {selectedAddress.totalVolume}
+                                            -
                                           </div>
                                         </div>
                                         <div className="text-center">
@@ -656,7 +593,7 @@ export default function MonitoredAddresses() {
                                             <span className="text-gray-400">Last Activity</span>
                                           </div>
                                           <div className="text-2xl font-bold text-white">
-                                            {selectedAddress.lastActivity}
+                                            -
                                           </div>
                                         </div>
                                       </div>
@@ -668,7 +605,7 @@ export default function MonitoredAddresses() {
                                       <CardTitle className="text-white text-lg">Notes</CardTitle>
                                     </CardHeader>
                                     <CardContent>
-                                      <p className="text-white">{selectedAddress.notes}</p>
+                                      <p className="text-white">{selectedAddress.notes || 'No notes available'}</p>
                                     </CardContent>
                                   </Card>
                                 </TabsContent>
@@ -714,13 +651,13 @@ export default function MonitoredAddresses() {
                                             Receive notifications when this address has activity
                                           </p>
                                         </div>
-                                        <Switch checked={selectedAddress.alertsEnabled} />
+                                        <Switch checked={false} />
                                       </div>
                                       <div>
                                         <Label className="text-gray-400">Alert Threshold (USD)</Label>
                                         <Input
                                           type="number"
-                                          value={selectedAddress.alertThreshold}
+                                          value={10000}
                                           className="bg-gray-900 border-gray-600 mt-1"
                                         />
                                       </div>
@@ -861,41 +798,38 @@ export default function MonitoredAddresses() {
                                     <CardContent className="space-y-4">
                                       <div>
                                         <Label className="text-gray-400">Status</Label>
-                                        <Select defaultValue={selectedAddress.status.toLowerCase()}>
+                                        <Select defaultValue="active">
                                           <SelectTrigger className="bg-gray-900 border-gray-600 mt-1">
                                             <SelectValue />
                                           </SelectTrigger>
                                           <SelectContent className="bg-gray-800 border-gray-700">
                                             <SelectItem value="active">Active</SelectItem>
-                                            <SelectItem value="paused">Paused</SelectItem>
                                             <SelectItem value="inactive">Inactive</SelectItem>
                                           </SelectContent>
                                         </Select>
                                       </div>
                                       <div>
-                                        <Label className="text-gray-400">Category</Label>
-                                        <Select defaultValue={selectedAddress.category.toLowerCase()}>
-                                          <SelectTrigger className="bg-gray-900 border-gray-600 mt-1">
-                                            <SelectValue />
-                                          </SelectTrigger>
-                                          <SelectContent className="bg-gray-800 border-gray-700">
-                                            <SelectItem value="critical">Critical</SelectItem>
-                                            <SelectItem value="high_risk">High Risk</SelectItem>
-                                            <SelectItem value="medium">Medium</SelectItem>
-                                            <SelectItem value="low">Low</SelectItem>
-                                          </SelectContent>
-                                        </Select>
+                                        <Label className="text-gray-400">Client ID</Label>
+                                        <Input
+                                          className="bg-gray-900 border-gray-600 mt-1"
+                                          defaultValue={selectedAddress.clientId || ''}
+                                          placeholder="Enter client ID"
+                                        />
                                       </div>
                                       <div>
                                         <Label className="text-gray-400">Update Notes</Label>
                                         <Textarea
                                           className="bg-gray-900 border-gray-600 mt-1"
-                                          defaultValue={selectedAddress.notes}
+                                          defaultValue={selectedAddress.notes || ''}
                                           rows={3}
+                                          placeholder="Enter monitoring notes"
                                         />
                                       </div>
                                       <div className="flex justify-between pt-4">
-                                        <Button variant="destructive">
+                                        <Button 
+                                          variant="destructive"
+                                          onClick={() => handleDeleteAddress(selectedAddress._id)}
+                                        >
                                           <Trash2 className="h-4 w-4 mr-2" />
                                           Remove Address
                                         </Button>
@@ -912,17 +846,53 @@ export default function MonitoredAddresses() {
                           )}
                         </DialogContent>
                       </Dialog>
-                      <Button variant="outline" size="sm" className="border-gray-600 text-gray-300 hover:bg-gray-700">
-                        <ExternalLink className="h-4 w-4" />
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="border-gray-600 text-gray-300 hover:bg-gray-700"
+                        onClick={() => handleDeleteAddress(address._id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
                   </TableCell>
                 </TableRow>
-              ))}
+                )
+              })}
             </TableBody>
           </Table>
         </CardContent>
       </Card>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteConfirmVisible} onOpenChange={setDeleteConfirmVisible}>
+        <DialogContent className="bg-gray-900 border-gray-700 text-white">
+          <DialogHeader>
+            <DialogTitle>Delete Address</DialogTitle>
+            <DialogDescription className="text-gray-400">
+              Are you sure you want to delete this monitored address? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end space-x-2 pt-4">
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setDeleteConfirmVisible(false)
+                setAddressToDelete(null)
+              }}
+            >
+              Cancel
+            </Button>
+            <Button 
+              variant="destructive" 
+              onClick={confirmDelete}
+              disabled={loading}
+            >
+              {loading ? 'Deleting...' : 'Delete Address'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

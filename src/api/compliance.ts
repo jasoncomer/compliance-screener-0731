@@ -155,5 +155,12 @@ export const compliance = {
     const endpoint = `/compliance/monitored-addresses/${addressId}/history`;
     const response = await axiosInstance.get(endpoint);
     return response.data.data;
+  },
+
+  // Get unique client IDs
+  getUniqueClientIds: async (): Promise<string[]> => {
+    const endpoint = `/compliance/client-ids`;
+    const response = await axiosInstance.get(endpoint);
+    return response.data.data;
   }
 };
