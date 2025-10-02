@@ -11,6 +11,7 @@ const mockTransactions: Transaction[] = [
   // Bitcoin Genesis Block transactions (1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa)
   {
     id: "f4184fc596403b9d638783cf57adfe4c75c605f6356fbc91338530e9831e9e16",
+    txId: "f4184fc596403b9d638783cf57adfe4c75c605f6356fbc91338530e9831e9e16",
     clientId: "5665456546",
     counterpartyEntities: "Genesis Block Address",
     blockchain: "Bitcoin",
