@@ -357,6 +357,7 @@ const EntitySidebar: React.FC<Props> = ({ currentEntityId, onSelectSot }) => {
             </div>
           </div>
         )}
+
       </div>
     </Card>
   );

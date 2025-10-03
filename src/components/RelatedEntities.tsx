@@ -1,10 +1,11 @@
 import React, { useEffect,useState } from 'react';
 
 import { User } from 'lucide-react';
-import { useSelector } from 'react-redux';
 
+import { useSelector } from 'react-redux';
 import { api } from '../api/api';
 import { RootState } from '../store/store';
+
 import { cn } from '@/design-system/utils';
 import { Card } from './ui/card';
 import { Avatar, AvatarFallback } from './ui/avatar';
