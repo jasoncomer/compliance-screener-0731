@@ -147,12 +147,12 @@ export const VASPExplorer: React.FC = () => {
   return (
     <ViewWrapper
       icon={<Database className="w-8 h-8 text-orange-500" />}
-      title={isEmptyState ? "Entity Explorer" : ""}
+      title="Entity Explorer"
       fullWidth={true}
+      className="bg-gray-200 dark:bg-gray-900"
     >
-
       {/* Sticky Search Bar */}
-      <div className={`sticky top-[0] z-20 bg-white dark:bg-background border-b border-gray-200 dark:border-gray-700 ${isEmptyState ? 'pt-2 py-4 mb-2' : 'py-4'}`}>
+      <div className="sticky top-[0] z-20 pt-2 py-2 mb-2 border-b bg-gray-200 dark:bg-gray-900">
         <div className="flex justify-between items-center gap-4">
           <div className="flex-1 max-w-2xl">
             <div className="relative w-full">

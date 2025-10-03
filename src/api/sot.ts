@@ -8,6 +8,12 @@ interface RelatedEntitiesResponse {
   unique_custodians: string[];
 }
 
+interface EntityOwnershipResponse {
+  entity: string;
+  relationship_types: string[];
+  count: number;
+}
+
 const updateMongoDb = async () => {
   const res = await axiosInstance.get('/sot/update', { timeout: 180 * 1000 });
   return res.data;
@@ -101,6 +107,37 @@ const getRelatedEntities = async (entityId: string): Promise<RelatedEntitiesResp
   return request;
 };
 
+// Cache to prevent duplicate requests for reverse relationships
+const reverseRelationshipsCache = new Map<string, Promise<EntityOwnershipResponse[]>>();
+
+const getEntitiesWhereBeneficialOwner = async (entityId: string): Promise<EntityOwnershipResponse[]> => {
+  // Check if request is already in progress
+  if (reverseRelationshipsCache.has(entityId)) {
+    console.log(`Using cached reverse relationships request for entity: ${entityId}`);
+    return reverseRelationshipsCache.get(entityId)!;
+  }
+
+  const request = (async () => {
+    try {
+      const response = await axiosInstance.get(`/attribution/entity/${entityId}/owned-by`, {
+        timeout: 5000 // 5 second timeout - fail fast
+      });
+      return response.data;
+    } catch (error: any) {
+      console.error(`Error fetching reverse relationships for ${entityId}:`, error);
+      // Return empty array instead of throwing to prevent breaking the sidebar
+      return [];
+    } finally {
+      // Remove from cache after completion (success or failure)
+      reverseRelationshipsCache.delete(entityId);
+    }
+  })();
+
+  // Cache the promise
+  reverseRelationshipsCache.set(entityId, request);
+  return request;
+};
+
 export const sot = {
   updateMongoDb,
   loadLastUpdate,
@@ -109,4 +146,5 @@ export const sot = {
   updateSOT,
   deleteSOT,
   getRelatedEntities,
+  getEntitiesWhereBeneficialOwner,
 };

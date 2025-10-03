@@ -1,10 +1,10 @@
 import React, { useMemo, useState } from 'react';
 
 import { FacebookOutlined, GithubOutlined, GlobalOutlined, InstagramOutlined, LinkedinOutlined, MediumOutlined, RedditOutlined, SendOutlined, TwitterOutlined, UserOutlined, WarningOutlined,YoutubeOutlined } from '@ant-design/icons';
-import { Button, Card, Col, Form, message, Modal, Row, Space, Switch,Tag, Typography } from 'antd';
+import { message, Modal } from 'antd';
 import { useSelector } from 'react-redux';
 
-import { colors } from '@/design-system/tokens'
+// Design system tokens available if needed
 
 import { api } from '../api/api';
 import { RootState } from '../store/store';
@@ -13,16 +13,54 @@ import { EEntityType } from '../typings/SOT';
 import { getEntityTypeLabel } from '../utils/display-labels';
 import { renderTextWithLinks } from '../utils/urls';
 
-import Input from './common/Input';
+// Input component now using design system Input
 import { SimpleLogo } from './common/Logo';
 import EntitySidebar from './EntitySidebar/index';
 import EntityBalanceSheet from './EntityBalanceSheet';
+import { Card } from './ui/card';
+import { Badge } from './ui/badge';
+import { Button } from './ui/button';
+import { Switch } from './ui/switch';
+import { Input } from './ui/input';
+import { Textarea } from './ui/textarea';
 
 
 
-const { Title, Text } = Typography;
+// Typography components removed - using native HTML elements with Tailwind classes
 
-import { cn } from '../lib/utils';
+import { cn } from '@/design-system/utils';
+
+// Form Field Component using design system
+interface FormFieldProps {
+  label: string;
+  name: string;
+  required?: boolean;
+  error?: string;
+  children: React.ReactNode;
+  className?: string;
+}
+
+const FormField: React.FC<FormFieldProps> = ({ label, name, required, error, children, className }) => (
+  <div className={cn("space-y-2", className)}>
+    <label 
+      htmlFor={name}
+      className={cn(
+        "block text-sm font-medium",
+        "text-gray-900 dark:text-white",
+        error && "text-red-600 dark:text-red-400"
+      )}
+    >
+      {label}
+      {required && <span className="text-red-500 ml-1">*</span>}
+    </label>
+    {children}
+    {error && (
+      <p className="text-sm text-red-600 dark:text-red-400">
+        {error}
+      </p>
+    )}
+  </div>
+);
 
 interface ContainerProps {
   children: React.ReactNode;
@@ -42,7 +80,7 @@ interface EditorWrapperProps {
 }
 
 const EditorWrapper: React.FC<EditorWrapperProps> = ({ children, className, style }) => (
-  <Card className={cn("flex-1 min-w-0", className)} style={style}>
+  <Card className={cn("flex-1 min-w-0 p-6", className)} style={style}>
     {children}
   </Card>
 );
@@ -53,9 +91,9 @@ interface ButtonGroupProps {
 }
 
 const ButtonGroup: React.FC<ButtonGroupProps> = ({ children, className }) => (
-  <Space className={cn("mt-6", className)}>
+  <div className={cn("flex gap-3 mt-6", className)}>
     {children}
-  </Space>
+  </div>
 );
 
 interface DetailSectionProps {
@@ -99,9 +137,9 @@ interface DetailLabelProps {
 }
 
 const DetailLabel: React.FC<DetailLabelProps> = ({ children, className, style }) => (
-  <Text className={cn("block text-gray-600 mb-1 text-base text-left", className)} style={style}>
+  <label className={cn("block text-gray-600 dark:text-gray-300 mb-1 text-base text-left font-medium", className)} style={style}>
     {children}
-  </Text>
+  </label>
 );
 
 interface DetailValueProps {
@@ -111,12 +149,12 @@ interface DetailValueProps {
 }
 
 const DetailValue: React.FC<DetailValueProps> = ({ children, className, style }) => (
-  <Text className={cn(
-    "text-base flex items-start gap-2 text-left",
+  <div className={cn(
+    "text-base flex items-start gap-2 text-left text-gray-900 dark:text-gray-100",
     className
   )} style={style}>
     {children}
-  </Text>
+  </div>
 );
 
 interface HeaderSectionProps {
@@ -186,21 +224,23 @@ interface SOTEditorProps {
   onSelectAssociatedSot: (sot: SOT) => void;
 }
 
-const ToggleSwitch = ({ name, label }: { name: string; label: string }) => (
-  <Form.Item
-    name={name}
+const ToggleSwitch = ({ name, label, defaultValue }: { name: string; label: string; defaultValue?: boolean }) => (
+  <FormField 
     label={label}
-    valuePropName="checked"
+    name={name}
   >
-    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+    <div className="flex justify-between items-end">
       <span>{/* Empty span to maintain spacing */}</span>
-      <Switch />
+      <Switch 
+        id={name}
+        name={name}
+        defaultChecked={defaultValue || false}
+      />
     </div>
-  </Form.Item>
+  </FormField>
 );
 
 const SOTEditor: React.FC<SOTEditorProps> = ({ sot, onSelectAssociatedSot }) => {
-  const [form] = Form.useForm();
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
   const { itemsMap } = useSelector((state: RootState) => state.sot);
@@ -224,33 +264,52 @@ const SOTEditor: React.FC<SOTEditorProps> = ({ sot, onSelectAssociatedSot }) => 
 
   const handleCancel = () => {
     setIsEditing(false);
-    form.resetFields();
   };
 
-  const handleSave = async () => {
-    try {
-      const values = await form.validateFields();
-      if (!isValidSOT(sot)) return;
-      Modal.confirm({
-        title: 'Save Changes',
-        content: 'Are you sure you want to save these changes?',
-        onOk: async () => {
-          try {
-            setLoading(true);
-            await api.sot.updateSOT(sot._id, values);
-            setIsEditing(false);
-            message.success('SOT updated successfully');
-          } catch (error) {
-            console.error('Failed to update SOT:', error);
-            message.error('Failed to update SOT');
-          } finally {
-            setLoading(false);
-          }
-        },
-      });
-    } catch (error) {
-      console.error('Validation failed:', error);
+  const handleSave = async (e?: React.FormEvent) => {
+    if (e) {
+      e.preventDefault();
     }
+    
+    if (!isValidSOT(sot)) return;
+    
+    Modal.confirm({
+      title: 'Save Changes',
+      content: 'Are you sure you want to save these changes?',
+      onOk: async () => {
+        try {
+          setLoading(true);
+          
+          // Get form data from the form element
+          const formElement = document.querySelector('form');
+          if (!formElement) return;
+          
+          const formData = new FormData(formElement);
+          const values: Record<string, any> = {};
+          
+          // Convert FormData to object
+          for (const [key, value] of formData.entries()) {
+            values[key] = value;
+          }
+          
+          // Handle checkbox values (switches)
+          const switches = formElement.querySelectorAll('input[type="checkbox"]');
+          switches.forEach((switchEl) => {
+            const input = switchEl as HTMLInputElement;
+            values[input.name] = input.checked;
+          });
+          
+          await api.sot.updateSOT(sot._id, values);
+          setIsEditing(false);
+          message.success('SOT updated successfully');
+        } catch (error) {
+          console.error('Failed to update SOT:', error);
+          message.error('Failed to update SOT');
+        } finally {
+          setLoading(false);
+        }
+      },
+    });
   };
 
   const getSocialMediaIcon = (url: string) => {
@@ -279,137 +338,283 @@ const SOTEditor: React.FC<SOTEditorProps> = ({ sot, onSelectAssociatedSot }) => 
 
     if (isEditing) {
       return (
-        <Form
-          form={form}
-          layout="vertical"
-          initialValues={sot}
-        >
-          <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item name="proper_name" label="Company Name">
-                <Input />
-              </Form.Item>
-              <Form.Item name="entity_id" label="Entity ID">
-                <Input />
-              </Form.Item>
-              <Form.Item name="entity_type" label="Entity Type">
-                <Input />
-              </Form.Item>
-              <Form.Item name="ceo" label="CEO">
-                <Input />
-              </Form.Item>
-              <Form.Item name="key_personnel" label="Key Personnel">
-                <Input placeholder="Comma-separated list of key personnel" />
-              </Form.Item>
-              <Form.Item name="ticker" label="Ticker">
-                <Input placeholder="Comma-separated list of tickers" />
-              </Form.Item>
-              <Form.Item name="parent_id" label="Parent ID">
-                <Input />
-              </Form.Item>
-              <Form.Item name="year_founded" label="Year Founded">
-                <Input />
-              </Form.Item>
-              <Form.Item name="ens_address" label="ENS Address">
-                <Input />
-              </Form.Item>
-              <Form.Item name="social_media_profile" label="Social Media">
-                {[1, 2, 3, 4].map((num) => (
-                  <Form.Item
-                    key={`social_media_profile${num === 1 ? '' : '_' + num}`}
-                    name={`social_media_profile${num === 1 ? '' : '_' + num}`}
-                  >
-                    <Input placeholder={`Social Media Profile ${num}`} />
-                  </Form.Item>
-                ))}
-              </Form.Item>
+        <form onSubmit={(e) => { e.preventDefault(); handleSave(); }}>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="space-y-4">
+              <FormField 
+                label="Company Name"
+                name="proper_name"
+                required
+              >
+                <Input 
+                  id="proper_name"
+                  defaultValue={sot.proper_name || ''}
+                />
+              </FormField>
+              <FormField 
+                label="Entity ID"
+                name="entity_id"
+                required
+              >
+                <Input 
+                  id="entity_id"
+                  defaultValue={sot.entity_id || ''}
+                />
+              </FormField>
+              <FormField 
+                label="Entity Type"
+                name="entity_type"
+              >
+                <Input 
+                  id="entity_type"
+                  defaultValue={sot.entity_type || ''}
+                />
+              </FormField>
+              <FormField 
+                label="CEO"
+                name="ceo"
+              >
+                <Input 
+                  id="ceo"
+                  defaultValue={sot.ceo || ''}
+                />
+              </FormField>
+              <FormField 
+                label="Key Personnel"
+                name="key_personnel"
+              >
+                <Input 
+                  id="key_personnel"
+                  placeholder="Comma-separated list of key personnel"
+                  defaultValue={sot.key_personnel || ''}
+                />
+              </FormField>
+              <FormField 
+                label="Ticker"
+                name="ticker"
+              >
+                <Input 
+                  id="ticker"
+                  placeholder="Comma-separated list of tickers"
+                  defaultValue={sot.ticker || ''}
+                />
+              </FormField>
+              <FormField 
+                label="Parent ID"
+                name="parent_id"
+              >
+                <Input 
+                  id="parent_id"
+                  defaultValue={sot.parent_id || ''}
+                />
+              </FormField>
+              <FormField 
+                label="Year Founded"
+                name="year_founded"
+              >
+                <Input 
+                  id="year_founded"
+                  defaultValue={sot.year_founded || ''}
+                />
+              </FormField>
+              <FormField 
+                label="ENS Address"
+                name="ens_address"
+              >
+                <Input 
+                  id="ens_address"
+                  defaultValue={sot.ens_address || ''}
+                />
+              </FormField>
+              <FormField 
+                label="Social Media"
+                name="social_media_profile"
+              >
+                <div className="space-y-2">
+                  {[1, 2, 3, 4].map((num) => (
+                    <Input 
+                      key={`social_media_profile${num === 1 ? '' : '_' + num}`}
+                      id={`social_media_profile${num === 1 ? '' : '_' + num}`}
+                      name={`social_media_profile${num === 1 ? '' : '_' + num}`}
+                      placeholder={`Social Media Profile ${num}`}
+                      defaultValue={sot[`social_media_profile${num === 1 ? '' : '_' + num}` as keyof SOT] as string || ''}
+                    />
+                  ))}
+                </div>
+              </FormField>
 
-              <ToggleSwitch name="no_kyc_req" label="No KYC Required" />
-              <ToggleSwitch name="dead" label="Dead" />
-              <ToggleSwitch name="centralized" label="Centralized" />
-              <ToggleSwitch name="revisit_site" label="Revisit Site" />
+              <ToggleSwitch name="no_kyc_req" label="No KYC Required" defaultValue={sot.no_kyc_req || false} />
+              <ToggleSwitch name="dead" label="Dead" defaultValue={sot.dead || false} />
+              <ToggleSwitch name="centralized" label="Centralized" defaultValue={sot.centralized || false} />
+              <ToggleSwitch name="revisit_site" label="Revisit Site" defaultValue={sot.revisit_site || false} />
 
-              <Form.Item name="legal_info_url" label="Legal Info URL">
-                <Input />
-              </Form.Item>
-              <Form.Item name="user" label="User">
-                <Input />
-              </Form.Item>
-              <Form.Item name="date_updated" label="Date Updated">
-                <Input />
-              </Form.Item>
-            </Col>
+              <FormField 
+                label="Legal Info URL"
+                name="legal_info_url"
+              >
+                <Input 
+                  id="legal_info_url"
+                  defaultValue={sot.legal_info_url || ''}
+                />
+              </FormField>
+              <FormField 
+                label="User"
+                name="user"
+              >
+                <Input 
+                  id="user"
+                  defaultValue={sot.user || ''}
+                />
+              </FormField>
+              <FormField 
+                label="Date Updated"
+                name="date_updated"
+              >
+                <Input 
+                  id="date_updated"
+                  defaultValue={sot.date_updated || ''}
+                />
+              </FormField>
+            </div>
 
-            <Col span={12}>
-              <Form.Item name="url" label="Website">
-                <Input />
-              </Form.Item>
-              <Form.Item name="contact_phone" label="Phone">
-                <Input />
-              </Form.Item>
-              <Form.Item name="contact_address" label="Address">
-                <Input />
-              </Form.Item>
-              <Form.Item name="contact_twitter" label="Twitter">
-                <Input />
-              </Form.Item>
-              <Form.Item name="contact_telegram" label="Telegram">
-                <Input />
-              </Form.Item>
-              <Form.Item name="contact_email" label="Email">
-                <Input type="email" />
-              </Form.Item>
+            <div className="space-y-4">
+              <FormField 
+                label="Website"
+                name="url"
+              >
+                <Input 
+                  id="url"
+                  defaultValue={sot.url || ''}
+                />
+              </FormField>
+              <FormField 
+                label="Phone"
+                name="contact_phone"
+              >
+                <Input 
+                  id="contact_phone"
+                  defaultValue={sot.contact_phone || ''}
+                />
+              </FormField>
+              <FormField 
+                label="Address"
+                name="contact_address"
+              >
+                <Input 
+                  id="contact_address"
+                  defaultValue={sot.contact_address || ''}
+                />
+              </FormField>
+              <FormField 
+                label="Twitter"
+                name="contact_twitter"
+              >
+                <Input 
+                  id="contact_twitter"
+                  defaultValue={sot.contact_twitter || ''}
+                />
+              </FormField>
+              <FormField 
+                label="Telegram"
+                name="contact_telegram"
+              >
+                <Input 
+                  id="contact_telegram"
+                  defaultValue={sot.contact_telegram || ''}
+                />
+              </FormField>
+              <FormField 
+                label="Email"
+                name="contact_email"
+              >
+                <Input 
+                  id="contact_email"
+                  type="email"
+                  defaultValue={sot.contact_email || ''}
+                />
+              </FormField>
 
               {/* Associated Countries */}
-              <Form.Item label="Associated Countries">
-                <Row gutter={16}>
+              <FormField 
+                label="Associated Countries"
+                name="associated_countries"
+              >
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {[1, 2, 3, 4, 5, 6].map((num) => (
-                    <Col span={12} key={`country_${num}`}>
-                      <Form.Item name={`associate_country_${num}`}>
-                        <Input placeholder={`Country ${num}`} />
-                      </Form.Item>
-                    </Col>
+                    <div key={`country_${num}`}>
+                      <Input 
+                        id={`associate_country_${num}`}
+                        name={`associate_country_${num}`}
+                        placeholder={`Country ${num}`}
+                        defaultValue={sot[`associate_country_${num}` as keyof SOT] as string || ''}
+                      />
+                    </div>
                   ))}
-                </Row>
-              </Form.Item>
+                </div>
+              </FormField>
 
-              <Form.Item label="Logo">
+              <FormField 
+                label="Logo"
+                name="logo"
+              >
                 <SimpleLogo
                   entityId={sot.entity_id}
                   entityType={sot.entity_type}
                   size="large"
                 />
-              </Form.Item>
+              </FormField>
 
-              <Form.Item label="Entity Tags">
-                <Row gutter={16}>
+              <FormField 
+                label="Entity Tags"
+                name="entity_tags"
+              >
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {[1, 2, 3, 4, 5, 6, 7].map((num) => (
-                    <Col span={12} key={`tag_${num}`}>
-                      <Form.Item name={`entity_tag${num}`}>
-                        <Input placeholder={`Tag ${num}`} />
-                      </Form.Item>
-                    </Col>
+                    <div key={`tag_${num}`}>
+                      <Input 
+                        id={`entity_tag${num}`}
+                        name={`entity_tag${num}`}
+                        placeholder={`Tag ${num}`}
+                        defaultValue={sot[`entity_tag${num}` as keyof SOT] as string || ''}
+                      />
+                    </div>
                   ))}
-                </Row>
-              </Form.Item>
+                </div>
+              </FormField>
 
-              <Form.Item name="description_merged" label="Description">
-                <Input multiline rows={6} />
-              </Form.Item>
+              <FormField 
+                label="Description"
+                name="description_merged"
+              >
+                <Textarea 
+                  id="description_merged"
+                  name="description_merged"
+                  rows={6}
+                  defaultValue={sot.description_merged || ''}
+                />
+              </FormField>
 
-              <Form.Item name="note" label="Notes">
-                <Input multiline rows={4} />
-              </Form.Item>
-            </Col>
-          </Row>
+              <FormField 
+                label="Notes"
+                name="note"
+              >
+                <Textarea 
+                  id="note"
+                  name="note"
+                  rows={4}
+                  defaultValue={sot.note || ''}
+                />
+              </FormField>
+            </div>
+          </div>
 
           <ButtonGroup>
-            <Button onClick={handleCancel}>Cancel</Button>
-            <Button type="primary" onClick={handleSave} loading={loading}>
-              Save Changes
+            <Button variant="outline" onClick={handleCancel}>Cancel</Button>
+            <Button onClick={handleSave} disabled={loading}>
+              {loading ? 'Saving...' : 'Save Changes'}
             </Button>
           </ButtonGroup>
-        </Form>
+        </form>
       );
     }
 
@@ -423,9 +628,9 @@ const SOTEditor: React.FC<SOTEditorProps> = ({ sot, onSelectAssociatedSot }) => 
             fallbackIcon={<UserOutlined />}
           />
           <HeaderInfo>
-            <Title level={4} style={{ margin: 0 }}>{sot.proper_name || sot.entity_id}</Title>
-            <div style={{ display: 'block', marginBottom: '4px' }}>
-              <Text type="secondary">{getEntityTypeLabel(sot.entity_type as EEntityType)}</Text>
+            <h4 className="text-xl font-semibold text-gray-900 dark:text-white mb-1">{sot.proper_name || sot.entity_id}</h4>
+            <div className="block mb-1">
+              <span className="text-sm text-gray-600 dark:text-gray-400">{getEntityTypeLabel(sot.entity_type as EEntityType)}</span>
             </div>
 
             {isOfacSanctioned && (
@@ -437,23 +642,23 @@ const SOTEditor: React.FC<SOTEditorProps> = ({ sot, onSelectAssociatedSot }) => 
             <div style={{ marginTop: '4px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
               {sot.dead && (
                 <span>
-                  <Text strong style={{ color: colors.semantic.danger }}>
+                  <span className="font-semibold text-red-600 dark:text-red-400">
                     Entity likely inactive or does not support Crypto
-                  </Text>
+                  </span>
                 </span>
               )}
               {sot.centralized === false && (
                 <span>
-                  <Text strong style={{ color: colors.brand.secondary, marginBottom: '0' }}>
+                  <span className="font-semibold text-blue-600 dark:text-blue-400 mb-0">
                     Decentralized Entity
-                  </Text>
+                  </span>
                 </span>
               )}
               {sot.no_kyc_req && (
                 <span>
-                  <Text strong style={{ color: colors.brand.primary, marginTop: '0' }}>
+                  <span className="font-semibold text-orange-600 dark:text-orange-400 mt-0">
                     NO KYC REQUIRED
-                  </Text>
+                  </span>
                 </span>
               )}
             </div>
@@ -483,7 +688,7 @@ const SOTEditor: React.FC<SOTEditorProps> = ({ sot, onSelectAssociatedSot }) => 
                       <strong>Key Personnel:</strong>{' '}
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginTop: '4px' }}>
                         {sot.key_personnel.split(',').map(person =>
-                          <Tag key={person.trim()}>{person.trim()}</Tag>
+                          <Badge key={person.trim()} variant="secondary" className="mr-1 mb-1">{person.trim()}</Badge>
                         )}
                       </div>
                     </span>
@@ -513,7 +718,12 @@ const SOTEditor: React.FC<SOTEditorProps> = ({ sot, onSelectAssociatedSot }) => 
                   {sot.legal_info_url && (
                     <span style={{ marginTop: '48px', display: 'block' }}>
                       <strong>Legal Info: </strong>
-                      <a href={sot.legal_info_url?.startsWith('http') ? sot.legal_info_url : `https://${sot.legal_info_url}`} target="_blank" rel="noopener noreferrer">
+                      <a 
+                        href={sot.legal_info_url?.startsWith('http') ? sot.legal_info_url : `https://${sot.legal_info_url}`} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="text-[#e87e4f] hover:text-[#d6693a] dark:text-[#e87e4f] dark:hover:text-[#d6693a] transition-colors"
+                      >
                         <GlobalOutlined /> View Legal Information
                       </a>
                     </span>
@@ -547,7 +757,13 @@ const SOTEditor: React.FC<SOTEditorProps> = ({ sot, onSelectAssociatedSot }) => 
                   <DetailValue style={{ display: 'flex', flexDirection: 'column', width: '70%', gap: '8px' }}>
                     <ScrollableWebsiteLinks>
                       {allUrls.map((url, idx) => (
-                        <a key={idx} href={url.startsWith('http') ? url : `https://${url}`} target="_blank" rel="noopener noreferrer">
+                        <a 
+                          key={idx} 
+                          href={url.startsWith('http') ? url : `https://${url}`} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-[#e87e4f] hover:text-[#d6693a] dark:text-[#e87e4f] dark:hover:text-[#d6693a] transition-colors"
+                        >
                           <GlobalOutlined style={{ marginRight: 4 }} />
                           {url}
                         </a>
@@ -589,6 +805,7 @@ const SOTEditor: React.FC<SOTEditorProps> = ({ sot, onSelectAssociatedSot }) => 
                             target="_blank"
                             rel="noopener noreferrer"
                             style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+                            className="text-[#e87e4f] hover:text-[#d6693a] dark:text-[#e87e4f] dark:hover:text-[#d6693a] transition-colors"
                           >
                             <TwitterOutlined />
                             <span>{sot.contact_twitter}</span>
@@ -605,6 +822,7 @@ const SOTEditor: React.FC<SOTEditorProps> = ({ sot, onSelectAssociatedSot }) => 
                             target="_blank"
                             rel="noopener noreferrer"
                             style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+                            className="text-[#e87e4f] hover:text-[#d6693a] dark:text-[#e87e4f] dark:hover:text-[#d6693a] transition-colors"
                           >
                             <SendOutlined />
                             <span>{sot.contact_telegram}</span>
@@ -626,6 +844,7 @@ const SOTEditor: React.FC<SOTEditorProps> = ({ sot, onSelectAssociatedSot }) => 
                               target="_blank"
                               rel="noopener noreferrer"
                               style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+                              className="text-[#e87e4f] hover:text-[#d6693a] dark:text-[#e87e4f] dark:hover:text-[#d6693a] transition-colors"
                             >
                               {icon}
                               <span>{value}</span>
@@ -637,9 +856,9 @@ const SOTEditor: React.FC<SOTEditorProps> = ({ sot, onSelectAssociatedSot }) => 
                       if (needsScroll) {
                         return (
                           <div>
-                            <Text type="secondary" style={{ marginBottom: '8px', display: 'block' }}>
+                            <p className="text-sm text-gray-600 dark:text-gray-400 mb-2 block">
                               {socialMediaCount} profiles available (scroll to view all)
-                            </Text>
+                            </p>
                             <ScrollableSocialLinks>
                               {socialMediaLinks}
                             </ScrollableSocialLinks>
@@ -671,7 +890,7 @@ const SOTEditor: React.FC<SOTEditorProps> = ({ sot, onSelectAssociatedSot }) => 
                           <strong>Ticker:</strong>
                           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginTop: '4px' }}>
                             {sot.ticker.split(',').map(t =>
-                              <Tag key={t.trim()}>{t.trim()}</Tag>
+                              <Badge key={t.trim()} variant="outline" className="mr-1 mb-1">{t.trim()}</Badge>
                             )}
                           </div>
                         </span>
@@ -688,7 +907,7 @@ const SOTEditor: React.FC<SOTEditorProps> = ({ sot, onSelectAssociatedSot }) => 
                               {Object.entries(sot)
                                 .filter(([key, value]) => key.startsWith('associate_country_') && value)
                                 .map(([key, value]) => (
-                                  <Tag key={key}>{value}</Tag>
+                                  <Badge key={key} variant="secondary" className="mr-1 mb-1">{value}</Badge>
                                 ))}
                             </div>
                           </span>
