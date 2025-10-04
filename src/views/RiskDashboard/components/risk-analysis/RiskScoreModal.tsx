@@ -1,14 +1,14 @@
 import React from 'react';
 
-import { Card, Empty,Modal, Progress, Space, Statistic, Table, Tabs, Typography } from 'antd';
-import { AlertTriangle, CheckCircle, CreditCard, Globe, Shield,User, XCircle } from 'lucide-react';
+import { AlertTriangle, CheckCircle, CreditCard, Globe, Shield, User, XCircle } from 'lucide-react';
 
-import { colors } from '@/design-system/tokens'
+import { Modal } from '@/components/ui/modal';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { colors } from '@/design-system/tokens';
 
-import { useTheme } from '../../../../context/ThemeContext';
-import { RiskFactor,RiskScoringResponse } from '../../../../typings/riskScoring';
 
-const { Text } = Typography;
+import { RiskFactor, RiskScoringResponse } from '../../../../typings/riskScoring';
 
 interface RiskScoreModalProps {
   visible: boolean;
@@ -19,7 +19,6 @@ interface RiskScoreModalProps {
 }
 
 const RiskScoreModal: React.FC<RiskScoreModalProps> = ({ riskScores, visible, onClose, address, loading }) => {
-  useTheme(); // Used for theme context
 
   const getRiskColor = (score: number): string => {
     if (score > 70) return colors.semantic.danger;
@@ -28,62 +27,17 @@ const RiskScoreModal: React.FC<RiskScoreModalProps> = ({ riskScores, visible, on
   };
 
   const getRiskIcon = (severity: string) => {
-    if (severity === 'high') return <XCircle className="w-4 h-4" style={{ color: colors.semantic.danger }} />;
-    if (severity === 'medium') return <AlertTriangle className="w-4 h-4" style={{ color: colors.semantic.warning }} />;
-    return <CheckCircle className="w-4 h-4" style={{ color: colors.semantic.success }} />;
+    if (severity === 'high') return <XCircle className="w-4 h-4 text-red-500" />;
+    if (severity === 'medium') return <AlertTriangle className="w-4 h-4 text-yellow-500" />;
+    return <CheckCircle className="w-4 h-4 text-green-500" />;
   };
-
-  const columns = [
-    {
-      title: 'Risk Factor',
-      dataIndex: 'id',
-      key: 'id',
-      render: (text: string, record: RiskFactor) => (
-        <Space>
-          {getRiskIcon(record.severity)}
-          <Text style={{ color: colors.gray[800] }}>{text}</Text>
-        </Space>
-      ),
-    },
-    {
-      title: 'Risk Score',
-      dataIndex: 'score',
-      key: 'score',
-      render: (score: number) => {
-        const formatPercent = (percent?: number) => {
-          if (percent === undefined) return '0%';
-          return `${percent}%`;
-        };
-        
-        return (
-          <Progress 
-            percent={Number((score * 100).toFixed(2))} 
-            size="small" 
-            status={score * 100 > 70 ? 'exception' : 'normal'} 
-            strokeColor={getRiskColor(score * 100)}
-            format={formatPercent}
-          />
-        );
-      },
-    },
-    {
-      title: 'Description',
-      dataIndex: 'description',
-      key: 'description',
-      render: (text: string) => <Text style={{ color: colors.gray[600] }}>{text}</Text>,
-    },
-  ];
 
   const renderRiskScoreCards = () => {
     if (!riskScores) return null;
 
-
-    // Handle different possible data formats
     const getRiskScore = (value: number | undefined): number => {
       if (value === undefined || value === null) return 0;
-      // If value is already in 0-100 range, use it directly
       if (value > 1) return Math.round(value);
-      // If value is in 0-1 range, convert to percentage
       return Math.round(value * 100);
     };
 
@@ -92,207 +46,166 @@ const RiskScoreModal: React.FC<RiskScoreModalProps> = ({ riskScores, visible, on
     const entityRiskScore = getRiskScore(riskScores.entityRisk?.aggregateScore);
     const jurisdictionRiskScore = getRiskScore(riskScores.jurisdictionRisk?.aggregateScore);
 
+    const RiskCard = ({ title, score }: { title: string; score: number }) => (
+      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+        <div className="text-sm text-gray-600 dark:text-gray-400 mb-2">{title}</div>
+        <div className="text-3xl font-bold mb-2" style={{ color: getRiskColor(score) }}>
+          {score}<span className="text-lg text-gray-500 dark:text-gray-400">/100</span>
+        </div>
+        <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+          <div
+            className="h-2 rounded-full transition-all"
+            style={{
+              width: `${score}%`,
+              backgroundColor: getRiskColor(score)
+            }}
+          />
+        </div>
+      </div>
+    );
 
     return (
-       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '24px' }}>
-         <Card style={{ backgroundColor: colors.white, borderColor: colors.gray[200] }}>
-           <Statistic
-             title={<Text style={{ color: colors.gray[800] }}>Overall Risk Score</Text>}
-             value={overallRiskScore}
-             suffix="/100"
-             valueStyle={{
-               color: getRiskColor(overallRiskScore)
-             }}
-           />
-           <Progress 
-             percent={overallRiskScore}
-             status={overallRiskScore > 70 ? 'exception' : 'normal'} 
-             strokeColor={getRiskColor(overallRiskScore)}
-             format={(percent) => `${percent}%`}
-           />
-         </Card>
-         
-         <Card style={{ backgroundColor: colors.white, borderColor: colors.gray[200] }}>
-           <Statistic
-             title={<Text style={{ color: colors.gray[800] }}>Transaction Risk</Text>}
-             value={transactionRiskScore}
-             suffix="/100"
-             valueStyle={{
-               color: getRiskColor(transactionRiskScore)
-             }}
-           />
-           <Progress 
-             percent={transactionRiskScore}
-             status={transactionRiskScore > 70 ? 'exception' : 'normal'} 
-             strokeColor={getRiskColor(transactionRiskScore)}
-             format={(percent) => `${percent}%`}
-           />
-         </Card>
-         
-         <Card style={{ backgroundColor: colors.white, borderColor: colors.gray[200] }}>
-           <Statistic
-             title={<Text style={{ color: colors.gray[800] }}>Entity Risk</Text>}
-             value={entityRiskScore}
-             suffix="/100"
-             valueStyle={{
-               color: getRiskColor(entityRiskScore)
-             }}
-           />
-           <Progress 
-             percent={entityRiskScore}
-             status={entityRiskScore > 70 ? 'exception' : 'normal'} 
-             strokeColor={getRiskColor(entityRiskScore)}
-             format={(percent) => `${percent}%`}
-           />
-         </Card>
-         
-         <Card style={{ backgroundColor: colors.white, borderColor: colors.gray[200] }}>
-           <Statistic
-             title={<Text style={{ color: colors.gray[800] }}>Jurisdiction Risk</Text>}
-             value={jurisdictionRiskScore}
-             suffix="/100"
-             valueStyle={{
-               color: getRiskColor(jurisdictionRiskScore)
-             }}
-           />
-           <Progress 
-             percent={jurisdictionRiskScore}
-             status={jurisdictionRiskScore > 70 ? 'exception' : 'normal'} 
-             strokeColor={getRiskColor(jurisdictionRiskScore)}
-             format={(percent) => `${percent}%`}
-           />
-         </Card>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <RiskCard title="Overall Risk Score" score={overallRiskScore} />
+        <RiskCard title="Transaction Risk" score={transactionRiskScore} />
+        <RiskCard title="Entity Risk" score={entityRiskScore} />
+        <RiskCard title="Jurisdiction Risk" score={jurisdictionRiskScore} />
       </div>
     );
   };
 
-  const customEmptyState = (icon: React.ReactNode, description: string) => (
-    <Empty
-      image={icon}
-      imageStyle={{ height: 40, color: colors.brand.primary }}
-      description={<Text style={{ color: colors.brand.primary }}>{description}</Text>}
-    />
-  );
+  const renderRiskTable = (factors: RiskFactor[], emptyIcon: React.ReactNode, emptyText: string) => {
+    if (!factors || factors.length === 0) {
+      return (
+        <div className="flex flex-col items-center justify-center py-12 text-gray-500 dark:text-gray-400">
+          <div className="mb-3">{emptyIcon}</div>
+          <p>{emptyText}</p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="rounded-md border border-gray-200 dark:border-gray-700">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Risk Factor</TableHead>
+              <TableHead>Risk Score</TableHead>
+              <TableHead>Description</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {factors.map((factor) => (
+              <TableRow key={factor.id}>
+                <TableCell>
+                  <div className="flex items-center gap-2">
+                    {getRiskIcon(factor.severity)}
+                    <span>{factor.id}</span>
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <div className="flex items-center gap-2">
+                    <div className="w-24 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                      <div
+                        className="h-2 rounded-full"
+                        style={{
+                          width: `${factor.score * 100}%`,
+                          backgroundColor: getRiskColor(factor.score * 100)
+                        }}
+                      />
+                    </div>
+                    <span className="text-sm">{(factor.score * 100).toFixed(0)}%</span>
+                  </div>
+                </TableCell>
+                <TableCell className="text-gray-600 dark:text-gray-400">
+                  {factor.description}
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+    );
+  };
 
   return (
     <Modal
+      open={visible}
+      onClose={onClose}
+      size="xl"
       title={
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <Shield className="w-5 h-5" style={{ color: colors.brand.primary }} />
-          <span style={{ color: colors.gray[800] }}>Risk Score Details</span>
+        <div className="flex items-center gap-2">
+          <Shield className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+          <span>Risk Score Details</span>
         </div>
       }
-      open={visible}
-      onCancel={onClose}
-      footer={null}
-      width={1000}
-      style={{ top: 20 }}
-      styles={{
-        body: {
-          backgroundColor: colors.white,
-          color: colors.gray[800],
-          maxHeight: '80vh',
-          overflowY: 'auto'
-        }
-      }}
+      className="min-w-[800px] min-h-[600px]"
+      bodyClassName="max-h-[80vh] overflow-y-auto"
     >
-      <div style={{ marginBottom: '16px' }}>
-        <Text style={{ color: colors.gray[600] }}>Address: </Text>
-        <Text code style={{ color: colors.gray[800] }}>{address}</Text>
+      <div className="mb-4">
+        <span className="text-gray-600 dark:text-gray-400">Address: </span>
+        <code className="text-sm bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">{address}</code>
       </div>
 
       {loading ? (
-        <div style={{ textAlign: 'center', padding: '40px' }}>
-          <div className="ant-spin ant-spin-lg ant-spin-spinning">
-            <span className="ant-spin-dot ant-spin-dot-spin">
-              <i className="ant-spin-dot-item"></i>
-              <i className="ant-spin-dot-item"></i>
-              <i className="ant-spin-dot-item"></i>
-              <i className="ant-spin-dot-item"></i>
-            </span>
-          </div>
-          <div style={{ marginTop: '16px', color: colors.gray[600] }}>Loading risk analysis...</div>
+        <div className="text-center p-10">
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          <div className="mt-4 text-gray-600 dark:text-gray-400">Loading risk analysis...</div>
         </div>
       ) : riskScores ? (
         <div>
           {renderRiskScoreCards()}
-          
-          <Card style={{ backgroundColor: colors.white, borderColor: colors.gray[200] }}>
-            <Tabs 
-              defaultActiveKey="entity"
-              style={{ color: colors.gray[800] }}
-              items={[
-                {
-                  key: 'entity',
-                  label: (
-                    <span style={{ color: colors.gray[800] }}>
-                      <User className="w-4 h-4 inline mr-2" />
-                      Entity Risk Factors
-                    </span>
-                  ),
-                  children: (
-                    <Table 
-                      dataSource={riskScores.entityRisk?.factors || []}
-                      columns={columns}
-                      pagination={false}
-                       locale={{ emptyText: customEmptyState(<User className="w-8 h-8" />, 'No entity risk factors were found for this address') }}
-                      rowKey="id"
-                      style={{ width: '100%' }}
-                      className="risk-table"
-                    />
-                  ),
-                },
-                {
-                  key: 'transaction',
-                  label: (
-                    <span style={{ color: colors.gray[800] }}>
-                      <CreditCard className="w-4 h-4 inline mr-2" />
-                      Transaction Risk Factors
-                    </span>
-                  ),
-                  children: (
-                    <Table 
-                      dataSource={riskScores.transactionRisk?.factors || []}
-                      columns={columns}
-                      pagination={false}
-                      rowKey="id"
-                       locale={{ emptyText: customEmptyState(<CreditCard className="w-8 h-8" />, 'No transaction risk factors were found for this address') }}
-                      style={{ width: '100%' }}
-                      className="risk-table"
-                    />
-                  ),
-                },
-                {
-                  key: 'jurisdiction',
-                  label: (
-                    <span style={{ color: colors.gray[800] }}>
-                      <Globe className="w-4 h-4 inline mr-2" />
-                      Jurisdiction Risk Factors
-                    </span>
-                  ),
-                  children: (
-                    <Table 
-                      dataSource={riskScores.jurisdictionRisk?.factors || []}
-                      columns={columns}
-                      pagination={false}
-                      rowKey="id"
-                       locale={{ emptyText: customEmptyState(<Globe className="w-8 h-8" />, 'No jurisdiction risk data available for this address') }}
-                      style={{ width: '100%' }}
-                      className="risk-table"
-                    />
-                  ),
-                },
-              ]}
-            />
-          </Card>
+
+          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+            <Tabs defaultValue="entity">
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="entity">
+                  <User className="w-4 h-4 mr-2" />
+                  Entity Risk
+                </TabsTrigger>
+                <TabsTrigger value="transaction">
+                  <CreditCard className="w-4 h-4 mr-2" />
+                  Transaction Risk
+                </TabsTrigger>
+                <TabsTrigger value="jurisdiction">
+                  <Globe className="w-4 h-4 mr-2" />
+                  Jurisdiction Risk
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="entity">
+                {renderRiskTable(
+                  riskScores.entityRisk?.factors || [],
+                  <User className="w-8 h-8" />,
+                  'No entity risk factors were found for this address'
+                )}
+              </TabsContent>
+
+              <TabsContent value="transaction">
+                {renderRiskTable(
+                  riskScores.transactionRisk?.factors || [],
+                  <CreditCard className="w-8 h-8" />,
+                  'No transaction risk factors were found for this address'
+                )}
+              </TabsContent>
+
+              <TabsContent value="jurisdiction">
+                {renderRiskTable(
+                  riskScores.jurisdictionRisk?.factors || [],
+                  <Globe className="w-8 h-8" />,
+                  'No jurisdiction risk data available for this address'
+                )}
+              </TabsContent>
+            </Tabs>
+          </div>
         </div>
       ) : (
-         <div style={{ textAlign: 'center', padding: '40px', color: colors.gray[600] }}>
-           No risk score data available for this address.
-            </div>
-          )}
+        <div className="text-center p-10 text-gray-600 dark:text-gray-400">
+          No risk score data available for this address.
+        </div>
+      )}
     </Modal>
   );
 };
 
-export default RiskScoreModal; 
+export default RiskScoreModal;

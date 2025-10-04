@@ -1,4 +1,4 @@
-import React, { useCallback,useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 
 import { GitBranch, Network, Save, Wallet } from 'lucide-react'
 import { useSearchParams } from 'react-router-dom';
@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import GitHubWorkspaceManager from '@/components/workspace/GitHubWorkspaceManager'
 import SaveWorkspaceButton from '@/components/workspace/SaveWorkspaceButton'
 import { loadVersion, saveVersion, type Workspace } from '@/lib/workspace-utils'
+import { logoService } from '../../services/logoService'
 
 import AddressSearchInput from '../../components/common/AddressSearchInput';
 import ViewWrapper from '../../components/ViewWrapper';
@@ -36,7 +37,8 @@ import {
   FTNode,
   HelpSystem, 
   LeftPanel,
-  NetworkGraph, 
+  NetworkGraph,
+  NetworkGraphV2,
   NodeTxPicker,
   SaveAndNewDialog, 
   SearchConfirmationDialog, 
@@ -131,6 +133,9 @@ const FlowTracePage: React.FC = () => {
   const [hasSelection] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isLeftPanelLoading, setIsLeftPanelLoading] = useState(false);
+
+  // Feature flag for using the new D3 force-based NetworkGraphV2
+  const [useD3Force, setUseD3Force] = useState(true);
   
   // Edge dialog state
   const [edgeDialogOpen, setEdgeDialogOpen] = useState(false);
@@ -215,7 +220,7 @@ const FlowTracePage: React.FC = () => {
           entityType: override.entityType || 'wallet',
           properName: override.displayTitle || attribution.entity,
           riskScore: riskScores[address]?.overallRisk ? Math.round(riskScores[address].overallRisk * 100) : undefined,
-          logoUrl: override.logo ? `https://storage.googleapis.com/entity-logos/${attribution.entity}.jpg` : null,
+          logoUrl: override.logo ? logoService.getLogoUrl(attribution.entity) : null,
           bo: attribution.bo,
           custodian: attribution.custodian
         };
@@ -993,7 +998,7 @@ const FlowTracePage: React.FC = () => {
           const resolvedLabel = override.displayTitle || node.id;
           const resolvedEntityId = attribution.entity;
           const resolvedEntityType = override.entityType || 'wallet';
-          const logoUrl = override.logo ? `https://storage.googleapis.com/entity-logos/${attribution.entity}.jpg` : null;
+          const logoUrl = override.logo ? logoService.getLogoUrl(attribution.entity) : null;
           
           
           return {
@@ -1044,7 +1049,7 @@ const FlowTracePage: React.FC = () => {
             selectedEntity: {
               ...prev.selectedEntity,
               label: override.displayTitle || currentAddress,
-              logoUrl: override.logo ? `https://storage.googleapis.com/entity-logos/${attribution.entity}.jpg` : prev.selectedEntity?.logoUrl,
+              logoUrl: override.logo ? logoService.getLogoUrl(attribution.entity) : prev.selectedEntity?.logoUrl,
               type: override.entityType || 'wallet',
               // Preserve existing risk score (set by fetchAndSetLeftPanelData with BO override)
               riskScore: prev.selectedEntity?.riskScore,
@@ -1068,7 +1073,7 @@ const FlowTracePage: React.FC = () => {
             selectedEntity: {
               label: override.displayTitle || currentAddress,
               address: currentAddress,
-              logoUrl: override.logo ? `https://storage.googleapis.com/entity-logos/${attribution.entity}.jpg` : null,
+              logoUrl: override.logo ? logoService.getLogoUrl(attribution.entity) : null,
               type: override.entityType || 'wallet',
               // Only set risk score if we have proper risk score data (from fetchAndSetLeftPanelData)
               riskScore: undefined,
@@ -1592,56 +1597,121 @@ const FlowTracePage: React.FC = () => {
 
           {/* Network Graph and Left Panel */}
           <div className="relative" style={{ height: 'calc(100vh - 160px)' }}>
-            <NetworkGraph
-              ref={graphRef}
-              nodes={nodes}
-              connections={connections}
-              onNodeClick={(node) => {
-                // Node click selects the node and fetches its data for the left panel
-                handleNodeSelection(node);
-              }}
-              onNodeDoubleClick={(node) => {
-                // Allow renaming only for custom/empty nodes (no entityId/type or type === 'custom')
-                const isCustom = node.type === 'custom' || (!node.entityId && !node.entityType);
-                if (!isCustom) return;
-                const current = node.label || node.id;
-                const next = window.prompt('Rename node label:', current);
-                if (next && next.trim().length) {
-                  setNodes(prev => prev.map(n => n.id === node.id ? { ...n, label: next.trim() } : n));
-                }
-              }}
-              onNodeAdd={async (node) => {
-                if (node.type === 'custom') {
-                  setExpandSourceNode(node);
-                  setCustomExpandOpen(true);
-                } else {
-                  // Set the source node to the currently selected node (the one we're expanding from)
-                  setNodeTxPickerSourceNode(currentAddress || centerNodeId);
-                  setCurrentAddress(node.id);
-                  
-                  // Show side panel data for the node being expanded
-                  setLeftPanelData(null); // Clear old data first
-                  await fetchAndSetLeftPanelData(node.id);
-                  
-                  setNodeTxPickerOpen(true);
-                }
-              }}
-              onNodeDrag={(nodeId, x, y) => {
-                setNodes(prev => prev.map(n => n.id === nodeId ? { ...n, x, y } : n));
-              }}
-              onEdgeClick={handleEdgeClick}
-              onNodeRemove={(nodeId) => {
-                setNodes(prev => prev.filter(n => n.id !== nodeId));
-                setConnections(prev => prev.filter(c => c.from !== nodeId && c.to !== nodeId));
-              }}
-              utxoCollapseMode={utxoCollapseMode}
-              activeTool={activeDrawingTool}
-              activeColor={activeColor}
-              onDrawingAction={handleDrawingAction}
-              drawingHistory={drawingHistory.slice(0, historyIndex + 1)}
+            {/* Toggle button for switching between graph versions */}
+            <div className="absolute top-4 right-4 z-30 bg-white dark:bg-gray-800 rounded-md shadow-md p-2">
+              <label className="flex items-center space-x-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={useD3Force}
+                  onChange={(e) => setUseD3Force(e.target.checked)}
+                  className="form-checkbox h-4 w-4 text-blue-600"
+                />
+                <span className="text-sm text-gray-700 dark:text-gray-300">Use D3 Force Layout</span>
+              </label>
+            </div>
 
-              centerNodeId={centerNodeId}
-            />
+            {/* Conditionally render the appropriate graph component */}
+            {useD3Force ? (
+              <NetworkGraphV2
+                ref={graphRef}
+                nodes={nodes}
+                connections={connections}
+                onNodeClick={(node) => {
+                  // Node click selects the node and fetches its data for the left panel
+                  handleNodeSelection(node);
+                }}
+                onNodeDoubleClick={(node) => {
+                  // Allow renaming only for custom/empty nodes (no entityId/type or type === 'custom')
+                  const isCustom = node.type === 'custom' || (!node.entityId && !node.entityType);
+                  if (!isCustom) return;
+                  const current = node.label || node.id;
+                  const next = window.prompt('Rename node label:', current);
+                  if (next && next.trim().length) {
+                    setNodes(prev => prev.map(n => n.id === node.id ? { ...n, label: next.trim() } : n));
+                  }
+                }}
+                onNodeAdd={async (node) => {
+                  if (node.type === 'custom') {
+                    setExpandSourceNode(node);
+                    setCustomExpandOpen(true);
+                  } else {
+                    // Set the source node to the currently selected node (the one we're expanding from)
+                    setNodeTxPickerSourceNode(currentAddress || centerNodeId);
+                    setCurrentAddress(node.id);
+
+                    // Show side panel data for the node being expanded
+                    setLeftPanelData(null); // Clear old data first
+                    await fetchAndSetLeftPanelData(node.id);
+
+                    setNodeTxPickerOpen(true);
+                  }
+                }}
+                onNodeDrag={(nodeId, x, y) => {
+                  setNodes(prev => prev.map(n => n.id === nodeId ? { ...n, x, y } : n));
+                }}
+                onEdgeClick={handleEdgeClick}
+                onNodeRemove={(nodeId) => {
+                  setNodes(prev => prev.filter(n => n.id !== nodeId));
+                  setConnections(prev => prev.filter(c => c.from !== nodeId && c.to !== nodeId));
+                }}
+                utxoCollapseMode={utxoCollapseMode}
+                activeTool={activeDrawingTool}
+                activeColor={activeColor}
+                onDrawingAction={handleDrawingAction}
+                drawingHistory={drawingHistory.slice(0, historyIndex + 1)}
+                centerNodeId={centerNodeId}
+              />
+            ) : (
+              <NetworkGraph
+                ref={graphRef}
+                nodes={nodes}
+                connections={connections}
+                onNodeClick={(node) => {
+                  // Node click selects the node and fetches its data for the left panel
+                  handleNodeSelection(node);
+                }}
+                onNodeDoubleClick={(node) => {
+                  // Allow renaming only for custom/empty nodes (no entityId/type or type === 'custom')
+                  const isCustom = node.type === 'custom' || (!node.entityId && !node.entityType);
+                  if (!isCustom) return;
+                  const current = node.label || node.id;
+                  const next = window.prompt('Rename node label:', current);
+                  if (next && next.trim().length) {
+                    setNodes(prev => prev.map(n => n.id === node.id ? { ...n, label: next.trim() } : n));
+                  }
+                }}
+                onNodeAdd={async (node) => {
+                  if (node.type === 'custom') {
+                    setExpandSourceNode(node);
+                    setCustomExpandOpen(true);
+                  } else {
+                    // Set the source node to the currently selected node (the one we're expanding from)
+                    setNodeTxPickerSourceNode(currentAddress || centerNodeId);
+                    setCurrentAddress(node.id);
+
+                    // Show side panel data for the node being expanded
+                    setLeftPanelData(null); // Clear old data first
+                    await fetchAndSetLeftPanelData(node.id);
+
+                    setNodeTxPickerOpen(true);
+                  }
+                }}
+                onNodeDrag={(nodeId, x, y) => {
+                  setNodes(prev => prev.map(n => n.id === nodeId ? { ...n, x, y } : n));
+                }}
+                onEdgeClick={handleEdgeClick}
+                onNodeRemove={(nodeId) => {
+                  setNodes(prev => prev.filter(n => n.id !== nodeId));
+                  setConnections(prev => prev.filter(c => c.from !== nodeId && c.to !== nodeId));
+                }}
+                utxoCollapseMode={utxoCollapseMode}
+                activeTool={activeDrawingTool}
+                activeColor={activeColor}
+                onDrawingAction={handleDrawingAction}
+                drawingHistory={drawingHistory.slice(0, historyIndex + 1)}
+                centerNodeId={centerNodeId}
+              />
+            )}
 
             {/* Left Panel */}
             <div className="absolute top-0 left-0 h-full z-20">

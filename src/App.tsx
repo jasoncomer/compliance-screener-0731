@@ -28,7 +28,7 @@ import ComplianceScreener from './views/Compliance/ComplianceScreener';
 import ClientOverviewPage from './views/Compliance/ClientOverviewPage';
 import MonitoredAddressesPage from './views/Compliance/MonitoredAddressesPage';
 import { ComplianceDashboard } from "./views/compliance-v2/compliance-dashboard";
-import FlowTrace from './views/Flowtrace/FlowTracePage';
+import FlowTrace from './views/Flowtrace/FlowTrace';
 import Home from "./views/Home";
 import Login from './views/Login';
 import Register from "./views/Register";

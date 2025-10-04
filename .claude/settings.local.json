@@ -13,7 +13,8 @@
       "Bash(mkdir:*)",
       "Bash(cp:*)",
       "Bash(find:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "WebSearch"
     ],
     "deny": []
   }

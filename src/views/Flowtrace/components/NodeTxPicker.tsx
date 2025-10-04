@@ -7,10 +7,10 @@ import { Badge } from '../../../components/ui/badge';
 import { Button } from '../../../components/ui/button';
 import { Checkbox } from '../../../components/ui/checkbox';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../../../components/ui/dialog';
+import { api } from '../../../api/api';
 import { useAttribution } from '../../../context/AttributionContext';
 import { useCryptoPrices } from '../../../hooks/useCryptoPrices';
 import { useLogo } from '../../../hooks/useLogo';
-import { flowtraceService } from '../../../services/flowtraceService';
 import { RootState } from '../../../store/store';
 import { SOT } from '../../../typings/interfaces';
 import { applyBeneficialOwnerOverride } from '../../../utils/entityUtils';
@@ -196,80 +196,9 @@ export const NodeTxPicker: React.FC<Props> = ({ open, address, onOpenChange, onA
     return uniqueTxHashes.size;
   };
 
-  // Cache for historical prices to avoid repeated API calls
-  const [historicalPriceCache, setHistoricalPriceCache] = useState<Map<string, number>>(new Map());
-
-  // State to store calculated USD values for transactions
-  const [calculatedUsdValues, setCalculatedUsdValues] = useState<Map<string, string>>(new Map());
-
-  // Note: Rate limiting is now handled by the backend service
-
-  // Fetch historical Bitcoin price for a specific date using our backend API
-  const fetchHistoricalBtcPrice = async (date: string | number): Promise<number | null> => {
-    try {
-      let targetDate: string;
-
-      if (typeof date === 'number') {
-        // Convert timestamp to date string (YYYY-MM-DD format)
-        targetDate = new Date(date * 1000).toISOString().split('T')[0];
-      } else {
-        // Use the date string directly
-        targetDate = date.split('T')[0];
-      }
-
-      // Validate date format (should be YYYY-MM-DD)
-      if (!/^\d{4}-\d{2}-\d{2}$/.test(targetDate)) {
-        console.error('Invalid date format:', targetDate);
-        return null;
-      }
-
-      // Check cache first
-      if (historicalPriceCache.has(targetDate)) {
-        return historicalPriceCache.get(targetDate)!;
-      }
-
-      // Use our backend API instead of direct CoinGecko calls
-      const response = await fetch(
-        `/api/crypto/historical-price?date=${targetDate}&symbol=BTC`,
-        {
-          headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json'
-          }
-        }
-      );
-
-      if (!response.ok) {
-        if (response.status === 404) {
-          console.warn(`Historical price not found for ${targetDate}, using fallback price`);
-          return null; // Will trigger fallback to current price
-        }
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-
-      // Validate response structure
-      if (typeof data.price !== 'number' || data.price <= 0) {
-        console.error('Invalid price data from backend API:', data);
-        return null;
-      }
-
-      // Cache the result
-      setHistoricalPriceCache(prev => new Map(prev).set(targetDate, data.price));
-
-      return data.price;
-    } catch (error) {
-      console.error('Error fetching historical Bitcoin price:', error);
-      return null;
-    }
-  };
-
-  // Calculate USD value from BTC amount using historical or current prices
+  // Calculate USD value from BTC amount using current prices
   const calculateUsdValue = (btcAmount: number, currency: string = 'BTC'): string => {
     if (currency === 'BTC') {
-      // For now, use current price as we don't have historical price API yet
-      // TODO: Implement historical price fetching based on transaction date
       const btcPrice = getPrice('BTC');
       if (btcPrice) {
         const usdValue = btcAmount * btcPrice;
@@ -286,37 +215,6 @@ export const NodeTxPicker: React.FC<Props> = ({ open, address, onOpenChange, onA
     } else {
       // For other currencies, return a placeholder
       return '$0.00';
-    }
-  };
-
-  // Calculate USD value asynchronously using historical prices
-  const calculateUsdValueAsync = async (txId: string, btcAmount: number, currency: string = 'BTC', transactionDate?: string | number): Promise<void> => {
-    if (currency === 'BTC' && transactionDate) {
-      try {
-        const historicalPrice = await fetchHistoricalBtcPrice(transactionDate);
-        if (historicalPrice) {
-          const usdValue = btcAmount * historicalPrice;
-          const formattedValue = `$${usdValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-          setCalculatedUsdValues(prev => new Map(prev).set(txId, formattedValue));
-        } else {
-          // Fallback to current price if historical price fails
-          const currentPrice = getPrice('BTC') || 45000;
-          const usdValue = btcAmount * currentPrice;
-          const formattedValue = `$${usdValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-          setCalculatedUsdValues(prev => new Map(prev).set(txId, formattedValue));
-        }
-      } catch (error) {
-        console.error('Error calculating USD value for transaction:', txId, error);
-        // Fallback to current price
-        const currentPrice = getPrice('BTC') || 45000;
-        const usdValue = btcAmount * currentPrice;
-        const formattedValue = `$${usdValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-        setCalculatedUsdValues(prev => new Map(prev).set(txId, formattedValue));
-      }
-    } else if (currency === 'USDC' || currency === 'USDT') {
-      // For stablecoins, the USD value is the same as the amount
-      const formattedValue = `$${btcAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-      setCalculatedUsdValues(prev => new Map(prev).set(txId, formattedValue));
     }
   };
 
@@ -360,18 +258,6 @@ export const NodeTxPicker: React.FC<Props> = ({ open, address, onOpenChange, onA
       });
     });
   }, [attributions, itemsMap, txs.length]);
-
-  // Calculate USD values asynchronously when transactions are loaded
-  useEffect(() => {
-    if (txs.length > 0) {
-      txs.forEach(tx => {
-        const btcAmount = parseFloat(tx.amount || '0');
-        if (btcAmount > 0) {
-          calculateUsdValueAsync(tx.txid, btcAmount, tx.currency || 'BTC', tx.time);
-        }
-      });
-    }
-  }, [txs]);
 
   // Pre-select already-expanded addresses only on initial load (when nothing is selected yet)
   useEffect(() => {
@@ -476,15 +362,15 @@ export const NodeTxPicker: React.FC<Props> = ({ open, address, onOpenChange, onA
       }
       
       try {
+        // Fetch transactions and risk scores using blockchain API
+        const [transactionsResponse, riskScoreResponse, attributionResponse] = await Promise.all([
+          api.blockchain.getAddressTransactions(address, { page: 1, limit: 100 }),
+          api.riskScoring.calculateRiskScore(address, 'address').catch(() => null),
+          api.blockchain.getBitcoinAttribution(address).catch(() => null)
+        ]);
 
-        // Use optimized endpoint to get transactions for the address
-        const optimizedResponse = await flowtraceService.expandNodeOptimized(address, {
-          includeRiskScores: true,
-          includeTransactions: true
-        });
-
-        // Extract transactions from optimized response
-        const allTransactions = optimizedResponse.data.transactions || [];
+        // Extract transactions
+        const allTransactions = transactionsResponse.txs || [];
 
         // If no SOT data in Redux, try to fetch it directly
         let sotDataToUse = itemsMap;
@@ -501,8 +387,18 @@ export const NodeTxPicker: React.FC<Props> = ({ open, address, onOpenChange, onA
           }
         }
 
-        // Extract data from optimized response (no need for separate API calls!)
-        const { enhancedData, riskScores } = optimizedResponse.data;
+        // Build enhanced data from responses
+        const enhancedData = attributionResponse ? [{
+          address,
+          attribution: attributionResponse,
+          entityProfile: {
+            entityId: attributionResponse.entity,
+            entity_type: 'wallet',
+            proper_name: attributionResponse.entity
+          }
+        }] : [];
+
+        const riskScores = riskScoreResponse ? { [address]: riskScoreResponse } : {};
         
         // Build address entities from enhanced data
         const addressEntities: Record<string, any> = {};
@@ -597,7 +493,7 @@ export const NodeTxPicker: React.FC<Props> = ({ open, address, onOpenChange, onA
               let entityName = rawEntityName ? rawEntityName.charAt(0).toUpperCase() + rawEntityName.slice(1) : 'Unknown Entity';
               let entityType = 'wallet' as const;
               let entityTags: string[] = [];
-              // Logo will be handled by EntityLogo component using useLogo hook
+              let logo: string | undefined = undefined;
 
               if (sotDataToUse && Object.keys(sotDataToUse).length > 0) {
                 const entitySOT = sotDataToUse[entityData?.entity || ''];
@@ -619,7 +515,7 @@ export const NodeTxPicker: React.FC<Props> = ({ open, address, onOpenChange, onA
                   entityName = override.displayTitle || override.entityName;
                   entityType = (override.entityType as any) || entityType;
                   entityTags = override.entityTags || [];
-                  // Logo will be handled by EntityLogo component using useLogo hook
+                  logo = override.logo;
                 }
               }
 
@@ -635,7 +531,7 @@ export const NodeTxPicker: React.FC<Props> = ({ open, address, onOpenChange, onA
                 entityName,
                 entityId,
                 entityType,
-                // logo will be handled by EntityLogo component
+                logo,
                 riskScore: risk,
                 amount: inputAmountBtc.toFixed(8),
                 currency: 'BTC',
@@ -727,7 +623,7 @@ export const NodeTxPicker: React.FC<Props> = ({ open, address, onOpenChange, onA
               let entityName = rawEntityName ? rawEntityName.charAt(0).toUpperCase() + rawEntityName.slice(1) : 'Unknown Entity';
               let entityType = 'wallet' as const;
               let entityTags: string[] = [];
-              // Logo will be handled by EntityLogo component using useLogo hook
+              let logo: string | undefined = undefined;
 
               if (sotDataToUse && Object.keys(sotDataToUse).length > 0) {
                 const entitySOT = sotDataToUse[entityData?.entity || ''];
@@ -749,7 +645,7 @@ export const NodeTxPicker: React.FC<Props> = ({ open, address, onOpenChange, onA
                   entityName = override.displayTitle || override.entityName;
                   entityType = (override.entityType as any) || entityType;
                   entityTags = override.entityTags || [];
-                  // Logo will be handled by EntityLogo component using useLogo hook
+                  logo = override.logo;
                 }
               }
 
@@ -764,7 +660,7 @@ export const NodeTxPicker: React.FC<Props> = ({ open, address, onOpenChange, onA
                 entityName,
                 entityId,
                 entityType,
-                // logo will be handled by EntityLogo component
+                logo,
                 riskScore: risk,
                 amount: addressInputAmountBtc.toFixed(8), // Actual amount this address sent (e.g., 0.32516944 BTC)
                 currency: 'BTC',
@@ -1366,7 +1262,7 @@ export const NodeTxPicker: React.FC<Props> = ({ open, address, onOpenChange, onA
                                   {tx.amount} {tx.currency}
                                 </div>
                                 <div className="text-sm text-gray-600 dark:text-gray-400">
-                                  {calculatedUsdValues.get(tx.txid) || tx.usdValue}
+                                  {tx.usdValue}
                                 </div>
                               </td>
                               <td className="p-3">
@@ -1563,7 +1459,7 @@ export const NodeTxPicker: React.FC<Props> = ({ open, address, onOpenChange, onA
                         <div className="font-mono text-sm text-gray-900 dark:text-gray-100">
                           {tx.amount} {tx.currency}
                         </div>
-                        <div className="text-xs text-gray-600 dark:text-gray-400">{calculatedUsdValues.get(tx.txid) || tx.usdValue}</div>
+                        <div className="text-xs text-gray-600 dark:text-gray-400">{tx.usdValue}</div>
                       </td>
                       <td className="p-3">
                         <div className="text-sm text-gray-900 dark:text-gray-100">

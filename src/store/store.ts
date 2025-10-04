@@ -5,6 +5,7 @@ import monitoredAddressesReducer from './slices/monitoredAddressesSlice';
 import organizationsReducer from './slices/organizationsSlice';
 import sotReducer from './slices/sotSlice';
 import subscriptionReducer from './slices/subscriptionSlice';
+import uiReducer from './slices/uiSlice';
 import casesReducer from './slices/casesSlice';
 import clientOverviewReducer from './slices/clientOverviewSlice';
 
@@ -15,6 +16,7 @@ export const store = configureStore({
     monitoredAddresses: monitoredAddressesReducer,
     organizations: organizationsReducer,
     subscription: subscriptionReducer,
+    ui: uiReducer,
     cases: casesReducer,
     clientOverview: clientOverviewReducer,
   },

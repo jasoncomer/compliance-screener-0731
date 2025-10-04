@@ -1,6 +1,4 @@
-import { api,axiosInstance } from '../api/api';
-
-import { flowtraceOptimizedService } from './flowtraceOptimizedService';
+import { api, axiosInstance } from '../api/api';
 
 export interface AddressDataResponse {
   address: string;
@@ -35,85 +33,8 @@ export interface BitcoinAttribution {
 }
 
 export const flowtraceService = {
-  // NEW: Optimized FlowTrace methods
-  async expandNodeOptimized(address: string, options?: { includeRiskScores?: boolean; includeTransactions?: boolean }) {
-    try {
-      return await flowtraceOptimizedService.expandNode(address, options);
-    } catch (error) {
-      
-      // Fallback to legacy methods when optimized endpoint is not available
-      
-      const [addressData, transactions, riskScore] = await Promise.all([
-        this.fetchAddress(address),
-        options?.includeTransactions !== false ? this.fetchTransactions(address, 1, 50) : Promise.resolve({ txs: [], pagination: { totalTxs: 0 } }),
-        options?.includeRiskScores !== false ? this.fetchRiskScore(address) : Promise.resolve(null)
-      ]);
-
-
-      // Try to fetch attribution data for this address
-      let attributionData = null;
-      try {
-        const attributionResponse = await this.fetchEntityProfile(address);
-        attributionData = attributionResponse;
-      } catch (attributionError) {
-      }
-
-      // Note: Entity profile data will be resolved client-side using AttributionContext and SOT data
-      // This avoids the authentication issues with the server-side attribution calls
-      
-      // Get SOT data to resolve entity names properly
-      let resolvedEntityName = null;
-      let resolvedEntityType = 'wallet';
-      let resolvedLogo = null;
-      
-             if (attributionData?.entityId) {
-               try {
-                 const sotData = await this.getSOTDataFromStore();
-                 if (sotData && sotData[attributionData.entityId]) {
-                   const sotEntry = sotData[attributionData.entityId] as any; // Type assertion for SOT data
-                   resolvedEntityName = sotEntry.proper_name || attributionData.entityId;
-                   resolvedEntityType = sotEntry.entity_type || 'wallet';
-                   resolvedLogo = sotEntry.logo || null;
-                 }
-               } catch (error) {
-               }
-             }
-      
-      const result = {
-        data: {
-          address,
-          transactions: transactions.txs || [],
-          enhancedData: [{
-            address,
-            attribution: attributionData || addressData.attribution || {},
-            entityProfile: {
-              entity_type: resolvedEntityType,
-               proper_name: resolvedEntityName || addressData.attribution?.entity || null,
-              logo: resolvedLogo || attributionData?.logoUrl || addressData.attribution?.logo || null,
-              entityId: attributionData?.entityId || addressData.attribution?.entity || null
-            }
-          }],
-          riskScores: riskScore ? { [address]: riskScore } : {},
-          summary: {
-            totalTransactions: transactions.pagination?.totalTxs || 0
-          }
-        },
-        performance: {
-          totalTime: 0,
-          apiCallsSaved: 0,
-          optimization: 'legacy-fallback'
-        }
-      };
-
-      return result;
-    }
-  },
-
-  async expandNodesBatchOptimized(addresses: string[], options?: { includeRiskScores?: boolean }) {
-    return await flowtraceOptimizedService.expandNodesBatch(addresses, options);
-  },
-
-  // Legacy methods (kept for backward compatibility)
+  // Legacy methods for backward compatibility
+  // NOTE: New code should use api.blockchain, api.riskScoring with React Query hooks (useFlowtraceQueries.ts)
   fetchAddress(address: string) {
     return axiosInstance.get<AddressDataResponse>(`/blockchain/address/${address}`).then(r => r.data);
   },
@@ -238,11 +159,11 @@ export const flowtraceService = {
           if (sotEntry.proper_name) {
             primaryLabel = sotEntry.proper_name;
           }
-        } else {
         }
       } catch (error) {
+        // SOT lookup failed, continue with existing data
+        console.debug('Failed to fetch SOT data for entity:', primaryEntityId);
       }
-    } else {
     }
     
     entityInfo = {
@@ -275,17 +196,13 @@ export const flowtraceService = {
           }
         }
       } catch (error) {
+        // SOT lookup failed, continue without logo
+        console.debug('Failed to fetch SOT data for logo:', entityInfo.entityId);
       }
     }
     
-    // If no logo from SOT and entityType exists, try fallback from main SOT data
-    if (!logoUrl && entityInfo?.entityType) {
-      try {
-        // For now, skip the fallback logo lookup to avoid loading entire SOT dataset
-        // This can be optimized later with a specific endpoint for entity type logos
-      } catch (error) {
-      }
-    }
+    // Note: Fallback logo lookup is skipped to avoid loading entire SOT dataset
+    // This can be optimized later with a specific endpoint for entity type logos
     
     const result = {
       entityId: entityInfo?.entityId,

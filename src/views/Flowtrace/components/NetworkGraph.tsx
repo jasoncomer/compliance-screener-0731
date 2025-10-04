@@ -61,13 +61,14 @@ interface NetworkGraphProps {
   onNodeDrag: (nodeId: string, x: number, y: number) => void
   onEdgeClick: (connection: FTConnection) => void
   onNodeRemove: (nodeId: string) => void
+  onBulkNodeRemove?: (nodeIds: string[]) => void
   onNodeAdd: (node: FTNode) => void
   utxoCollapseMode: "aggregated" | "individual"
   activeTool?: 'select' | 'draw' | 'rectangle' | 'circle' | 'text'
   activeColor?: string
   onDrawingAction?: (action: { type: string; data: any }) => void
   drawingHistory?: any[]
-
+  areaSelectionMode?: boolean
   centerNodeId?: string | null
 }
 
@@ -77,6 +78,10 @@ export type NetworkGraphHandle = {
   resetView: () => void
   forceRender: () => void
   centerOnNode: (nodeId: string) => void
+  getSelectedNodes: () => string[]
+  clearSelection: () => void
+  selectNodes: (nodeIds: string[]) => void
+  editSelectedTextAnnotation: () => void
 }
 
 export const NetworkGraph = forwardRef<NetworkGraphHandle, NetworkGraphProps>(({ 
@@ -177,27 +182,34 @@ export const NetworkGraph = forwardRef<NetworkGraphHandle, NetworkGraphProps>(({
     forceRender: () => setRenderTick(prev => prev + 1),
     centerOnNode: (nodeId: string) => {
       if (!canvasRef.current) return;
-      
+
       const targetNode = nodes.find(node => node.id === nodeId);
       if (!targetNode) return;
-      
+
       // Get canvas dimensions
       const canvas = canvasRef.current;
       const rect = canvas.getBoundingClientRect();
       const canvasWidth = rect.width;
       const canvasHeight = rect.height;
-      
+
       // Calculate the right center position (75% from left, 50% from top)
       const targetX = canvasWidth * 0.75;
       const targetY = canvasHeight * 0.5;
-      
+
       // Calculate the pan offset needed to center the node at the target position
       const panX = targetX - (targetNode.x * zoom);
       const panY = targetY - (targetNode.y * zoom);
-      
+
       console.log('🎯 Programmatically centering node', nodeId, 'to right center of view');
       setPan({ x: panX, y: panY });
       setCenteredNodeId(nodeId); // Mark this node as centered
+    },
+    // Stub implementations for multi-select (not implemented in legacy NetworkGraph)
+    getSelectedNodes: () => [],
+    clearSelection: () => {},
+    selectNodes: (_nodeIds: string[]) => {},
+    editSelectedTextAnnotation: () => {
+      console.log('⚠️ editSelectedTextAnnotation not implemented in legacy NetworkGraph');
     }
   }), [nodes, zoom]);
 
@@ -1242,38 +1254,9 @@ export const NetworkGraph = forwardRef<NetworkGraphHandle, NetworkGraphProps>(({
           ctx.textAlign = 'center';
           ctx.fillText(`Risk: ${Math.round(riskValue)}`, n.x, n.y + yOffset);
           yOffset += 14 / zoom;
-          
-          // Debug logging for all nodes with risk scores
-          console.log('🔍 Node risk display:', {
-            nodeId: n.id,
-            label: n.label,
-            risk: n.risk,
-            riskValue,
-            rounded: Math.round(riskValue),
-            isAggregated: n.id.startsWith('agg:')
-          });
-        } else {
-          // Debug logging for nodes without valid risk scores
-          console.log('⚠️ Node missing valid risk score:', {
-            nodeId: n.id,
-            label: n.label,
-            risk: n.risk,
-            riskValue,
-            isAggregated: n.id.startsWith('agg:')
-          });
         }
-      } else {
-        // Debug logging for nodes without risk property
-        console.log('❌ Node missing risk property:', {
-          nodeId: n.id,
-          label: n.label,
-          risk: n.risk,
-          isAggregated: n.id.startsWith('agg:')
-        });
       }
       
-      
-
       // add (+) button at top-left of node
       const addR = 5; // icon radius
       const addCx = n.x - radius - 6; // a bit offset from circle edge on left side

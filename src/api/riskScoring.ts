@@ -19,3 +19,7 @@ export const calculateRiskScore = async (identifier: string, type: 'address' | '
 
   return response.data.data;
 };
+
+export const riskScoring = {
+  calculateRiskScore,
+};

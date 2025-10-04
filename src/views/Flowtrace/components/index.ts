@@ -13,10 +13,17 @@ export { LeftPanel } from './LeftPanel';
 export { LoadingIndicator } from './LoadingIndicator';
 export type { FTConnection, FTNode } from './NetworkGraph';
 export { NetworkGraph } from './NetworkGraph';
+export { NetworkGraphV2 } from './NetworkGraphV2';
 export { NodeTxPicker } from './NodeTxPicker';
 export { SaveAndNewDialog } from './SaveAndNewDialog';
 export { SearchConfirmationDialog } from './SearchConfirmationDialog';
+export { SettingsDialog } from './SettingsDialog';
 export { StartNewGraphConfirmationDialog } from './StartNewGraphConfirmationDialog';
 export { Toolbar } from './Toolbar';
 export { WalletClusterPanel } from './WalletClusterPanel';
 export { WorkspaceInfo } from './WorkspaceInfo';
+
+// Compound components
+export { FlowTraceDialogs } from './FlowTraceDialogs';
+export { FlowTraceGraphContainer } from './FlowTraceGraphContainer';
+export { FlowTraceToolbars } from './FlowTraceToolbars';

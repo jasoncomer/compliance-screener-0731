@@ -9,6 +9,7 @@ import { contactSales } from './contactSales';
 import { crypto } from './crypto';
 import { notesApi } from './notes';
 import { organizations } from './organizations';
+import { riskScoring } from './riskScoring';
 import { socialMedia } from './socialMedia';
 import { sot } from './sot';
 import { subscription } from './subscription';
@@ -34,6 +35,7 @@ export const api = {
   contactSales,
   crypto,
   organizations,
+  riskScoring,
   sot,
   socialMedia,
   subscription,

@@ -116,7 +116,7 @@ const serializeGraphState = (graphState: any) => ({
   customNodes: graphState.customNodes || [],
   nodeStyles: graphState.nodeStyles || {},
   connectionStyles: graphState.connectionStyles || {},
-  drawingElements: graphState.drawingElements || [],
+  drawingElements: graphState.drawingElements || graphState.drawings || [],
   selectedElements: graphState.selectedElements || [],
   filters: graphState.filters || {},
   settings: graphState.settings || {},

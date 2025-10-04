@@ -78,15 +78,16 @@ export const HelpSystem: React.FC<HelpSystemProps> = ({ className = '' }) => {
     if (currentStep < HELP_STEPS.length - 1) {
       setCurrentStep(currentStep + 1);
     } else {
-      setCurrentStep(0); // Loop back to start
+      // Close dialog at the end
+      setIsOpen(false);
+      setCurrentStep(0);
+      setIsAutoPlay(false);
     }
   };
 
   const handlePrevious = () => {
     if (currentStep > 0) {
       setCurrentStep(currentStep - 1);
-    } else {
-      setCurrentStep(HELP_STEPS.length - 1); // Loop to end
     }
   };
 
@@ -112,8 +113,7 @@ export const HelpSystem: React.FC<HelpSystemProps> = ({ className = '' }) => {
       <Button
         onClick={() => setIsOpen(true)}
         variant="outline"
-        size="sm"
-        className={`p-2 ${className}`}
+        className={`h-11 px-3 ${className}`}
         title="Help & Tutorial"
       >
         <HelpCircle className="h-4 w-4" />
@@ -199,17 +199,20 @@ export const HelpSystem: React.FC<HelpSystemProps> = ({ className = '' }) => {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => setCurrentStep(0)}
+                  onClick={() => {
+                    setCurrentStep(0);
+                    setIsAutoPlay(false);
+                  }}
                 >
                   Restart
                 </Button>
-                
+
                 <Button
                   onClick={handleNext}
                   className="flex items-center gap-1"
                 >
                   {currentStep === HELP_STEPS.length - 1 ? 'Finish' : 'Next'}
-                  <ChevronRight className="h-4 w-4" />
+                  {currentStep < HELP_STEPS.length - 1 && <ChevronRight className="h-4 w-4" />}
                 </Button>
               </div>
             </div>
