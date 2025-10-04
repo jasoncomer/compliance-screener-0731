@@ -82,7 +82,8 @@ export const compliance = {
       timestamp?: { from?: string; to?: string };
       minAmount?: number;
       maxAmount?: number;
-      riskLevel?: 'high' | 'medium' | 'low';
+      minRiskLevel?: number;
+      maxRiskLevel?: number;
       page?: number;
       limit?: number;
       sortBy?: string;
@@ -103,10 +104,16 @@ export const compliance = {
       firstTransaction: response.data?.data?.transactions?.[0] ? {
         keys: Object.keys(response.data.data.transactions[0]),
         txId: response.data.data.transactions[0].txId,
-        _id: response.data.data.transactions[0]._id
+        _id: response.data.data.transactions[0]._id,
+        riskScores: response.data.data.transactions[0].riskScores
       } : null,
       allTxIds: response.data?.data?.transactions?.map((tx: any) => tx.txId) || [],
-      allTxIdsFull: response.data?.data?.transactions?.map((tx: any) => ({ txId: tx.txId, clientId: tx.clientId, _id: tx._id })) || [],
+      allTxIdsFull: response.data?.data?.transactions?.map((tx: any) => ({ 
+        txId: tx.txId, 
+        clientId: tx.clientId, 
+        _id: tx._id,
+        riskScores: tx.riskScores
+      })) || [],
       searchTerm: filters.txId,
       matches: response.data?.data?.transactions?.filter((tx: any) => 
         tx.txId && tx.txId.includes(filters.txId || '')

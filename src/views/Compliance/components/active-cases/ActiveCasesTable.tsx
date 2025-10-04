@@ -1,9 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-
 import { Check, Eye } from 'lucide-react';
-
 import { blockchain } from '../../../../api/blockchain';
-import { api } from '../../../../api/api';
 import { Badge } from '../../../../components/ui/badge';
 import { Button } from '../../../../components/ui/button';
 import { Checkbox } from '../../../../components/ui/checkbox';
@@ -18,7 +15,6 @@ import { useAppDispatch, useAppSelector } from '../../../../store/hooks';
 import { updateTransactionAssignee, updateTransactionStatus } from '../../../../store/slices/complianceTransactionsSlice';
 import { selectActiveOrgMembersMap } from '../../../../store/slices/organizationsSlice';
 import { EComplianceTransactionStatus, IComplianceTransaction } from '../../../../typings/compliance';
-import { IUser } from '../../../../typings/interfaces';
 import { truncateAddress } from '../../../../utils/crypto';
 import { getBlockchainLabel, getUserDisplayName } from '../../../../utils/display-labels';
 import AssignedTransactionDetailsModal from '../../modals/TransactionDetails/AssignedTransactionDetailsModal';
@@ -73,11 +69,23 @@ const ActiveCasesTable: React.FC<ActiveCasesTableProps> = React.memo(({
   const { getPrice } = useCryptoPrices();
 
   // Debug organization members data
-  console.log('ActiveCasesTable organizationMembers:', { organizationMembers, membersCount: Object.keys(organizationMembers || {}).length });
+  console.log('🔍 ActiveCasesTable - Props received:', {
+    transactionsCount: transactions.length,
+    totalTransactions,
+    currentPage,
+    pageSize,
+    loading,
+    isArchivedTab,
+    isActiveCasesTab,
+    firstTransaction: transactions[0] || null
+  });
+
+  // Debug organization members data
+  console.log('🔍 ActiveCasesTable - organizationMembers:', { organizationMembers, membersCount: Object.keys(organizationMembers || {}).length });
 
   // Check if we have the necessary data
   if (!organizationMembers) {
-    console.warn('organizationMembers is not available yet');
+    console.warn('🔍 ActiveCasesTable - organizationMembers is not available yet');
   }
 
 
@@ -183,16 +191,12 @@ const ActiveCasesTable: React.FC<ActiveCasesTableProps> = React.memo(({
   // Convert transaction to case handler
   const handleConvertToCase = useCallback(async (transactionId: string) => {
     try {
-      const response = await api.post(`/cases/transactions/${transactionId}/convert-to-case`, {
-        caseTitle: `Transaction Case ${transactionId.slice(0, 8)}...`,
-        priority: 'NORMAL'
-      });
-
-      if (response.data.success) {
-        console.log('Successfully converted transaction to case:', response.data.data.case);
-        // Optionally refresh the transactions list or show a success message
-        // You might want to dispatch an action to refresh the data
-      }
+      // TODO: Implement API call when endpoint is available
+      console.log('Converting transaction to case:', transactionId);
+      // const response = await api.post(`/cases/transactions/${transactionId}/convert-to-case`, {
+      //   caseTitle: `Transaction Case ${transactionId.slice(0, 8)}...`,
+      //   priority: 'NORMAL'
+      // });
     } catch (error) {
       console.error('Error converting transaction to case:', error);
       // Handle error (show toast, etc.)
@@ -354,14 +358,16 @@ const ActiveCasesTable: React.FC<ActiveCasesTableProps> = React.memo(({
       },
     },
     {
-      title: 'Transaction Timestamp',
-      dataIndex: 'timestamp',
-      key: 'timestamp',
+      title: 'Date (Assigned/Transaction)',
+      dataIndex: 'reviewTimestamp',
+      key: 'assignedDate',
       width: 180,
       align: 'right',
-      render: (timestamp: string | Date) => {
-        if (!timestamp) return <span className="text-muted-foreground">N/A</span>;
-        const date = new Date(timestamp);
+      render: (timestamp: string | Date, record: IComplianceTransaction) => {
+        // Use reviewTimestamp if available (for assigned cases), otherwise use timestamp
+        const dateToShow = record.reviewTimestamp || timestamp;
+        if (!dateToShow) return <span className="text-muted-foreground">N/A</span>;
+        const date = new Date(dateToShow);
         if (isNaN(date.getTime())) return <span className="text-muted-foreground">Invalid Date</span>;
 
         return (
@@ -380,11 +386,7 @@ const ActiveCasesTable: React.FC<ActiveCasesTableProps> = React.memo(({
           </div>
         );
       },
-      sorter: (a: IComplianceTransaction, b: IComplianceTransaction) => {
-        if (!a.timestamp) return -1;
-        if (!b.timestamp) return 1;
-        return new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime();
-      },
+      sorter: true, // Enable server-side sorting
     },
     {
       title: 'Blockchain',
@@ -403,11 +405,7 @@ const ActiveCasesTable: React.FC<ActiveCasesTableProps> = React.memo(({
       key: 'amount',
       width: 120,
       align: 'right',
-      sorter: (a: IComplianceTransaction, b: IComplianceTransaction) => {
-        const aAmount = typeof a.amount === 'number' ? a.amount : 0;
-        const bAmount = typeof b.amount === 'number' ? b.amount : 0;
-        return aAmount - bAmount;
-      },
+      sorter: true, // Enable server-side sorting
       render: (amount: number) => {
         if (typeof amount !== 'number' || isNaN(amount)) return <span className="text-muted-foreground">N/A</span>;
         const convertedAmount = ((amount / 100000000) * btcPrice);
@@ -432,9 +430,23 @@ const ActiveCasesTable: React.FC<ActiveCasesTableProps> = React.memo(({
         if (!counterpartyEntities || counterpartyEntities.length === 0) {
           return <span className="text-muted-foreground">N/A</span>;
         }
+        
+        // Helper function to truncate addresses
+        const truncateCounterpartyAddress = (address: string): string => {
+          if (address.length <= 10) return address; // Don't truncate short addresses
+          return `${address.slice(0, 6)}...${address.slice(-4)}`;
+        };
+        
         return (
           <span className="text-foreground">
-            {counterpartyEntities.map((entity) => attributions[entity]?.entity || entity).join(', ')}
+            {counterpartyEntities.map((entity) => {
+              const displayName = attributions[entity]?.entity || entity;
+              // If it's a Bitcoin address (starts with 1, 3, or bc1), truncate it
+              if (entity.match(/^[13bc]/)) {
+                return truncateCounterpartyAddress(displayName);
+              }
+              return displayName;
+            }).join(', ')}
           </span>
         );
       },
@@ -524,18 +536,14 @@ const ActiveCasesTable: React.FC<ActiveCasesTableProps> = React.memo(({
     {
       title: 'Last Updated',
       dataIndex: 'reviewTimestamp',
-      key: 'reviewTimestamp',
+      key: 'lastUpdated',
       width: 150,
       align: 'right',
       render: (reviewTimestamp?: Date) => {
         if (!reviewTimestamp) return <span className="text-muted-foreground">Not reviewed yet</span>;
         return <span className="text-foreground">{new Date(reviewTimestamp).toLocaleString()}</span>;
       },
-      sorter: (a: IComplianceTransaction, b: IComplianceTransaction) => {
-        if (!a.reviewTimestamp) return -1;
-        if (!b.reviewTimestamp) return 1;
-        return new Date(a.reviewTimestamp).getTime() - new Date(b.reviewTimestamp).getTime();
-      },
+      sorter: true, // Enable server-side sorting
     },
     {
       title: 'Actions',
@@ -591,11 +599,10 @@ const ActiveCasesTable: React.FC<ActiveCasesTableProps> = React.memo(({
     },
   ], [btcPrice, organizationMembers, getReviewerName, handleViewDetails, handleViewRisk, calculatedRiskScores, riskCalculationLoading, dispatch, denom]);
 
-  try {
-    return (
-      <>
-        {/* Bulk Actions Bar */}
-        {selectedRowKeys.length > 0 && (
+  return (
+    <>
+      {/* Bulk Actions Bar */}
+      {selectedRowKeys.length > 0 && (
           <div className="mb-4 p-3 bg-primary/10 border border-primary rounded-md flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Checkbox
@@ -657,8 +664,25 @@ const ActiveCasesTable: React.FC<ActiveCasesTableProps> = React.memo(({
             pageSizeOptions: [10, 20, 50, 100],
             onChange: (page, size) => onTableChange({ current: page, pageSize: size })
           }}
+          onChange={(pagination, sorter) => {
+            // Handle server-side sorting
+            if (sorter && sorter.column && sorter.order) {
+              const sortBy = sorter.field || sorter.columnKey;
+              const sortOrder = sorter.order === 'ascend' ? 'asc' : 'desc';
+              onTableChange({ 
+                current: pagination.current, 
+                pageSize: pagination.pageSize,
+                sortBy,
+                sortOrder
+              });
+            } else {
+              onTableChange({ 
+                current: pagination.current, 
+                pageSize: pagination.pageSize 
+              });
+            }
+          }}
           loading={loading}
-          onChange={(pagination, sorter) => onTableChange({ ...pagination, sorter })}
           scroll={{ x: 1000 }}
           footer={!isArchivedTab ? () => (
             <div className="flex justify-between items-center">
@@ -783,26 +807,6 @@ const ActiveCasesTable: React.FC<ActiveCasesTableProps> = React.memo(({
         </Dialog>
       </>
     );
-  } catch (error) {
-    console.error('Error rendering ActiveCasesTable:', error);
-    console.error('Error details:', {
-      error: error,
-      message: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : undefined,
-      organizationMembers,
-      transactions: transactions?.length,
-      validTransactions: validTransactions?.length
-    });
-    return (
-      <div className="p-5 text-center">
-        <p>Error loading table data. Please try refreshing the page.</p>
-        <p className="text-sm text-gray-500 mt-2">
-          Error: {error instanceof Error ? error.message : 'Unknown error'}
-        </p>
-        <Button onClick={() => window.location.reload()}>Refresh Page</Button>
-      </div>
-    );
-  }
 });
 
 export default ActiveCasesTable;

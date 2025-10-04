@@ -97,9 +97,19 @@ const complianceTransactionsSlice = createSlice({
         
         const response = action.payload as ComplianceTransactionResponse;
         
+        console.log('🔍 Redux - fetchComplianceTransactions.fulfilled:', {
+          responseType: typeof response,
+          hasTransactions: Array.isArray(response?.transactions),
+          transactionCount: response?.transactions?.length || 0,
+          total: response?.total || 0,
+          page: response?.page || 0,
+          limit: response?.limit || 0,
+          firstTransaction: response?.transactions?.[0] || null
+        });
+        
         // Validate response structure
         if (!response || !Array.isArray(response.transactions)) {
-          console.error('Invalid API response structure:', response);
+          console.error('🔍 Redux - Invalid API response structure:', response);
           state.error = 'Invalid response structure from API';
           return;
         }
@@ -202,45 +212,44 @@ export const selectCompletedTransactions = createSelector(
     const allTransactions = Object.values(txs);
     
     // If we have server-side filtering (indicated by non-status filters), return all transactions
-    // as they are already filtered by the server
+    // as they are already filtered by the server, but still apply status filtering
     const hasServerSideFilters = filters.blockchain || filters.assignedTo || 
-                                filters.timestamp || filters.minAmount || 
-                                filters.maxAmount || filters.riskLevel;
+                                filters.timestamp || filters.reviewTimestamp || filters.minAmount || 
+                                filters.maxAmount || filters.minRiskLevel || filters.maxRiskLevel ||
+                                filters.clientId || filters.txId || filters.counterpartyEntity;
     
-    if (hasServerSideFilters) {
-      return allTransactions;
-    }
-    
-    // Apply client-side filtering for fields that need partial matching
     let filteredTransactions = allTransactions;
     
-    // Filter by txId (partial match)
-    if (filters.txId) {
-      console.log('Client-side filtering by txId (completed):', {
-        searchTerm: filters.txId,
-        totalTransactions: filteredTransactions.length,
-        sampleTxIds: filteredTransactions.slice(0, 3).map(tx => tx.txId),
-        beforeFilter: filteredTransactions.length
-      });
+    // Apply client-side filtering for fields that need partial matching (only if no server-side filtering)
+    if (!hasServerSideFilters) {
+      // Filter by txId (partial match)
+      if (filters.txId) {
+        console.log('Client-side filtering by txId (completed):', {
+          searchTerm: filters.txId,
+          totalTransactions: filteredTransactions.length,
+          sampleTxIds: filteredTransactions.slice(0, 3).map(tx => tx.txId),
+          beforeFilter: filteredTransactions.length
+        });
+        
+        filteredTransactions = filteredTransactions.filter(tx => 
+          tx.txId && tx.txId.toLowerCase().includes(filters.txId!.toLowerCase())
+        );
+        
+        console.log('After txId filtering (completed):', {
+          afterFilter: filteredTransactions.length,
+          filteredTxIds: filteredTransactions.map(tx => tx.txId)
+        });
+      }
       
-      filteredTransactions = filteredTransactions.filter(tx => 
-        tx.txId && tx.txId.toLowerCase().includes(filters.txId!.toLowerCase())
-      );
-      
-      console.log('After txId filtering (completed):', {
-        afterFilter: filteredTransactions.length,
-        filteredTxIds: filteredTransactions.map(tx => tx.txId)
-      });
+      // Filter by clientId (partial match)
+      if (filters.clientId) {
+        filteredTransactions = filteredTransactions.filter(tx => 
+          tx.clientId && tx.clientId.toLowerCase().includes(filters.clientId!.toLowerCase())
+        );
+      }
     }
     
-    // Filter by clientId (partial match)
-    if (filters.clientId) {
-      filteredTransactions = filteredTransactions.filter(tx => 
-        tx.clientId && tx.clientId.toLowerCase().includes(filters.clientId!.toLowerCase())
-      );
-    }
-    
-    // Filter by completed statuses
+    // Always apply status filtering for completed transactions
     return filteredTransactions.filter((tx) => 
       tx.status === EComplianceTransactionStatus.APPROVED || 
       tx.status === EComplianceTransactionStatus.CLOSED_WITH_NOTE || 
@@ -255,58 +264,78 @@ export const selectActiveTransactions = createSelector(
   (txs: Record<string, IComplianceTransaction>, filters: TransactionFilters) => {
     const allTransactions = Object.values(txs);
     
+    console.log('🔍 Redux Selector - selectActiveTransactions:', {
+      totalTransactions: allTransactions.length,
+      filters,
+      transactionIds: allTransactions.map(tx => tx._id).slice(0, 5)
+    });
+    
     // If we have server-side filtering (indicated by non-status filters), return all transactions
-    // as they are already filtered by the server
+    // as they are already filtered by the server, but still apply status filtering
     const hasServerSideFilters = filters.blockchain || filters.assignedTo || 
-                                filters.timestamp || filters.minAmount || 
-                                filters.maxAmount || filters.riskLevel;
+                                filters.timestamp || filters.reviewTimestamp || filters.minAmount || 
+                                filters.maxAmount || filters.minRiskLevel || filters.maxRiskLevel ||
+                                filters.clientId || filters.txId || filters.counterpartyEntity;
     
-    if (hasServerSideFilters) {
-      return allTransactions;
-    }
+    console.log('🔍 Redux Selector - hasServerSideFilters:', hasServerSideFilters);
     
-    // Apply client-side filtering for fields that need partial matching
     let filteredTransactions = allTransactions;
     
-    // Filter by txId (partial match)
-    if (filters.txId) {
-      console.log('Client-side filtering by txId:', {
-        searchTerm: filters.txId,
-        totalTransactions: filteredTransactions.length,
-        sampleTxIds: filteredTransactions.slice(0, 3).map(tx => tx.txId),
-        beforeFilter: filteredTransactions.length
-      });
+    // Apply client-side filtering for fields that need partial matching (only if no server-side filtering)
+    if (!hasServerSideFilters) {
+      // Filter by txId (partial match)
+      if (filters.txId) {
+        console.log('Client-side filtering by txId:', {
+          searchTerm: filters.txId,
+          totalTransactions: filteredTransactions.length,
+          sampleTxIds: filteredTransactions.slice(0, 3).map(tx => tx.txId),
+          beforeFilter: filteredTransactions.length
+        });
+        
+        filteredTransactions = filteredTransactions.filter(tx => 
+          tx.txId && tx.txId.toLowerCase().includes(filters.txId!.toLowerCase())
+        );
+        
+        console.log('After txId filtering:', {
+          afterFilter: filteredTransactions.length,
+          filteredTxIds: filteredTransactions.map(tx => tx.txId)
+        });
+      }
       
-      filteredTransactions = filteredTransactions.filter(tx => 
-        tx.txId && tx.txId.toLowerCase().includes(filters.txId!.toLowerCase())
-      );
-      
-      console.log('After txId filtering:', {
-        afterFilter: filteredTransactions.length,
-        filteredTxIds: filteredTransactions.map(tx => tx.txId)
-      });
+      // Filter by clientId (partial match)
+      if (filters.clientId) {
+        filteredTransactions = filteredTransactions.filter(tx => 
+          tx.clientId && tx.clientId.toLowerCase().includes(filters.clientId!.toLowerCase())
+        );
+      }
     }
     
-    // Filter by clientId (partial match)
-    if (filters.clientId) {
-      filteredTransactions = filteredTransactions.filter(tx => 
-        tx.clientId && tx.clientId.toLowerCase().includes(filters.clientId!.toLowerCase())
-      );
-    }
-    
-    // If no status filter is set, use default active statuses
+    // Always apply status filtering
     if (!filters.status) {
       const defaultActiveStatuses = [
         EComplianceTransactionStatus.UNREVIEWED,
         EComplianceTransactionStatus.IN_REVIEW,
         EComplianceTransactionStatus.HOLD
       ];
-      return filteredTransactions.filter(tx => defaultActiveStatuses.includes(tx.status));
+      const finalResult = filteredTransactions.filter(tx => defaultActiveStatuses.includes(tx.status));
+      console.log('🔍 Redux Selector - Final result (no status filter):', {
+        filteredCount: finalResult.length,
+        statuses: finalResult.map(tx => tx.status),
+        riskScores: finalResult.map(tx => tx.riskScores)
+      });
+      return finalResult;
     }
     
     // If status filter is set, respect it
     const allowedStatuses = filters.status.split(',').map(s => s.trim());
-    return filteredTransactions.filter(tx => allowedStatuses.includes(tx.status));
+    const finalResult = filteredTransactions.filter(tx => allowedStatuses.includes(tx.status));
+    console.log('🔍 Redux Selector - Final result (with status filter):', {
+      allowedStatuses,
+      filteredCount: finalResult.length,
+      statuses: finalResult.map(tx => tx.status),
+      riskScores: finalResult.map(tx => tx.riskScores)
+    });
+    return finalResult;
   }
 );
 

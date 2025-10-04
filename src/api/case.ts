@@ -63,5 +63,16 @@ export const caseApi = {
     const endpoint = `/cases/clients/${clientId}/process-transactions`;
     const response = await axiosInstance.post(endpoint);
     return response.data.data;
+  },
+
+  // Reassign case to a different user
+  reassignCase: async (
+    caseId: string,
+    assignedTo: string,
+    notes?: string
+  ): Promise<ICase> => {
+    const endpoint = `/cases/${caseId}/reassign`;
+    const response = await axiosInstance.patch(endpoint, { assignedTo, notes });
+    return response.data.data;
   }
 };

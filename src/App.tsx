@@ -64,6 +64,27 @@ function App() {
   useEffect(() => {
     const loadUser = async () => {
       try {
+        // Development mode bypass - create a mock user for development
+        if (import.meta.env.DEV && !localStorage.getItem('bs-app-user')) {
+          const mockUser = {
+            id: 'dev-user-123',
+            name: 'Development User',
+            email: 'dev@example.com',
+            role: 'user'
+          };
+          
+          setUser(mockUser);
+          trackUser(mockUser.id, {
+            email: mockUser.email,
+            name: mockUser.name,
+            role: mockUser.role
+          });
+          
+          dispatch(fetchOrganizations());
+          setIsLoading(false);
+          return;
+        }
+
         const { accessToken, user: userKey } = config.localstorageKeys;
         const storedToken = localStorage.getItem(accessToken);
         const storedUser = localStorage.getItem(userKey);

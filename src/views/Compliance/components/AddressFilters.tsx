@@ -1,9 +1,10 @@
 import React from 'react';
 
+import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
-import { cn } from '../../../lib/utils';
-import { IAddressFilters as AddressFiltersType } from '../../../typings/compliance';
+import { cn } from '@/lib/utils';
+import { IAddressFilters as AddressFiltersType } from '@/typings/compliance';
 
 interface AddressFiltersProps {
   filters: AddressFiltersType;
@@ -20,12 +21,19 @@ const AddressFilters: React.FC<AddressFiltersProps> = ({ filters, onFiltersChang
     onFiltersChange({ ...filters, isActive: value });
   };
 
-  // const handleEntityNameSearch = (value: string) => {
-  //   onFiltersChange({ ...filters, entityName: value });
-  // };
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    onFiltersChange({ ...filters, searchTerm: e.target.value });
+  };
 
   return (
     <div className={cn("flex gap-4", className)}>
+      <Input
+        placeholder="Search addresses, client IDs, notes..."
+        value={filters.searchTerm || ''}
+        onChange={handleSearchChange}
+        className="w-[300px] h-12"
+      />
+      
       <Select
         onValueChange={handleBlockchainChange}
         value={filters.blockchain || ''}
@@ -52,13 +60,6 @@ const AddressFilters: React.FC<AddressFiltersProps> = ({ filters, onFiltersChang
           <SelectItem value="false">Inactive</SelectItem>
         </SelectContent>
       </Select>
-      {/* <Input.Search
-        placeholder="Search by entity name"
-        style={{ width: 300 }}
-        onSearch={handleEntityNameSearch}
-        defaultValue={filters.entityName}
-        size="large"
-      /> */}
     </div>
   );
 };

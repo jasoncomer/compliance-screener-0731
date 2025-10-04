@@ -245,20 +245,21 @@ export default function ActiveCases() {
           <CardDescription>Cases currently under investigation by compliance officers</CardDescription>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow className="border-gray-700">
-                <TableHead className="text-gray-400">Case ID</TableHead>
-                <TableHead className="text-gray-400">Title</TableHead>
-                <TableHead className="text-gray-400">Assigned To</TableHead>
-                <TableHead className="text-gray-400">Priority</TableHead>
-                <TableHead className="text-gray-400">Status</TableHead>
-                <TableHead className="text-gray-400">Risk Score</TableHead>
-                <TableHead className="text-gray-400">Amount</TableHead>
-                <TableHead className="text-gray-400">Due Date</TableHead>
-                <TableHead className="text-gray-400">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
+          <div className="overflow-auto max-h-96">
+            <Table>
+              <TableHeader className="sticky top-0 z-20 bg-gray-900">
+                <TableRow className="border-gray-700">
+                  <TableHead className="text-gray-400">Case ID</TableHead>
+                  <TableHead className="text-gray-400">Title</TableHead>
+                  <TableHead className="text-gray-400">Assigned To</TableHead>
+                  <TableHead className="text-gray-400">Priority</TableHead>
+                  <TableHead className="text-gray-400">Status</TableHead>
+                  <TableHead className="text-gray-400">Risk Score</TableHead>
+                  <TableHead className="text-gray-400">Amount</TableHead>
+                  <TableHead className="text-gray-400">Due Date</TableHead>
+                  <TableHead className="text-gray-400">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
             <TableBody>
               {filteredCases.map((case_) => (
                 <TableRow key={case_.id} className="border-gray-700 hover:bg-gray-800">
@@ -683,7 +684,8 @@ export default function ActiveCases() {
                 </TableRow>
               ))}
             </TableBody>
-          </Table>
+            </Table>
+          </div>
         </CardContent>
       </Card>
 

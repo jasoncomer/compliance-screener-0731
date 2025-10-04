@@ -70,12 +70,22 @@ const ActiveCasesTab: React.FC<ActiveCasesTabProps> = ({ isActive, className }) 
   useEffect(() => {
     if (!isActive) return;
 
+    console.log('🔍 ActiveCasesTab - useEffect triggered with filters:', filters);
+    console.log('🔍 ActiveCasesTab - useEffect dependencies:', { 
+      isActive, 
+      currentPage, 
+      pageSize, 
+      organizationId: organization?._id 
+    });
+
     const mergedFilters = {
       ...filters,
       status: filters.status || ACTIVE_STATUSES.join(','), // Use default only if no status filter is set
       page: currentPage,
       limit: pageSize
     };
+    
+    console.log('🔍 ActiveCasesTab - useEffect dispatching fetchComplianceTransactions with:', mergedFilters);
     dispatch(fetchComplianceTransactions(mergedFilters));
   }, [dispatch, filters, organization, currentPage, pageSize, isActive]);
 
@@ -92,14 +102,33 @@ const ActiveCasesTab: React.FC<ActiveCasesTabProps> = ({ isActive, className }) 
   const handleTableChange = (pagination: any) => {
     dispatch(setPage(pagination.current));
     dispatch(setLimit(pagination.pageSize));
+    
+    // Handle sorting if provided
+    if (pagination.sortBy && pagination.sortOrder) {
+      const updatedFilters = {
+        ...filters,
+        sortBy: pagination.sortBy,
+        sortOrder: pagination.sortOrder,
+        page: pagination.current,
+        limit: pagination.pageSize
+      };
+      // Dispatch setFilters first, then use the updatedFilters directly to avoid race condition
+      dispatch(setFilters(updatedFilters));
+      dispatch(fetchComplianceTransactions(updatedFilters));
+    }
   };
 
   // Handle filter changes from the filter panel
   const handleFilterChange = (newFilters: TransactionFilters) => {
+    console.log('🔍 ActiveCasesTab - Received filters from ComplianceFilterPanel:', newFilters);
+    console.log('🔍 ActiveCasesTab - Current Redux filters before change:', filters);
+    
     const mergedFilters = {
       ...newFilters,
       page: 1,
-      limit: pageSize
+      limit: pageSize,
+      sortBy: 'reviewTimestamp',
+      sortOrder: 'desc' as const
     };
 
     // If no specific status is selected, show all active statuses
@@ -107,7 +136,12 @@ const ActiveCasesTab: React.FC<ActiveCasesTabProps> = ({ isActive, className }) 
       mergedFilters.status = ACTIVE_STATUSES.join(',');
     }
 
+    console.log('🔍 ActiveCasesTab - Merged filters before sending to Redux:', mergedFilters);
+    console.log('🔍 ActiveCasesTab - Dispatching setFilters and fetchComplianceTransactions');
+    
+    // Dispatch setFilters first, then use the mergedFilters directly to avoid race condition
     dispatch(setFilters(mergedFilters));
+    dispatch(fetchComplianceTransactions(mergedFilters));
   };
 
   // Clear all filters
@@ -115,7 +149,9 @@ const ActiveCasesTab: React.FC<ActiveCasesTabProps> = ({ isActive, className }) 
     dispatch(setFilters({
       page: 1,
       limit: pageSize,
-      status: ACTIVE_STATUSES.join(',') // Reset to default active statuses when clearing
+      status: ACTIVE_STATUSES.join(','), // Reset to default active statuses when clearing
+      sortBy: 'reviewTimestamp',
+      sortOrder: 'desc' as const
     }));
   };
 
@@ -137,13 +173,22 @@ const ActiveCasesTab: React.FC<ActiveCasesTabProps> = ({ isActive, className }) 
       {/* Filter Panel */}
       <ComplianceFilterPanel
         className="mb-4"
+        showStatusFilter={true}
+        showAssignedToFilter={true}
+        showCounterpartyEntityFilter={true}
+        showTransactionIdFilter={true}
+        showBlockchainFilter={true}
+        showClientIdFilter={true}
+        showRiskLevelFilter={true}
+        showAmountFilter={true}
+        showDateRangeFilter={true}
+        showReviewDateRangeFilter={true}
         statusOptions={[
           { value: EComplianceTransactionStatus.UNREVIEWED, label: 'Unreviewed' },
           { value: EComplianceTransactionStatus.IN_REVIEW, label: 'In Review' },
           { value: EComplianceTransactionStatus.HOLD, label: 'Hold' }
         ]}
         availableBlockchains={availableBlockchains}
-        showTransactionIdFilter={true}
         defaultStatus={ACTIVE_STATUSES}
         onFilterChange={handleFilterChange}
         onClearFilters={handleClearFilters}

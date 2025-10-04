@@ -42,19 +42,20 @@ export default function TransactionsTable({ transactions }: TransactionsTablePro
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <Table>
-          <TableHeader>
-            <TableRow className="border-gray-700">
-              <TableHead className="text-gray-400">Status</TableHead>
-              <TableHead className="text-gray-400">Client ID</TableHead>
-              <TableHead className="text-gray-400">Counterparty Entities</TableHead>
-              <TableHead className="text-gray-400">Blockchain</TableHead>
-              <TableHead className="text-gray-400">Amount</TableHead>
-              <TableHead className="text-gray-400">Timestamp</TableHead>
-              <TableHead className="text-gray-400">Risk Score</TableHead>
-              <TableHead className="text-gray-400">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
+        <div className="overflow-auto max-h-96">
+          <Table>
+            <TableHeader className="sticky top-0 z-20 bg-gray-900">
+              <TableRow className="border-gray-700">
+                <TableHead className="text-gray-400">Status</TableHead>
+                <TableHead className="text-gray-400">Client ID</TableHead>
+                <TableHead className="text-gray-400">Counterparty Entities</TableHead>
+                <TableHead className="text-gray-400">Blockchain</TableHead>
+                <TableHead className="text-gray-400">Amount</TableHead>
+                <TableHead className="text-gray-400">Timestamp</TableHead>
+                <TableHead className="text-gray-400">Risk Score</TableHead>
+                <TableHead className="text-gray-400">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
           <TableBody>
             {transactions.map((transaction) => (
               <TableRow key={transaction.id} className="border-gray-700 hover:bg-gray-800">
@@ -95,7 +96,8 @@ export default function TransactionsTable({ transactions }: TransactionsTablePro
               </TableRow>
             ))}
           </TableBody>
-        </Table>
+          </Table>
+        </div>
       </CardContent>
     </Card>
   )

@@ -112,6 +112,11 @@ const UnassignedTransactionsTable: React.FC<TransactionsTableProps> = ({
         notes,
         status
       });
+      
+      // Force refresh of the data to ensure UI updates immediately
+      if (onTransactionUpdate) {
+        onTransactionUpdate();
+      }
     } catch (error) {
       console.error('Failed to assign transaction:', error);
       
@@ -255,9 +260,23 @@ const UnassignedTransactionsTable: React.FC<TransactionsTableProps> = ({
         if (!counterpartyEntities.length) return (
           <span className="text-gray-400">N/A</span>
         );
+        
+        // Helper function to truncate addresses
+        const truncateCounterpartyAddress = (address: string): string => {
+          if (address.length <= 10) return address; // Don't truncate short addresses
+          return `${address.slice(0, 6)}...${address.slice(-4)}`;
+        };
+        
         return (
           <span className="text-gray-600 dark:text-gray-400">
-            {counterpartyEntities.map((entity) => attributions[entity]?.entity || entity).join(', ')}
+            {counterpartyEntities.map((entity) => {
+              const displayName = attributions[entity]?.entity || entity;
+              // If it's a Bitcoin address (starts with 1, 3, or bc1), truncate it
+              if (entity.match(/^[13bc]/)) {
+                return truncateCounterpartyAddress(displayName);
+              }
+              return displayName;
+            }).join(', ')}
           </span>
         )
       }

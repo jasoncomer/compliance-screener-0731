@@ -55,30 +55,14 @@ const UnassignedTransactionsTab: React.FC<UnassignedTransactionsTabProps> = ({ i
 
   // Memoize derived data to prevent unnecessary re-renders
   const rawTransactions = useMemo(() => data?.transactions || [], [data?.transactions]);
-  const totalTransactions = useMemo(() => data?.total || 0, [data?.total]);
+  const totalTransactions = useMemo(() => {
+    const total = data?.total || 0;
+    console.log('Total transactions calculated:', total, 'from data:', data);
+    return total;
+  }, [data?.total]);
 
-  // Apply client-side filtering for fields that need partial matching
-  const transactions = useMemo(() => {
-    let filtered = rawTransactions;
-
-    // Filter by txId (partial match)
-    if (filters.txId) {
-      const txIdFilter = filters.txId.toLowerCase();
-      filtered = filtered.filter(tx =>
-        tx.txId && tx.txId.toLowerCase().includes(txIdFilter)
-      );
-    }
-
-    // Filter by clientId (partial match)
-    if (filters.clientId) {
-      const clientIdFilter = filters.clientId.toLowerCase();
-      filtered = filtered.filter(tx =>
-        tx.clientId && tx.clientId.toLowerCase().includes(clientIdFilter)
-      );
-    }
-
-    return filtered;
-  }, [rawTransactions, filters.txId, filters.clientId]);
+  // Use raw transactions directly - filtering is handled by the API
+  const transactions = useMemo(() => rawTransactions, [rawTransactions]);
 
   // Sync local transactions with fetched data
   useEffect(() => {
@@ -141,40 +125,60 @@ const UnassignedTransactionsTab: React.FC<UnassignedTransactionsTabProps> = ({ i
 
   // Handle table change (pagination, sorting)
   const handleTableChange = (pagination: any, _filters: any, sorter: any) => {
+    console.log('handleTableChange called with:', { pagination, sorter });
+    
     // Handle pagination
     setCurrentPage(pagination.current);
     setPageSize(pagination.pageSize);
 
     // Handle sorting
+    let newSortBy = sortBy;
+    let newSortOrder = sortOrder;
+    
     if (sorter && sorter.field) {
       if (sorter.order) {
         // Active sorting on a specific field
-        setSortBy(sorter.field);
-        setSortOrder(sorter.order === 'ascend' ? 'asc' : 'desc');
+        newSortBy = sorter.field;
+        newSortOrder = sorter.order === 'ascend' ? 'asc' : 'desc';
       } else {
         // Sorting cancelled
         if (sorter.field === 'timestamp') {
           // For timestamp, cycle to ascending when cancelled from descending
           if (sortBy === 'timestamp' && sortOrder === 'desc') {
-            setSortBy('timestamp');
-            setSortOrder('asc');
+            newSortBy = 'timestamp';
+            newSortOrder = 'asc';
           } else {
-            setSortBy('timestamp');
-            setSortOrder('desc');
+            newSortBy = 'timestamp';
+            newSortOrder = 'desc';
           }
         } else {
           // For other fields, reset to default
-          setSortBy('timestamp');
-          setSortOrder('desc');
+          newSortBy = 'timestamp';
+          newSortOrder = 'desc';
         }
       }
     } else {
       // No sorter at all - reset to default if not already there
       if (sortBy !== 'timestamp' || sortOrder !== 'desc') {
-        setSortBy('timestamp');
-        setSortOrder('desc');
+        newSortBy = 'timestamp';
+        newSortOrder = 'desc';
       }
     }
+
+    // Update sort state
+    setSortBy(newSortBy);
+    setSortOrder(newSortOrder);
+
+    // Update filters with new pagination and sorting values
+    const newFilters = {
+      ...filters,
+      page: pagination.current,
+      limit: pagination.pageSize,
+      sortBy: newSortBy,
+      sortOrder: newSortOrder,
+    };
+    console.log('Updating filters to:', newFilters);
+    setFilters(newFilters);
   };
 
   // Handle row selection change
@@ -229,6 +233,10 @@ const UnassignedTransactionsTab: React.FC<UnassignedTransactionsTabProps> = ({ i
       sortBy,
       sortOrder,
     };
+    
+    // Log the filters being sent to API
+    console.log('Sending filters to API:', mergedFilters);
+    console.log('Counterparty Entity filter value:', newFilters.counterpartyEntity);
     setFilters(mergedFilters);
   };
 
@@ -312,6 +320,11 @@ const UnassignedTransactionsTab: React.FC<UnassignedTransactionsTabProps> = ({ i
         showAssignedToFilter={false}
         showCounterpartyEntityFilter={true}
         showTransactionIdFilter={true}
+        showBlockchainFilter={true}
+        showClientIdFilter={true}
+        showRiskLevelFilter={true}
+        showAmountFilter={true}
+        showDateRangeFilter={true}
         availableBlockchains={availableBlockchains}
         defaultStatus={initialStatusFilter}
         onFilterChange={handleFilterChange}

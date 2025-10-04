@@ -27,6 +27,7 @@ export interface IAddressFilters {
   entityName?: string;
   tags?: string[];
   isActive?: boolean;
+  searchTerm?: string;
 }
 
 // Monitored Address Change History Types
@@ -99,9 +100,11 @@ export interface TransactionFilters {
   txId?: string;
   assignedTo?: string; // User ID of the assigned reviewer
   timestamp?: { from?: string; to?: string };
+  reviewTimestamp?: { from?: string; to?: string };
   minAmount?: number;
   maxAmount?: number;
-  riskLevel?: 'high' | 'medium' | 'low';
+  minRiskLevel?: number;
+  maxRiskLevel?: number;
   page?: number;
   limit?: number;
   sortBy?: string; // Field to sort by

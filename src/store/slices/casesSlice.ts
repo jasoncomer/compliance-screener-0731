@@ -59,6 +59,14 @@ export const updateCaseStatus = createAsyncThunk(
   }
 );
 
+export const reassignCase = createAsyncThunk(
+  'cases/reassignCase',
+  async ({ caseId, assignedTo, notes }: { caseId: string; assignedTo: string; notes?: string }) => {
+    const response = await caseApi.reassignCase(caseId, assignedTo, notes);
+    return response;
+  }
+);
+
 const casesSlice = createSlice({
   name: 'cases',
   initialState,
@@ -154,6 +162,31 @@ const casesSlice = createSlice({
       .addCase(updateCaseStatus.rejected, (state, action) => {
         state.loading = false;
         state.error = action.error.message || 'Failed to update case status';
+      })
+      
+      // Reassign case
+      .addCase(reassignCase.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(reassignCase.fulfilled, (state, action) => {
+        state.loading = false;
+        const updatedCase = action.payload;
+        
+        // Update in cases list
+        const index = state.cases.findIndex(caseItem => caseItem._id === updatedCase._id);
+        if (index !== -1) {
+          state.cases[index] = updatedCase;
+        }
+        
+        // Update current case if it's the same
+        if (state.currentCase && state.currentCase._id === updatedCase._id) {
+          state.currentCase = updatedCase;
+        }
+      })
+      .addCase(reassignCase.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.error.message || 'Failed to reassign case';
       });
   }
 });
@@ -185,6 +218,9 @@ export const selectOpenCases = (state: { cases: CasesState }) =>
 
 export const selectClosedCases = (state: { cases: CasesState }) => 
   state.cases.cases.filter(caseItem => caseItem.status === ECaseStatus.CLOSED || caseItem.status === ECaseStatus.ARCHIVED);
+
+export const selectUnreviewedCases = (state: { cases: CasesState }) => 
+  state.cases.cases.filter(caseItem => caseItem.status === ECaseStatus.UNREVIEWED);
 
 export const selectHighPriorityCases = (state: { cases: CasesState }) => 
   state.cases.cases.filter(caseItem => caseItem.priority === 'HIGH' || caseItem.priority === 'CRITICAL');

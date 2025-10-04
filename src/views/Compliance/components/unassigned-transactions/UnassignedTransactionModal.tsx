@@ -6,9 +6,11 @@ import {
   Bitcoin,
   Building2,
   Database,
+  FileText,
   GitBranch,
   Globe,
   Hash,
+  Plus,
   Shield,
   User,
 } from "lucide-react"
@@ -30,6 +32,7 @@ import { useAppDispatch, useAppSelector } from "../../../../store/hooks"
 import { fetchSOT, selectSotItemsMap } from "../../../../store/slices/sotSlice"
 import { SOT } from "../../../../typings/interfaces"
 import { TransactionRiskModal } from "../modals/TransactionRiskModal"
+import { CaseReportBuilderModal } from "../../../../components/modals/CaseReportBuilderModal"
 
 
 interface UnassignedTransactionModalProps {
@@ -72,6 +75,7 @@ export function UnassignedTransactionModal({
   const [isRiskModalOpen, setIsRiskModalOpen] = useState(false)
   const [detailedRiskData, setDetailedRiskData] = useState<any>(null)
   const [riskDataLoading, setRiskDataLoading] = useState(false)
+  const [isCaseReportModalOpen, setIsCaseReportModalOpen] = useState(false)
 
   // Debug: Log when risk modal opens
   useEffect(() => {
@@ -260,10 +264,12 @@ export function UnassignedTransactionModal({
         </DialogHeader>
 
         <Tabs defaultValue="transaction-info" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
+          <TabsList className="grid w-full grid-cols-5 bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
             <TabsTrigger value="transaction-info">Transaction Information</TabsTrigger>
             <TabsTrigger value="transaction-risk">Transaction Risk</TabsTrigger>
             <TabsTrigger value="counterparty-info">Counterparty Information</TabsTrigger>
+            <TabsTrigger value="notes">Notes</TabsTrigger>
+            <TabsTrigger value="case-report">Case Report</TabsTrigger>
           </TabsList>
 
           <TabsContent value="transaction-info" className="space-y-6">
@@ -1055,6 +1061,126 @@ export function UnassignedTransactionModal({
             </div>
           </TabsContent>
 
+          <TabsContent value="notes" className="space-y-6">
+            {/* Notes Section */}
+            <div className="space-y-6">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+                  <FileText className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Transaction Notes</h3>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Add and manage notes for this transaction</p>
+                </div>
+              </div>
+
+              <div className="bg-white dark:bg-gray-800/50 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-medium text-gray-900 dark:text-gray-100">Notes</h4>
+                    <Button size="sm" variant="outline">
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Note
+                    </Button>
+                  </div>
+                  
+                  <div className="space-y-3">
+                    <div className="p-3 bg-gray-50 dark:bg-gray-900/50 rounded-lg border">
+                      <div className="flex items-center justify-between mb-2">
+                        <h5 className="font-medium text-sm">Initial Review</h5>
+                        <Badge variant="secondary" className="text-xs">General</Badge>
+                      </div>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        Transaction appears to be a standard exchange transfer. No immediate red flags identified.
+                      </p>
+                      <div className="flex items-center justify-between mt-2 text-xs text-gray-500">
+                        <span>By John Smith</span>
+                        <span>{new Date().toLocaleString()}</span>
+                      </div>
+                    </div>
+                    
+                    <div className="p-3 bg-gray-50 dark:bg-gray-900/50 rounded-lg border">
+                      <div className="flex items-center justify-between mb-2">
+                        <h5 className="font-medium text-sm">Risk Assessment</h5>
+                        <Badge variant="secondary" className="text-xs bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300">Risk</Badge>
+                      </div>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        Low risk transaction based on counterparty verification and amount. Proceeding with standard processing.
+                      </p>
+                      <div className="flex items-center justify-between mt-2 text-xs text-gray-500">
+                        <span>By Sarah Johnson</span>
+                        <span>{new Date(Date.now() - 3600000).toLocaleString()}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="case-report" className="space-y-6">
+            {/* Case Report Section */}
+            <div className="space-y-6">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
+                  <FileText className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Generate Case Report</h3>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Create a comprehensive compliance report for this transaction</p>
+                </div>
+              </div>
+
+              <div className="bg-white dark:bg-gray-800/50 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="text-md font-semibold text-gray-900 dark:text-gray-100">Generate Case Report</h4>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">Create a comprehensive compliance report for this transaction</p>
+                    </div>
+                    <Button 
+                      onClick={() => {
+                        alert('🚀 Generate Report button clicked! Check console for details.');
+                        console.log('🔘 Generate Report button clicked!');
+                        console.log('📋 Current transaction:', transaction?.txId);
+                        console.log('🔧 Setting modal state to true');
+                        setIsCaseReportModalOpen(true);
+                        console.log('✅ Modal state set to true');
+                      }}
+                      className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 h-10 px-4 py-2 bg-red-600 hover:bg-red-700 text-white"
+                    >
+                      <FileText className="h-4 w-4 mr-2" />
+                      🚀 TEST Generate Report
+                    </Button>
+                  </div>
+
+                  <div className="space-y-4">
+                    <h4 className="text-md font-semibold text-gray-900 dark:text-gray-100">Report Status</h4>
+                    <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-3 h-3 bg-gray-400 rounded-full"></div>
+                        <span className="text-sm text-gray-700 dark:text-gray-300">No report generated yet</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <h4 className="text-md font-semibold text-gray-900 dark:text-gray-100">Report Preview</h4>
+                    <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-4">
+                      <div className="aspect-video bg-white dark:bg-gray-800 rounded border flex items-center justify-center">
+                        <div className="text-center">
+                          <FileText className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                          <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">No report generated yet</p>
+                          <p className="text-xs text-gray-400">Click "Generate Report" to create a comprehensive case report</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </TabsContent>
+
         </Tabs>
 
         <div className="flex justify-between items-center pt-6 border-t border-gray-200 dark:border-gray-700 mt-6">
@@ -1111,6 +1237,17 @@ export function UnassignedTransactionModal({
           } else {
             console.log('Risk score update skipped - missing transaction or riskData');
           }
+        }}
+      />
+
+      {/* Case Report Builder Modal */}
+      <CaseReportBuilderModal
+        isOpen={isCaseReportModalOpen}
+        onClose={() => setIsCaseReportModalOpen(false)}
+        transaction={transaction}
+        onReportGenerated={(report) => {
+          console.log('Report generated:', report);
+          // You can add additional logic here to handle the generated report
         }}
       />
     </Dialog>

@@ -43,29 +43,73 @@ const MonitoredAddressManagement: React.FC<MonitoredAddressManagementProps> = ({
   const [loading, setLoading] = useState(false);
   const [historyModalVisible, setHistoryModalVisible] = useState(false);
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
-  const [filteredAddresses, setFilteredAddresses] = useState<MonitoredAddress[]>(addresses);
   const [historyRefreshKey, setHistoryRefreshKey] = useState<number>(0);
   const [submitLoading, setSubmitLoading] = useState(false);
   const [deleteConfirmVisible, setDeleteConfirmVisible] = useState(false);
   const [addressToDelete, setAddressToDelete] = useState<string | null>(null);
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  
+  // Sorting state
+  const [sortBy, setSortBy] = useState<string>('address');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
 
   // Determine if component is being used as a modal or embedded in a tab
   const isEmbedded = visible === undefined;
 
-  useEffect(() => {
-    // apply all filters to the addresses
+  // Apply filters to get all matching addresses
+  const allFilteredAddresses = React.useMemo(() => {
     const filtered = addresses.filter(addr => {
+      // Handle search term separately
+      if (filters.searchTerm) {
+        const searchLower = filters.searchTerm.toLowerCase();
+        const matchesSearch = 
+          addr.address.toLowerCase().includes(searchLower) ||
+          addr.clientId.toLowerCase().includes(searchLower) ||
+          (addr.notes && addr.notes.toLowerCase().includes(searchLower)) ||
+          addr.blockchain.toLowerCase().includes(searchLower);
+        
+        if (!matchesSearch) return false;
+      }
+
+      // Handle other filters
       return Object.entries(filters).every(([key, value]) => {
+        if (key === 'searchTerm') return true; // Already handled above
         if (key === 'blockchain') {
-          console.log('addr.blockchain', addr.blockchain, value);
           return addr.blockchain.toLowerCase() === value?.toLowerCase();
         }
 
         return addr[key as keyof MonitoredAddress] === value;
       });
     });
-    setFilteredAddresses(filtered);
-  }, [addresses, filters]);
+
+    // Apply sorting
+    return filtered.sort((a, b) => {
+      const aValue = a[sortBy as keyof MonitoredAddress] || '';
+      const bValue = b[sortBy as keyof MonitoredAddress] || '';
+      
+      if (sortOrder === 'asc') {
+        return aValue < bValue ? -1 : aValue > bValue ? 1 : 0;
+      } else {
+        return aValue > bValue ? -1 : aValue < bValue ? 1 : 0;
+      }
+    });
+  }, [addresses, filters, sortBy, sortOrder]);
+
+  // Apply pagination to filtered addresses
+  const paginatedAddresses = React.useMemo(() => {
+    const startIndex = (currentPage - 1) * pageSize;
+    const endIndex = startIndex + pageSize;
+    return allFilteredAddresses.slice(startIndex, endIndex);
+  }, [allFilteredAddresses, currentPage, pageSize]);
+
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filters]);
 
   const handleAddAddress = () => {
     setEditingAddress(null);
@@ -212,6 +256,19 @@ const MonitoredAddressManagement: React.FC<MonitoredAddressManagementProps> = ({
     setHistoryModalVisible(true);
   };
 
+  // Handle pagination changes
+  const handlePaginationChange = (page: number, size: number) => {
+    setCurrentPage(page);
+    setPageSize(size);
+  };
+
+  // Handle sorting changes
+  const handleSort = (newSortBy: string, newSortOrder: 'asc' | 'desc') => {
+    setSortBy(newSortBy);
+    setSortOrder(newSortOrder);
+    setCurrentPage(1); // Reset to first page when sorting changes
+  };
+
   // Only render if visible is true or component is embedded in a tab
   if (visible === false && !isEmbedded) {
     return null;
@@ -231,11 +288,18 @@ const MonitoredAddressManagement: React.FC<MonitoredAddressManagementProps> = ({
       </MonitoredTableActions>
 
       <MonitoredAddressesTable
-        addresses={filteredAddresses}
+        addresses={paginatedAddresses}
         loading={loading}
         onEdit={handleEditAddress}
         onDelete={handleDeleteAddress}
         onViewHistory={handleViewHistory}
+        pagination={{
+          current: currentPage,
+          pageSize: pageSize,
+          total: allFilteredAddresses.length,
+          onChange: handlePaginationChange
+        }}
+        onSort={handleSort}
       />
 
       {/* Add/Edit Address Modal */}

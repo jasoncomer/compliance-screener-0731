@@ -353,19 +353,20 @@ export default function MonitoredAddresses() {
           <CardDescription>Blockchain addresses under continuous compliance monitoring</CardDescription>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow className="border-gray-700">
-                <TableHead className="text-gray-400">Address</TableHead>
-                <TableHead className="text-gray-400">Label</TableHead>
-                <TableHead className="text-gray-400">Category</TableHead>
-                <TableHead className="text-gray-400">Risk Score</TableHead>
-                <TableHead className="text-gray-400">Status</TableHead>
-                <TableHead className="text-gray-400">Activity</TableHead>
-                <TableHead className="text-gray-400">Volume</TableHead>
-                <TableHead className="text-gray-400">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
+          <div className="overflow-auto max-h-96">
+            <Table>
+              <TableHeader className="sticky top-0 z-20 bg-gray-900">
+                <TableRow className="border-gray-700">
+                  <TableHead className="text-gray-400">Address</TableHead>
+                  <TableHead className="text-gray-400">Label</TableHead>
+                  <TableHead className="text-gray-400">Category</TableHead>
+                  <TableHead className="text-gray-400">Risk Score</TableHead>
+                  <TableHead className="text-gray-400">Status</TableHead>
+                  <TableHead className="text-gray-400">Activity</TableHead>
+                  <TableHead className="text-gray-400">Volume</TableHead>
+                  <TableHead className="text-gray-400">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
             <TableBody>
               {filteredAddresses.map((address) => {
                 const riskScore = getMockRiskScore(address.address)
@@ -860,7 +861,8 @@ export default function MonitoredAddresses() {
                 )
               })}
             </TableBody>
-          </Table>
+            </Table>
+          </div>
         </CardContent>
       </Card>
 
