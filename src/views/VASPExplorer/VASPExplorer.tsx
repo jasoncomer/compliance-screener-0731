@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { Database } from 'lucide-react';
 import { useDispatch, useSelector } from 'react-redux';
@@ -17,6 +17,18 @@ import { SOT } from '../../typings/interfaces';
 import { SearchDropdown } from './components';
 import { useEntitySearch, useSearchDropdown } from './hooks';
 
+// Meerkat-themed loading messages
+const LOADING_MESSAGES = [
+  '🐾  Our meerkats are peeking over the horizon for VASPs…',
+  '🔎 Standing on tiptoes, scanning the savannah of 30,000+ entities…',
+  '🌞 Sun\'s up! Meerkats are digging through the blockchain burrows…',
+  '🏜️ Hold tight — the meerkat scouts are out on patrol.',
+  '🪨 Still digging… VASP tunnels go deep!',
+  '⛏️ Digging through blockchain trails…',
+  '🔒 Loading safely — meerkats are great at lookout duty.',
+  '🐾 Counting tails — one VASP at a time…'
+];
+
 export const VASPExplorer: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
   const { items: sot, itemsMap: sotMap, loading: sotLoading} = useSelector((state: RootState) => state.sot);
@@ -26,6 +38,11 @@ export const VASPExplorer: React.FC = () => {
   const [selectedSot, setSelectedSot] = useState<SOT | null>(null);
   const [_, setQuickViewSot] = useState<SOT | null>(null);
   const [searchValue, setSearchValue] = useState('');
+  
+  // Randomly select a loading message (memoized to avoid changing on re-renders)
+  const loadingMessage = useMemo(() => {
+    return LOADING_MESSAGES[Math.floor(Math.random() * LOADING_MESSAGES.length)];
+  }, []);
 
   // Debounce search value
   const debouncedSearchValue = useDebounce(searchValue, 300);
@@ -151,48 +168,75 @@ export const VASPExplorer: React.FC = () => {
       fullWidth={true}
       className="bg-gray-200 dark:bg-gray-900"
     >
-      {/* Sticky Search Bar */}
-      <div className="sticky top-[0] z-20 pt-2 py-2 mb-2 border-b bg-gray-200 dark:bg-gray-900">
-        <div className="flex justify-between items-center gap-4">
-          <div className="flex-1 max-w-2xl">
-            <div className="relative w-full">
-              <SearchInput
-                placeholder="Search by name, address, or type..."
-                value={searchValue}
-                onChange={handleInputChange}
-                onSearch={performSearch}
-                loading={loading || sotLoading}
-                onKeyDown={handleKeyDown}
-                onFocus={handleInputFocus}
-              />
-              
-              <SearchDropdown
-                ref={dropdownRef}
-                isOpen={isDropdownOpen}
-                searchResults={searchResults}
-                sotMap={sotMap}
-                highlightedIndex={highlightedIndex}
-                onQuickView={handleQuickView}
-                onViewFullProfile={handleViewFullProfile}
-                onSelectOption={dropdownSelectOption}
-              />
+      {/* Initial Loading State */}
+      {sotLoading ? (
+        <div className="flex flex-col items-center justify-center h-[60vh] gap-6">
+          <div className="relative">
+            <Database className="w-16 h-16 text-orange-500 animate-pulse" />
+            <div className="absolute -top-2 -right-2">
+              <div className="w-6 h-6 bg-orange-500 rounded-full animate-ping" />
             </div>
           </div>
+          <div className="text-center space-y-2">
+            <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
+              Loading Entity Database
+            </h3>
+            <p className="text-lg text-gray-600 dark:text-gray-400 max-w-md animate-pulse">
+              {loadingMessage}
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <div className="w-2 h-2 bg-orange-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+            <div className="w-2 h-2 bg-orange-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+            <div className="w-2 h-2 bg-orange-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+          </div>
         </div>
-      </div>
-
-      {/* Main Content */}
-      {isEmptyState ? (
-        <EmptyState
-          variant="initial"
-          icon={<Database className="w-12 h-12" />}
-          title="Welcome to Entity Explorer"
-          description="Search and explore VASP entities, their relationships, and detailed information. Use the search bar above to find entities by name, address, or type."
-        />
       ) : (
-        <div className="flex-1 flex flex-col gap-6 w-full mt-2">
-          <SOTEditor sot={selectedSot} onSelectAssociatedSot={handleSelectAssociatedSot} />
-        </div>
+        <>
+          {/* Sticky Search Bar */}
+          <div className="sticky top-[0] z-20 pt-2 py-2 mb-2 border-b bg-gray-200 dark:bg-gray-900">
+            <div className="flex justify-between items-center gap-4">
+              <div className="flex-1 max-w-2xl">
+                <div className="relative w-full">
+                  <SearchInput
+                    placeholder="Search by name, address, or type..."
+                    value={searchValue}
+                    onChange={handleInputChange}
+                    onSearch={performSearch}
+                    loading={loading}
+                    onKeyDown={handleKeyDown}
+                    onFocus={handleInputFocus}
+                  />
+                  
+                  <SearchDropdown
+                    ref={dropdownRef}
+                    isOpen={isDropdownOpen}
+                    searchResults={searchResults}
+                    sotMap={sotMap}
+                    highlightedIndex={highlightedIndex}
+                    onQuickView={handleQuickView}
+                    onViewFullProfile={handleViewFullProfile}
+                    onSelectOption={dropdownSelectOption}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Main Content */}
+          {isEmptyState ? (
+            <EmptyState
+              variant="initial"
+              icon={<Database className="w-12 h-12" />}
+              title="Welcome to Entity Explorer"
+              description="Search and explore VASP entities, their relationships, and detailed information. Use the search bar above to find entities by name, address, or type."
+            />
+          ) : (
+            <div className="flex-1 flex flex-col gap-6 w-full mt-2">
+              <SOTEditor sot={selectedSot} onSelectAssociatedSot={handleSelectAssociatedSot} />
+            </div>
+          )}
+        </>
       )}
     </ViewWrapper>
   );
