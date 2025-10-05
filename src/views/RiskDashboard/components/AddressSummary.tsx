@@ -164,16 +164,16 @@ function AddressSummaryComponent({
 
   return (
     <section
-      className="rounded-2xl border p-6 h-full bg-gray-50 dark:bg-background border-gray-200 dark:border-gray-700 flex flex-col"
+      className="rounded-2xl border p-4 bg-gray-50 dark:bg-background border-gray-200 dark:border-gray-700 h-full flex flex-col"
       aria-label="Address summary"
     >
-      <h2 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white flex items-center gap-2">
+      <h2 className="text-lg font-semibold mb-3 text-gray-900 dark:text-white flex items-center gap-2">
         <Activity className="w-4 h-4 text-orange-500 flex-shrink-0" />
         <span>Summary</span>
       </h2>
 
       {/* Stats Cards */}
-      <div className="space-y-4 flex-1">
+      <div className="space-y-3 flex-1">
         <StatCard
           icon={<TrendingDown className="w-4 h-4 text-green-600 dark:text-green-400" />}
           label="Received"
@@ -202,14 +202,14 @@ function AddressSummaryComponent({
       {/* Flow Indicator Bar */}
       {(inputAmount > 0 || outputAmount > 0) && (
         <div
-          className="mt-4 p-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-100 dark:border-gray-700 flex-shrink-0"
+          className="mt-4 p-2 bg-white dark:bg-gray-800 rounded-lg border border-gray-100 dark:border-gray-700 flex-shrink-0"
           role="progressbar"
           aria-label="Transaction flow indicator"
           aria-valuenow={flowPercentage}
           aria-valuemin={0}
           aria-valuemax={100}
         >
-          <div className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-400 mb-2">
+          <div className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-400 mb-1.5">
             <span>In</span>
             <span className="font-medium text-gray-900 dark:text-white">
               {flowPercentage.toFixed(0)}%/{(100 - flowPercentage).toFixed(0)}%

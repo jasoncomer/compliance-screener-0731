@@ -32,7 +32,7 @@ import { SimpleSankeyTest } from './components/SimpleSankeyTest';
 import { 
   EntityDetails,
   GeographicPresence,
-  RiskSummary,
+  RiskAssessment,
   TopCounterparties, 
   TransactionActivity,
   TransactionHistory} from './components';
@@ -1071,11 +1071,11 @@ const RiskDashboard: React.FC = React.memo(() => {
       ) : (
         <div className="space-y-6">
           {/* Address Header, Summary, and Risk Assessment Layout */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-8 items-start">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6 mt-6 lg:mt-8 items-stretch">
             {/* Left Column - Address Header and Summary (1/3 width) */}
-            <div className="flex flex-col gap-6 h-full">
+            <div className="flex flex-col gap-3 lg:gap-4 h-full">
               {/* Address Header Card */}
-              <div className="rounded-2xl border p-6 bg-gray-50 dark:bg-background border-gray-200 dark:border-gray-700 flex-shrink-0">
+              <div className="rounded-2xl border p-3 lg:p-4 bg-gray-50 dark:bg-background border-gray-200 dark:border-gray-700 flex-shrink-0">
                 <AddressHeader 
                   address={address}
                   entityTags={entityTags}
@@ -1086,14 +1086,14 @@ const RiskDashboard: React.FC = React.memo(() => {
               </div>
 
               {/* Summary Stats */}
-              <div className="flex-1">
+              <div className="flex-1 min-h-0 flex flex-col">
                 <AddressSummary {...addressSummaryProps} />
               </div>
             </div>
 
             {/* Right Column - Risk Assessment (2/3 width) */}
-            <div className="lg:col-span-2">
-              <RiskSummary 
+            <div className="lg:col-span-2 h-full">
+              <RiskAssessment 
                 riskScores={enhancedRiskScore}
                 address={address}
                 isLoading={isLoadingRiskScore || loading}
