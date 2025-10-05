@@ -102,8 +102,7 @@ const UnassignedTransactionsTable: React.FC<TransactionsTableProps> = ({
       // Make the API call - this will update Redux store via the mutation
       await updateAssigneeMutation.mutateAsync({
         transactionId: selectedTransactionData._id,
-        assignee: assigneeId,
-        status: status
+        assignee: assigneeId
       });
       
       console.log('Transaction assigned successfully:', {
@@ -112,10 +111,10 @@ const UnassignedTransactionsTable: React.FC<TransactionsTableProps> = ({
         notes,
         status
       });
-      
+
       // Force refresh of the data to ensure UI updates immediately
       if (onTransactionUpdate) {
-        onTransactionUpdate();
+        onTransactionUpdate(selectedTransactionData);
       }
     } catch (error) {
       console.error('Failed to assign transaction:', error);

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FileText, Download, AlertCircle, CheckCircle, X } from 'lucide-react';
+import { FileText, Download, AlertCircle, CheckCircle } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -156,7 +156,7 @@ export const ReportGenerationModal: React.FC<ReportGenerationModalProps> = ({
                     <Input
                       id="subjectName"
                       value={customData.subject?.name || ''}
-                      onChange={(e) => setCustomData(prev => ({
+                      onChange={(e) => setCustomData((prev: any) => ({
                         ...prev,
                         subject: {
                           ...prev.subject,
@@ -170,9 +170,9 @@ export const ReportGenerationModal: React.FC<ReportGenerationModalProps> = ({
                     <Label htmlFor="activityType">Activity Type</Label>
                     <Select
                       value={customData.suspiciousActivity?.activityType || ''}
-                      onValueChange={(value) => setCustomData(prev => ({
+                      onValueChange={(value) => setCustomData((prev: any) => ({
                         ...prev,
-                        suspiciousActivity: {
+                suspiciousActivity: {
                           ...prev.suspiciousActivity,
                           activityType: value
                         }
@@ -198,7 +198,7 @@ export const ReportGenerationModal: React.FC<ReportGenerationModalProps> = ({
                   <Textarea
                     id="narrative"
                     value={customData.narrative?.detailedDescription || ''}
-                    onChange={(e) => setCustomData(prev => ({
+                    onChange={(e) => setCustomData((prev: any) => ({
                       ...prev,
                       narrative: {
                         ...prev.narrative,

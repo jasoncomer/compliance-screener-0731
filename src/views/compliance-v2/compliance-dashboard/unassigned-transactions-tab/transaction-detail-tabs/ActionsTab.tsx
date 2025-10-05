@@ -1,5 +1,4 @@
 import { AlertTriangle, CheckCircle, Clock, Shield, FileText } from "lucide-react"
-import { useState } from "react"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -17,6 +16,11 @@ interface ActionsTabProps {
 
 export default function ActionsTab({ transaction }: ActionsTabProps) {
   const currentOrganization = useAppSelector(selectCurrentOrganization);
+
+  const handleGenerateSAR = () => {
+    // TODO: Implement SAR generation logic
+    console.log("Generate SAR for transaction:", transaction.id);
+  };
   
   return (
     <div className="space-y-4">

@@ -22,15 +22,6 @@ export const ChartModule: React.FC<ChartModuleProps> = ({ module }) => {
     { label: 'High Risk', value: 25, color: '#EF4444' }
   ]);
 
-  const updateModule = () => {
-    module.content = {
-      ...module.content,
-      chartType,
-      title,
-      data
-    };
-  };
-
   const handleChartTypeChange = (type: string) => {
     setChartType(type);
     module.content = { ...module.content, chartType: type };
@@ -55,7 +46,7 @@ export const ChartModule: React.FC<ChartModuleProps> = ({ module }) => {
   };
 
   const removeDataPoint = (index: number) => {
-    const newData = data.filter((_, i) => i !== index);
+    const newData = data.filter((_item: any, i: any) => i !== index);
     setData(newData);
     module.content = { ...module.content, data: newData };
   };
@@ -74,13 +65,13 @@ export const ChartModule: React.FC<ChartModuleProps> = ({ module }) => {
   };
 
   const renderChart = () => {
-    const total = data.reduce((sum, item) => sum + item.value, 0);
-    
+    const total = data.reduce((sum: number, item: any) => sum + item.value, 0);
+
     switch (chartType) {
       case 'bar':
         return (
           <div className="space-y-2">
-            {data.map((item, index) => (
+            {data.map((item: any, index: number) => (
               <div key={index} className="flex items-center gap-2">
                 <div className="w-20 text-sm text-gray-600 dark:text-gray-400">{item.label}</div>
                 <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-6 relative">
@@ -105,7 +96,7 @@ export const ChartModule: React.FC<ChartModuleProps> = ({ module }) => {
           <div className="flex items-center gap-4">
             <div className="w-32 h-32 relative">
               <svg viewBox="0 0 100 100" className="w-full h-full">
-                {data.map((item, index) => {
+                {data.map((item: any, index: any) => {
                   const percentage = total > 0 ? (item.value / total) * 100 : 0;
                   const startAngle = (cumulativePercentage / 100) * 360;
                   const endAngle = ((cumulativePercentage + percentage) / 100) * 360;
@@ -137,7 +128,7 @@ export const ChartModule: React.FC<ChartModuleProps> = ({ module }) => {
               </svg>
             </div>
             <div className="space-y-2">
-              {data.map((item, index) => (
+              {data.map((item: any, index: any) => (
                 <div key={index} className="flex items-center gap-2">
                   <div
                     className="w-3 h-3 rounded-full"
@@ -199,7 +190,7 @@ export const ChartModule: React.FC<ChartModuleProps> = ({ module }) => {
           </div>
           
           <div className="space-y-2">
-            {data.map((item, index) => (
+            {data.map((item: any, index: any) => (
               <div key={index} className="flex items-center gap-2 p-2 border border-gray-200 dark:border-gray-700 rounded">
                 <Input
                   value={item.label}

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { FileText, Bold, Italic, List, AlignLeft, AlignCenter, AlignRight } from 'lucide-react';
+import { FileText, AlignLeft, AlignCenter, AlignRight } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -16,15 +16,6 @@ export const TextModule: React.FC<TextModuleProps> = ({ module }) => {
   const [title, setTitle] = useState(module.content?.title || '');
   const [content, setContent] = useState(module.content?.text || '');
   const [alignment, setAlignment] = useState(module.content?.alignment || 'left');
-
-  const updateModule = () => {
-    module.content = {
-      ...module.content,
-      title,
-      text: content,
-      alignment
-    };
-  };
 
   const handleTitleChange = (value: string) => {
     setTitle(value);

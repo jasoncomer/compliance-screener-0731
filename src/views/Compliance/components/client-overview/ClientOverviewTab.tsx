@@ -1,26 +1,19 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { useAppDispatch, useAppSelector } from '../../../../store/hooks';
-import { 
+import {
   fetchClientOverview,
   selectClientOverview,
   selectClientCases,
-  selectClientTransactions,
   selectTopCounterparties,
   selectClientOverviewLoading,
   selectClientOverviewError
 } from '../../../../store/slices/clientOverviewSlice';
 import { selectAvailableClientIds, fetchUniqueClientIds } from '../../../../store/slices/complianceTransactionsSlice';
-import { ClientOverview, ICase } from '../../../../typings/case';
-import { Button } from '../../../../components/ui/button';
-import { Input } from '../../../../components/ui/input';
-import { Badge } from '../../../../components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '../../../../components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../../../components/ui/table';
 import { Alert, AlertDescription } from '../../../../components/ui/alert';
-import { 
-  Search, 
-  TrendingUp, 
-  TrendingDown, 
+import {
+  Search,
+  TrendingUp,
+  TrendingDown,
   Minus,
   DollarSign,
   Activity,
@@ -28,7 +21,6 @@ import {
   Users,
   FileText,
   Calendar,
-  ChevronDown,
   StickyNote
 } from 'lucide-react';
 import { format } from 'date-fns';
@@ -39,7 +31,6 @@ const ClientOverviewTab: React.FC = () => {
   const dispatch = useAppDispatch();
   const overview = useAppSelector(selectClientOverview);
   const cases = useAppSelector(selectClientCases);
-  const transactions = useAppSelector(selectClientTransactions);
   const topCounterparties = useAppSelector(selectTopCounterparties);
   const loading = useAppSelector(selectClientOverviewLoading);
   const error = useAppSelector(selectClientOverviewError);

@@ -1,19 +1,17 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
-import { Database, FileSearch, History, Search, Table, Users, Briefcase } from 'lucide-react';
+import { FileSearch, History, Search, Table } from 'lucide-react';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 import ViewWrapper from '../../components/ViewWrapper';
-import { useAppDispatch, useAppSelector } from '../../store/hooks';
-import { fetchMonitoredAddresses, selectAllAddresses } from '../../store/slices/monitoredAddressesSlice';
+import { useAppDispatch } from '../../store/hooks';
+import { fetchMonitoredAddresses } from '../../store/slices/monitoredAddressesSlice';
 
 import ActiveCasesTab from './components/active-cases/ActiveCasesTab';
 import ArchivedCasesTab from './components/archived-cases/ArchivedCasesTab';
-import MonitoredAddressesTab from './components/monitored-addresses/MonitoredAddressesTab';
 import UnassignedTransactionsTab from './components/unassigned-transactions/UnassignedTransactionsTab';
-import ClientOverviewTab from './components/client-overview/ClientOverviewTab';
 
 type TabKey = 'transactions' | 'active-cases' | 'archived-cases';
 
@@ -28,7 +26,6 @@ const ComplianceScreener: React.FC = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const location = useLocation();
-  const monitoredAddresses = useAppSelector(selectAllAddresses);
   
   // Determine active tab from URL
   const getActiveTabFromUrl = (): TabKey => {
@@ -54,7 +51,7 @@ const ComplianceScreener: React.FC = () => {
   const handleTabChange = (activeKey: string) => {
     const newTab = activeKey as TabKey;
     setActiveTab(newTab);
-    
+
     // Navigate to the appropriate URL
     if (newTab === 'active-cases') {
       navigate('/home/compliance-screener/active-cases');
@@ -64,11 +61,6 @@ const ComplianceScreener: React.FC = () => {
       navigate('/home/compliance-screener');
     }
   };
-
-  // Handle addresses change - memoized to prevent unnecessary re-renders
-  const handleAddressesChange = useCallback(() => {
-    dispatch(fetchMonitoredAddresses());
-  }, [dispatch]);
 
   const getTabDescription = (tab: TabKey): string => {
     switch (tab) {

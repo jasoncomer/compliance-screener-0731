@@ -35,7 +35,6 @@ interface ComplianceFilterPanelProps {
 
   // Available options
   availableBlockchains?: string[];
-  availableClientIds?: string[];
   statusOptions?: Array<{ value: EComplianceTransactionStatus; label: string }>;
 
   // Default/initial values
@@ -62,7 +61,6 @@ const ComplianceFilterPanel: React.FC<ComplianceFilterPanelProps> = ({
   showRiskLevelFilter = true,
   showAmountFilter = true,
   availableBlockchains = [],
-  availableClientIds = [],
   statusOptions,
   defaultStatus,
   onFilterChange,
@@ -167,7 +165,7 @@ const ComplianceFilterPanel: React.FC<ComplianceFilterPanelProps> = ({
   // Process form values into TransactionFilters
   const processFilterValues = (values: any): TransactionFilters => {
     const { dateFrom, dateTo, reviewDateFrom, reviewDateTo, minAmount, maxAmount, minRiskLevel, maxRiskLevel, ...rest } = values;
-    const filters: TransactionFilters = { ...rest };
+    const filters: TransactionFilters = { ...rest } as TransactionFilters;
 
     // Transaction timestamp date range filter
     if (dateFrom && dateTo) {

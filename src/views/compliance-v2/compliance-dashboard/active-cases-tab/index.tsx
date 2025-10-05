@@ -54,6 +54,8 @@ interface Case {
   tags: string[]
   evidence: number
   notes: number
+  txId?: string
+  organizationId?: string
 }
 
 // Mock data for active cases
@@ -671,7 +673,7 @@ export default function ActiveCases() {
                               <TabsContent value="case-report" className="space-y-4">
                                 <CaseReportSection
                                   caseId={selectedCase?.id || 'default-case-id'}
-                                  transactionId={selectedCase?.transaction?.txId || 'default-tx-id'}
+                                  transactionId={selectedCase?.txId || 'default-tx-id'}
                                   organizationId={selectedCase?.organizationId || 'default-org-id'}
                                 />
                               </TabsContent>

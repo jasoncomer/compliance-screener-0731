@@ -8,7 +8,7 @@ import {
   selectCasesPagination,
   setFilters
 } from '../../../../store/slices/casesSlice';
-import { ECaseStatus, ECasePriority, ICase } from '../../../../typings/case';
+import { ECaseStatus, ECasePriority } from '../../../../typings/case';
 import { Button } from '../../../../components/ui/button';
 import { Input } from '../../../../components/ui/input';
 import { Badge } from '../../../../components/ui/badge';
@@ -75,7 +75,7 @@ const CasesTab: React.FC = () => {
       case ECaseStatus.UNDER_REVIEW:
         return 'outline';
       case ECaseStatus.CLOSED:
-        return 'success';
+        return 'default';
       case ECaseStatus.ARCHIVED:
         return 'destructive';
       default:

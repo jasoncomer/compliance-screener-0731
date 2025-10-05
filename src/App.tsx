@@ -27,7 +27,6 @@ import BlockExplorer from './views/blockexplorer/BlockExplorer';
 import ComplianceScreener from './views/Compliance/ComplianceScreener';
 import ClientOverviewPage from './views/Compliance/ClientOverviewPage';
 import MonitoredAddressesPage from './views/Compliance/MonitoredAddressesPage';
-import { ComplianceDashboard } from "./views/compliance-v2/compliance-dashboard";
 import FlowTrace from './views/Flowtrace/FlowTrace';
 import Home from "./views/Home";
 import Login from './views/Login';
@@ -64,27 +63,6 @@ function App() {
   useEffect(() => {
     const loadUser = async () => {
       try {
-        // Development mode bypass - create a mock user for development
-        if (import.meta.env.DEV && !localStorage.getItem('bs-app-user')) {
-          const mockUser = {
-            id: 'dev-user-123',
-            name: 'Development User',
-            email: 'dev@example.com',
-            role: 'user'
-          };
-          
-          setUser(mockUser);
-          trackUser(mockUser.id, {
-            email: mockUser.email,
-            name: mockUser.name,
-            role: mockUser.role
-          });
-          
-          dispatch(fetchOrganizations());
-          setIsLoading(false);
-          return;
-        }
-
         const { accessToken, user: userKey } = config.localstorageKeys;
         const storedToken = localStorage.getItem(accessToken);
         const storedUser = localStorage.getItem(userKey);
@@ -160,7 +138,7 @@ function App() {
             <Route path="compliance-screener/archived-cases" element={<ComplianceScreener />} />
             <Route path="compliance-screener/client-overview" element={<ClientOverviewPage />} />
             <Route path="compliance-screener/addresses" element={<MonitoredAddressesPage />} />
-            <Route path="compliance-dashboard" element={<ComplianceDashboard />} />
+            {/* <Route path="compliance-dashboard" element={<ComplianceDashboard />} /> */}
             <Route path="admin" element={<Admin />} />
             <Route path="alerts" element={<Alerts />} />
             <Route path="vasp-explorer" element={<VASPExplorer />} />

@@ -1,13 +1,12 @@
-import React, { useMemo,useState } from 'react';
+import React, { useMemo, useState } from 'react';
 
-import { ArrowDownRight,ArrowUpRight, BarChart3, Check, Copy, ExternalLink, TrendingUp, X } from 'lucide-react';
+import { ArrowDownRight, ArrowUpRight, BarChart3, Check, Copy, ExternalLink, TrendingUp, X } from 'lucide-react';
 
 import { useAttribution } from '../../../../context/AttributionContext';
 import { useTheme } from '../../../../context/ThemeContext';
 import { useAppSelector } from '../../../../store/hooks';
 import { RootState } from '../../../../store/store';
 import { truncateAddress } from '../../../../utils/crypto';
-import { TransformedTransaction } from '../../../../utils/transactionTransformers';
 
 interface Counterparty {
   entity: string;
@@ -23,14 +22,12 @@ interface TopCounterpartiesProps {
   incoming: Counterparty[];
   outgoing: Counterparty[];
   onCounterpartyClick?: (address: string) => void;
-  transactions?: TransformedTransaction[];
 }
 
-const TopCounterparties: React.FC<TopCounterpartiesProps> = ({ 
-  incoming, 
-  outgoing, 
-  onCounterpartyClick,
-  transactions = []
+const TopCounterparties: React.FC<TopCounterpartiesProps> = ({
+  incoming,
+  outgoing,
+  onCounterpartyClick
 }) => {
   const { theme } = useTheme();
   const [activeTab, setActiveTab] = useState('all');
@@ -46,25 +43,16 @@ const TopCounterparties: React.FC<TopCounterpartiesProps> = ({
   // Helper function to get entity name for a counterparty address
   const getEntityName = (counterpartyAddress: string): string | null => {
     if (!counterpartyAddress || counterpartyAddress === 'Unknown') return null;
-    
+
     const attribution = attributions[counterpartyAddress];
     if (!attribution) return null;
-    
+
     const entityId = attribution.entity || attribution.bo || attribution.custodian;
     if (!entityId) return null;
-    
+
     const entity = Object.values(itemsMap).find(sot => sot.entity_id === entityId);
     // Only return proper_name if it exists and is not empty
     return entity?.proper_name || null;
-  };
-
-
-  // Get transactions for a specific counterparty
-  const getCounterpartyTransactions = (address: string) => {
-    return transactions.filter(tx => 
-      (tx.type === 'in' && tx.from === address) || 
-      (tx.type === 'out' && tx.to === address)
-    );
   };
 
   // Modal functions
@@ -103,11 +91,6 @@ const TopCounterparties: React.FC<TopCounterpartiesProps> = ({
       const explorerUrl = `/home/blockham?entity=${selectedCounterparty.entityId}`;
       window.open(explorerUrl, '_blank', 'noopener,noreferrer');
     }
-  };
-
-  const formatTime = (timeString: string) => {
-    const date = new Date(timeString);
-    return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
   const allCounterparties = useMemo(() => {

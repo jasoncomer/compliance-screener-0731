@@ -1,6 +1,5 @@
 import {
   ICase,
-  ClientOverview,
   CaseFilters,
   CreateCaseRequest,
   UpdateCaseStatusRequest,

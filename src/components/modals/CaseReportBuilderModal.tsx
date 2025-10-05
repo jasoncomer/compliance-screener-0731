@@ -10,7 +10,9 @@ import { IComplianceTransaction } from '@/typings/compliance';
 
 export interface ReportModuleData {
   id: string;
-  type: 'text' | 'chart' | 'image';
+  type: 'text' | 'chart' | 'image' | 'transaction-info' | 'transaction-risk' | 'counterparty-info' | 'notes';
+  title: string;
+  position: number;
   content: any;
 }
 
