@@ -190,9 +190,9 @@ const RiskSummary: React.FC<RiskSummaryProps> = ({
   );
 
   return (
-    <div className={`rounded-2xl border p-6 ${
+    <div className={`rounded-2xl border p-6 h-full ${
       theme === 'dark' 
-        ? 'bg-gray-800/50 border-gray-700' 
+        ? 'bg-gray-50 dark:bg-background border-gray-700' 
         : 'bg-gray-50 border-gray-200'
     }`}>
       {/* Header Section */}

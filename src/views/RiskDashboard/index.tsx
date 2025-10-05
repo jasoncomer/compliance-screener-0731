@@ -1070,28 +1070,36 @@ const RiskDashboard: React.FC = React.memo(() => {
         </div>
       ) : (
         <div className="space-y-6">
-          {/* Address Header - Full Width */}
-          <div className="rounded-2xl border p-6 bg-gray-50 dark:bg-background border-gray-200 dark:border-gray-700 mt-8">
-            <AddressHeader 
-              address={address}
-              entityTags={entityTags}
-              entityName={getDisplayName}
-              entityId={primaryEntityId}
-              entityType={primaryEntityId ? getEntityType(primaryEntityId) : undefined}
-            />
-          </div>
+          {/* Address Header, Summary, and Risk Assessment Layout */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-8 items-start">
+            {/* Left Column - Address Header and Summary (1/3 width) */}
+            <div className="flex flex-col gap-6 h-full">
+              {/* Address Header Card */}
+              <div className="rounded-2xl border p-6 bg-gray-50 dark:bg-background border-gray-200 dark:border-gray-700 flex-shrink-0">
+                <AddressHeader 
+                  address={address}
+                  entityTags={entityTags}
+                  entityName={getDisplayName}
+                  entityId={primaryEntityId}
+                  entityType={primaryEntityId ? getEntityType(primaryEntityId) : undefined}
+                />
+              </div>
 
-          {/* Summary Stats - Full Width */}
-          <div>
-            <AddressSummary {...addressSummaryProps} />
-          </div>
+              {/* Summary Stats */}
+              <div className="flex-1">
+                <AddressSummary {...addressSummaryProps} />
+              </div>
+            </div>
 
-          {/* Risk Assessment - Full Width with all details inline */}
-          <RiskSummary 
-            riskScores={enhancedRiskScore}
-            address={address}
-            isLoading={isLoadingRiskScore || loading}
-          />
+            {/* Right Column - Risk Assessment (2/3 width) */}
+            <div className="lg:col-span-2">
+              <RiskSummary 
+                riskScores={enhancedRiskScore}
+                address={address}
+                isLoading={isLoadingRiskScore || loading}
+              />
+            </div>
+          </div>
 
           {/* Transaction Activity - Full Width - Show for every address */}
           <div>
