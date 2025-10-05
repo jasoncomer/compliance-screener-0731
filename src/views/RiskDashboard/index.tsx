@@ -32,8 +32,7 @@ import { SimpleSankeyTest } from './components/SimpleSankeyTest';
 import { 
   EntityDetails,
   GeographicPresence,
-  RiskAssessment, 
-  RiskScoreModal,
+  RiskSummary,
   TopCounterparties, 
   TransactionActivity,
   TransactionHistory} from './components';
@@ -45,7 +44,6 @@ const RiskDashboard: React.FC = React.memo(() => {
   const [hasData, setHasData] = useState(false);
   const [address, setAddress] = useState('');
   const [searchValue, setSearchValue] = useState('');
-  const [riskScoreModalVisible, setRiskScoreModalVisible] = useState(false);
   const [addressNotFound, setAddressNotFound] = useState<boolean>(false);
   const [entityDetailsHeight, setEntityDetailsHeight] = useState<number | undefined>(undefined);
   const entityDetailsRef = useRef<HTMLDivElement>(null);
@@ -924,10 +922,6 @@ const RiskDashboard: React.FC = React.memo(() => {
     handleAddressSearch(value);
   }, [handleAddressSearch]);
 
-  const handleRiskScoreClick = useCallback(() => {
-    setRiskScoreModalVisible(true);
-  }, []);
-
   // Handle counterparty click to navigate to that address - memoized
   const handleCounterpartyClick = useCallback((address: string) => {
     if (address && address.trim()) {
@@ -1087,18 +1081,17 @@ const RiskDashboard: React.FC = React.memo(() => {
             />
           </div>
 
-          {/* Summary Stats and Risk Assessment - Two Columns */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Summary Stats - Full Width */}
+          <div>
             <AddressSummary {...addressSummaryProps} />
-            <RiskAssessment 
-              score={enhancedRiskScore ? Math.round(enhancedRiskScore.overallRisk * 100) : 0}
-              level={enhancedRiskScore ? getRiskLevel(enhancedRiskScore.overallRisk * 100) : 'Unknown'}
-              description={enhancedRiskScore ? getRiskDescription(enhancedRiskScore.overallRisk * 100) : 'No risk data available'}
-              isLoading={isLoadingRiskScore || loading}
-              onSeeDetails={handleRiskScoreClick}
-              boInfo={enhancedRiskScore?.boInfo}
-            />
           </div>
+
+          {/* Risk Assessment - Full Width with all details inline */}
+          <RiskSummary 
+            riskScores={enhancedRiskScore}
+            address={address}
+            isLoading={isLoadingRiskScore || loading}
+          />
 
           {/* Transaction Activity - Full Width - Show for every address */}
           <div>
@@ -1391,16 +1384,6 @@ const RiskDashboard: React.FC = React.memo(() => {
           </div>
           <p className="mt-1">{addressError.message}</p>
         </div>
-      )}
-
-      {riskScoreModalVisible && (
-        <RiskScoreModal
-          visible={riskScoreModalVisible}
-          onClose={() => setRiskScoreModalVisible(false)}
-          riskScores={enhancedRiskScore}
-          address={address}
-          loading={isLoadingRiskScore}
-        />
       )}
     </ViewWrapper>
   );
