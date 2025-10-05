@@ -1142,11 +1142,10 @@ const RiskDashboard: React.FC = React.memo(() => {
           {/* Top Counterparties and Transaction History - Two Columns */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="rounded-2xl border p-6 bg-gray-50 dark:bg-background border-gray-200 dark:border-gray-700">
-              <TopCounterparties 
-                incoming={counterpartyData.incoming} 
-                outgoing={counterpartyData.outgoing} 
+              <TopCounterparties
+                incoming={counterpartyData.incoming}
+                outgoing={counterpartyData.outgoing}
                 onCounterpartyClick={handleCounterpartyClick}
-                transactions={transformedTransactions}
               />
             </div>
             

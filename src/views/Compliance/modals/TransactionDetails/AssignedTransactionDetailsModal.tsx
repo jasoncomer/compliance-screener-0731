@@ -10,7 +10,6 @@ import {
   GitBranch,
   Globe,
   Hash,
-  Image,
   Shield,
   Upload,
   User,
@@ -28,14 +27,14 @@ import { TruncatedTransactionLink } from "@/components/ui/truncated-transaction-
 
 import { useAttribution } from '../../../../context/AttributionContext';
 import { useCryptoPrices } from '../../../../hooks/useCryptoPrices';
-import { useAppDispatch,useAppSelector } from '../../../../store/hooks';
+import { useAppDispatch, useAppSelector } from '../../../../store/hooks';
 import { selectTransactionById, updateTransactionStatus } from '../../../../store/slices/complianceTransactionsSlice';
 import { selectActiveOrgMembersMap } from '../../../../store/slices/organizationsSlice';
 import { fetchSOT } from '../../../../store/slices/sotSlice';
 import { calculateDetailedRiskAnalysis } from '../../../../services/inputTransactionRiskService';
 import { blockchain } from '../../../../api/blockchain';
 import { RootState } from '../../../../store/store';
-import { EComplianceTransactionStatus,IComplianceTransaction } from '../../../../typings/compliance';
+import { EComplianceTransactionStatus, IComplianceTransaction } from '../../../../typings/compliance';
 import { getUserDisplayName } from '../../../../utils/display-labels';
 import { TransactionRiskModal } from '../../components/modals/TransactionRiskModal';
 import CaseAssignmentHistoryModal from '../CaseAssignmentHistoryModal';

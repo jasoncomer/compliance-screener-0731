@@ -23,6 +23,7 @@ const mockTransactions: Transaction[] = [
   },
   {
     id: "a1075db55d416d3ca199f55b6084e2115b9345e016c5b7f7b8c8c8c8c8c8c8c8c",
+    txId: "a1075db55d416d3ca199f55b6084e2115b9345e016c5b7f7b8c8c8c8c8c8c8c8c",
     clientId: "5665456546",
     counterpartyEntities: "Genesis Block → Mixer Service",
     blockchain: "Bitcoin",
@@ -35,6 +36,7 @@ const mockTransactions: Transaction[] = [
   // Mixer service transactions (3J98t1WpEZ73CNmQviecrnyiWrnqRhWNLy)
   {
     id: "b8c8c8c8c8c8c8c8c8c8c8c8c8c8c8c8c8c8c8c8c8c8c8c8c8c8c8c8c8c8c8c8",
+    txId: "b8c8c8c8c8c8c8c8c8c8c8c8c8c8c8c8c8c8c8c8c8c8c8c8c8c8c8c8c8c8c8c8",
     clientId: "5665456546",
     counterpartyEntities: "Mixer Service Input",
     blockchain: "Bitcoin",
@@ -46,6 +48,7 @@ const mockTransactions: Transaction[] = [
   },
   {
     id: "c9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9",
+    txId: "c9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9",
     clientId: "5665456546",
     counterpartyEntities: "Mixer Service Input",
     blockchain: "Bitcoin",
@@ -58,6 +61,7 @@ const mockTransactions: Transaction[] = [
   // Ethereum DeFi exploit transactions (0x742d35Cc6634C0532925a3b8D4C9db96DfB3f681)
   {
     id: "0xd4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8",
+    txId: "0xd4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8",
     clientId: "1234567890",
     counterpartyEntities: "DeFi Exploit Address",
     blockchain: "Ethereum",
@@ -69,6 +73,7 @@ const mockTransactions: Transaction[] = [
   },
   {
     id: "0xe5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8c9",
+    txId: "0xe5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8c9",
     clientId: "1234567890",
     counterpartyEntities: "DeFi Exploit Address",
     blockchain: "Ethereum",

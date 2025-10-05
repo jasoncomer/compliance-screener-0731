@@ -11,9 +11,7 @@ interface CounterpartyInfoSummaryProps {
   transaction: IComplianceTransaction;
 }
 
-export const CounterpartyInfoSummary: React.FC<CounterpartyInfoSummaryProps> = ({
-  transaction
-}) => {
+export const CounterpartyInfoSummary: React.FC<CounterpartyInfoSummaryProps> = () => {
   // Mock counterparty data - in real implementation, this would come from the transaction data
   const counterparties = [
     {
@@ -52,7 +50,7 @@ export const CounterpartyInfoSummary: React.FC<CounterpartyInfoSummaryProps> = (
         </div>
       </div>
 
-      {counterparties.map((counterparty, index) => (
+      {counterparties.map((counterparty) => (
         <Card key={counterparty.id}>
           <CardContent className="p-6">
             <div className="space-y-6">

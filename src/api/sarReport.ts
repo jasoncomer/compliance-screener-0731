@@ -1,4 +1,4 @@
-import { api } from './api';
+import { axiosInstance } from './api';
 import { ISARReport, SARReportFilters, SARReportStats, SARReportGenerationRequest } from '../typings/sarReport';
 
 export const sarReportApi = {
@@ -6,7 +6,7 @@ export const sarReportApi = {
    * Generate a new SAR report
    */
   generateSARReport: async (data: SARReportGenerationRequest): Promise<ISARReport> => {
-    const response = await api.post('/sar-reports', data);
+    const response = await axiosInstance.post('/sar-reports', data);
     return response.data.data;
   },
 
@@ -18,7 +18,7 @@ export const sarReportApi = {
     organizationId: string;
     additionalData?: any;
   }): Promise<any> => {
-    const response = await api.post('/sar-reports/comprehensive', data);
+    const response = await axiosInstance.post('/sar-reports/comprehensive', data);
     return response.data.data;
   },
 
@@ -26,7 +26,7 @@ export const sarReportApi = {
    * Get SAR report by ID
    */
   getSARReportById: async (reportId: string): Promise<ISARReport> => {
-    const response = await api.get(`/sar-reports/${reportId}`);
+    const response = await axiosInstance.get(`/sar-reports/${reportId}`);
     return response.data.data;
   },
 
@@ -41,7 +41,7 @@ export const sarReportApi = {
     if (filters?.limit) params.append('limit', filters.limit.toString());
     if (filters?.offset) params.append('offset', filters.offset.toString());
 
-    const response = await api.get(`/sar-reports?${params.toString()}`);
+    const response = await axiosInstance.get(`/sar-reports?${params.toString()}`);
     return response.data.data;
   },
 
@@ -49,11 +49,11 @@ export const sarReportApi = {
    * Update SAR report status
    */
   updateSARReportStatus: async (
-    reportId: string, 
+    reportId: string,
     status: 'draft' | 'submitted' | 'accepted' | 'rejected',
     fincenReferenceNumber?: string
   ): Promise<ISARReport> => {
-    const response = await api.put(`/sar-reports/${reportId}/status`, {
+    const response = await axiosInstance.put(`/sar-reports/${reportId}/status`, {
       status,
       fincenReferenceNumber
     });
@@ -64,7 +64,7 @@ export const sarReportApi = {
    * Generate FinCEN-compliant XML for SAR submission
    */
   generateFinCENXML: async (reportId: string): Promise<Blob> => {
-    const response = await api.get(`/sar-reports/${reportId}/xml`, {
+    const response = await axiosInstance.get(`/sar-reports/${reportId}/xml`, {
       responseType: 'blob'
     });
     return response.data;
@@ -74,7 +74,7 @@ export const sarReportApi = {
    * Generate PDF report for SAR
    */
   generateSARPDF: async (reportId: string): Promise<Blob> => {
-    const response = await api.get(`/sar-reports/${reportId}/pdf`, {
+    const response = await axiosInstance.get(`/sar-reports/${reportId}/pdf`, {
       responseType: 'blob'
     });
     return response.data;
@@ -84,14 +84,14 @@ export const sarReportApi = {
    * Delete SAR report (soft delete)
    */
   deleteSARReport: async (reportId: string): Promise<void> => {
-    await api.delete(`/sar-reports/${reportId}`);
+    await axiosInstance.delete(`/sar-reports/${reportId}`);
   },
 
   /**
    * Get SAR report statistics for dashboard
    */
   getSARReportStats: async (): Promise<SARReportStats> => {
-    const response = await api.get('/sar-reports/stats');
+    const response = await axiosInstance.get('/sar-reports/stats');
     return response.data.data;
   }
 };

@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 
-import { IComplianceTransaction } from '@/typings/compliance';
+import { IComplianceTransaction, EComplianceTransactionStatus } from '@/typings/compliance';
 
 interface TransactionInfoSummaryProps {
   transaction: IComplianceTransaction;
@@ -123,15 +123,15 @@ export const TransactionInfoSummary: React.FC<TransactionInfoSummaryProps> = ({
               <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
               <Label className="text-sm font-medium text-gray-600">Status</Label>
             </div>
-            <Badge 
-              variant={transaction.status === 'COMPLETED' ? 'default' : 'secondary'}
+            <Badge
+              variant={transaction.status === EComplianceTransactionStatus.APPROVED ? 'default' : 'secondary'}
               className={
-                transaction.status === 'COMPLETED' 
+                transaction.status === EComplianceTransactionStatus.APPROVED
                   ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
                   : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300'
               }
             >
-              {transaction.status || 'PENDING'}
+              {transaction.status || EComplianceTransactionStatus.UNASSIGNED}
             </Badge>
           </CardContent>
         </Card>

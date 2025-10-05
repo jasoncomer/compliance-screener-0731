@@ -1,5 +1,5 @@
 import React from 'react';
-import { FileText, Download, Eye } from 'lucide-react';
+import { FileText } from 'lucide-react';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';

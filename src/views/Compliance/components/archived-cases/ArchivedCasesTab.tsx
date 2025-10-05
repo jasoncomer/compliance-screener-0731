@@ -41,7 +41,6 @@ const ArchivedCasesTab: React.FC<ArchivedCasesTabProps> = ({ isActive, className
 
   // Track available filter options
   const [availableBlockchains, setAvailableBlockchains] = useState<string[]>([]);
-  const [availableClientIds, setAvailableClientIds] = useState<string[]>([]);
 
   // Load transactions from Redux store
   useEffect(() => {
@@ -62,10 +61,6 @@ const ArchivedCasesTab: React.FC<ArchivedCasesTabProps> = ({ isActive, className
       // Extract unique blockchains
       const blockchains = [...new Set(transactions.map(tx => tx.blockchain))];
       setAvailableBlockchains(blockchains);
-
-      // Extract unique client IDs
-      const clientIds = [...new Set(transactions.map(tx => tx.clientId))];
-      setAvailableClientIds(clientIds);
     }
   }, [transactions]);
 
@@ -140,8 +135,6 @@ const ArchivedCasesTab: React.FC<ArchivedCasesTabProps> = ({ isActive, className
           { value: EComplianceTransactionStatus.CLOSED_WITH_SAR, label: 'Closed with SAR' }
         ]}
         availableBlockchains={availableBlockchains}
-        availableClientIds={availableClientIds}
-        showTransactionIdFilter={true}
         defaultStatus={ARCHIVED_STATUSES}
         onFilterChange={handleFilterChange}
         onClearFilters={handleClearFilters}

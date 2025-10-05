@@ -1,6 +1,5 @@
-import jsPDF from 'jspdf';
+import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
-import type { jsPDF } from 'jspdf';
 
 export interface ReportData {
   transaction: any;
@@ -17,14 +16,6 @@ export const generatePDF = async (reportData: ReportData, modules: any[]): Promi
   const pageWidth = doc.internal.pageSize.getWidth();
   const margin = 20;
   let yPosition = margin;
-
-  // Helper function to add text with word wrapping
-  const addText = (text: string, x: number, y: number, maxWidth: number, fontSize: number = 12) => {
-    doc.setFontSize(fontSize);
-    const lines = doc.splitTextToSize(text, maxWidth);
-    doc.text(lines, x, y);
-    return y + (lines.length * fontSize * 0.4);
-  };
 
   // Helper function to add a new page if needed
   const checkNewPage = (requiredHeight: number) => {
@@ -71,28 +62,30 @@ export const generatePDF = async (reportData: ReportData, modules: any[]): Promi
       // Module content based on type
       switch (module.type) {
         case 'transaction-info':
-          yPosition = renderTransactionInfo(doc, reportData.transaction, margin, yPosition, pageWidth);
+          yPosition = renderTransactionInfo(doc, reportData.transaction, margin, yPosition);
           break;
         case 'transaction-risk':
-          yPosition = renderTransactionRisk(doc, reportData.transaction, margin, yPosition, pageWidth);
+          yPosition = renderTransactionRisk(doc, reportData.transaction, margin, yPosition);
           break;
         case 'counterparty-info':
-          yPosition = renderCounterpartyInfo(doc, reportData.transaction, margin, yPosition, pageWidth);
+          yPosition = renderCounterpartyInfo(doc, reportData.transaction, margin, yPosition);
           break;
         case 'notes':
           yPosition = renderNotes(doc, module, margin, yPosition, pageWidth);
           break;
         case 'image':
-          yPosition = renderImage(doc, module, margin, yPosition, pageWidth);
+          yPosition = renderImage(doc, module, margin, yPosition);
           break;
         case 'text':
           yPosition = renderText(doc, module, margin, yPosition, pageWidth);
           break;
         case 'chart':
-          yPosition = renderChart(doc, module, margin, yPosition, pageWidth);
+          yPosition = renderChart(doc, module, margin, yPosition);
           break;
         default:
-          yPosition = addText('Unknown module type', margin, yPosition, pageWidth - 2 * margin);
+          doc.setFontSize(12);
+          doc.text('Unknown module type', margin, yPosition);
+          yPosition += 12 * 0.4;
       }
 
       yPosition += 20; // Space between modules
@@ -114,7 +107,7 @@ export const generatePDF = async (reportData: ReportData, modules: any[]): Promi
   doc.save(`case-report-${reportData.metadata.reportId}.pdf`);
 };
 
-const renderTransactionInfo = (doc: jsPDF, transaction: any, margin: number, yPosition: number, pageWidth: number): number => {
+const renderTransactionInfo = (doc: jsPDF, transaction: any, margin: number, yPosition: number): number => {
   const data = [
     ['Transaction ID', transaction.txId],
     ['Client ID', transaction.clientId || 'N/A'],
@@ -124,7 +117,7 @@ const renderTransactionInfo = (doc: jsPDF, transaction: any, margin: number, yPo
     ['Status', transaction.status || 'PENDING']
   ];
 
-  doc.autoTable({
+  (doc as any).autoTable({
     startY: yPosition,
     head: [['Field', 'Value']],
     body: data,
@@ -137,7 +130,7 @@ const renderTransactionInfo = (doc: jsPDF, transaction: any, margin: number, yPo
   return (doc as any).lastAutoTable.finalY + 10;
 };
 
-const renderTransactionRisk = (doc: jsPDF, transaction: any, margin: number, yPosition: number, pageWidth: number): number => {
+const renderTransactionRisk = (doc: jsPDF, transaction: any, margin: number, yPosition: number): number => {
   const riskScores = [
     ['Overall Risk', transaction.riskScores?.[0] || 25],
     ['Entity Risk', 23],
@@ -145,7 +138,7 @@ const renderTransactionRisk = (doc: jsPDF, transaction: any, margin: number, yPo
     ['Transaction Risk', 15]
   ];
 
-  doc.autoTable({
+  (doc as any).autoTable({
     startY: yPosition,
     head: [['Risk Category', 'Score']],
     body: riskScores,
@@ -158,7 +151,7 @@ const renderTransactionRisk = (doc: jsPDF, transaction: any, margin: number, yPo
   return (doc as any).lastAutoTable.finalY + 10;
 };
 
-const renderCounterpartyInfo = (doc: jsPDF, transaction: any, margin: number, yPosition: number, pageWidth: number): number => {
+const renderCounterpartyInfo = (doc: jsPDF, _transaction: any, margin: number, yPosition: number): number => {
   const counterparties = [
     ['Entity Name', 'Crypto Exchange Ltd'],
     ['Entity Type', 'Exchange'],
@@ -167,7 +160,7 @@ const renderCounterpartyInfo = (doc: jsPDF, transaction: any, margin: number, yP
     ['Status', 'Verified']
   ];
 
-  doc.autoTable({
+  (doc as any).autoTable({
     startY: yPosition,
     head: [['Field', 'Value']],
     body: counterparties,
@@ -180,7 +173,7 @@ const renderCounterpartyInfo = (doc: jsPDF, transaction: any, margin: number, yP
   return (doc as any).lastAutoTable.finalY + 10;
 };
 
-const renderNotes = (doc: jsPDF, module: any, margin: number, yPosition: number, pageWidth: number): number => {
+const renderNotes = (doc: jsPDF, _module: any, margin: number, yPosition: number, pageWidth: number): number => {
   const notes = [
     {
       title: 'Initial Review',
@@ -204,7 +197,9 @@ const renderNotes = (doc: jsPDF, module: any, margin: number, yPosition: number,
 
     doc.setFontSize(10);
     doc.setFont('helvetica', 'normal');
-    yPosition = addText(note.content, margin, yPosition, pageWidth - 2 * margin, 10);
+    const lines = doc.splitTextToSize(note.content, pageWidth - 2 * margin);
+    doc.text(lines, margin, yPosition);
+    yPosition += lines.length * 10 * 0.4;
     yPosition += 5;
 
     doc.setFontSize(8);
@@ -215,7 +210,7 @@ const renderNotes = (doc: jsPDF, module: any, margin: number, yPosition: number,
   return yPosition;
 };
 
-const renderImage = (doc: jsPDF, module: any, margin: number, yPosition: number, pageWidth: number): number => {
+const renderImage = (doc: jsPDF, module: any, margin: number, yPosition: number): number => {
   if (module.content?.imageUrl) {
     try {
       // For base64 images, we can embed them directly
@@ -262,13 +257,15 @@ const renderText = (doc: jsPDF, module: any, margin: number, yPosition: number, 
   if (module.content?.text) {
     doc.setFontSize(10);
     doc.setFont('helvetica', 'normal');
-    yPosition = addText(module.content.text, margin, yPosition, pageWidth - 2 * margin, 10);
+    const lines = doc.splitTextToSize(module.content.text, pageWidth - 2 * margin);
+    doc.text(lines, margin, yPosition);
+    yPosition += lines.length * 10 * 0.4;
   }
 
   return yPosition;
 };
 
-const renderChart = (doc: jsPDF, module: any, margin: number, yPosition: number, pageWidth: number): number => {
+const renderChart = (doc: jsPDF, module: any, margin: number, yPosition: number): number => {
   if (module.content?.title) {
     doc.setFontSize(14);
     doc.setFont('helvetica', 'bold');
@@ -279,7 +276,7 @@ const renderChart = (doc: jsPDF, module: any, margin: number, yPosition: number,
   if (module.content?.data && module.content.data.length > 0) {
     const data = module.content.data.map((item: any) => [item.label, item.value.toString()]);
     
-    doc.autoTable({
+    (doc as any).autoTable({
       startY: yPosition,
       head: [['Category', 'Value']],
       body: data,

@@ -105,11 +105,11 @@ const MonitoredAddressesTable: React.FC<MonitoredAddressTableProps> = ({
         pageSizeOptions: [10, 20, 50, 100],
         onChange: pagination.onChange
       } : false}
-      onChange={(pagination, sorter) => {
+      onChange={(_pagination: any, sorter: any) => {
         if (sorter && sorter.column && sorter.order && onSort) {
           const sortBy = sorter.field || sorter.columnKey;
           const sortOrder = sorter.order === 'ascend' ? 'asc' : 'desc';
-          onSort(sortBy, sortOrder);
+          onSort(sortBy as string, sortOrder);
         }
       }}
     />

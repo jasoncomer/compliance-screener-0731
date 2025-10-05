@@ -32,7 +32,7 @@ export function ComplianceDashboard() {
           </TabsList>
 
           <TabsContent value={EComplianceTab.UNASSIGNED_TRANSACTIONS}>
-            <UnassignedTransactionsTab initialStatusFilter="UNASSIGNED" />
+            <UnassignedTransactionsTab />
           </TabsContent>
           <TabsContent value={EComplianceTab.ACTIVE_CASES}>
             <ActiveCases />

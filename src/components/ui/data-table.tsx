@@ -140,15 +140,15 @@ export function DataTable<T extends Record<string, any>>({
   )
 
   // Track last external pagination values to avoid unnecessary updates
-  const lastExternalCurrent = React.useRef(pagination?.current || 1);
-  const lastExternalPageSize = React.useRef(pagination?.pageSize || 10);
+  const lastExternalCurrent = React.useRef(pagination && typeof pagination !== 'boolean' ? pagination.current || 1 : 1);
+  const lastExternalPageSize = React.useRef(pagination && typeof pagination !== 'boolean' ? pagination.pageSize || 10 : 10);
 
   // Sync external pagination props with internal state
   React.useEffect(() => {
-    if (pagination) {
+    if (pagination && typeof pagination !== 'boolean') {
       const externalCurrent = pagination.current || 1;
       const externalPageSize = pagination.pageSize || 10;
-      
+
       // Only update if the external values have actually changed
       if (externalCurrent !== lastExternalCurrent.current) {
         lastExternalCurrent.current = externalCurrent;
@@ -159,7 +159,7 @@ export function DataTable<T extends Record<string, any>>({
         setPageSize(externalPageSize);
       }
     }
-  }, [pagination?.current, pagination?.pageSize]);
+  }, [pagination && typeof pagination !== 'boolean' ? pagination.current : undefined, pagination && typeof pagination !== 'boolean' ? pagination.pageSize : undefined]);
 
   // Get row key
   const getRowKey = (record: T, index: number): string => {
