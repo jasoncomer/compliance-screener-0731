@@ -79,9 +79,8 @@ const EntitySidebar: React.FC<Props> = ({ currentEntityId, onSelectSot }) => {
   if (isLoading) {
     return (
       <Card className={cn(
-        "flex flex-col h-full overflow-hidden w-80",
+        "flex flex-col w-80 overflow-hidden h-full",
         getSpacing('card', 'compact'),
-        "max-h-[calc(100vh-200px)] min-h-[400px]"
       )}>
         <div className="flex flex-col items-center justify-center h-full p-8">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500 mb-4"></div>
@@ -170,14 +169,12 @@ const EntitySidebar: React.FC<Props> = ({ currentEntityId, onSelectSot }) => {
 
   return (
     <Card className={cn(
-      "flex flex-col h-full overflow-hidden w-80", // Set fixed width to 320px (w-80)
+      "flex flex-col w-80 overflow-hidden h-full", // Set fixed width to 320px (w-80) and full height
       getSpacing('card', 'compact'), // p-4 for compact card padding
-      "max-h-[calc(100vh-200px)] min-h-[400px]"
     )}>
       <div className={cn(
         "flex flex-col flex-1 min-h-0 overflow-y-auto overflow-x-hidden",
         "pr-1", // Reduced from pr-2 to pr-1 for better spacing
-        "max-h-[calc(100vh-250px)] min-h-[350px]",
         "scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600",
         "scrollbar-track-transparent"
       )}>

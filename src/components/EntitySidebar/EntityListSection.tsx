@@ -30,7 +30,7 @@ export const EntityListSection: React.FC<EntityListSectionProps> = ({
       </div>
       <div className={cn(
         "overflow-y-auto overflow-x-hidden relative",
-        "max-h-92",
+        "max-h-64",
         "scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600",
         "scrollbar-track-transparent"
       )}>
