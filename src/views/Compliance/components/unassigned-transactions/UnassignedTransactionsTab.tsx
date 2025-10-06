@@ -201,6 +201,29 @@ const UnassignedTransactionsTab: React.FC<UnassignedTransactionsTabProps> = ({ i
     // React Query will automatically refetch after mutations
   };
 
+  // Calculate the number of items visible on the current page
+  const currentPageItemsCount = useMemo(() => {
+    if (!localTransactions || localTransactions.length === 0) {
+      return 0;
+    }
+    
+    // Calculate the actual number of items on the current page
+    const startIndex = (currentPage - 1) * pageSize;
+    const endIndex = Math.min(startIndex + pageSize, localTransactions.length);
+    const count = endIndex - startIndex;
+    
+    return Math.max(0, count);
+  }, [localTransactions, currentPage, pageSize]);
+
+  // Handle select all functionality
+  const handleSelectAll = () => {
+    const startIndex = (currentPage - 1) * pageSize;
+    const endIndex = startIndex + pageSize;
+    const currentPageItems = localTransactions.slice(startIndex, endIndex);
+    const allKeys = currentPageItems.map(transaction => transaction._id);
+    setSelectedRowKeys(allKeys);
+  };
+
   // Handle filter changes from the filter panel
   const handleFilterChange = (newFilters: TransactionFilters) => {
     setCurrentPage(1); // Reset to first page when filtering
@@ -236,12 +259,6 @@ const UnassignedTransactionsTab: React.FC<UnassignedTransactionsTabProps> = ({ i
         txCount={totalTransactions}
       />
 
-      <BulkSelectComponent
-        selectedRowKeys={selectedRowKeys}
-        onClearSelection={handleClearSelection}
-        onBulkActionComplete={handleBulkActionComplete}
-      />
-
       <ComplianceFilterPanel
         className="mb-4"
         showStatusFilter={false}
@@ -254,6 +271,17 @@ const UnassignedTransactionsTab: React.FC<UnassignedTransactionsTabProps> = ({ i
         onClearFilters={handleClearFilters}
         applyOnChange={true}
       />
+
+      {/* Bulk Selection Component - shown when items are selected */}
+      {selectedRowKeys.length > 0 && (
+        <BulkSelectComponent
+          selectedRowKeys={selectedRowKeys}
+          onClearSelection={handleClearSelection}
+          onSelectAll={handleSelectAll}
+          totalItems={currentPageItemsCount}
+          onBulkActionComplete={handleBulkActionComplete}
+        />
+      )}
 
       <div className="flex-1 min-h-0 overflow-hidden">
         <UnassignedTransactionsTable

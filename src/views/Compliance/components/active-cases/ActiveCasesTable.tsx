@@ -14,7 +14,9 @@ import { useAttribution } from '../../../../context/AttributionContext';
 import { useCryptoPrices } from '../../../../hooks/useCryptoPrices';
 import { calculateDetailedRiskAnalysis, calculateSimpleRiskScore, InputTransactionRiskData } from '../../../../services/inputTransactionRiskService';
 import { useAppDispatch, useAppSelector } from '../../../../store/hooks';
+import { fetchComplianceTransactions, selectComplianceFilters } from '../../../../store/slices/complianceTransactionsSlice';
 import { updateTransactionAssignee, updateTransactionStatus } from '../../../../store/slices/complianceTransactionsSlice';
+import BulkSelectComponent from '../BulkSelectComponent';
 import { EComplianceTransactionStatus, IComplianceTransaction } from '../../../../typings/compliance';
 import { IUser } from '../../../../typings/interfaces';
 import { truncateAddress } from '../../../../utils/crypto';
@@ -66,6 +68,7 @@ const ActiveCasesTable: React.FC<ActiveCasesTableProps> = React.memo(({
   const [selectedTransaction, setSelectedTransaction] = useState<IComplianceTransaction | null>(null);
   const dispatch = useAppDispatch();
   const { users } = useAppSelector(state => state.organizations);
+  const filters = useAppSelector(selectComplianceFilters);
   const { getPrice } = useCryptoPrices();
 
   const btcPrice = getPrice('BTC') || 0;
@@ -261,10 +264,35 @@ const ActiveCasesTable: React.FC<ActiveCasesTableProps> = React.memo(({
 
   // Ensure transactions is an array and filter out invalid entries
   const validTransactions = useMemo(() => {
-    return Array.isArray(transactions)
+    const result = Array.isArray(transactions)
       ? transactions.filter(tx => tx && tx._id)
       : [];
+    return result;
   }, [transactions]);
+
+  // Calculate the number of items visible on the current page
+  const currentPageItemsCount = useMemo(() => {
+    if (!validTransactions || validTransactions.length === 0) {
+      return 0;
+    }
+    
+    // Calculate the actual number of items on the current page
+    const startIndex = (currentPage - 1) * pageSize;
+    const endIndex = Math.min(startIndex + pageSize, validTransactions.length);
+    const actualPageSize = endIndex - startIndex;
+    
+    console.log('currentPageItemsCount calculation:', {
+      validTransactionsLength: validTransactions.length,
+      currentPage,
+      pageSize,
+      startIndex,
+      endIndex,
+      actualPageSize
+    });
+    
+    return actualPageSize;
+  }, [validTransactions, currentPage, pageSize]);
+
 
   // Define columns for DataTable
   const columns: Column<IComplianceTransaction>[] = useMemo(() => [
@@ -495,13 +523,23 @@ const ActiveCasesTable: React.FC<ActiveCasesTableProps> = React.memo(({
               variant="default"
               size="sm"
               className="h-7 w-7 p-0 bg-green-600 hover:bg-green-700"
-              onClick={(e) => {
+              onClick={async (e) => {
                 e.stopPropagation();
-                // Handle approve action
-                dispatch(updateTransactionStatus({
-                  transactionId: record._id,
-                  status: EComplianceTransactionStatus.APPROVED
-                }));
+                alert('🚀 NEW CODE VERSION - Individual Approve Button Clicked!');
+                try {
+                  // Handle approve action
+                  await dispatch(updateTransactionStatus({
+                    transactionId: record._id,
+                    status: EComplianceTransactionStatus.APPROVED
+                  })).unwrap();
+                  
+                  alert('🚀 APPROVAL SUCCESS - Page will refresh now!');
+                  // Force a complete page refresh to ensure UI updates
+                  window.location.reload();
+                } catch (error) {
+                  console.error('Error approving transaction:', error);
+                  alert('Error approving transaction: ' + error);
+                }
               }}
             >
               <Check className="h-3 w-3" />
@@ -510,58 +548,30 @@ const ActiveCasesTable: React.FC<ActiveCasesTableProps> = React.memo(({
         );
       },
     },
-  ], [btcPrice, users, getReviewerName, handleViewDetails, handleViewRisk, calculatedRiskScores, riskCalculationLoading, dispatch, denom]);
+  ], [btcPrice, users, getReviewerName, handleViewDetails, handleViewRisk, calculatedRiskScores, riskCalculationLoading, dispatch, denom, filters, pageSize]);
 
   try {
     return (
       <>
-        {/* Bulk Actions Bar */}
-        {selectedRowKeys.length > 0 && (
-          <div className="mb-4 p-3 bg-primary/10 border border-primary rounded-md flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Checkbox
-                checked={selectedRowKeys.length === validTransactions.length}
-                onCheckedChange={(checked) => {
-                  if (checked) {
-                    setSelectedRowKeys(validTransactions.map(tx => tx._id));
-                  } else {
-                    setSelectedRowKeys([]);
-                  }
-                }}
-              />
-              <span className="font-medium text-primary">
-                {selectedRowKeys.length} transaction{selectedRowKeys.length !== 1 ? 's' : ''} selected
-              </span>
-            </div>
-            <div className="flex gap-2">
-              <Button
-                variant="default"
-                size="sm"
-                className="bg-green-600 hover:bg-green-700"
-                onClick={handleBulkApprove}
-                disabled={bulkActionLoading}
-              >
-                <Check className="mr-2 h-3 w-3" />
-                Approve Selected
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleBulkInReview}
-                disabled={bulkActionLoading}
-              >
-                In Review
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleBulkReassign}
-                disabled={bulkActionLoading}
-              >
-                Reassign Selected
-              </Button>
-            </div>
-          </div>
+        {/* Bulk Selection Component - only shown for non-archived tabs */}
+        {!isArchivedTab && (
+          <BulkSelectComponent
+            selectedRowKeys={selectedRowKeys}
+            onClearSelection={() => setSelectedRowKeys([])}
+            onSelectAll={() => {
+              const startIndex = (currentPage - 1) * pageSize;
+              const endIndex = startIndex + pageSize;
+              const currentPageItems = validTransactions.slice(startIndex, endIndex);
+              const allKeys = currentPageItems.map(transaction => transaction._id);
+              setSelectedRowKeys(allKeys);
+            }}
+            totalItems={currentPageItemsCount}
+            onBulkActionComplete={() => {
+              alert('🚀 NEW CODE VERSION - Bulk Action Completed!');
+              // Force a complete page refresh to ensure UI updates
+              window.location.reload();
+            }}
+          />
         )}
 
         <DataTable
@@ -569,7 +579,7 @@ const ActiveCasesTable: React.FC<ActiveCasesTableProps> = React.memo(({
           dataSource={validTransactions}
           columns={columns}
           rowKey="_id"
-          rowSelection={rowSelection}
+          rowSelection={!isArchivedTab ? rowSelection : undefined}
           pagination={{
             current: currentPage,
             pageSize: pageSize,
@@ -583,9 +593,6 @@ const ActiveCasesTable: React.FC<ActiveCasesTableProps> = React.memo(({
           scroll={{ x: 1000 }}
           footer={!isArchivedTab ? () => (
             <div className="flex justify-between items-center">
-              <div>
-                <strong>{totalTransactions}</strong> active cases requiring review
-              </div>
               <div>
                 <Button variant="link" size="sm">
                   Export Cases

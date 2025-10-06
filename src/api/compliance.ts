@@ -103,10 +103,12 @@ export const compliance = {
       firstTransaction: response.data?.data?.transactions?.[0] ? {
         keys: Object.keys(response.data.data.transactions[0]),
         txId: response.data.data.transactions[0].txId,
-        _id: response.data.data.transactions[0]._id
+        _id: response.data.data.transactions[0]._id,
+        status: response.data.data.transactions[0].status
       } : null,
       allTxIds: response.data?.data?.transactions?.map((tx: any) => tx.txId) || [],
-      allTxIdsFull: response.data?.data?.transactions?.map((tx: any) => ({ txId: tx.txId, clientId: tx.clientId, _id: tx._id })) || [],
+      allTxIdsFull: response.data?.data?.transactions?.map((tx: any) => ({ txId: tx.txId, clientId: tx.clientId, _id: tx._id, status: tx.status })) || [],
+      allStatuses: response.data?.data?.transactions?.map((tx: any) => tx.status) || [],
       searchTerm: filters.txId,
       matches: response.data?.data?.transactions?.filter((tx: any) => 
         tx.txId && tx.txId.includes(filters.txId || '')
@@ -144,6 +146,19 @@ export const compliance = {
     const response = await axiosInstance.post(endpoint, { 
       transactionIds,
       assigneeId
+    });
+    return response.data.data.results;
+  },
+
+  // Bulk update transaction status
+  bulkUpdateTransactionStatus: async (
+    transactionIds: string[],
+    status: string
+  ): Promise<IComplianceTransaction[]> => {
+    const endpoint = `/compliance/transactions/bulk/status`;
+    const response = await axiosInstance.post(endpoint, { 
+      transactionIds,
+      status
     });
     return response.data.data.results;
   },
