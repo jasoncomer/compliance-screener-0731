@@ -143,7 +143,7 @@ const TransactionView: React.FC = () => {
       />
 
       <div className="w-full">
-        <div className="flex items-center justify-between">
+        <div className="flex py-2 items-center justify-between">
           <h3>Transaction Details</h3>
           <Button
             variant="ghost"

@@ -355,7 +355,7 @@ const Address: React.FC = () => {
       {renderDateFilterIndicator()}
 
       <div className="w-full">
-        <h3>
+        <h3 className="py-2">
           Transactions ({totalTxs.toLocaleString()})
           {dateFilter && (
             <span className="text-sm font-normal text-gray-500 dark:text-gray-400 ml-2">
@@ -381,7 +381,9 @@ const Address: React.FC = () => {
         ) : (
           // Show transactions when loaded
           <>
-            {txs.map(tx => <BtcTransactionTable key={tx._id} transaction={tx} />)}
+            <div className="space-y-4">
+              {txs.map(tx => <BtcTransactionTable key={tx._id} transaction={tx} />)}
+            </div>
             <Pagination
               currentPage={currentPage}
               totalPages={totalPages}
