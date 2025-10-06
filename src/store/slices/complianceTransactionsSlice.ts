@@ -167,12 +167,19 @@ const complianceTransactionsSlice = createSlice({
         }
       })
       .addCase(bulkUpdateTransactionAssignee.fulfilled, (state, action) => {
+        console.log('🚀 Redux - bulkUpdateTransactionAssignee.fulfilled:', {
+          payload: action.payload,
+          transactionIds: action.payload?.map(tx => tx._id),
+          currentStateKeys: Object.keys(state.transactions)
+        });
         const updatedTransactions = action.payload as IComplianceTransaction[];
         updatedTransactions.forEach(transaction => {
           if (transaction && transaction._id) {
+            console.log('🚀 Redux - Updating transaction:', transaction._id, 'with assignee:', transaction.reviewerId);
             state.transactions[transaction._id] = transaction;
           }
         });
+        console.log('🚀 Redux - Updated state transactions:', Object.keys(state.transactions));
       })
       .addCase(bulkUpdateTransactionStatus.fulfilled, (state, action) => {
         const updatedTransactions = action.payload as IComplianceTransaction[];
@@ -217,7 +224,8 @@ export const selectActiveTransactions = createSelector(
       totalTransactions: allTransactions.length,
       filters,
       transactionIds: allTransactions.map(tx => tx._id),
-      statuses: allTransactions.map(tx => tx.status)
+      statuses: allTransactions.map(tx => tx.status),
+      assignees: allTransactions.map(tx => ({ id: tx._id, assignee: tx.reviewerId, reviewerName: tx.reviewerName }))
     });
     
     // If we have server-side filtering (indicated by non-status filters), 

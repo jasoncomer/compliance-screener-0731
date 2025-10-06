@@ -93,7 +93,7 @@ const ActiveCasesTable: React.FC<ActiveCasesTableProps> = React.memo(({
       }
     });
     return assignees;
-  }, [selectedRowKeys, transactions]);
+  }, [selectedRowKeys, transactions.length]);
 
   // Function to handle row click to show transaction details
   const handleViewDetails = useCallback((record: IComplianceTransaction) => {
@@ -260,7 +260,7 @@ const ActiveCasesTable: React.FC<ActiveCasesTableProps> = React.memo(({
         }
       });
     }
-  }, [transactions, calculatedRiskScores, riskCalculationLoading, attributions]);
+  }, [transactions.length, calculatedRiskScores, riskCalculationLoading]);
 
   // Ensure transactions is an array and filter out invalid entries
   const validTransactions = useMemo(() => {
@@ -291,7 +291,7 @@ const ActiveCasesTable: React.FC<ActiveCasesTableProps> = React.memo(({
     });
     
     return actualPageSize;
-  }, [validTransactions, currentPage, pageSize]);
+  }, [validTransactions?.length, currentPage, pageSize]);
 
 
   // Define columns for DataTable
@@ -523,24 +523,27 @@ const ActiveCasesTable: React.FC<ActiveCasesTableProps> = React.memo(({
               variant="default"
               size="sm"
               className="h-7 w-7 p-0 bg-green-600 hover:bg-green-700"
-              onClick={async (e) => {
-                e.stopPropagation();
-                alert('🚀 NEW CODE VERSION - Individual Approve Button Clicked!');
-                try {
-                  // Handle approve action
-                  await dispatch(updateTransactionStatus({
-                    transactionId: record._id,
-                    status: EComplianceTransactionStatus.APPROVED
-                  })).unwrap();
-                  
-                  alert('🚀 APPROVAL SUCCESS - Page will refresh now!');
-                  // Force a complete page refresh to ensure UI updates
-                  window.location.reload();
-                } catch (error) {
-                  console.error('Error approving transaction:', error);
-                  alert('Error approving transaction: ' + error);
-                }
-              }}
+               onClick={async (e) => {
+                 e.stopPropagation();
+                 try {
+                   // Handle approve action
+                   await dispatch(updateTransactionStatus({
+                     transactionId: record._id,
+                     status: EComplianceTransactionStatus.APPROVED
+                   })).unwrap();
+                   
+                   console.log('🚀 Individual approval successful, refreshing data...');
+                   // Refetch data to update the UI with current filters
+                   const refetchFilters = {
+                     ...filters,
+                     page: currentPage,
+                     limit: pageSize
+                   };
+                   dispatch(fetchComplianceTransactions(refetchFilters));
+                 } catch (error) {
+                   console.error('Error approving transaction:', error);
+                 }
+               }}
             >
               <Check className="h-3 w-3" />
             </Button>
@@ -548,7 +551,7 @@ const ActiveCasesTable: React.FC<ActiveCasesTableProps> = React.memo(({
         );
       },
     },
-  ], [btcPrice, users, getReviewerName, handleViewDetails, handleViewRisk, calculatedRiskScores, riskCalculationLoading, dispatch, denom, filters, pageSize]);
+  ], [btcPrice, users, getReviewerName, handleViewDetails, handleViewRisk, calculatedRiskScores, riskCalculationLoading, dispatch, denom]);
 
   try {
     return (
@@ -557,20 +560,27 @@ const ActiveCasesTable: React.FC<ActiveCasesTableProps> = React.memo(({
         {!isArchivedTab && (
           <BulkSelectComponent
             selectedRowKeys={selectedRowKeys}
-            onClearSelection={() => setSelectedRowKeys([])}
-            onSelectAll={() => {
+            onClearSelection={useCallback(() => setSelectedRowKeys([]), [])}
+            onSelectAll={useCallback(() => {
               const startIndex = (currentPage - 1) * pageSize;
               const endIndex = startIndex + pageSize;
               const currentPageItems = validTransactions.slice(startIndex, endIndex);
               const allKeys = currentPageItems.map(transaction => transaction._id);
               setSelectedRowKeys(allKeys);
-            }}
+            }, [validTransactions.length, currentPage, pageSize])}
             totalItems={currentPageItemsCount}
-            onBulkActionComplete={() => {
-              alert('🚀 NEW CODE VERSION - Bulk Action Completed!');
-              // Force a complete page refresh to ensure UI updates
-              window.location.reload();
-            }}
+            onBulkActionComplete={useCallback(() => {
+              console.log('🚀 Bulk action completed, refreshing data...');
+              // Clear selection and refresh data
+              setSelectedRowKeys([]);
+              // Refetch data to update the UI with current filters
+              const refetchFilters = {
+                ...filters,
+                page: currentPage,
+                limit: pageSize
+              };
+              dispatch(fetchComplianceTransactions(refetchFilters));
+            }, [filters, currentPage, pageSize, dispatch])}
           />
         )}
 
@@ -722,4 +732,14 @@ const ActiveCasesTable: React.FC<ActiveCasesTableProps> = React.memo(({
   }
 });
 
-export default ActiveCasesTable;
+export default React.memo(ActiveCasesTable, (prevProps, nextProps) => {
+  // Custom comparison to prevent unnecessary re-renders
+  return (
+    prevProps.transactions === nextProps.transactions &&
+    prevProps.totalTransactions === nextProps.totalTransactions &&
+    prevProps.currentPage === nextProps.currentPage &&
+    prevProps.pageSize === nextProps.pageSize &&
+    prevProps.loading === nextProps.loading &&
+    prevProps.isArchivedTab === nextProps.isArchivedTab
+  );
+});

@@ -5,8 +5,7 @@ import { Button } from '../../../components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../../../components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../components/ui/select';
 import { useBulkUpdateTransactionAssignee, useBulkUpdateTransactionStatus } from '../../../hooks/useComplianceTransactions';
-import { useAppDispatch, useAppSelector } from '../../../store/hooks';
-import { fetchComplianceTransactions, selectComplianceFilters } from '../../../store/slices/complianceTransactionsSlice';
+import { useAppSelector } from '../../../store/hooks';
 import { selectActiveOrgMembers } from '../../../store/slices/organizationsSlice';
 import { EMemberStatus } from '../../../typings/organization';
 import { EComplianceTransactionStatus } from '../../../typings/compliance';
@@ -34,9 +33,7 @@ const BulkSelectComponent: React.FC<BulkSelectComponentProps> = ({
     onBulkActionCompleteType: typeof onBulkActionComplete
   });
   console.log('🔍 BulkSelectComponent - onBulkActionComplete callback:', typeof onBulkActionComplete);
-  const dispatch = useAppDispatch();
   const organizationMembers = useAppSelector(selectActiveOrgMembers);
-  const filters = useAppSelector(selectComplianceFilters);
   const bulkUpdateMutation = useBulkUpdateTransactionAssignee();
   const bulkStatusUpdateMutation = useBulkUpdateTransactionStatus();
   
@@ -55,9 +52,12 @@ const BulkSelectComponent: React.FC<BulkSelectComponentProps> = ({
   });
 
   const openBulkAssignModal = () => {
+    console.log('🚀 openBulkAssignModal called with selectedRowKeys:', selectedRowKeys);
     if (selectedRowKeys.length === 0) {
+      console.log('🚨 No rows selected, returning early');
       return;
     }
+    console.log('🚀 Opening assign modal');
     setAssignModalVisible(true);
   };
 
@@ -82,10 +82,16 @@ const BulkSelectComponent: React.FC<BulkSelectComponentProps> = ({
 
   const handleBulkAssign = async () => {
     if (!selectedReviewer) {
+      console.log('🚨 BulkAssign - No reviewer selected');
       return;
     }
 
     const transactionIds = selectedRowKeys.map(key => String(key));
+    console.log('🚀 BulkAssign - Starting bulk assign with:', {
+      transactionIds,
+      assignee: selectedReviewer,
+      currentFilters: filters
+    });
     
     bulkUpdateMutation.mutate(
       {
@@ -93,18 +99,12 @@ const BulkSelectComponent: React.FC<BulkSelectComponentProps> = ({
         assignee: selectedReviewer
       },
       {
-        onSuccess: () => {
+        onSuccess: (response) => {
+          console.log('🚀 BulkAssign - SUCCESS! Response:', response);
           console.log('🔍 BulkSelectComponent - Bulk assign success, calling onBulkActionComplete');
           onClearSelection();
           closeBulkAssignModal();
-          // Refetch data to update the UI with current filters
-          const refetchFilters = {
-            ...filters,
-            page: 1, // Reset to first page
-            limit: 10 // Default limit
-          };
-          console.log('Refetching with filters:', refetchFilters);
-          dispatch(fetchComplianceTransactions(refetchFilters));
+          
           if (onBulkActionComplete) {
             console.log('🔍 BulkSelectComponent - Calling onBulkActionComplete callback (assign)');
             try {
@@ -118,7 +118,7 @@ const BulkSelectComponent: React.FC<BulkSelectComponentProps> = ({
           }
         },
         onError: (error) => {
-          console.error('Error assigning transactions:', error);
+          console.error('🚨 BulkAssign - ERROR:', error);
           if (onBulkActionComplete) {
             onBulkActionComplete();
           }
@@ -143,18 +143,7 @@ const BulkSelectComponent: React.FC<BulkSelectComponentProps> = ({
           console.log('🔍 BulkSelectComponent - Bulk approve success, calling onBulkActionComplete');
           onClearSelection();
           closeBulkApproveModal();
-          // Refetch data to update the UI with current filters
-          const refetchFilters = {
-            ...filters,
-            page: 1, // Reset to first page
-            limit: 10 // Default limit
-          };
-          console.log('🔍 Bulk Approve Success - Refetching with filters:', refetchFilters);
-          console.log('🔍 Current Redux state before refetch:', {
-            currentFilters: filters,
-            refetchFilters
-          });
-          dispatch(fetchComplianceTransactions(refetchFilters));
+          
           if (onBulkActionComplete) {
             console.log('🔍 BulkSelectComponent - Calling onBulkActionComplete callback');
             try {
