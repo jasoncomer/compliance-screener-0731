@@ -32,8 +32,7 @@ import { SimpleSankeyTest } from './components/SimpleSankeyTest';
 import { 
   EntityDetails,
   GeographicPresence,
-  RiskAssessment, 
-  RiskScoreModal,
+  RiskAssessment,
   TopCounterparties, 
   TransactionActivity,
   TransactionHistory} from './components';
@@ -45,7 +44,6 @@ const RiskDashboard: React.FC = React.memo(() => {
   const [hasData, setHasData] = useState(false);
   const [address, setAddress] = useState('');
   const [searchValue, setSearchValue] = useState('');
-  const [riskScoreModalVisible, setRiskScoreModalVisible] = useState(false);
   const [addressNotFound, setAddressNotFound] = useState<boolean>(false);
   const [entityDetailsHeight, setEntityDetailsHeight] = useState<number | undefined>(undefined);
   const entityDetailsRef = useRef<HTMLDivElement>(null);
@@ -924,10 +922,6 @@ const RiskDashboard: React.FC = React.memo(() => {
     handleAddressSearch(value);
   }, [handleAddressSearch]);
 
-  const handleRiskScoreClick = useCallback(() => {
-    setRiskScoreModalVisible(true);
-  }, []);
-
   // Handle counterparty click to navigate to that address - memoized
   const handleCounterpartyClick = useCallback((address: string) => {
     if (address && address.trim()) {
@@ -1076,28 +1070,35 @@ const RiskDashboard: React.FC = React.memo(() => {
         </div>
       ) : (
         <div className="space-y-6">
-          {/* Address Header - Full Width */}
-          <div className="rounded-2xl border p-6 bg-gray-50 dark:bg-background border-gray-200 dark:border-gray-700 mt-8">
-            <AddressHeader 
-              address={address}
-              entityTags={entityTags}
-              entityName={getDisplayName}
-              entityId={primaryEntityId}
-              entityType={primaryEntityId ? getEntityType(primaryEntityId) : undefined}
-            />
-          </div>
+          {/* Address Header, Summary, and Risk Assessment Layout */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6 mt-6 lg:mt-8 items-stretch">
+            {/* Left Column - Address Header and Summary (1/3 width) */}
+            <div className="flex flex-col gap-3 lg:gap-4 h-full">
+              {/* Address Header Card */}
+              <div className="rounded-2xl border p-3 lg:p-4 bg-gray-50 dark:bg-background border-gray-200 dark:border-gray-700 flex-shrink-0">
+                <AddressHeader 
+                  address={address}
+                  entityTags={entityTags}
+                  entityName={getDisplayName}
+                  entityId={primaryEntityId}
+                  entityType={primaryEntityId ? getEntityType(primaryEntityId) : undefined}
+                />
+              </div>
 
-          {/* Summary Stats and Risk Assessment - Two Columns */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <AddressSummary {...addressSummaryProps} />
-            <RiskAssessment 
-              score={enhancedRiskScore ? Math.round(enhancedRiskScore.overallRisk * 100) : 0}
-              level={enhancedRiskScore ? getRiskLevel(enhancedRiskScore.overallRisk * 100) : 'Unknown'}
-              description={enhancedRiskScore ? getRiskDescription(enhancedRiskScore.overallRisk * 100) : 'No risk data available'}
-              isLoading={isLoadingRiskScore || loading}
-              onSeeDetails={handleRiskScoreClick}
-              boInfo={enhancedRiskScore?.boInfo}
-            />
+              {/* Summary Stats */}
+              <div className="flex-1 min-h-0 flex flex-col">
+                <AddressSummary {...addressSummaryProps} />
+              </div>
+            </div>
+
+            {/* Right Column - Risk Assessment (2/3 width) */}
+            <div className="lg:col-span-2 h-full">
+              <RiskAssessment 
+                riskScores={enhancedRiskScore}
+                address={address}
+                isLoading={isLoadingRiskScore || loading}
+              />
+            </div>
           </div>
 
           {/* Transaction Activity - Full Width - Show for every address */}
@@ -1391,16 +1392,6 @@ const RiskDashboard: React.FC = React.memo(() => {
           </div>
           <p className="mt-1">{addressError.message}</p>
         </div>
-      )}
-
-      {riskScoreModalVisible && (
-        <RiskScoreModal
-          visible={riskScoreModalVisible}
-          onClose={() => setRiskScoreModalVisible(false)}
-          riskScores={enhancedRiskScore}
-          address={address}
-          loading={isLoadingRiskScore}
-        />
       )}
     </ViewWrapper>
   );

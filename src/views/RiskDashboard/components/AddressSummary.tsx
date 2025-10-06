@@ -77,20 +77,20 @@ const StatCard = React.memo<StatCardProps>(function StatCard({
   }
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg p-3 sm:p-4 shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-md transition-all duration-200 group">
+    <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-md transition-all duration-200 group">
       <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2 min-w-0 flex-1">
+        <div className="flex items-center gap-3 min-w-0 flex-1">
           <div
             className={`p-2 rounded-lg bg-gradient-to-br ${getBgGradient(trend)} group-hover:scale-105 transition-transform duration-200 flex-shrink-0`}
             aria-hidden="true">
             {icon}
           </div>
           <div className="min-w-0 flex-1">
-            <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 truncate">
+            <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
               {label}
             </p>
             <p
-              className="text-sm sm:text-base font-semibold text-gray-900 dark:text-white font-mono truncate"
+              className="text-base font-semibold text-gray-900 dark:text-white font-mono truncate"
               aria-label={`${label}: ${value}`}>
               {value}
             </p>
@@ -164,16 +164,16 @@ function AddressSummaryComponent({
 
   return (
     <section
-      className="rounded-2xl border p-4 sm:p-6 h-full bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700 overflow-hidden"
+      className="rounded-2xl border p-4 bg-gray-50 dark:bg-background border-gray-200 dark:border-gray-700 h-full flex flex-col"
       aria-label="Address summary"
     >
-      <h2 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4 text-gray-900 dark:text-white flex items-center gap-2">
+      <h2 className="text-lg font-semibold mb-3 text-gray-900 dark:text-white flex items-center gap-2">
         <Activity className="w-4 h-4 text-orange-500 flex-shrink-0" />
         <span>Summary</span>
       </h2>
 
       {/* Stats Cards */}
-      <div className="space-y-3">
+      <div className="space-y-3 flex-1">
         <StatCard
           icon={<TrendingDown className="w-4 h-4 text-green-600 dark:text-green-400" />}
           label="Received"
@@ -202,21 +202,21 @@ function AddressSummaryComponent({
       {/* Flow Indicator Bar */}
       {(inputAmount > 0 || outputAmount > 0) && (
         <div
-          className="mt-4 p-2 bg-white dark:bg-gray-800 rounded-lg border border-gray-100 dark:border-gray-700"
+          className="mt-4 p-2 bg-white dark:bg-gray-800 rounded-lg border border-gray-100 dark:border-gray-700 flex-shrink-0"
           role="progressbar"
           aria-label="Transaction flow indicator"
           aria-valuenow={flowPercentage}
           aria-valuemin={0}
           aria-valuemax={100}
         >
-          <div className="flex items-center justify-between text-xs text-gray-600 dark:text-gray-400 mb-1.5">
-            <span className="text-xs">In</span>
-            <span className="font-medium text-gray-900 dark:text-white text-xs">
+          <div className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-400 mb-1.5">
+            <span>In</span>
+            <span className="font-medium text-gray-900 dark:text-white">
               {flowPercentage.toFixed(0)}%/{(100 - flowPercentage).toFixed(0)}%
             </span>
-            <span className="text-xs">Out</span>
+            <span>Out</span>
           </div>
-          <div className="w-full h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+          <div className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
             <div className="h-full flex relative">
               <div
                 className="absolute inset-y-0 left-0 bg-gradient-to-r from-green-400 to-green-500 transition-all duration-500 ease-out"
