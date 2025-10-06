@@ -83,7 +83,7 @@ const BtcTransactionHeader: React.FC<BtcTransactionHeaderProps> = React.memo(({
           </button>
           <TransactionLink
             txid={txHash}
-            className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
+            className="text-orange-600 hover:text-orange-800 dark:text-orange-400 dark:hover:text-orange-300 transition-colors"
             truncate={isSmallScreen}
           />
         </div>
@@ -92,7 +92,7 @@ const BtcTransactionHeader: React.FC<BtcTransactionHeaderProps> = React.memo(({
         <span className="font-bold mb-1">Block Height:</span>
         <Link
           to={`/home/block-explorer/block/${blockHeight}`}
-          className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
+          className="text-orange-600 hover:text-orange-800 dark:text-orange-400 dark:hover:text-orange-300 transition-colors"
         >
           {blockHeight.toLocaleString()}
         </Link>

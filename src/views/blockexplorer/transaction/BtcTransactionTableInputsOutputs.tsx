@@ -37,8 +37,6 @@ const LoadingSkeleton = React.memo(() => (
 LoadingSkeleton.displayName = 'LoadingSkeleton';
 
 const BtcTransactionInputsOutputs: React.FC<BtcTransactionInputsOutputsProps> = React.memo(({ transaction, isLoading = false }) => {
-  const [expandedInputs, setExpandedInputs] = useState(false);
-  const [expandedOutputs, setExpandedOutputs] = useState(false);
 
   const INITIAL_DISPLAY_COUNT = 10;
   const LARGE_LIST_THRESHOLD = 50;
@@ -68,26 +66,13 @@ const BtcTransactionInputsOutputs: React.FC<BtcTransactionInputsOutputsProps> = 
 
   // Optimize display for large lists
   const displayedInputs = useMemo(() => {
-    if (expandedInputs || cpin.length <= INITIAL_DISPLAY_COUNT) {
-      return cpin;
-    }
-    return cpin.slice(0, INITIAL_DISPLAY_COUNT);
-  }, [cpin, expandedInputs]);
+    return cpin;
+  }, [cpin]);
 
   const displayedOutputs = useMemo(() => {
-    if (expandedOutputs || cpout.length <= INITIAL_DISPLAY_COUNT) {
-      return cpout;
-    }
-    return cpout.slice(0, INITIAL_DISPLAY_COUNT);
-  }, [cpout, expandedOutputs]);
+    return cpout;
+  }, [cpout]);
 
-  const handleExpandInputs = useCallback(() => {
-    setExpandedInputs(true);
-  }, []);
-
-  const handleExpandOutputs = useCallback(() => {
-    setExpandedOutputs(true);
-  }, []);
 
   // Show loading skeleton if loading
   if (isLoading || !transaction) {
@@ -105,14 +90,6 @@ const BtcTransactionInputsOutputs: React.FC<BtcTransactionInputsOutputsProps> = 
           <span className="whitespace-nowrap font-medium text-foreground">{formattedInputTotal} BTC</span>
         </div>
         <BtcInputsOutputs data={displayedInputs} type='inputs' />
-        {!expandedInputs && cpin.length > INITIAL_DISPLAY_COUNT && (
-          <button
-            onClick={handleExpandInputs}
-            className="mt-2 mx-2 py-2 px-4 text-sm font-medium text-primary hover:text-primary/80 border border-border rounded-md hover:bg-accent transition-colors"
-          >
-            Show {cpin.length - INITIAL_DISPLAY_COUNT} more inputs
-          </button>
-        )}
       </div>
 
       <div className="flex flex-col min-w-0 min-h-0 relative max-h-[400px] overflow-y-auto scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent">
@@ -124,14 +101,6 @@ const BtcTransactionInputsOutputs: React.FC<BtcTransactionInputsOutputsProps> = 
           <span className="whitespace-nowrap font-medium text-foreground">{formattedOutputTotal} BTC</span>
         </div>
         <BtcInputsOutputs data={displayedOutputs} type='outputs' />
-        {!expandedOutputs && cpout.length > INITIAL_DISPLAY_COUNT && (
-          <button
-            onClick={handleExpandOutputs}
-            className="mt-2 mx-2 py-2 px-4 text-sm font-medium text-primary hover:text-primary/80 border border-border rounded-md hover:bg-accent transition-colors"
-          >
-            Show {cpout.length - INITIAL_DISPLAY_COUNT} more outputs
-          </button>
-        )}
       </div>
     </div>
   );
