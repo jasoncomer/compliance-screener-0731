@@ -579,25 +579,6 @@ const RiskDashboard: React.FC = React.memo(() => {
     return entity?.revisit_site || false;
   }, [items]);
 
-  // Risk level helper functions - memoized
-  const getRiskLevel = useCallback((score: number): string => {
-    if (score >= 80) return 'High';
-    if (score >= 50) return 'Medium';
-    if (score >= 20) return 'Low';
-    return 'Very Low';
-  }, []);
-
-  const getRiskDescription = useCallback((score: number): string => {
-    if (score >= 80) {
-      return 'This address shows significant risk indicators including high transaction volumes, connections to known risky entities, and unusual activity patterns.';
-    } else if (score >= 50) {
-      return 'This address displays moderate risk factors with some concerning transaction patterns and entity connections that warrant attention.';
-    } else if (score >= 20) {
-      return 'This address shows low risk indicators with mostly normal transaction patterns and few concerning connections.';
-    } else {
-      return 'This address appears to be low risk with normal transaction patterns and no significant concerning indicators.';
-    }
-  }, []);
 
   // Generate transaction activity data from real transaction data - memoized
   const transactionActivityData = useMemo(() => {

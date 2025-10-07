@@ -10,6 +10,7 @@ interface NotesButtonProps {
   children: React.ReactNode;
   className?: string;
   newNotesCount?: number;
+  totalNotesCount?: number;
 }
 
 const NotesButton: React.FC<NotesButtonProps> = ({
@@ -17,7 +18,8 @@ const NotesButton: React.FC<NotesButtonProps> = ({
   title,
   children,
   className,
-  newNotesCount = 0
+  newNotesCount = 0,
+  totalNotesCount = 0
 }) => (
   <div className="relative inline-block">
     <button
@@ -30,7 +32,7 @@ const NotesButton: React.FC<NotesButtonProps> = ({
       )}
     >
       <MessageSquare className="w-4 h-4" />
-      {children}
+      {totalNotesCount > 0 ? `${totalNotesCount} ${totalNotesCount === 1 ? 'Note' : 'Notes'}` : children}
       {newNotesCount > 0 && (
         <span className="absolute -top-2 -right-2 bg-orange-700 text-white text-xs font-bold border-2 border-white dark:border-background rounded-full min-w-[20px] h-5 flex items-center justify-center px-1 z-10 shadow-sm">
           {newNotesCount}

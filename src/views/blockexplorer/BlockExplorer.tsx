@@ -7,6 +7,7 @@ import EmptyState from '../../components/common/EmptyState';
 import NotesModal from '../../components/common/NotesModal';
 import SearchInput from '../../components/common/SearchInput';
 import ViewWrapper from '../../components/ViewWrapper';
+import { useNotesCount } from '../../hooks/useNotesCount';
 import { determineInputType } from '../../utils/crypto';
 
 import Address from './address-page/Address';
@@ -88,6 +89,13 @@ const BlockExplorer: React.FC = () => {
   const [notesModalVisible, setNotesModalVisible] = useState(false);
   const [newNotesCount, setNewNotesCount] = useState(0);
   const [currentContext, setCurrentContext] = useState<CurrentContext>({ type: 'general' });
+
+  // Use notes count hook to get total notes count
+  const { totalNotesCount } = useNotesCount({
+    contextType: currentContext.type === 'general' ? undefined : currentContext.type as 'transaction' | 'address' | 'block',
+    contextId: currentContext.id,
+    enabled: currentContext.type !== 'general'
+  });
 
 
   useEffect(() => {
@@ -188,6 +196,7 @@ const BlockExplorer: React.FC = () => {
               onClick={showNotesModal}
               title="View Notes"
               newNotesCount={newNotesCount}
+              totalNotesCount={totalNotesCount}
             >
               Notes
             </NotesButton>
