@@ -95,7 +95,7 @@ const BtcTransactionInputsOutputs: React.FC<BtcTransactionInputsOutputsProps> = 
   }
 
   return (
-    <div className="grid grid-cols-2 gap-5 w-full min-w-0 h-4/5 max-[1680px]:grid-cols-1 max-[1680px]:gap-8 pb-2">
+    <div className="grid grid-cols-2 my-2 gap-5 w-full min-w-0 h-4/5 max-[1680px]:grid-cols-1 max-[1680px]:gap-8 pb-2">
       <div className="flex flex-col min-w-0 min-h-0 relative max-h-[400px] overflow-y-auto scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent">
         <div className="grid grid-cols-[auto_1fr_auto] items-center gap-[1px] border-b border-border px-[10px] py-2 sticky top-0 z-[2] bg-background/90 backdrop-blur-lg">
           <span className="whitespace-nowrap font-medium text-foreground">

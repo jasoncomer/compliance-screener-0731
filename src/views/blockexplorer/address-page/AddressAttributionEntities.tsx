@@ -81,7 +81,7 @@ const AddressAttributionEntities: React.FC<AddressAttributionEntitiesProps> = ({
     const entityType = getEntityType(entityId) || defaultType || '';
 
     return (
-      <div className="flex gap flex-1 min-w-0">
+      <div className="flex gap flex-1 min-w-0 items-center">
         <SimpleLogo
           entityId={entityId}
           entityType={entityType}
@@ -125,25 +125,25 @@ const AddressAttributionEntities: React.FC<AddressAttributionEntitiesProps> = ({
   }
 
   return (
-    <>
+    <div className="flex gap-4">
       {attributions[address]?.entity && (
-        <Card className={cn("flex-1 h-fit max-h-[120px] rounded-lg border-0 p-3 bg-gray-100 dark:bg-gray-900")}>
+        <Card className={cn("flex-1 h-fit max-h-[120px] rounded-lg border border-gray-200 dark:border-gray-700 p-4 bg-white dark:bg-gray-800 shadow-sm")}>
           {renderEntityWithHover(attributions[address].entity, 'Entity')}
         </Card>
       )}
 
       {attributions[address]?.bo && (attributions[address]?.bo !== attributions[address]?.entity) && (
-        <Card className={cn("flex-1 h-fit max-h-[120px] rounded-lg border-0 p-3 bg-gray-100 dark:bg-gray-900")}>
+        <Card className={cn("flex-1 h-fit max-h-[120px] rounded-lg border border-gray-200 dark:border-gray-700 p-4 bg-white dark:bg-gray-800 shadow-sm")}>
           {renderEntityWithHover(attributions[address].bo, 'Beneficial Owner')}
         </Card>
       )}
 
       {attributions[address]?.custodian && (
-        <Card className={cn("flex-1 h-fit max-h-[120px] rounded-lg border-0 p-3 bg-gray-100 dark:bg-gray-900")}>
+        <Card className={cn("flex-1 h-fit max-h-[120px] rounded-lg border border-gray-200 dark:border-gray-700 p-4 bg-white dark:bg-gray-800 shadow-sm")}>
           {renderEntityWithHover(attributions[address].custodian, 'Custodian', 'Custodian')}
         </Card>
       )}
-    </>
+    </div>
   );
 };
 

@@ -300,7 +300,7 @@ const AddressSummary: React.FC<AddressSummaryProps> = ({
 
       {/* Attribution Section - sticky */}
       {address && attributions[address] && (
-        <div className="sticky top-[60px] z-10 my-4 border border-gray-200 dark:border-gray-700 rounded-lg">
+        <div className="sticky top-[60px] z-10 mt-4">
           <AddressAttributionEntities address={address} />
         </div>
       )}

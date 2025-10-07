@@ -9,7 +9,7 @@ interface BsBlockProps {
 
 export const BsBlock: React.FC<BsBlockProps> = ({ children, className }) => (
   <div className={cn(
-    "rounded-md my-5 border-2 border-gray-300 dark:border-gray-600",
+    "rounded-md border-2 border-gray-300 dark:border-gray-600",
     "bg-white dark:bg-background",
     "text-black dark:text-white",
     "[&_h3]:text-black [&_h3]:dark:text-white",
