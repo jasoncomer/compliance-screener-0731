@@ -206,9 +206,10 @@ const ComplianceFilterPanel: React.FC<ComplianceFilterPanelProps> = ({
                 onValueChange={(value) => handleFieldChange('blockchain', value)}
               >
                 <SelectTrigger className="h-8">
-                  <SelectValue placeholder="Blockchain" />
+                  <SelectValue placeholder="Show All" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="">Show All</SelectItem>
                   {availableBlockchains
                     .filter(blockchain => blockchain)
                     .map(blockchain => (

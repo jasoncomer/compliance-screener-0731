@@ -16,10 +16,6 @@ const AddressFilters: React.FC<AddressFiltersProps> = ({ filters, onFiltersChang
     onFiltersChange({ ...filters, blockchain: value });
   };
 
-  const handleStatusChange = (value: boolean | undefined) => {
-    onFiltersChange({ ...filters, isActive: value });
-  };
-
   // const handleEntityNameSearch = (value: string) => {
   //   onFiltersChange({ ...filters, entityName: value });
   // };
@@ -28,28 +24,16 @@ const AddressFilters: React.FC<AddressFiltersProps> = ({ filters, onFiltersChang
     <div className={cn("flex gap-4", className)}>
       <Select
         onValueChange={handleBlockchainChange}
-        value={filters.blockchain || ''}
+        value={filters.blockchain ?? 'all'}
       >
         <SelectTrigger className="w-[200px] h-12">
-          <SelectValue placeholder="Blockchain" />
+          <SelectValue placeholder="Show All" />
         </SelectTrigger>
         <SelectContent>
+          <SelectItem value="all">Show All</SelectItem>
           <SelectItem value="ethereum">Ethereum</SelectItem>
           <SelectItem value="bitcoin">Bitcoin</SelectItem>
           {/* Add more blockchains as needed */}
-        </SelectContent>
-      </Select>
-
-      <Select
-        onValueChange={(value) => handleStatusChange(value === 'true')}
-        value={filters.isActive !== undefined ? filters.isActive.toString() : ''}
-      >
-        <SelectTrigger className="w-[200px] h-12">
-          <SelectValue placeholder="Status" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="true">Active</SelectItem>
-          <SelectItem value="false">Inactive</SelectItem>
         </SelectContent>
       </Select>
       {/* <Input.Search

@@ -287,10 +287,10 @@ export default function MonitoredAddresses() {
           <div className="flex items-center space-x-2">
             <Select value={filterBlockchain} onValueChange={setFilterBlockchain}>
               <SelectTrigger className="w-[150px] bg-gray-800 border-gray-700">
-                <SelectValue placeholder="Blockchain" />
+                <SelectValue placeholder="Show All" />
               </SelectTrigger>
               <SelectContent className="bg-gray-800 border-gray-700">
-                <SelectItem value="all">All Blockchains</SelectItem>
+                <SelectItem value="all">Show All</SelectItem>
                 <SelectItem value="Bitcoin">Bitcoin</SelectItem>
                 <SelectItem value="Ethereum">Ethereum</SelectItem>
                 <SelectItem value="Litecoin">Litecoin</SelectItem>
