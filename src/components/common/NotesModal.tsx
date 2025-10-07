@@ -8,6 +8,7 @@ import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Modal } from '../ui/modal';
 import { Textarea } from '../ui/textarea';
+import { message } from '../ui/message';
 
 
 import { ICreateNote, INote, notesApi } from '../../api/notes';
@@ -170,29 +171,6 @@ interface NotesModalProps {
   onNewNotesCountChange?: (count: number) => void;
 }
 
-// Simple message utility - you can replace this with your preferred toast/notification system
-const useCustomMessage = () => {
-  const message = {
-    success: (content: string) => {
-      console.log('Success:', content);
-      // TODO: Replace with your toast/notification system
-    },
-    error: (content: string) => {
-      console.error('Error:', content);
-      // TODO: Replace with your toast/notification system
-    },
-    warning: (content: string) => {
-      console.warn('Warning:', content);
-      // TODO: Replace with your toast/notification system
-    },
-    info: (content: string) => {
-      console.info('Info:', content);
-      // TODO: Replace with your toast/notification system
-    }
-  };
-  
-  return message;
-};
 
 const NotesModal: React.FC<NotesModalProps> = ({ 
   visible, 
@@ -205,7 +183,6 @@ const NotesModal: React.FC<NotesModalProps> = ({
 }) => {
   const { theme } = useTheme();
   const { user: currentUser } = useAppContext();
-  const message = useCustomMessage(); // Use our custom message hook
   const [notes, setNotes] = useState<INote[]>([]);
   const [newNote, setNewNote] = useState('');
   const [loading, setLoading] = useState(false);
