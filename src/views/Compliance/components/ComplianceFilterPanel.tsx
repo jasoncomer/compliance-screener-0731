@@ -221,7 +221,9 @@ const ComplianceFilterPanel: React.FC<ComplianceFilterPanelProps> = ({
 
   // Handle field change
   const handleFieldChange = (field: string, value: any) => {
-    const newValues = { ...formValues, [field]: value || undefined };
+    // Treat special "all" value as empty/undefined
+    const processedValue = value === 'all' ? '' : value;
+    const newValues = { ...formValues, [field]: processedValue || undefined };
     setFormValues(newValues);
 
     // Validate the new values

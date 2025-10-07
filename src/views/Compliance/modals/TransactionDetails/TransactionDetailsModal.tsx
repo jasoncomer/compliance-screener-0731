@@ -76,11 +76,13 @@ export const TransactionDetailsModal: FC<TransactionDetailsModalProps> = React.m
 
   // Get team members for assignment
   const teamMembers = useMemo(() => {
-    return Object.values(organizationMembers).map(member => ({
-      id: member._id,
-      name: getUserDisplayName(member),
-      role: member.role || 'Reviewer'
-    }));
+    return Object.values(organizationMembers)
+      .filter(member => member._id)
+      .map(member => ({
+        id: member._id!,
+        name: getUserDisplayName(member),
+        role: member.role || 'Reviewer'
+      }));
   }, [organizationMembers]);
 
   // Initialize assignment notes with existing notes if available
@@ -144,7 +146,7 @@ export const TransactionDetailsModal: FC<TransactionDetailsModalProps> = React.m
                   </SelectTrigger>
                   <SelectContent>
                     {teamMembers.map((member) => (
-                      <SelectItem key={member.id} value={member.id || ''}>
+                      <SelectItem key={member.id} value={member.id}>
                         <div className="flex items-center gap-2">
                           <User className="h-4 w-4" />
                           {member.name}

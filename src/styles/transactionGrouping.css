@@ -6,7 +6,7 @@
 }
 
 .table-row-odd {
-  background-color: #f8f9fa;
+  background-color: #f1f3f4;
 }
 
 .dark .table-row-even {
@@ -58,15 +58,15 @@
 }
 
 .tx-group-1 {
-  background-color: #f8f9fa;
-}
-
-.tx-group-2 {
   background-color: #f1f3f4;
 }
 
-.tx-group-3 {
+.tx-group-2 {
   background-color: #e8eaed;
+}
+
+.tx-group-3 {
+  background-color: #d1d5db;
 }
 
 /* Dark mode support */

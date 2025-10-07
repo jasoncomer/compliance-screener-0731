@@ -36,12 +36,13 @@ const AddressFilters: React.FC<AddressFiltersProps> = ({ filters, onFiltersChang
       
       <Select
         onValueChange={handleBlockchainChange}
-        value={filters.blockchain || ''}
+        value={filters.blockchain ?? 'all'}
       >
         <SelectTrigger className="w-[200px] h-12">
-          <SelectValue placeholder="Blockchain" />
+          <SelectValue placeholder="Show All" />
         </SelectTrigger>
         <SelectContent>
+          <SelectItem value="all">Show All</SelectItem>
           <SelectItem value="ethereum">Ethereum</SelectItem>
           <SelectItem value="bitcoin">Bitcoin</SelectItem>
           {/* Add more blockchains as needed */}

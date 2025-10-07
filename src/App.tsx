@@ -25,9 +25,8 @@ import Admin from './views/Admin';
 import Alerts from './views/Alerts';
 import BlockExplorer from './views/blockexplorer/BlockExplorer';
 import ComplianceScreener from './views/Compliance/ComplianceScreener';
-import ClientOverviewPage from './views/Compliance/ClientOverviewPage';
-import MonitoredAddressesPage from './views/Compliance/MonitoredAddressesPage';
 import FlowTrace from './views/Flowtrace/FlowTrace';
+
 import Home from "./views/Home";
 import Login from './views/Login';
 import Register from "./views/Register";
@@ -36,6 +35,8 @@ import RiskDashboard from './views/RiskDashboard/index';
 import Settings from './views/Settings';
 import { VASPExplorer } from './views/VASPExplorer';
 import Welcome from './views/Welcome/index';
+import ClientOverviewPage from "./views/Compliance/ClientOverviewPage";
+import MonitoredAddressesPage from "./views/Compliance/MonitoredAddressesPage";
 
 function App() {
   const dispatch = useAppDispatch();

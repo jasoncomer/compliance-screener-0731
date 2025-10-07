@@ -131,9 +131,9 @@ const AssignedTransactionDetailsModal: React.FC<AssignedTransactionDetailsModalP
   const teamMembers = useMemo(() => {
     const currentAssigneeId = currentTransaction?.reviewerId;
     return Object.values(organizationMembersMap)
-      .filter(member => member.userId !== currentAssigneeId) // Exclude current assignee
+      .filter(member => member.userId && member.userId !== currentAssigneeId) // Filter out members without userId and exclude current assignee
       .map(member => ({
-        id: member.userId || '',
+        id: member.userId!,
         name: getUserDisplayName(member)
       }));
   }, [organizationMembersMap, currentTransaction?.reviewerId]);

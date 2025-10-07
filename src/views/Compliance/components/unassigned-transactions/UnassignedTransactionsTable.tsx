@@ -425,8 +425,7 @@ const UnassignedTransactionsTable: React.FC<TransactionsTableProps> = ({
             },
           })}
           scroll={{
-            x: 1000,
-            y: 'calc(100vh - 600px)'
+            x: 1000
           }}
         />
 

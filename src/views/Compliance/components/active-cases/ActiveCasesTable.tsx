@@ -3,7 +3,6 @@ import { Check, Eye } from 'lucide-react';
 import { blockchain } from '../../../../api/blockchain';
 import { Badge } from '../../../../components/ui/badge';
 import { Button } from '../../../../components/ui/button';
-import { Checkbox } from '../../../../components/ui/checkbox';
 import { Column,DataTable } from '../../../../components/ui/data-table';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../../../../components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../../components/ui/select';
@@ -12,6 +11,7 @@ import { useAttribution } from '../../../../context/AttributionContext';
 import { useCryptoPrices } from '../../../../hooks/useCryptoPrices';
 import { calculateDetailedRiskAnalysis, calculateSimpleRiskScore, InputTransactionRiskData } from '../../../../services/inputTransactionRiskService';
 import { useAppDispatch, useAppSelector } from '../../../../store/hooks';
+import { fetchComplianceTransactions, selectComplianceFilters } from '../../../../store/slices/complianceTransactionsSlice';
 import { updateTransactionAssignee, updateTransactionStatus } from '../../../../store/slices/complianceTransactionsSlice';
 import { selectActiveOrgMembersMap } from '../../../../store/slices/organizationsSlice';
 import { EComplianceTransactionStatus, IComplianceTransaction } from '../../../../typings/compliance';
@@ -23,6 +23,7 @@ import { currencySymbols } from '../CurrencySelector';
 import { TransactionRiskModal } from '../modals/TransactionRiskModal';
 
 import '../../../../styles/transactionGrouping.css';
+import { Checkbox } from '@radix-ui/react-checkbox';
 
 // Status mapping for display labels
 const getStatusDisplayLabel = (status: EComplianceTransactionStatus): string => {
@@ -65,6 +66,7 @@ const ActiveCasesTable: React.FC<ActiveCasesTableProps> = React.memo(({
   const [isRiskModalVisible, setIsRiskModalVisible] = useState(false);
   const [selectedTransaction, setSelectedTransaction] = useState<IComplianceTransaction | null>(null);
   const dispatch = useAppDispatch();
+  const filters = useAppSelector(selectComplianceFilters);
   const organizationMembers = useAppSelector(selectActiveOrgMembersMap);
   const { getPrice } = useCryptoPrices();
 
@@ -111,7 +113,7 @@ const ActiveCasesTable: React.FC<ActiveCasesTableProps> = React.memo(({
       }
     });
     return assignees;
-  }, [selectedRowKeys, transactions]);
+  }, [selectedRowKeys, transactions.length]);
 
   // Function to handle row click to show transaction details
   const handleViewDetails = useCallback((record: IComplianceTransaction) => {
@@ -309,14 +311,17 @@ const ActiveCasesTable: React.FC<ActiveCasesTableProps> = React.memo(({
         }
       });
     }
-  }, [transactions, calculatedRiskScores, riskCalculationLoading, attributions]);
+  }, [transactions.length, calculatedRiskScores, riskCalculationLoading]);
 
   // Ensure transactions is an array and filter out invalid entries
   const validTransactions = useMemo(() => {
-    return Array.isArray(transactions)
+    const result = Array.isArray(transactions)
       ? transactions.filter(tx => tx && tx._id)
       : [];
+    return result;
   }, [transactions]);
+
+
 
   // Define columns for DataTable
   const columns: Column<IComplianceTransaction>[] = useMemo(() => [
@@ -582,14 +587,27 @@ const ActiveCasesTable: React.FC<ActiveCasesTableProps> = React.memo(({
               variant="default"
               size="sm"
               className="h-7 w-7 p-0 bg-green-600 hover:bg-green-700"
-              onClick={(e) => {
-                e.stopPropagation();
-                // Handle approve action
-                dispatch(updateTransactionStatus({
-                  transactionId: record._id,
-                  status: EComplianceTransactionStatus.APPROVED
-                }));
-              }}
+               onClick={async (e) => {
+                 e.stopPropagation();
+                 try {
+                   // Handle approve action
+                   await dispatch(updateTransactionStatus({
+                     transactionId: record._id,
+                     status: EComplianceTransactionStatus.APPROVED
+                   })).unwrap();
+                   
+                   console.log('🚀 Individual approval successful, refreshing data...');
+                   // Refetch data to update the UI with current filters
+                   const refetchFilters = {
+                     ...filters,
+                     page: currentPage,
+                     limit: pageSize
+                   };
+                   dispatch(fetchComplianceTransactions(refetchFilters));
+                 } catch (error) {
+                   console.error('Error approving transaction:', error);
+                 }
+               }}
             >
               <Check className="h-3 w-3" />
             </Button>
@@ -607,7 +625,7 @@ const ActiveCasesTable: React.FC<ActiveCasesTableProps> = React.memo(({
             <div className="flex items-center gap-2">
               <Checkbox
                 checked={selectedRowKeys.length === validTransactions.length}
-                onCheckedChange={(checked) => {
+                onCheckedChange={(checked: boolean) => {
                   if (checked) {
                     setSelectedRowKeys(validTransactions.map(tx => tx._id));
                   } else {
@@ -655,7 +673,7 @@ const ActiveCasesTable: React.FC<ActiveCasesTableProps> = React.memo(({
           dataSource={validTransactions}
           columns={columns}
           rowKey="_id"
-          rowSelection={rowSelection}
+          rowSelection={!isArchivedTab ? rowSelection : undefined}
           pagination={{
             current: currentPage,
             pageSize: pageSize,
@@ -686,9 +704,6 @@ const ActiveCasesTable: React.FC<ActiveCasesTableProps> = React.memo(({
           scroll={{ x: 1000 }}
           footer={!isArchivedTab ? () => (
             <div className="flex justify-between items-center">
-              <div>
-                <strong>{totalTransactions}</strong> active cases requiring review
-              </div>
               <div>
                 <Button variant="link" size="sm">
                   Export Cases
@@ -779,7 +794,7 @@ const ActiveCasesTable: React.FC<ActiveCasesTableProps> = React.memo(({
                         return (
                           <SelectItem
                             key={`user-${userId}-${index}`}
-                            value={userId || ''}
+                            value={userId!}
                           >
                             {getUserDisplayName(member)}
                           </SelectItem>
@@ -809,4 +824,14 @@ const ActiveCasesTable: React.FC<ActiveCasesTableProps> = React.memo(({
     );
 });
 
-export default ActiveCasesTable;
+export default React.memo(ActiveCasesTable, (prevProps, nextProps) => {
+  // Custom comparison to prevent unnecessary re-renders
+  return (
+    prevProps.transactions === nextProps.transactions &&
+    prevProps.totalTransactions === nextProps.totalTransactions &&
+    prevProps.currentPage === nextProps.currentPage &&
+    prevProps.pageSize === nextProps.pageSize &&
+    prevProps.loading === nextProps.loading &&
+    prevProps.isArchivedTab === nextProps.isArchivedTab
+  );
+});

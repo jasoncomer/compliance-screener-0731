@@ -33,7 +33,7 @@ export const TransactionLink: React.FC<TransactionLinkProps> = ({
     <Link
       to={`/home/block-explorer/transaction/${txid}`}
       className={cn(
-        "text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 transition-colors font-mono text-sm",
+        "text-orange-600 hover:text-orange-800 dark:text-orange-400 dark:hover:text-orange-300 transition-colors font-mono text-sm",
         className
       )}
       onMouseEnter={handleMouseEnter}

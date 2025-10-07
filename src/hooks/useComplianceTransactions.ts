@@ -84,3 +84,20 @@ export const useBulkUpdateTransactionAssignee = () => {
     },
   });
 };
+
+// Hook for bulk updating transaction status
+export const useBulkUpdateTransactionStatus = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ transactionIds, status }: { transactionIds: string[]; status: string }) =>
+      api.compliance.bulkUpdateTransactionStatus(transactionIds, status),
+    onSuccess: () => {
+      // Invalidate all transaction queries to ensure fresh data
+      queryClient.invalidateQueries({ queryKey: complianceQueryKeys.transactions() });
+    },
+    onError: (error) => {
+      console.error('Failed to bulk update transaction status:', error);
+    },
+  });
+};

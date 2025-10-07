@@ -85,6 +85,7 @@ export interface RowSelectionProps<T> {
   type?: "checkbox" | "radio"
   columnWidth?: number | string
   fixed?: boolean
+  renderHeader?: () => React.ReactNode
 }
 
 export interface ExpandableProps<T> {
@@ -329,7 +330,7 @@ export function DataTable<T extends Record<string, any>>({
       <div className={cn("w-full overflow-auto rounded-lg border border-gray-200 dark:border-gray-700", scroll?.x && "overflow-x-auto")} style={{ maxHeight: scroll?.y || 'auto' }}>
         <Table className={cn(bordered && "border border-gray-200 dark:border-gray-700")}>
           {showHeader && (
-            <TableHeader className="sticky top-0 z-20 bg-white dark:bg-gray-900">
+            <TableHeader className="sticky top-0 z-20 bg-gray-100 dark:bg-gray-800">
               <TableRow>
                 {rowSelection && (
                   <TableHead
@@ -340,17 +341,21 @@ export function DataTable<T extends Record<string, any>>({
                     )}
                     style={{ width: rowSelection.columnWidth }}
                   >
-                    {rowSelection.type === "checkbox" && (
-                      <Checkbox
-                        checked={
-                          paginatedData.length > 0 &&
-                          paginatedData.every((record, index) =>
-                            selectedKeys.includes(getRowKey(record, index))
-                          )
-                        }
-                        onCheckedChange={handleSelectAll}
-                        aria-label="Select all"
-                      />
+                    {rowSelection.renderHeader ? (
+                      rowSelection.renderHeader()
+                    ) : (
+                      rowSelection.type === "checkbox" && (
+                        <Checkbox
+                          checked={
+                            paginatedData.length > 0 &&
+                            paginatedData.every((record, index) =>
+                              selectedKeys.includes(getRowKey(record, index))
+                            )
+                          }
+                          onCheckedChange={handleSelectAll}
+                          aria-label="Select all"
+                        />
+                      )
                     )}
                   </TableHead>
                 )}
@@ -421,7 +426,9 @@ export function DataTable<T extends Record<string, any>>({
                     <TableRow
                       className={cn(
                         isSelected && "bg-muted/50",
-                        "hover:bg-muted/30 transition-colors"
+                        "hover:bg-muted/30 transition-colors",
+                        // Alternating row colors for better readability
+                        index % 2 === 0 ? "bg-white dark:bg-gray-900" : "bg-gray-100 dark:bg-gray-800"
                       )}
                       {...onRow?.(record, index)}
                     >

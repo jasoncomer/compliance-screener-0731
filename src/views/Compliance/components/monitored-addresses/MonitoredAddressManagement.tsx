@@ -39,7 +39,7 @@ const MonitoredAddressManagement: React.FC<MonitoredAddressManagementProps> = ({
   const [uploadModalVisible, setUploadModalVisible] = useState(false);
   const [fileList, setFileList] = useState<any[]>([]);
   const [form] = Form.useForm();
-  const [filters, setFilters] = useState<IAddressFilters>({});
+  const [filters, setFilters] = useState<IAddressFilters>({ blockchain: 'all' });
   const [loading, setLoading] = useState(false);
   const [historyModalVisible, setHistoryModalVisible] = useState(false);
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
@@ -78,6 +78,10 @@ const MonitoredAddressManagement: React.FC<MonitoredAddressManagementProps> = ({
       return Object.entries(filters).every(([key, value]) => {
         if (key === 'searchTerm') return true; // Already handled above
         if (key === 'blockchain') {
+          // If value is "all" (Show All), don't filter by blockchain
+          if (!value || value === '' || value === 'all') {
+            return true;
+          }
           return addr.blockchain.toLowerCase() === value?.toLowerCase();
         }
 

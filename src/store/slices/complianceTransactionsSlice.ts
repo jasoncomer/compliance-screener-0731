@@ -72,6 +72,14 @@ export const bulkUpdateTransactionAssignee = createAsyncThunk(
   }
 );
 
+export const bulkUpdateTransactionStatus = createAsyncThunk(
+  'complianceTransactions/bulkUpdateStatus',
+  async ({ transactionIds, status }: { transactionIds: string[]; status: string }) => {
+    const response = await api.compliance.bulkUpdateTransactionStatus(transactionIds, status);
+    return response;
+  }
+);
+
 const complianceTransactionsSlice = createSlice({
   name: 'complianceTransactions',
   initialState,
@@ -101,10 +109,13 @@ const complianceTransactionsSlice = createSlice({
           responseType: typeof response,
           hasTransactions: Array.isArray(response?.transactions),
           transactionCount: response?.transactions?.length || 0,
-          total: response?.total || 0,
-          page: response?.page || 0,
-          limit: response?.limit || 0,
-          firstTransaction: response?.transactions?.[0] || null
+          total: response?.total,
+          page: response?.page,
+          limit: response?.limit,
+          firstTransactionStatus: response?.transactions?.[0]?.status,
+          allStatuses: response?.transactions?.map(tx => tx.status) || [],
+          firstTransactionId: response?.transactions?.[0]?._id,
+          firstTransactionTxId: response?.transactions?.[0]?.txId
         });
         
         // Validate response structure
@@ -170,6 +181,21 @@ const complianceTransactionsSlice = createSlice({
         }
       })
       .addCase(bulkUpdateTransactionAssignee.fulfilled, (state, action) => {
+        console.log('🚀 Redux - bulkUpdateTransactionAssignee.fulfilled:', {
+          payload: action.payload,
+          transactionIds: action.payload?.map(tx => tx._id),
+          currentStateKeys: Object.keys(state.transactions)
+        });
+        const updatedTransactions = action.payload as IComplianceTransaction[];
+        updatedTransactions.forEach(transaction => {
+          if (transaction && transaction._id) {
+            console.log('🚀 Redux - Updating transaction:', transaction._id, 'with assignee:', transaction.reviewerId);
+            state.transactions[transaction._id] = transaction;
+          }
+        });
+        console.log('🚀 Redux - Updated state transactions:', Object.keys(state.transactions));
+      })
+      .addCase(bulkUpdateTransactionStatus.fulfilled, (state, action) => {
         const updatedTransactions = action.payload as IComplianceTransaction[];
         updatedTransactions.forEach(transaction => {
           if (transaction && transaction._id) {
@@ -267,17 +293,36 @@ export const selectActiveTransactions = createSelector(
     console.log('🔍 Redux Selector - selectActiveTransactions:', {
       totalTransactions: allTransactions.length,
       filters,
-      transactionIds: allTransactions.map(tx => tx._id).slice(0, 5)
+      transactionIds: allTransactions.map(tx => tx._id),
+      statuses: allTransactions.map(tx => tx.status),
+      assignees: allTransactions.map(tx => ({ id: tx._id, assignee: tx.reviewerId }))
     });
     
-    // If we have server-side filtering (indicated by non-status filters), return all transactions
-    // as they are already filtered by the server, but still apply status filtering
+    // If we have server-side filtering (indicated by non-status filters), 
+    // the server should have already filtered by status, but we still need to ensure
+    // we only return active transactions for the Case Management tab
     const hasServerSideFilters = filters.blockchain || filters.assignedTo || 
                                 filters.timestamp || filters.reviewTimestamp || filters.minAmount || 
                                 filters.maxAmount || filters.minRiskLevel || filters.maxRiskLevel ||
                                 filters.clientId || filters.txId || filters.counterpartyEntity;
     
     console.log('🔍 Redux Selector - hasServerSideFilters:', hasServerSideFilters);
+    
+    if (hasServerSideFilters) {
+      // Even with server-side filtering, ensure we only return active statuses
+      const defaultActiveStatuses = [
+        EComplianceTransactionStatus.UNREVIEWED,
+        EComplianceTransactionStatus.IN_REVIEW,
+        EComplianceTransactionStatus.HOLD
+      ];
+      const filtered = allTransactions.filter(tx => defaultActiveStatuses.includes(tx.status));
+      console.log('🔍 Redux Selector - Final result (server-side filters):', {
+        filteredCount: filtered.length,
+        statuses: filtered.map(tx => tx.status),
+        riskScores: filtered.map(tx => tx.riskScores)
+      });
+      return filtered;
+    }
     
     let filteredTransactions = allTransactions;
     

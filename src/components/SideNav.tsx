@@ -105,11 +105,6 @@ const SideNav: React.FC<SideNavProps> = ({ theme, collapsed, onCollapse }) => {
         },
       ],
     },
-    // {
-    //   key: 'compliance-dashboard',
-    //   icon: <BarChart3 />,
-    //   label: 'Compliance Dashboard',
-    // },
     {
       key: 'block-explorer',
       icon: <Globe />,
