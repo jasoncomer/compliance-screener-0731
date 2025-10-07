@@ -444,7 +444,7 @@ export function UnassignedTransactionModal({
                         </Button>
                         <Button
                           variant="outline"
-                          onClick={() => window.open('/home/blockham', '_blank')}
+                          onClick={() => window.open('/home/vasp-explorer', '_blank')}
                           className="h-12 flex flex-col items-center gap-2 bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800"
                         >
                           <Database className="h-5 w-5 text-orange-600 dark:text-orange-400" />
@@ -771,7 +771,7 @@ export function UnassignedTransactionModal({
                         </Button>
                         <Button
                           variant="outline"
-                          onClick={() => window.open('/home/blockham', '_blank')}
+                          onClick={() => window.open('/home/vasp-explorer', '_blank')}
                           className="h-12 flex flex-col items-center gap-2 bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800"
                         >
                           <Database className="h-5 w-5 text-orange-600 dark:text-orange-400" />
@@ -1047,7 +1047,7 @@ export function UnassignedTransactionModal({
                         </Button>
                         <Button
                           variant="outline"
-                          onClick={() => window.open('/home/blockham', '_blank')}
+                          onClick={() => window.open('/home/vasp-explorer', '_blank')}
                           className="h-12 flex flex-col items-center gap-2 bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800"
                         >
                           <Database className="h-5 w-5 text-orange-600 dark:text-orange-400" />

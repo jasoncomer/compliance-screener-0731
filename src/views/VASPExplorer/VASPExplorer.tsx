@@ -37,7 +37,6 @@ export const VASPExplorer: React.FC = () => {
   const [searchParams] = useSearchParams();
 
   const [selectedSot, setSelectedSot] = useState<SOT | null>(null);
-  const [_, setQuickViewSot] = useState<SOT | null>(null);
   const [searchValue, setSearchValue] = useState('');
 
   // Debounce search value
@@ -82,14 +81,12 @@ export const VASPExplorer: React.FC = () => {
     setSelectedSot(newSot);
   }, []);
 
-  const handleQuickView = useCallback((e: React.MouseEvent, entityId: string) => {
+  const handleQuickView = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
-    setQuickViewSot(sotMap[entityId]);
-  }, [sotMap]);
+  }, []);
 
   const handleViewFullProfile = useCallback((sot: SOT) => {
-    setSelectedSot(sot);
-    setQuickViewSot(null);
+    if (sot?.entity_id) window.open(`/home/vasp-explorer?entity=${sot.entity_id}`, '_blank')?.focus();
   }, []);
 
   const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {

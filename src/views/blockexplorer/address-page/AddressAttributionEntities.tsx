@@ -62,17 +62,6 @@ const AddressAttributionEntities: React.FC<AddressAttributionEntitiesProps> = ({
     return Object.values(itemsMap).find(sot => sot.entity_id === entityId) || null;
   };
 
-  // Handle view full profile
-  const handleViewFullProfile = (sot: any) => {
-    // Navigate to VASP Explorer with the entity in the same tab
-    window.location.href = `/home/blockham?entity=${sot.entity_id}`;
-  };
-
-  // Handle quick view click
-  const handleQuickView = (e: React.MouseEvent, _entityId: string) => {
-    e.stopPropagation();
-    // The EntityQuickView component handles the quick view display
-  };
 
   // Render entity with hover functionality
   const renderEntityWithHover = (entityId: string, label: string, defaultType?: string) => {
@@ -101,8 +90,10 @@ const AddressAttributionEntities: React.FC<AddressAttributionEntitiesProps> = ({
                     entity_id: sot.entity_id
                   }}
                   sot={sot}
-                  onViewFull={handleViewFullProfile}
-                  onQuickView={handleQuickView}
+                  onViewFull={(s) => {
+                    if (s?.entity_id) window.open(`/home/vasp-explorer?entity=${s.entity_id}`, '_blank')?.focus();
+                  }}
+                  onQuickView={(e) => e.stopPropagation()}
                   popoverPlacement="right"
                   popoverWidth={450}
                 />

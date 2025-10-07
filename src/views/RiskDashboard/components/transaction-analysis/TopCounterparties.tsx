@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 
 import { ArrowDownRight, ArrowUpRight, BarChart3, Check, Copy, ExternalLink, TrendingUp, X } from 'lucide-react';
 
+import EntityQuickView from '../../../../components/EntityQuickView';
 import { useAttribution } from '../../../../context/AttributionContext';
 import { useTheme } from '../../../../context/ThemeContext';
 import { useAppSelector } from '../../../../store/hooks';
@@ -236,12 +237,36 @@ const TopCounterparties: React.FC<TopCounterpartiesProps> = ({
                             <div className="flex flex-col">
                               {(() => {
                                 const entityName = getEntityName(record.address);
-                                return entityName && (
-                                  <span className={`text-xs font-medium mb-1 ${
-                                    theme === 'dark' ? 'text-blue-400' : 'text-blue-600'
-                                  }`}>
-                                    {entityName}
-                                  </span>
+                                if (!entityName) return null;
+                                
+                                const attribution = attributions[record.address];
+                                const entityId = attribution?.entity || attribution?.bo || attribution?.custodian;
+                                const sot = entityId ? Object.values(itemsMap).find(s => s.entity_id === entityId) : null;
+                                
+                                return (
+                                  <div className="flex items-center gap-2 mb-1">
+                                    <span className={`text-xs font-medium ${
+                                      theme === 'dark' ? 'text-blue-400' : 'text-blue-600'
+                                    }`}>
+                                      {entityName}
+                                    </span>
+                                    {sot && (
+                                      <EntityQuickView
+                                        entity={{
+                                          _id: sot._id,
+                                          proper_name: sot.proper_name,
+                                          entity_id: sot.entity_id
+                                        }}
+                                        sot={sot}
+                                        onViewFull={(s) => {
+                                          if (s?.entity_id) window.open(`/home/vasp-explorer?entity=${s.entity_id}`, '_blank')?.focus();
+                                        }}
+                                        onQuickView={(e) => e.stopPropagation()}
+                                        popoverPlacement="right"
+                                        popoverWidth={450}
+                                      />
+                                    )}
+                                  </div>
                                 );
                               })()}
                               <span 

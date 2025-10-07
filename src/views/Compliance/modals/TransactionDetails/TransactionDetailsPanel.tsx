@@ -161,23 +161,6 @@ export const LeftPanel: React.FC<LeftPanelProps> = ({
     return Object.values(itemsMap).find(sot => sot.entity_id === entityId) || null;
   };
 
-  // Handle view full profile for entity
-  const handleViewFullProfile = (sot: SOT) => {
-    // TODO: Implement navigation to full entity profile view
-    console.log('View full profile for entity:', sot.entity_id);
-    onEntityClick(transactionDetails);
-    onClose();
-  };
-
-  // Handle quick view click
-  const handleQuickView = (e: React.MouseEvent, entityId: string) => {
-    e.stopPropagation();
-    // Set the quick view SOT
-    const sot = getEntitySot(entityId);
-    if (sot) {
-      setSelectedEntitySot(sot);
-    }
-  };
 
   return (
     <Panel.Container as={Panel.Left}>
@@ -228,8 +211,14 @@ export const LeftPanel: React.FC<LeftPanelProps> = ({
                         entity_id: entitySot.entity_id
                       }}
                       sot={entitySot}
-                      onViewFull={handleViewFullProfile}
-                      onQuickView={handleQuickView}
+                      onViewFull={(s) => {
+                        if (s?.entity_id) window.open(`/home/vasp-explorer?entity=${s.entity_id}`, '_blank')?.focus();
+                      }}
+                      onQuickView={(e, entityId) => {
+                        e.stopPropagation();
+                        const sot = getEntitySot(entityId);
+                        if (sot) setSelectedEntitySot(sot);
+                      }}
                       popoverPlacement="right"
                       popoverWidth={400}
                     />

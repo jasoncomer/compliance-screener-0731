@@ -294,7 +294,7 @@ const AssignedTransactionDetailsModal: React.FC<AssignedTransactionDetailsModalP
     if (currentTransaction?.status !== EComplianceTransactionStatus.IN_REVIEW) {
       await handleStatusUpdate(EComplianceTransactionStatus.IN_REVIEW);
     }
-    window.open('/home/blockham', '_blank');
+    window.open('/home/vasp-explorer', '_blank');
   };
 
   // Status options (CLOSED_WITH_NOTE is automatic when notes exist)
