@@ -94,14 +94,14 @@ const MonitoredAddressUploadModal: React.FC<MonitoredAddressUploadModalProps> = 
 
         <div className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
           <p>Supported formats: CSV, JSON</p>
-          <p>Required columns: address, blockchain, entityName</p>
-          <p>Optional columns: riskThreshold, tags (semicolon-separated), notes</p>
+          <p>Required columns: address, blockchain, client_id</p>
+          <p>Optional columns: note</p>
           <div>
             <p className="mb-2">Example CSV format:</p>
             <pre className="p-3 bg-gray-100 dark:bg-gray-800 rounded-md text-xs text-gray-700 dark:text-gray-300 overflow-x-auto">
-              address,blockchain,entityName,riskThreshold,tags,notes{'\n'}
-              0x123...,Ethereum,Exchange A,75,exchange;high-risk,Major exchange{'\n'}
-              1abc...,Bitcoin,Mixer B,90,mixer;high-risk,Known mixer
+              address,blockchain,client_id,note{'\n'}
+              0x123...,Ethereum,client-001,Major exchange{'\n'}
+              1abc...,Bitcoin,client-002,Known mixer
             </pre>
           </div>
         </div>
