@@ -5,6 +5,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useSearchParams } from 'react-router-dom';
 
 import EmptyState from '../../components/common/EmptyState';
+import { LoadingStateMessage } from '../../components/common/LoadingStateMessage';
 import SearchInput from '../../components/common/SearchInput';
 import SOTEditor from '../../components/SOTEditor';
 import ViewWrapper from '../../components/ViewWrapper';
@@ -16,6 +17,18 @@ import { SOT } from '../../typings/interfaces';
 
 import { SearchDropdown } from './components';
 import { useEntitySearch, useSearchDropdown } from './hooks';
+
+// Meerkat-themed loading messages
+const LOADING_MESSAGES = [
+  '🐾  Our meerkats are peeking over the horizon for VASPs…',
+  '🔎 Standing on tiptoes, scanning the savannah of 30,000+ entities…',
+  '🌞 Sun\'s up! Meerkats are digging through the blockchain burrows…',
+  '🏜️ Hold tight — the meerkat scouts are out on patrol.',
+  '🪨 Still digging… VASP tunnels go deep!',
+  '⛏️ Digging through blockchain trails…',
+  '🔒 Loading safely — meerkats are great at lookout duty.',
+  '🐾 Counting tails — one VASP at a time…'
+];
 
 export const VASPExplorer: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
@@ -151,48 +164,59 @@ export const VASPExplorer: React.FC = () => {
       fullWidth={true}
       className="bg-gray-200 dark:bg-gray-900"
     >
-      {/* Sticky Search Bar */}
-      <div className="sticky top-[0] z-20 pt-2 py-2 mb-2 border-b bg-gray-200 dark:bg-gray-900">
-        <div className="flex justify-between items-center gap-4">
-          <div className="flex-1 max-w-2xl">
-            <div className="relative w-full">
-              <SearchInput
-                placeholder="Search by name, address, or type..."
-                value={searchValue}
-                onChange={handleInputChange}
-                onSearch={performSearch}
-                loading={loading || sotLoading}
-                onKeyDown={handleKeyDown}
-                onFocus={handleInputFocus}
-              />
-              
-              <SearchDropdown
-                ref={dropdownRef}
-                isOpen={isDropdownOpen}
-                searchResults={searchResults}
-                sotMap={sotMap}
-                highlightedIndex={highlightedIndex}
-                onQuickView={handleQuickView}
-                onViewFullProfile={handleViewFullProfile}
-                onSelectOption={dropdownSelectOption}
-              />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Content */}
-      {isEmptyState ? (
-        <EmptyState
-          variant="initial"
-          icon={<Database className="w-12 h-12" />}
-          title="Welcome to Entity Explorer"
-          description="Search and explore VASP entities, their relationships, and detailed information. Use the search bar above to find entities by name, address, or type."
+      {/* Initial Loading State */}
+      {sotLoading ? (
+        <LoadingStateMessage
+          messages={LOADING_MESSAGES}
+          title="Loading Entity Database"
+          icon={<Database className="w-16 h-16 animate-pulse" />}
         />
       ) : (
-        <div className="flex-1 flex flex-col gap-6 w-full mt-2">
-          <SOTEditor sot={selectedSot} onSelectAssociatedSot={handleSelectAssociatedSot} />
-        </div>
+        <>
+          {/* Sticky Search Bar */}
+          <div className="sticky top-[0] z-20 pt-2 py-2 mb-2 border-b bg-gray-200 dark:bg-gray-900">
+            <div className="flex justify-between items-center gap-4">
+              <div className="flex-1 max-w-2xl">
+                <div className="relative w-full">
+                  <SearchInput
+                    placeholder="Search by name, address, or type..."
+                    value={searchValue}
+                    onChange={handleInputChange}
+                    onSearch={performSearch}
+                    loading={loading}
+                    onKeyDown={handleKeyDown}
+                    onFocus={handleInputFocus}
+                  />
+                  
+                  <SearchDropdown
+                    ref={dropdownRef}
+                    isOpen={isDropdownOpen}
+                    searchResults={searchResults}
+                    sotMap={sotMap}
+                    highlightedIndex={highlightedIndex}
+                    onQuickView={handleQuickView}
+                    onViewFullProfile={handleViewFullProfile}
+                    onSelectOption={dropdownSelectOption}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Main Content */}
+          {isEmptyState ? (
+            <EmptyState
+              variant="initial"
+              icon={<Database className="w-12 h-12" />}
+              title="Welcome to Entity Explorer"
+              description="Search and explore VASP entities, their relationships, and detailed information. Use the search bar above to find entities by name, address, or type."
+            />
+          ) : (
+            <div className="flex-1 flex flex-col gap-6 w-full mt-2">
+              <SOTEditor sot={selectedSot} onSelectAssociatedSot={handleSelectAssociatedSot} />
+            </div>
+          )}
+        </>
       )}
     </ViewWrapper>
   );
