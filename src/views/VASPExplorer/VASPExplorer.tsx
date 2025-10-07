@@ -1,10 +1,11 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 
 import { Database } from 'lucide-react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useSearchParams } from 'react-router-dom';
 
 import EmptyState from '../../components/common/EmptyState';
+import { LoadingStateMessage } from '../../components/common/LoadingStateMessage';
 import SearchInput from '../../components/common/SearchInput';
 import SOTEditor from '../../components/SOTEditor';
 import ViewWrapper from '../../components/ViewWrapper';
@@ -38,11 +39,6 @@ export const VASPExplorer: React.FC = () => {
   const [selectedSot, setSelectedSot] = useState<SOT | null>(null);
   const [_, setQuickViewSot] = useState<SOT | null>(null);
   const [searchValue, setSearchValue] = useState('');
-  
-  // Randomly select a loading message (memoized to avoid changing on re-renders)
-  const loadingMessage = useMemo(() => {
-    return LOADING_MESSAGES[Math.floor(Math.random() * LOADING_MESSAGES.length)];
-  }, []);
 
   // Debounce search value
   const debouncedSearchValue = useDebounce(searchValue, 300);
@@ -170,27 +166,11 @@ export const VASPExplorer: React.FC = () => {
     >
       {/* Initial Loading State */}
       {sotLoading ? (
-        <div className="flex flex-col items-center justify-center h-[60vh] gap-6">
-          <div className="relative">
-            <Database className="w-16 h-16 text-orange-500 animate-pulse" />
-            <div className="absolute -top-2 -right-2">
-              <div className="w-6 h-6 bg-orange-500 rounded-full animate-ping" />
-            </div>
-          </div>
-          <div className="text-center space-y-2">
-            <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
-              Loading Entity Database
-            </h3>
-            <p className="text-lg text-gray-600 dark:text-gray-400 max-w-md animate-pulse">
-              {loadingMessage}
-            </p>
-          </div>
-          <div className="flex gap-2">
-            <div className="w-2 h-2 bg-orange-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-            <div className="w-2 h-2 bg-orange-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-            <div className="w-2 h-2 bg-orange-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
-          </div>
-        </div>
+        <LoadingStateMessage
+          messages={LOADING_MESSAGES}
+          title="Loading Entity Database"
+          icon={<Database className="w-16 h-16 animate-pulse" />}
+        />
       ) : (
         <>
           {/* Sticky Search Bar */}
