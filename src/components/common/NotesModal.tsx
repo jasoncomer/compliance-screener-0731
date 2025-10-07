@@ -12,6 +12,7 @@ import { message } from '../ui/message';
 
 
 import { ICreateNote, INote, notesApi } from '../../api/notes';
+import { config } from '../../config/config';
 import { useAppContext } from '../../context/AppContext';
 import { useTheme } from '../../context/ThemeContext';
 import { selectCurrentOrganization } from '../../store/slices/organizationsSlice';
@@ -218,7 +219,7 @@ const NotesModal: React.FC<NotesModalProps> = ({
             // Reset unseen count when user views the notes
             setUnseenNotesCount(0);
           } catch (error) {
-            if (process.env.NODE_ENV === 'development') console.error('Failed to mark notes as viewed:', error);
+            if (config.isDev) console.error('Failed to mark notes as viewed:', error);
           }
         }
       }
@@ -248,7 +249,7 @@ const NotesModal: React.FC<NotesModalProps> = ({
         setUnseenNotesCount(response.data.count);
       } catch (error: any) {
         // Only log non-404 errors in development
-        if (process.env.NODE_ENV === 'development' && error?.response?.status !== 404) {
+        if (config.isDev && error?.response?.status !== 404) {
           console.error('Failed to calculate unseen count:', error);
         }
         // Fallback: set count to 0 if API fails
@@ -293,7 +294,7 @@ const NotesModal: React.FC<NotesModalProps> = ({
 
       setNotes(response.data || []);
     } catch (error) {
-      if (process.env.NODE_ENV === 'development') console.error('Failed to fetch notes:', error);
+      if (config.isDev) console.error('Failed to fetch notes:', error);
       message.error('Failed to load notes');
     } finally {
       setLoading(false);
@@ -331,14 +332,14 @@ const NotesModal: React.FC<NotesModalProps> = ({
       //       );
       //       setUnseenNotesCount(response.data.count);
       //     } catch (error) {
-      //       if (process.env.NODE_ENV === 'development') console.error('Failed to recalculate unseen count:', error);
+      //       if (config.isDev) console.error('Failed to recalculate unseen count:', error);
       //     }
       //   }
       // }
-      
+
       message.success('Note added successfully');
     } catch (error) {
-      if (process.env.NODE_ENV === 'development') console.error('Failed to add note:', error);
+      if (config.isDev) console.error('Failed to add note:', error);
       message.error('Failed to add note');
     } finally {
       setSubmitting(false);

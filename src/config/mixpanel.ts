@@ -1,13 +1,13 @@
 import mixpanel from 'mixpanel-browser';
 
-const MIXPANEL_TOKEN = import.meta.env.VITE_MIXPANEL_TOKEN || 'dev-token';
+import { config } from './config';
 
-// Initialize Mixpanel only if token is provided
+// Initialize Mixpanel only if token is provided and not in development
 let isMixpanelInitialized = false;
-if (MIXPANEL_TOKEN && MIXPANEL_TOKEN !== '') {
+if (!config.isDev && config.MIXPANEL_TOKEN) {
   try {
-    mixpanel.init(MIXPANEL_TOKEN, {
-      debug: import.meta.env.DEV,
+    mixpanel.init(config.MIXPANEL_TOKEN, {
+      debug: false,
       track_pageview: false, // Disable automatic pageview tracking
       persistence: 'localStorage'
     });

@@ -3,6 +3,7 @@ import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { AlertTriangle, RefreshCw } from 'lucide-react';
 
 import { Button } from '../../../components/ui/button';
+import { config } from '../../../config/config';
 
 interface Props {
   children: ReactNode;
@@ -53,7 +54,7 @@ export class ErrorBoundary extends Component<Props, State> {
               An unexpected error occurred. Please try refreshing the page or contact support if the problem persists.
             </p>
 
-            {process.env.NODE_ENV === 'development' && this.state.error && (
+            {config.isDev && this.state.error && (
               <details className="mb-4">
                 <summary className="cursor-pointer text-sm text-gray-500 dark:text-gray-400 mb-2">
                   Error Details (Development)

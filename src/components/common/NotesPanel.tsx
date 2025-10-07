@@ -6,6 +6,7 @@ import { useSelector } from 'react-redux';
 import styled from 'styled-components';
 
 import { ICreateNote, INote, notesApi } from '../../api/notes';
+import { config } from '../../config/config';
 import { useAppContext } from '../../context/AppContext';
 import { useTheme } from '../../context/ThemeContext';
 import { selectCurrentOrganization } from '../../store/slices/organizationsSlice';
@@ -208,7 +209,7 @@ const NotesPanel: React.FC<NotesPanelProps> = ({ transactionId, address, type = 
 
       setNotes(response.data || []);
     } catch (error) {
-      if (process.env.NODE_ENV === 'development') console.error('Failed to fetch notes:', error);
+      if (config.isDev) console.error('Failed to fetch notes:', error);
       message.error('Failed to load notes');
     } finally {
       setLoading(false);
@@ -232,7 +233,7 @@ const NotesPanel: React.FC<NotesPanelProps> = ({ transactionId, address, type = 
       fetchNotes();
       message.success('Note added successfully');
     } catch (error) {
-      if (process.env.NODE_ENV === 'development') console.error('Failed to add note:', error);
+      if (config.isDev) console.error('Failed to add note:', error);
       message.error('Failed to add note');
     } finally {
       setSubmitting(false);
