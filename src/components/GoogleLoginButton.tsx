@@ -43,7 +43,7 @@ export const GoogleLoginButton: React.FC<GoogleLoginButtonProps> = ({
   const handleGoogleLogin = () => {
     try {
       // Redirect to backend Google OAuth endpoint
-      window.location.href = `${BASE_API_URL}/api/v1/auth/google`;
+      window.location.href = `${BASE_API_URL}/auth/google`;
     } catch (error) {
       console.error('Error initiating Google OAuth:', error);
       if (onError) {
