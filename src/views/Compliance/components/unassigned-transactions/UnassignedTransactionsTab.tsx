@@ -34,35 +34,34 @@ const UnassignedTransactionsTab: React.FC<UnassignedTransactionsTabProps> = ({ i
   });
 
   // Use React Query for data fetching
-  const { data, isLoading: loading, error } = useComplianceTransactions(filters);
-
-  // Debug logging
-  useEffect(() => {
-    console.log('UnassignedTransactionsTab - Debug Info:', {
-      organization: organization?.name || 'No organization',
-      organizationId: organization?._id || 'No organization ID',
-      filters,
-      loading,
-      error: error?.message || 'No error',
-      data: data ? {
-        transactionsCount: data.transactions?.length || 0,
-        total: data.total || 0,
-        page: data.page || 0,
-        limit: data.limit || 0
-      } : 'No data'
-    });
-  }, [organization, filters, loading, error, data]);
+  const { data, isLoading: loading } = useComplianceTransactions(filters);
 
   // Memoize derived data to prevent unnecessary re-renders
   const rawTransactions = useMemo(() => data?.transactions || [], [data?.transactions]);
-  const totalTransactions = useMemo(() => {
-    const total = data?.total || 0;
-    console.log('Total transactions calculated:', total, 'from data:', data);
-    return total;
-  }, [data?.total]);
+  const totalTransactions = useMemo(() => data?.total || 0, [data?.total]);
 
-  // Use raw transactions directly - filtering is handled by the API
-  const transactions = useMemo(() => rawTransactions, [rawTransactions]);
+  // Apply client-side filtering for fields that need partial matching
+  const transactions = useMemo(() => {
+    let filtered = rawTransactions;
+
+    // Filter by txId (partial match)
+    if (filters.txId) {
+      const txIdFilter = filters.txId.toLowerCase();
+      filtered = filtered.filter(tx =>
+        tx.txId && tx.txId.toLowerCase().includes(txIdFilter)
+      );
+    }
+
+    // Filter by clientId (partial match)
+    if (filters.clientId) {
+      const clientIdFilter = filters.clientId.toLowerCase();
+      filtered = filtered.filter(tx =>
+        tx.clientId && tx.clientId.toLowerCase().includes(clientIdFilter)
+      );
+    }
+
+    return filtered;
+  }, [rawTransactions, filters.txId, filters.clientId]);
 
   // Sync local transactions with fetched data
   useEffect(() => {
@@ -125,60 +124,40 @@ const UnassignedTransactionsTab: React.FC<UnassignedTransactionsTabProps> = ({ i
 
   // Handle table change (pagination, sorting)
   const handleTableChange = (pagination: any, _filters: any, sorter: any) => {
-    console.log('handleTableChange called with:', { pagination, sorter });
-    
     // Handle pagination
     setCurrentPage(pagination.current);
     setPageSize(pagination.pageSize);
 
     // Handle sorting
-    let newSortBy = sortBy;
-    let newSortOrder = sortOrder;
-    
     if (sorter && sorter.field) {
       if (sorter.order) {
         // Active sorting on a specific field
-        newSortBy = sorter.field;
-        newSortOrder = sorter.order === 'ascend' ? 'asc' : 'desc';
+        setSortBy(sorter.field);
+        setSortOrder(sorter.order === 'ascend' ? 'asc' : 'desc');
       } else {
         // Sorting cancelled
         if (sorter.field === 'timestamp') {
           // For timestamp, cycle to ascending when cancelled from descending
           if (sortBy === 'timestamp' && sortOrder === 'desc') {
-            newSortBy = 'timestamp';
-            newSortOrder = 'asc';
+            setSortBy('timestamp');
+            setSortOrder('asc');
           } else {
-            newSortBy = 'timestamp';
-            newSortOrder = 'desc';
+            setSortBy('timestamp');
+            setSortOrder('desc');
           }
         } else {
           // For other fields, reset to default
-          newSortBy = 'timestamp';
-          newSortOrder = 'desc';
+          setSortBy('timestamp');
+          setSortOrder('desc');
         }
       }
     } else {
       // No sorter at all - reset to default if not already there
       if (sortBy !== 'timestamp' || sortOrder !== 'desc') {
-        newSortBy = 'timestamp';
-        newSortOrder = 'desc';
+        setSortBy('timestamp');
+        setSortOrder('desc');
       }
     }
-
-    // Update sort state
-    setSortBy(newSortBy);
-    setSortOrder(newSortOrder);
-
-    // Update filters with new pagination and sorting values
-    const newFilters = {
-      ...filters,
-      page: pagination.current,
-      limit: pagination.pageSize,
-      sortBy: newSortBy,
-      sortOrder: newSortOrder,
-    };
-    console.log('Updating filters to:', newFilters);
-    setFilters(newFilters);
   };
 
   // Handle row selection change
@@ -256,10 +235,6 @@ const UnassignedTransactionsTab: React.FC<UnassignedTransactionsTabProps> = ({ i
       sortBy,
       sortOrder,
     };
-    
-    // Log the filters being sent to API
-    console.log('Sending filters to API:', mergedFilters);
-    console.log('Counterparty Entity filter value:', newFilters.counterpartyEntity);
     setFilters(mergedFilters);
   };
 
@@ -278,53 +253,6 @@ const UnassignedTransactionsTab: React.FC<UnassignedTransactionsTabProps> = ({ i
     setFilters(newFilters);
   };
 
-  // Show loading state
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mx-auto"></div>
-          <p className="mt-2 text-gray-600">Loading transactions...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Show error state
-  if (error) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-center">
-          <div className="text-red-600 text-lg font-semibold">Error loading transactions</div>
-          <p className="mt-2 text-gray-600">{error.message}</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Show no data state
-  if (!loading && transactions.length === 0) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-center">
-          <div className="text-gray-600 text-lg font-semibold">No transactions found</div>
-          <p className="mt-2 text-gray-500">
-            {organization 
-              ? "No unassigned transactions found for your organization." 
-              : "Please ensure you have access to an organization."
-            }
-          </p>
-          <div className="mt-4 text-sm text-gray-400">
-            <p>Debug info:</p>
-            <p>Organization: {organization?.name || 'None'}</p>
-            <p>Filters: {JSON.stringify(filters)}</p>
-            <p>Total from API: {totalTransactions}</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
       <ComplianceHeaderActions
@@ -337,11 +265,6 @@ const UnassignedTransactionsTab: React.FC<UnassignedTransactionsTabProps> = ({ i
         showAssignedToFilter={false}
         showCounterpartyEntityFilter={true}
         showTransactionIdFilter={true}
-        showBlockchainFilter={true}
-        showClientIdFilter={true}
-        showRiskLevelFilter={true}
-        showAmountFilter={true}
-        showDateRangeFilter={true}
         availableBlockchains={availableBlockchains}
         defaultStatus={initialStatusFilter}
         onFilterChange={handleFilterChange}

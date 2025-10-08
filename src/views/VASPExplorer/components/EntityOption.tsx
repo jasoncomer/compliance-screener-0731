@@ -51,14 +51,12 @@ const EntityOption: React.FC<EntityOptionProps> = React.memo(({
       <div className="flex-1">
         <div className="flex items-center gap-2">
           <span className="font-medium">{entity.proper_name || entity.entity_id}</span>
-          {entity.entity_id && sotMap[entity.entity_id] && (
-            <EntityQuickView 
-              entity={entity}
-              sot={sotMap[entity.entity_id]}
-              onViewFull={handleViewFullProfile}
-              onQuickView={handleQuickView}
-            />
-          )}
+          <EntityQuickView 
+            entity={entity}
+            sot={sotMap[entity._id]}
+            onViewFull={handleViewFullProfile}
+            onQuickView={handleQuickView}
+          />
         </div>
         <div className="flex flex-wrap gap-1 mt-1">
           {entity.entity_type && (

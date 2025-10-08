@@ -1,8 +1,11 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+
 import { Check, Eye } from 'lucide-react';
+
 import { blockchain } from '../../../../api/blockchain';
 import { Badge } from '../../../../components/ui/badge';
 import { Button } from '../../../../components/ui/button';
+import { Checkbox } from '../../../../components/ui/checkbox';
 import { Column,DataTable } from '../../../../components/ui/data-table';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../../../../components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../../components/ui/select';
@@ -13,18 +16,17 @@ import { calculateDetailedRiskAnalysis, calculateSimpleRiskScore, InputTransacti
 import { useAppDispatch, useAppSelector } from '../../../../store/hooks';
 import { fetchComplianceTransactions, selectComplianceFilters } from '../../../../store/slices/complianceTransactionsSlice';
 import { updateTransactionAssignee, updateTransactionStatus } from '../../../../store/slices/complianceTransactionsSlice';
+import BulkSelectComponent from '../BulkSelectComponent';
 import { EComplianceTransactionStatus, IComplianceTransaction } from '../../../../typings/compliance';
+import { IUser } from '../../../../typings/interfaces';
 import { truncateAddress } from '../../../../utils/crypto';
-import { getBlockchainLabel, getUserDisplayName } from '../../../../utils/display-labels';
+import { getBlockchainLabel } from '../../../../utils/display-labels';
 import AssignedTransactionDetailsModal from '../../modals/TransactionDetails/AssignedTransactionDetailsModal';
 import { getComplianceReportStatusClassName } from '../../utils/compliance.utils';
 import { currencySymbols } from '../CurrencySelector';
 import { TransactionRiskModal } from '../modals/TransactionRiskModal';
 
 import '../../../../styles/transactionGrouping.css';
-import { selectActiveOrgMembersMap } from '@/store/slices/organizationsSlice';
-import { Checkbox } from '@radix-ui/react-checkbox';
-
 
 // Status mapping for display labels
 const getStatusDisplayLabel = (status: EComplianceTransactionStatus): string => {
@@ -48,7 +50,6 @@ interface ActiveCasesTableProps {
   loading: boolean;
   onTableChange: (pagination: any) => void;
   isArchivedTab?: boolean;
-  isActiveCasesTab?: boolean;
 }
 
 const ActiveCasesTable: React.FC<ActiveCasesTableProps> = React.memo(({
@@ -59,7 +60,6 @@ const ActiveCasesTable: React.FC<ActiveCasesTableProps> = React.memo(({
   loading,
   onTableChange,
   isArchivedTab = false,
-  isActiveCasesTab = false,
 }) => {
   const denom = 'USD';
   const [isDetailsModalVisible, setIsDetailsModalVisible] = useState(false);
@@ -67,30 +67,9 @@ const ActiveCasesTable: React.FC<ActiveCasesTableProps> = React.memo(({
   const [isRiskModalVisible, setIsRiskModalVisible] = useState(false);
   const [selectedTransaction, setSelectedTransaction] = useState<IComplianceTransaction | null>(null);
   const dispatch = useAppDispatch();
+  const { users } = useAppSelector(state => state.organizations);
   const filters = useAppSelector(selectComplianceFilters);
-  const organizationMembers = useAppSelector(selectActiveOrgMembersMap);
   const { getPrice } = useCryptoPrices();
-
-  // Debug organization members data
-  console.log('🔍 ActiveCasesTable - Props received:', {
-    transactionsCount: transactions.length,
-    totalTransactions,
-    currentPage,
-    pageSize,
-    loading,
-    isArchivedTab,
-    isActiveCasesTab,
-    firstTransaction: transactions[0] || null
-  });
-
-  // Debug organization members data
-  console.log('🔍 ActiveCasesTable - organizationMembers:', { organizationMembers, membersCount: Object.keys(organizationMembers || {}).length });
-
-  // Check if we have the necessary data
-  if (!organizationMembers) {
-    console.warn('🔍 ActiveCasesTable - organizationMembers is not available yet');
-  }
-
 
   const btcPrice = getPrice('BTC') || 0;
 
@@ -138,32 +117,16 @@ const ActiveCasesTable: React.FC<ActiveCasesTableProps> = React.memo(({
   }, []);
 
   // Function to get user name from ID
-  const getReviewerName = useCallback((reviewerId?: string) => {
+  const getReviewerName = useCallback((users: { [id: string]: IUser }, reviewerId?: string) => {
     if (!reviewerId) return 'Unassigned';
 
-    try {
-      // Ensure organizationMembers is defined
-      if (!organizationMembers) {
-        return `User ${reviewerId.substring(0, 8)}`;
-      }
-
-      const member = organizationMembers[reviewerId];
-      
-      if (member) {
-        try {
-          return getUserDisplayName(member);
-        } catch (error) {
-          console.error('Error calling getUserDisplayName:', error, { member });
-          return `${member.name || ''} ${member.surname || ''}`.trim() || 'Unknown User';
-        }
-      }
-
-      return `User ${reviewerId.substring(0, 8)}`;
-    } catch (error) {
-      console.error('Error in getReviewerName:', error, { reviewerId, organizationMembers });
-      return `User ${reviewerId?.substring(0, 8) || 'Unknown'}`;
+    const user = users[reviewerId];
+    if (user) {
+      return `${user.name} ${user.surname}`;
     }
-  }, [organizationMembers]);
+
+    return `User ${reviewerId.substring(0, 8)}`;
+  }, []);
 
   // Bulk action handlers
   const handleBulkApprove = useCallback(async () => {
@@ -190,21 +153,6 @@ const ActiveCasesTable: React.FC<ActiveCasesTableProps> = React.memo(({
       setBulkActionLoading(false);
     }
   }, [selectedRowKeys, dispatch]);
-
-  // Convert transaction to case handler
-  const handleConvertToCase = useCallback(async (transactionId: string) => {
-    try {
-      // TODO: Implement API call when endpoint is available
-      console.log('Converting transaction to case:', transactionId);
-      // const response = await api.post(`/cases/transactions/${transactionId}/convert-to-case`, {
-      //   caseTitle: `Transaction Case ${transactionId.slice(0, 8)}...`,
-      //   priority: 'NORMAL'
-      // });
-    } catch (error) {
-      console.error('Error converting transaction to case:', error);
-      // Handle error (show toast, etc.)
-    }
-  }, []);
 
   const handleBulkInReview = useCallback(async () => {
     if (selectedRowKeys.length === 0) return;
@@ -322,6 +270,30 @@ const ActiveCasesTable: React.FC<ActiveCasesTableProps> = React.memo(({
     return result;
   }, [transactions]);
 
+  // Calculate the number of items visible on the current page
+  const currentPageItemsCount = useMemo(() => {
+    if (!validTransactions || validTransactions.length === 0) {
+      return 0;
+    }
+    
+    // Calculate the actual number of items on the current page
+    const startIndex = (currentPage - 1) * pageSize;
+    const endIndex = Math.min(startIndex + pageSize, validTransactions.length);
+    const actualPageSize = endIndex - startIndex;
+    
+    console.log('currentPageItemsCount calculation:', {
+      validTransactionsLength: validTransactions.length,
+      currentPage,
+      pageSize,
+      startIndex,
+      endIndex,
+      actualPageSize
+    });
+    
+    return actualPageSize;
+  }, [validTransactions?.length, currentPage, pageSize]);
+
+
   // Define columns for DataTable
   const columns: Column<IComplianceTransaction>[] = useMemo(() => [
     {
@@ -339,7 +311,7 @@ const ActiveCasesTable: React.FC<ActiveCasesTableProps> = React.memo(({
       ),
     },
     {
-      title: 'Case ID (TXID)',
+      title: 'Transaction ID',
       dataIndex: 'txId',
       key: 'txId',
       width: 180,
@@ -352,8 +324,7 @@ const ActiveCasesTable: React.FC<ActiveCasesTableProps> = React.memo(({
               href={`/home/block-explorer/transaction/${txId}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-foreground hover:text-primary font-mono text-sm"
-              title={`Case ID: ${txId}`}
+              className="text-foreground hover:text-primary"
             >
               {truncateAddress(txId)}
             </a>
@@ -362,16 +333,14 @@ const ActiveCasesTable: React.FC<ActiveCasesTableProps> = React.memo(({
       },
     },
     {
-      title: 'Date (Assigned/Transaction)',
-      dataIndex: 'reviewTimestamp',
-      key: 'assignedDate',
+      title: 'Transaction Timestamp',
+      dataIndex: 'timestamp',
+      key: 'timestamp',
       width: 180,
       align: 'right',
-      render: (timestamp: string | Date, record: IComplianceTransaction) => {
-        // Use reviewTimestamp if available (for assigned cases), otherwise use timestamp
-        const dateToShow = record.reviewTimestamp || timestamp;
-        if (!dateToShow) return <span className="text-muted-foreground">N/A</span>;
-        const date = new Date(dateToShow);
+      render: (timestamp: string | Date) => {
+        if (!timestamp) return <span className="text-muted-foreground">N/A</span>;
+        const date = new Date(timestamp);
         if (isNaN(date.getTime())) return <span className="text-muted-foreground">Invalid Date</span>;
 
         return (
@@ -390,7 +359,11 @@ const ActiveCasesTable: React.FC<ActiveCasesTableProps> = React.memo(({
           </div>
         );
       },
-      sorter: true, // Enable server-side sorting
+      sorter: (a: IComplianceTransaction, b: IComplianceTransaction) => {
+        if (!a.timestamp) return -1;
+        if (!b.timestamp) return 1;
+        return new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime();
+      },
     },
     {
       title: 'Blockchain',
@@ -409,7 +382,11 @@ const ActiveCasesTable: React.FC<ActiveCasesTableProps> = React.memo(({
       key: 'amount',
       width: 120,
       align: 'right',
-      sorter: true, // Enable server-side sorting
+      sorter: (a: IComplianceTransaction, b: IComplianceTransaction) => {
+        const aAmount = typeof a.amount === 'number' ? a.amount : 0;
+        const bAmount = typeof b.amount === 'number' ? b.amount : 0;
+        return aAmount - bAmount;
+      },
       render: (amount: number) => {
         if (typeof amount !== 'number' || isNaN(amount)) return <span className="text-muted-foreground">N/A</span>;
         const convertedAmount = ((amount / 100000000) * btcPrice);
@@ -421,37 +398,6 @@ const ActiveCasesTable: React.FC<ActiveCasesTableProps> = React.memo(({
               {convertedAmount.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
             </span>
           </div>
-        );
-      },
-    },
-    {
-      title: 'Counterparty Entity',
-      dataIndex: 'counterpartyEntities',
-      key: 'counterpartyEntities',
-      width: 170,
-      align: 'right',
-      render: (counterpartyEntities: string[]) => {
-        if (!counterpartyEntities || counterpartyEntities.length === 0) {
-          return <span className="text-muted-foreground">N/A</span>;
-        }
-        
-        // Helper function to truncate addresses
-        const truncateCounterpartyAddress = (address: string): string => {
-          if (address.length <= 10) return address; // Don't truncate short addresses
-          return `${address.slice(0, 6)}...${address.slice(-4)}`;
-        };
-        
-        return (
-          <span className="text-foreground">
-            {counterpartyEntities.map((entity) => {
-              const displayName = attributions[entity]?.entity || entity;
-              // If it's a Bitcoin address (starts with 1, 3, or bc1), truncate it
-              if (entity.match(/^[13bc]/)) {
-                return truncateCounterpartyAddress(displayName);
-              }
-              return displayName;
-            }).join(', ')}
-          </span>
         );
       },
     },
@@ -472,7 +418,7 @@ const ActiveCasesTable: React.FC<ActiveCasesTableProps> = React.memo(({
       width: 90,
       align: 'right',
       render: (reviewerId?: string) => (
-        <span className="capitalize text-foreground">{getReviewerName(reviewerId)}</span>
+        <span className="capitalize text-foreground">{getReviewerName(users, reviewerId)}</span>
       ),
     },
     {
@@ -540,14 +486,18 @@ const ActiveCasesTable: React.FC<ActiveCasesTableProps> = React.memo(({
     {
       title: 'Last Updated',
       dataIndex: 'reviewTimestamp',
-      key: 'lastUpdated',
+      key: 'reviewTimestamp',
       width: 150,
       align: 'right',
       render: (reviewTimestamp?: Date) => {
         if (!reviewTimestamp) return <span className="text-muted-foreground">Not reviewed yet</span>;
         return <span className="text-foreground">{new Date(reviewTimestamp).toLocaleString()}</span>;
       },
-      sorter: true, // Enable server-side sorting
+      sorter: (a: IComplianceTransaction, b: IComplianceTransaction) => {
+        if (!a.reviewTimestamp) return -1;
+        if (!b.reviewTimestamp) return 1;
+        return new Date(a.reviewTimestamp).getTime() - new Date(b.reviewTimestamp).getTime();
+      },
     },
     {
       title: 'Actions',
@@ -569,19 +519,6 @@ const ActiveCasesTable: React.FC<ActiveCasesTableProps> = React.memo(({
             >
               <Eye className="h-3 w-3" />
             </Button>
-            {!isArchivedTab && !isActiveCasesTab && (
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-7 px-2 text-xs"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleConvertToCase(record._id);
-                }}
-              >
-                Convert to Case
-              </Button>
-            )}
             <Button
               variant="default"
               size="sm"
@@ -614,57 +551,37 @@ const ActiveCasesTable: React.FC<ActiveCasesTableProps> = React.memo(({
         );
       },
     },
-  ], [btcPrice, organizationMembers, getReviewerName, handleViewDetails, handleViewRisk, calculatedRiskScores, riskCalculationLoading, dispatch, denom]);
+  ], [btcPrice, users, getReviewerName, handleViewDetails, handleViewRisk, calculatedRiskScores, riskCalculationLoading, dispatch, denom]);
 
-  return (
-    <>
-      {/* Bulk Actions Bar */}
-      {selectedRowKeys.length > 0 && (
-          <div className="mb-4 p-3 bg-primary/10 border border-primary rounded-md flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Checkbox
-                checked={selectedRowKeys.length === validTransactions.length}
-                onCheckedChange={(checked: boolean) => {
-                  if (checked) {
-                    setSelectedRowKeys(validTransactions.map(tx => tx._id));
-                  } else {
-                    setSelectedRowKeys([]);
-                  }
-                }}
-              />
-              <span className="font-medium text-primary">
-                {selectedRowKeys.length} transaction{selectedRowKeys.length !== 1 ? 's' : ''} selected
-              </span>
-            </div>
-            <div className="flex gap-2">
-              <Button
-                variant="default"
-                size="sm"
-                className="bg-green-600 hover:bg-green-700"
-                onClick={handleBulkApprove}
-                disabled={bulkActionLoading}
-              >
-                <Check className="mr-2 h-3 w-3" />
-                Approve Selected
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleBulkInReview}
-                disabled={bulkActionLoading}
-              >
-                In Review
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleBulkReassign}
-                disabled={bulkActionLoading}
-              >
-                Reassign Selected
-              </Button>
-            </div>
-          </div>
+  try {
+    return (
+      <>
+        {/* Bulk Selection Component - only shown for non-archived tabs */}
+        {!isArchivedTab && (
+          <BulkSelectComponent
+            selectedRowKeys={selectedRowKeys}
+            onClearSelection={useCallback(() => setSelectedRowKeys([]), [])}
+            onSelectAll={useCallback(() => {
+              const startIndex = (currentPage - 1) * pageSize;
+              const endIndex = startIndex + pageSize;
+              const currentPageItems = validTransactions.slice(startIndex, endIndex);
+              const allKeys = currentPageItems.map(transaction => transaction._id);
+              setSelectedRowKeys(allKeys);
+            }, [validTransactions.length, currentPage, pageSize])}
+            totalItems={currentPageItemsCount}
+            onBulkActionComplete={useCallback(() => {
+              console.log('🚀 Bulk action completed, refreshing data...');
+              // Clear selection and refresh data
+              setSelectedRowKeys([]);
+              // Refetch data to update the UI with current filters
+              const refetchFilters = {
+                ...filters,
+                page: currentPage,
+                limit: pageSize
+              };
+              dispatch(fetchComplianceTransactions(refetchFilters));
+            }, [filters, currentPage, pageSize, dispatch])}
+          />
         )}
 
         <DataTable
@@ -681,25 +598,8 @@ const ActiveCasesTable: React.FC<ActiveCasesTableProps> = React.memo(({
             pageSizeOptions: [10, 20, 50, 100],
             onChange: (page, size) => onTableChange({ current: page, pageSize: size })
           }}
-          onChange={(pagination, sorter) => {
-            // Handle server-side sorting
-            if (sorter && sorter.column && sorter.order) {
-              const sortBy = sorter.field || sorter.columnKey;
-              const sortOrder = sorter.order === 'ascend' ? 'asc' : 'desc';
-              onTableChange({ 
-                current: pagination.current, 
-                pageSize: pagination.pageSize,
-                sortBy,
-                sortOrder
-              });
-            } else {
-              onTableChange({ 
-                current: pagination.current, 
-                pageSize: pagination.pageSize 
-              });
-            }
-          }}
           loading={loading}
+          onChange={(pagination, sorter) => onTableChange({ ...pagination, sorter })}
           scroll={{ x: 1000 }}
           footer={!isArchivedTab ? () => (
             <div className="flex justify-between items-center">
@@ -783,19 +683,19 @@ const ActiveCasesTable: React.FC<ActiveCasesTableProps> = React.memo(({
                     <SelectValue placeholder="Select assignee..." />
                   </SelectTrigger>
                   <SelectContent>
-                    {organizationMembers && Object.values(organizationMembers)
-                      .filter(member => {
-                        const userId = member.userId;
+                    {users && Object.values(users)
+                      .filter(user => {
+                        const userId = user._id;
                         return userId && !currentAssignees.has(userId);
                       })
-                      .map((member, index) => {
-                        const userId = member.userId;
+                      .map((user, index) => {
+                        const userId = user._id;
                         return (
                           <SelectItem
                             key={`user-${userId}-${index}`}
-                            value={userId!}
+                            value={userId || ''}
                           >
-                            {getUserDisplayName(member)}
+                            {`${user.name} ${user.surname}`}
                           </SelectItem>
                         );
                       })}
@@ -821,6 +721,15 @@ const ActiveCasesTable: React.FC<ActiveCasesTableProps> = React.memo(({
         </Dialog>
       </>
     );
+  } catch (error) {
+    console.error('Error rendering ActiveCasesTable:', error);
+    return (
+      <div className="p-5 text-center">
+        <p>Error loading table data. Please try refreshing the page.</p>
+        <Button onClick={() => window.location.reload()}>Refresh Page</Button>
+      </div>
+    );
+  }
 });
 
 export default React.memo(ActiveCasesTable, (prevProps, nextProps) => {

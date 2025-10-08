@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 
 import { Check, Copy } from 'lucide-react';
-import { Link } from 'react-router-dom';
 
 import { TransactionLink } from '../../../components/ui/TransactionLink';
 import useWindowSize from '../../../hooks/useWindowSize';

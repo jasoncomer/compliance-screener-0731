@@ -4,7 +4,7 @@ import { MessageSquarePlus } from 'lucide-react';
 
 import { Button } from '../../../components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../../../components/ui/dialog';
-import { api } from '../../../api/api';
+import { flowtraceService } from '../../../services/flowtraceService';
 
 type TxRow = {
   txid: string;
@@ -38,27 +38,28 @@ const NodeDialog: React.FC<Props> = ({ open, address, onOpenChange, riskScore, e
       if (!open || !address) return;
       setLoading(true);
       try {
-        // Fetch transactions and summary in parallel using blockchain API
-        const [transactions, summary] = await Promise.all([
-          api.blockchain.getAddressTransactions(address, { page: 1, limit: 10 }),
-          api.blockchain.getAddressSummary(address)
-        ]);
-
-        // Set balance and USD value from summary
-        setBalance(summary?.balance?.toString() || '0');
-        setUsdValue(summary?.balance || 0);
-
+        // Use optimized endpoint instead of multiple individual calls
+        const optimizedResponse = await flowtraceService.expandNodeOptimized(address, {
+          includeRiskScores: true,
+          includeTransactions: true
+        });
+        
+        // Extract data from optimized response
+        const { transactions, summary } = optimizedResponse.data;
+        
+        // Set balance (placeholder - could be calculated from transactions)
+        setBalance('0');
+        setUsdValue(0);
+        
         // Set transaction count and data
-        setTxCount(transactions.pagination.totalTxs);
-        setTxs(transactions.txs.map((t: any) => ({
-          txid: t.txid,
-          value: t.value,
-          time: t.time,
-          inputs: t.inputs,
-          outputs: t.outputs
+        setTxCount(summary.totalTransactions);
+        setTxs((transactions || []).slice(0, 10).map((t: any) => ({ 
+          txid: t.txid, 
+          value: t.value, 
+          time: t.time, 
+          inputs: t.inputs, 
+          outputs: t.outputs 
         })));
-      } catch (error) {
-        console.error('Error fetching node data:', error);
       } finally {
         setLoading(false);
       }

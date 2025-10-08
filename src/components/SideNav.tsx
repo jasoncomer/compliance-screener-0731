@@ -1,9 +1,7 @@
-import React, { useState } from 'react';
+import React from 'react';
 
 import {
   BarChart3,
-  ChevronDown,
-  ChevronRight,
   Database,
   GitBranch,
   Globe,
@@ -42,15 +40,10 @@ const SideNav: React.FC<SideNavProps> = ({ theme, collapsed, onCollapse }) => {
   const location = useLocation();
   const { user, clearAppData } = useAppContext();
   const { toggleTheme } = useTheme();
-  const [expandedMenus, setExpandedMenus] = useState<Set<string>>(new Set());
 
   const getActiveKey = () => {
     const parts = location.pathname.split('/');
     if (parts.length >= 3 && parts[2]) {
-      // Handle sub-menu paths like compliance-screener/client-overview
-      if (parts.length >= 4 && parts[3]) {
-        return `${parts[2]}/${parts[3]}`;
-      }
       return parts[2];
     }
     return 'block-explorer';
@@ -58,18 +51,6 @@ const SideNav: React.FC<SideNavProps> = ({ theme, collapsed, onCollapse }) => {
 
   const handleMenuClick = ({ key }: { key: string }) => {
     navigate(`/home/${key}`);
-  };
-
-  const toggleSubMenu = (key: string) => {
-    setExpandedMenus(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(key)) {
-        newSet.delete(key);
-      } else {
-        newSet.add(key);
-      }
-      return newSet;
-    });
   };
 
   const handleLogout = () => {
@@ -92,18 +73,11 @@ const SideNav: React.FC<SideNavProps> = ({ theme, collapsed, onCollapse }) => {
       key: 'compliance-screener',
       icon: <Search />,
       label: 'Compliance Screener',
-      subItems: [
-        {
-          key: 'compliance-screener/client-overview',
-          icon: <Users />,
-          label: 'Client Overview',
-        },
-        {
-          key: 'compliance-screener/addresses',
-          icon: <Database />,
-          label: 'Monitored Addresses',
-        },
-      ],
+    },
+    {
+      key: 'compliance-dashboard',
+      icon: <BarChart3 />,
+      label: 'Compliance Dashboard',
     },
     {
       key: 'block-explorer',
@@ -196,9 +170,6 @@ const SideNav: React.FC<SideNavProps> = ({ theme, collapsed, onCollapse }) => {
           <nav className="space-y-1 px-2">
             {navigationItems.map((item) => {
               const isActive = getActiveKey() === item.key;
-              const hasSubItems = item.subItems && item.subItems.length > 0;
-              const isExpanded = expandedMenus.has(item.key);
-              
               return (
                 <div key={item.key}>
                   {collapsed ? (
@@ -207,18 +178,7 @@ const SideNav: React.FC<SideNavProps> = ({ theme, collapsed, onCollapse }) => {
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => {
-                            if (hasSubItems) {
-                              // For compliance-screener, navigate to main page
-                              if (item.key === 'compliance-screener') {
-                                handleMenuClick({ key: item.key });
-                              } else {
-                                toggleSubMenu(item.key);
-                              }
-                            } else {
-                              handleMenuClick({ key: item.key });
-                            }
-                          }}
+                          onClick={() => handleMenuClick({ key: item.key })}
                           className={cn(
                             "w-10 h-10 mx-auto flex items-center justify-center font-['Inter']",
                             isActive
@@ -240,84 +200,25 @@ const SideNav: React.FC<SideNavProps> = ({ theme, collapsed, onCollapse }) => {
                       </TooltipContent>
                     </Tooltip>
                   ) : (
-                    <>
-                        <Button
-                          variant="ghost"
-                          onClick={() => {
-                            if (hasSubItems) {
-                              // For compliance-screener, navigate to main page
-                              if (item.key === 'compliance-screener') {
-                                handleMenuClick({ key: item.key });
-                              } else {
-                                toggleSubMenu(item.key);
-                              }
-                            } else {
-                              handleMenuClick({ key: item.key });
-                            }
-                          }}
-                          className={cn(
-                            "w-full justify-start gap-3 h-10 px-3 font-['Inter']",
-                            isActive
-                              ? theme === 'light'
-                                ? "bg-orange-50 text-orange-600"
-                                : "bg-orange-900/20 text-orange-400"
-                              : theme === 'light'
-                                ? "text-gray-600 hover:bg-gray-100 hover:text-orange-600"
-                                : "text-gray-400 hover:bg-gray-800 hover:text-orange-400"
-                          )}
-                        >
-                        <div className="h-5 w-5">
-                          {item.icon}
-                        </div>
-                        <span className="font-medium">{item.label}</span>
-                        {hasSubItems && (
-                          <div 
-                            className="ml-auto cursor-pointer"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              toggleSubMenu(item.key);
-                            }}
-                          >
-                            {isExpanded ? (
-                              <ChevronDown className="h-4 w-4" />
-                            ) : (
-                              <ChevronRight className="h-4 w-4" />
-                            )}
-                          </div>
-                        )}
-                      </Button>
-                      
-                      {/* Sub-menu items */}
-                      {hasSubItems && isExpanded && !collapsed && (
-                        <div className="ml-4 space-y-1">
-                          {item.subItems!.map((subItem) => {
-                            const isSubActive = getActiveKey() === subItem.key;
-                            return (
-                              <Button
-                                key={subItem.key}
-                                variant="ghost"
-                                onClick={() => handleMenuClick({ key: subItem.key })}
-                                className={cn(
-                                  "w-full justify-start gap-3 h-9 px-3 font-['Inter'] text-sm",
-                                  isSubActive
-                                    ? theme === 'light'
-                                      ? "bg-orange-50 text-orange-600"
-                                      : "bg-orange-900/20 text-orange-400"
-                                    : theme === 'light'
-                                      ? "text-gray-600 hover:bg-gray-100 hover:text-orange-600"
-                                      : "text-gray-400 hover:bg-gray-800 hover:text-orange-400"
-                                )}
-                              >
-                                <div className="h-4 w-4">
-                                  {subItem.icon}
-                                </div>
-                                <span className="font-medium">{subItem.label}</span>
-                              </Button>
-                            );
-                          })}
-                        </div>
+                    <Button
+                      variant="ghost"
+                      onClick={() => handleMenuClick({ key: item.key })}
+                      className={cn(
+                        "w-full justify-start gap-3 h-10 px-3 font-['Inter']",
+                        isActive
+                          ? theme === 'light'
+                            ? "bg-orange-50 text-orange-600"
+                            : "bg-orange-900/20 text-orange-400"
+                          : theme === 'light'
+                            ? "text-gray-600 hover:bg-gray-100 hover:text-orange-600"
+                            : "text-gray-400 hover:bg-gray-800 hover:text-orange-400"
                       )}
-                    </>
+                    >
+                      <div className="h-5 w-5">
+                        {item.icon}
+                      </div>
+                      <span className="font-medium">{item.label}</span>
+                    </Button>
                   )}
                 </div>
               );

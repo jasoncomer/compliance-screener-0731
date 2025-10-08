@@ -11,13 +11,6 @@ interface MonitoredAddressTableProps {
   onEdit: (address: MonitoredAddress) => void;
   onDelete: (id: string) => void;
   onViewHistory: (id: string) => void;
-  pagination?: {
-    current: number;
-    pageSize: number;
-    total: number;
-    onChange: (page: number, pageSize: number) => void;
-  };
-  onSort?: (sortBy: string, sortOrder: 'asc' | 'desc') => void;
 }
 
 const MonitoredAddressesTable: React.FC<MonitoredAddressTableProps> = ({
@@ -26,40 +19,33 @@ const MonitoredAddressesTable: React.FC<MonitoredAddressTableProps> = ({
   onEdit,
   onDelete,
   onViewHistory,
-  pagination,
-  onSort,
 }) => {
   const columns: Column<MonitoredAddress>[] = [
     {
       title: 'Address',
       dataIndex: 'address',
       key: 'address',
-      sorter: true,
     },
     {
       title: 'Blockchain',
       dataIndex: 'blockchain',
       key: 'blockchain',
-      sorter: true,
     },
     {
       title: 'Client ID',
       dataIndex: 'clientId',
       key: 'clientId',
-      sorter: true,
       render: (clientId: string) => clientId || 'N/A',
     },
     {
       title: 'Notes',
       dataIndex: 'notes',
       key: 'notes',
-      sorter: true,
       render: (notes: string) => notes || 'N/A',
     },
     {
       title: 'Action',
       key: 'action',
-      sorter: false,
       render: (_: any, record: MonitoredAddress) => (
         <div className="flex items-center gap-2">
           <Button
@@ -97,21 +83,6 @@ const MonitoredAddressesTable: React.FC<MonitoredAddressTableProps> = ({
       columns={columns}
       rowKey="_id"
       loading={loading}
-      pagination={pagination ? {
-        current: pagination.current,
-        pageSize: pagination.pageSize,
-        total: pagination.total,
-        showSizeChanger: true,
-        pageSizeOptions: [10, 20, 50, 100],
-        onChange: pagination.onChange
-      } : false}
-      onChange={(_pagination: any, sorter: any) => {
-        if (sorter && sorter.column && sorter.order && onSort) {
-          const sortBy = sorter.field || sorter.columnKey;
-          const sortOrder = sorter.order === 'ascend' ? 'asc' : 'desc';
-          onSort(sortBy as string, sortOrder);
-        }
-      }}
     />
   );
 };

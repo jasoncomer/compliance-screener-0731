@@ -62,6 +62,17 @@ const AddressAttributionEntities: React.FC<AddressAttributionEntitiesProps> = ({
     return Object.values(itemsMap).find(sot => sot.entity_id === entityId) || null;
   };
 
+  // Handle view full profile
+  const handleViewFullProfile = (sot: any) => {
+    // Navigate to VASP Explorer with the entity in the same tab
+    window.location.href = `/home/blockham?entity=${sot.entity_id}`;
+  };
+
+  // Handle quick view click
+  const handleQuickView = (e: React.MouseEvent, _entityId: string) => {
+    e.stopPropagation();
+    // The EntityQuickView component handles the quick view display
+  };
 
   // Render entity with hover functionality
   const renderEntityWithHover = (entityId: string, label: string, defaultType?: string) => {
@@ -70,7 +81,7 @@ const AddressAttributionEntities: React.FC<AddressAttributionEntitiesProps> = ({
     const entityType = getEntityType(entityId) || defaultType || '';
 
     return (
-      <div className="flex gap flex-1 min-w-0 items-center">
+      <div className="flex gap flex-1 min-w-0">
         <SimpleLogo
           entityId={entityId}
           entityType={entityType}
@@ -90,10 +101,8 @@ const AddressAttributionEntities: React.FC<AddressAttributionEntitiesProps> = ({
                     entity_id: sot.entity_id
                   }}
                   sot={sot}
-                  onViewFull={(s) => {
-                    if (s?.entity_id) window.open(`/home/vasp-explorer?entity=${s.entity_id}`, '_blank')?.focus();
-                  }}
-                  onQuickView={(e) => e.stopPropagation()}
+                  onViewFull={handleViewFullProfile}
+                  onQuickView={handleQuickView}
                   popoverPlacement="right"
                   popoverWidth={450}
                 />
@@ -116,25 +125,25 @@ const AddressAttributionEntities: React.FC<AddressAttributionEntitiesProps> = ({
   }
 
   return (
-    <div className="flex gap-4">
+    <>
       {attributions[address]?.entity && (
-        <Card className={cn("flex-1 h-fit max-h-[120px] rounded-lg border border-gray-200 dark:border-gray-700 p-4 bg-white dark:bg-gray-800 shadow-sm")}>
+        <Card className={cn("flex-1 h-fit max-h-[120px] rounded-lg border-0 p-3 bg-gray-100 dark:bg-gray-900")}>
           {renderEntityWithHover(attributions[address].entity, 'Entity')}
         </Card>
       )}
 
       {attributions[address]?.bo && (attributions[address]?.bo !== attributions[address]?.entity) && (
-        <Card className={cn("flex-1 h-fit max-h-[120px] rounded-lg border border-gray-200 dark:border-gray-700 p-4 bg-white dark:bg-gray-800 shadow-sm")}>
+        <Card className={cn("flex-1 h-fit max-h-[120px] rounded-lg border-0 p-3 bg-gray-100 dark:bg-gray-900")}>
           {renderEntityWithHover(attributions[address].bo, 'Beneficial Owner')}
         </Card>
       )}
 
       {attributions[address]?.custodian && (
-        <Card className={cn("flex-1 h-fit max-h-[120px] rounded-lg border border-gray-200 dark:border-gray-700 p-4 bg-white dark:bg-gray-800 shadow-sm")}>
+        <Card className={cn("flex-1 h-fit max-h-[120px] rounded-lg border-0 p-3 bg-gray-100 dark:bg-gray-900")}>
           {renderEntityWithHover(attributions[address].custodian, 'Custodian', 'Custodian')}
         </Card>
       )}
-    </div>
+    </>
   );
 };
 

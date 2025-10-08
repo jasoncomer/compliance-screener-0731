@@ -25,8 +25,8 @@ import Admin from './views/Admin';
 import Alerts from './views/Alerts';
 import BlockExplorer from './views/blockexplorer/BlockExplorer';
 import ComplianceScreener from './views/Compliance/ComplianceScreener';
-import FlowTrace from './views/Flowtrace/FlowTrace';
-
+import { ComplianceDashboard } from "./views/compliance-v2/compliance-dashboard";
+import FlowTrace from './views/Flowtrace/FlowTracePage';
 import Home from "./views/Home";
 import Login from './views/Login';
 import Register from "./views/Register";
@@ -35,8 +35,6 @@ import RiskDashboard from './views/RiskDashboard/index';
 import Settings from './views/Settings';
 import { VASPExplorer } from './views/VASPExplorer';
 import Welcome from './views/Welcome/index';
-import ClientOverviewPage from "./views/Compliance/ClientOverviewPage";
-import MonitoredAddressesPage from "./views/Compliance/MonitoredAddressesPage";
 
 function App() {
   const dispatch = useAppDispatch();
@@ -135,11 +133,7 @@ function App() {
           }>
             <Route index element={<BlockExplorer />} />
             <Route path="compliance-screener" element={<ComplianceScreener />} />
-            <Route path="compliance-screener/active-cases" element={<ComplianceScreener />} />
-            <Route path="compliance-screener/archived-cases" element={<ComplianceScreener />} />
-            <Route path="compliance-screener/client-overview" element={<ClientOverviewPage />} />
-            <Route path="compliance-screener/addresses" element={<MonitoredAddressesPage />} />
-            {/* <Route path="compliance-dashboard" element={<ComplianceDashboard />} /> */}
+            <Route path="compliance-dashboard" element={<ComplianceDashboard />} />
             <Route path="admin" element={<Admin />} />
             <Route path="alerts" element={<Alerts />} />
             <Route path="vasp-explorer" element={<VASPExplorer />} />

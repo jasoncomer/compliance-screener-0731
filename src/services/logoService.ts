@@ -1,188 +1,147 @@
-/**
- * Service for fetching and caching entity logos with fallback support
- */
+export interface LogoUploadResponse {
+  success: boolean;
+  url?: string;
+  filename?: string;
+  error?: string;
+}
 
-interface LogoCache {
-  [url: string]: {
-    status: 'loading' | 'success' | 'error';
-    image?: HTMLImageElement;
-    timestamp: number;
+export interface LogoMetadata {
+  filename: string;
+  url: string;
+  entityId?: string;
+  entityType?: string;
+  uploadedAt: string;
+}
+
+export interface LogoListResponse {
+  data: {
+    logos: LogoMetadata[];
   };
 }
 
-class LogoService {
-  private cache: LogoCache = {};
-  private readonly CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours
-  private readonly RETRY_DELAY = 5 * 60 * 1000; // 5 minutes for retrying failed loads
+export class LogoService {
+  private static readonly ENTITY_LOGOS_BASE = 'https://storage.googleapis.com/entity-logos';
+  private static readonly ENTITY_TYPE_LOGOS_BASE = 'https://storage.googleapis.com/entity-type-logos';
+  static readonly APP_ASSETS_BASE = 'https://storage.googleapis.com/blockscout_assets';
+  
+  private static logoCache = new Map<string, string | null>();
 
   /**
-   * Get logo URL for an entity, with fallback logic
+   * Get logo URL for an entity
    */
-  getLogoUrl(entityId: string | undefined, customLogoUrl?: string | null): string | null {
-    // Use custom logo URL if provided and it's a valid URL
-    if (customLogoUrl && (customLogoUrl.startsWith('http://') || customLogoUrl.startsWith('https://'))) {
-      return customLogoUrl;
-    }
-
-    // If customLogoUrl is provided but not a full URL, use it as the logo identifier
-    // (e.g., "bridgers" instead of "bridgers_xyz")
-    if (customLogoUrl && customLogoUrl !== 'true' && customLogoUrl !== 'false') {
-      return `https://storage.googleapis.com/entity-logos/${customLogoUrl}.jpg`;
-    }
-
-    // Don't generate URLs for invalid or unknown entities
-    if (!entityId || entityId === 'unknown_entity' || entityId === 'unknown') {
+  static async getLogoUrl(entityId?: string, entityType?: string): Promise<string | null> {
+    console.log('LogoService.getLogoUrl called with entityId:', entityId, 'entityType:', entityType);
+    
+    if (!entityId && !entityType) {
+      console.log('No entityId or entityType provided, returning null');
       return null;
     }
 
-    // Fallback to entityId
-    return `https://storage.googleapis.com/entity-logos/${entityId}.jpg`;
-  }
-
-  /**
-   * Load an image with caching and error handling
-   */
-  async loadImage(url: string): Promise<HTMLImageElement | null> {
+    // Create cache key
+    const cacheKey = `${entityId || ''}-${entityType || ''}`;
+    console.log('Cache key:', cacheKey);
+    
     // Check cache first
-    const cached = this.cache[url];
-    const now = Date.now();
+    if (this.logoCache.has(cacheKey)) {
+      const cachedUrl = this.logoCache.get(cacheKey) || null;
+      console.log('Found cached logo URL:', cachedUrl);
+      return cachedUrl;
+    }
 
-    if (cached) {
-      // Return cached success
-      if (cached.status === 'success' && cached.image) {
-        return cached.image;
+    // Try entity-specific logos first
+    if (entityId) {
+      console.log('Trying entity-specific logos for entityId:', entityId);
+      
+      // Try JPG first
+      const entityJpgUrl = `${this.ENTITY_LOGOS_BASE}/${entityId}.jpg`;
+      console.log('Trying JPG URL:', entityJpgUrl);
+      if (await this.checkImageExists(entityJpgUrl)) {
+        console.log('Found entity JPG logo:', entityJpgUrl);
+        this.logoCache.set(cacheKey, entityJpgUrl);
+        return entityJpgUrl;
       }
 
-      // Don't retry recent failures
-      if (cached.status === 'error' && (now - cached.timestamp) < this.RETRY_DELAY) {
-        return null;
-      }
-
-      // Wait for loading to complete
-      if (cached.status === 'loading') {
-        return new Promise((resolve) => {
-          const checkInterval = setInterval(() => {
-            const current = this.cache[url];
-            if (current && current.status !== 'loading') {
-              clearInterval(checkInterval);
-              resolve(current.status === 'success' ? current.image || null : null);
-            }
-          }, 100);
-
-          // Timeout after 5 seconds
-          setTimeout(() => {
-            clearInterval(checkInterval);
-            resolve(null);
-          }, 5000);
-        });
+      // Try PNG
+      const entityPngUrl = `${this.ENTITY_LOGOS_BASE}/${entityId}.png`;
+      console.log('Trying PNG URL:', entityPngUrl);
+      if (await this.checkImageExists(entityPngUrl)) {
+        console.log('Found entity PNG logo:', entityPngUrl);
+        this.logoCache.set(cacheKey, entityPngUrl);
+        return entityPngUrl;
       }
     }
 
-    // Mark as loading
-    this.cache[url] = { status: 'loading', timestamp: now };
-
-    try {
-      const img = await this.loadImageWithFallback(url);
-      if (img) {
-        this.cache[url] = { status: 'success', image: img, timestamp: now };
-        return img;
-      } else {
-        this.cache[url] = { status: 'error', timestamp: now };
-        return null;
+    // Fallback to entity-type logos
+    if (entityType) {
+      console.log('Trying entity-type logos for entityType:', entityType);
+      
+      // Try JPG first
+      const typeJpgUrl = `${this.ENTITY_TYPE_LOGOS_BASE}/${entityType}.jpg`;
+      console.log('Trying entity-type JPG URL:', typeJpgUrl);
+      if (await this.checkImageExists(typeJpgUrl)) {
+        console.log('Found entity-type JPG logo:', typeJpgUrl);
+        this.logoCache.set(cacheKey, typeJpgUrl);
+        return typeJpgUrl;
       }
-    } catch (error) {
-      this.cache[url] = { status: 'error', timestamp: now };
-      return null;
-    }
-  }
 
-  /**
-   * Try loading an image with fallback formats
-   */
-  private async loadImageWithFallback(url: string): Promise<HTMLImageElement | null> {
-    // Try the original URL first
-    const img = await this.tryLoadImage(url);
-    if (img) return img;
-
-    // If .jpg failed, try .png
-    if (url.endsWith('.jpg')) {
-      const pngUrl = url.replace('.jpg', '.png');
-      const pngImg = await this.tryLoadImage(pngUrl);
-      if (pngImg) return pngImg;
+      // Try PNG
+      const typePngUrl = `${this.ENTITY_TYPE_LOGOS_BASE}/${entityType}.png`;
+      console.log('Trying entity-type PNG URL:', typePngUrl);
+      if (await this.checkImageExists(typePngUrl)) {
+        console.log('Found entity-type PNG logo:', typePngUrl);
+        this.logoCache.set(cacheKey, typePngUrl);
+        return typePngUrl;
+      }
     }
 
+    console.log('No logo found for entityId:', entityId, 'entityType:', entityType);
+    this.logoCache.set(cacheKey, null);
     return null;
   }
 
   /**
-   * Attempt to load a single image
+   * Get logo URL with fallback logic (same as getLogoUrl but with better error handling)
    */
-  private tryLoadImage(url: string): Promise<HTMLImageElement | null> {
-    return new Promise((resolve) => {
-      const img = new Image();
-      // Don't set crossOrigin as it can cause issues with some CDNs
-
-      const timeout = setTimeout(() => {
-        img.onload = null;
-        img.onerror = null;
-        resolve(null);
-      }, 3000); // 3 second timeout
-
-      img.onload = () => {
-        clearTimeout(timeout);
-        if (img.complete && img.naturalWidth > 0) {
-          resolve(img);
-        } else {
-          resolve(null);
-        }
-      };
-
-      img.onerror = () => {
-        clearTimeout(timeout);
-        resolve(null);
-      };
-
-      img.src = url;
-    });
+  static async getLogoUrlWithFallback(entityId?: string, entityType?: string): Promise<string | null> {
+    try {
+      return await this.getLogoUrl(entityId, entityType);
+    } catch (error) {
+      console.error('Error getting logo URL with fallback:', error);
+      return null;
+    }
   }
 
   /**
-   * Preload multiple images in parallel
+   * Check if an image exists at the given URL
    */
-  async preloadImages(urls: (string | null)[]): Promise<void> {
-    const validUrls = urls.filter((url): url is string => url !== null);
-    await Promise.all(validUrls.map(url => this.loadImage(url)));
+  private static async checkImageExists(url: string): Promise<boolean> {
+    try {
+      const response = await fetch(url, { method: 'HEAD' });
+      return response.ok;
+    } catch (error) {
+      console.log('Image check failed for URL:', url, error);
+      return false;
+    }
   }
 
   /**
-   * Clear old cache entries
+   * Clear the logo cache
    */
-  clearOldCache(): void {
-    const now = Date.now();
-    Object.keys(this.cache).forEach(url => {
-      const entry = this.cache[url];
-      if (now - entry.timestamp > this.CACHE_DURATION) {
-        delete this.cache[url];
-      }
-    });
+  static clearCache(): void {
+    this.logoCache.clear();
+    console.log('Logo cache cleared');
   }
 
   /**
-   * Get cache status for debugging
+   * Get cache statistics
    */
-  getCacheStatus(): { total: number; success: number; error: number; loading: number } {
-    const entries = Object.values(this.cache);
+  static getCacheStats(): { size: number; entries: string[] } {
     return {
-      total: entries.length,
-      success: entries.filter(e => e.status === 'success').length,
-      error: entries.filter(e => e.status === 'error').length,
-      loading: entries.filter(e => e.status === 'loading').length
+      size: this.logoCache.size,
+      entries: Array.from(this.logoCache.keys()),
     };
   }
 }
 
-// Export singleton instance
-export const logoService = new LogoService();
-
-// Clear old cache entries periodically
-setInterval(() => logoService.clearOldCache(), 60 * 60 * 1000); // Every hour
+// Export a singleton instance
+export const logoService = new LogoService(); 

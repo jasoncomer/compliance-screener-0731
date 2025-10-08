@@ -1,7 +1,8 @@
-import React, { forwardRef, useRef } from 'react';
+import React, { forwardRef, useEffect, useRef } from 'react';
 
-import { Loader2, Search } from 'lucide-react';
+import { Loader2,Search } from 'lucide-react';
 
+import { useTheme } from '../../context/ThemeContext';
 import { cn } from '../../lib/utils';
 
 interface SearchInputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'type'> {
@@ -25,7 +26,42 @@ const SearchInput = forwardRef<HTMLInputElement, SearchInputProps>(({
   onKeyPress,
   ...props
 }, ref) => {
+  const { theme } = useTheme();
   const inputRef = useRef<HTMLInputElement>(null);
+  
+  // Force dark mode styling via direct DOM manipulation
+  useEffect(() => {
+    const input = inputRef.current;
+    if (input && theme === 'dark') {
+      // Force the background color directly with multiple approaches
+      input.style.setProperty('background-color', '#1f2937', 'important');
+      input.style.setProperty('color', '#ffffff', 'important');
+      input.style.setProperty('border-color', '#374151', 'important');
+      
+      // Also set the background using setAttribute for maximum compatibility
+      input.setAttribute('style', 
+        input.getAttribute('style') + 
+        '; background-color: #1f2937 !important; color: #ffffff !important; border-color: #374151 !important;'
+      );
+      
+      // Also set placeholder color
+      const style = document.createElement('style');
+      style.textContent = `
+        input[data-search-input="${input.id || 'search'}"]::placeholder {
+          color: #9ca3af !important;
+        }
+      `;
+      document.head.appendChild(style);
+      
+      // Force a re-render by toggling a class
+      input.classList.add('force-dark-mode');
+      
+      return () => {
+        document.head.removeChild(style);
+        input.classList.remove('force-dark-mode');
+      };
+    }
+  }, [theme]);
 
   const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && onSearch) {
@@ -77,8 +113,15 @@ const SearchInput = forwardRef<HTMLInputElement, SearchInputProps>(({
             : 'border-gray-300 dark:border-gray-700 focus:border-orange-500',
           (disabled || loading) && 'cursor-not-allowed opacity-50',
           variant === 'with-action' && 'rounded-r-none',
+          'search-input-dark-mode', // Add a specific class for targeting
           className
         )}
+        style={{
+          ...props.style,
+          backgroundColor: theme === 'dark' ? '#1f2937' : undefined,
+          color: theme === 'dark' ? '#ffffff' : undefined,
+          borderColor: theme === 'dark' ? '#374151' : undefined,
+        }}
         {...props}
       />
       

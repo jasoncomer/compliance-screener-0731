@@ -14,9 +14,6 @@ interface ComplianceTransactionsState {
   total: number;
   page: number;
   limit: number;
-  uniqueClientIds: string[];
-  uniqueClientIdsLoading: boolean;
-  uniqueClientIdsError: string | null;
 }
 
 const initialState: ComplianceTransactionsState = {
@@ -27,23 +24,12 @@ const initialState: ComplianceTransactionsState = {
   total: 0,
   page: 1,
   limit: 10,
-  uniqueClientIds: [],
-  uniqueClientIdsLoading: false,
-  uniqueClientIdsError: null,
 };
 
 export const fetchComplianceTransactions = createAsyncThunk(
   'complianceTransactions/fetchTransactions',
   async (filters: TransactionFilters) => {
     const response = await api.compliance.getTransactions(filters);
-    return response;
-  }
-);
-
-export const fetchUniqueClientIds = createAsyncThunk(
-  'complianceTransactions/fetchUniqueClientIds',
-  async () => {
-    const response = await api.compliance.getUniqueClientIds();
     return response;
   }
 );
@@ -120,7 +106,7 @@ const complianceTransactionsSlice = createSlice({
         
         // Validate response structure
         if (!response || !Array.isArray(response.transactions)) {
-          console.error('🔍 Redux - Invalid API response structure:', response);
+          console.error('Invalid API response structure:', response);
           state.error = 'Invalid response structure from API';
           return;
         }
@@ -202,18 +188,6 @@ const complianceTransactionsSlice = createSlice({
             state.transactions[transaction._id] = transaction;
           }
         });
-      })
-      .addCase(fetchUniqueClientIds.pending, (state) => {
-        state.uniqueClientIdsLoading = true;
-        state.uniqueClientIdsError = null;
-      })
-      .addCase(fetchUniqueClientIds.fulfilled, (state, action) => {
-        state.uniqueClientIdsLoading = false;
-        state.uniqueClientIds = action.payload;
-      })
-      .addCase(fetchUniqueClientIds.rejected, (state, action) => {
-        state.uniqueClientIdsLoading = false;
-        state.uniqueClientIdsError = action.error.message || 'Failed to fetch unique client IDs';
       });
   },
 });
@@ -233,55 +207,11 @@ export const selectUnassignedTransactions = createSelector(
 
 export const selectCompletedTransactions = createSelector(
   (state: RootState) => state.complianceTransactions.transactions,
-  (state: RootState) => state.complianceTransactions.filters,
-  (txs: Record<string, IComplianceTransaction>, filters: TransactionFilters) => {
-    const allTransactions = Object.values(txs);
-    
-    // If we have server-side filtering (indicated by non-status filters), return all transactions
-    // as they are already filtered by the server, but still apply status filtering
-    const hasServerSideFilters = filters.blockchain || filters.assignedTo || 
-                                filters.timestamp || filters.reviewTimestamp || filters.minAmount || 
-                                filters.maxAmount || filters.minRiskLevel || filters.maxRiskLevel ||
-                                filters.clientId || filters.txId || filters.counterpartyEntity;
-    
-    let filteredTransactions = allTransactions;
-    
-    // Apply client-side filtering for fields that need partial matching (only if no server-side filtering)
-    if (!hasServerSideFilters) {
-      // Filter by txId (partial match)
-      if (filters.txId) {
-        console.log('Client-side filtering by txId (completed):', {
-          searchTerm: filters.txId,
-          totalTransactions: filteredTransactions.length,
-          sampleTxIds: filteredTransactions.slice(0, 3).map(tx => tx.txId),
-          beforeFilter: filteredTransactions.length
-        });
-        
-        filteredTransactions = filteredTransactions.filter(tx => 
-          tx.txId && tx.txId.toLowerCase().includes(filters.txId!.toLowerCase())
-        );
-        
-        console.log('After txId filtering (completed):', {
-          afterFilter: filteredTransactions.length,
-          filteredTxIds: filteredTransactions.map(tx => tx.txId)
-        });
-      }
-      
-      // Filter by clientId (partial match)
-      if (filters.clientId) {
-        filteredTransactions = filteredTransactions.filter(tx => 
-          tx.clientId && tx.clientId.toLowerCase().includes(filters.clientId!.toLowerCase())
-        );
-      }
-    }
-    
-    // Always apply status filtering for completed transactions
-    return filteredTransactions.filter((tx) => 
-      tx.status === EComplianceTransactionStatus.APPROVED || 
-      tx.status === EComplianceTransactionStatus.CLOSED_WITH_NOTE || 
-      tx.status === EComplianceTransactionStatus.CLOSED_WITH_SAR
-    );
-  }
+  (txs: Record<string, IComplianceTransaction>) => Object.values(txs).filter((tx) => 
+    tx.status === EComplianceTransactionStatus.APPROVED || 
+    tx.status === EComplianceTransactionStatus.CLOSED_WITH_NOTE || 
+    tx.status === EComplianceTransactionStatus.CLOSED_WITH_SAR
+  )
 );
 
 export const selectActiveTransactions = createSelector(
@@ -295,20 +225,15 @@ export const selectActiveTransactions = createSelector(
       filters,
       transactionIds: allTransactions.map(tx => tx._id),
       statuses: allTransactions.map(tx => tx.status),
-      assignees: allTransactions.map(tx => ({ id: tx._id, assignee: tx.reviewerId }))
+      assignees: allTransactions.map(tx => ({ id: tx._id, assignee: tx.reviewerId, reviewerName: tx.reviewerName }))
     });
     
     // If we have server-side filtering (indicated by non-status filters), 
     // the server should have already filtered by status, but we still need to ensure
     // we only return active transactions for the Case Management tab
     const hasServerSideFilters = filters.blockchain || filters.assignedTo || 
-                                filters.timestamp || filters.reviewTimestamp || filters.minAmount || 
-                                filters.maxAmount || filters.minRiskLevel || filters.maxRiskLevel ||
-                                filters.clientId || filters.txId || filters.counterpartyEntity;
-    
-    console.log('🔍 Redux Selector - hasServerSideFilters:', hasServerSideFilters);
-    
-    console.log('🔍 Redux Selector - hasServerSideFilters:', hasServerSideFilters);
+                                filters.timestamp || filters.minAmount || 
+                                filters.maxAmount || filters.riskLevel;
     
     console.log('🔍 Redux Selector - hasServerSideFilters:', hasServerSideFilters);
     
@@ -328,51 +253,43 @@ export const selectActiveTransactions = createSelector(
       return filtered;
     }
     
+    // Apply client-side filtering for fields that need partial matching
     let filteredTransactions = allTransactions;
     
-    // Apply client-side filtering for fields that need partial matching (only if no server-side filtering)
-    if (!hasServerSideFilters) {
-      // Filter by txId (partial match)
-      if (filters.txId) {
-        console.log('Client-side filtering by txId:', {
-          searchTerm: filters.txId,
-          totalTransactions: filteredTransactions.length,
-          sampleTxIds: filteredTransactions.slice(0, 3).map(tx => tx.txId),
-          beforeFilter: filteredTransactions.length
-        });
-        
-        filteredTransactions = filteredTransactions.filter(tx => 
-          tx.txId && tx.txId.toLowerCase().includes(filters.txId!.toLowerCase())
-        );
-        
-        console.log('After txId filtering:', {
-          afterFilter: filteredTransactions.length,
-          filteredTxIds: filteredTransactions.map(tx => tx.txId)
-        });
-      }
+    // Filter by txId (partial match)
+    if (filters.txId) {
+      console.log('Client-side filtering by txId:', {
+        searchTerm: filters.txId,
+        totalTransactions: filteredTransactions.length,
+        sampleTxIds: filteredTransactions.slice(0, 3).map(tx => tx.txId),
+        beforeFilter: filteredTransactions.length
+      });
       
-      // Filter by clientId (partial match)
-      if (filters.clientId) {
-        filteredTransactions = filteredTransactions.filter(tx => 
-          tx.clientId && tx.clientId.toLowerCase().includes(filters.clientId!.toLowerCase())
-        );
-      }
+      filteredTransactions = filteredTransactions.filter(tx => 
+        tx.txId && tx.txId.toLowerCase().includes(filters.txId!.toLowerCase())
+      );
+      
+      console.log('After txId filtering:', {
+        afterFilter: filteredTransactions.length,
+        filteredTxIds: filteredTransactions.map(tx => tx.txId)
+      });
     }
     
-    // Always apply status filtering
+    // Filter by clientId (partial match)
+    if (filters.clientId) {
+      filteredTransactions = filteredTransactions.filter(tx => 
+        tx.clientId && tx.clientId.toLowerCase().includes(filters.clientId!.toLowerCase())
+      );
+    }
+    
+    // If no status filter is set, use default active statuses
     if (!filters.status) {
       const defaultActiveStatuses = [
         EComplianceTransactionStatus.UNREVIEWED,
         EComplianceTransactionStatus.IN_REVIEW,
         EComplianceTransactionStatus.HOLD
       ];
-      const finalResult = filteredTransactions.filter(tx => defaultActiveStatuses.includes(tx.status));
-      console.log('🔍 Redux Selector - Final result (no status filter):', {
-        filteredCount: finalResult.length,
-        statuses: finalResult.map(tx => tx.status),
-        riskScores: finalResult.map(tx => tx.riskScores)
-      });
-      return finalResult;
+      return filteredTransactions.filter(tx => defaultActiveStatuses.includes(tx.status));
     }
     
     // If status filter is set, respect it
@@ -407,17 +324,6 @@ export const selectPagination = createSelector(
 
 export const selectIsLoading = (state: RootState) =>
   state.complianceTransactions.loading;
-
-export const selectAvailableClientIds = createSelector(
-  (state: RootState) => state.complianceTransactions.uniqueClientIds,
-  (uniqueClientIds: string[]) => uniqueClientIds
-);
-
-export const selectUniqueClientIdsLoading = (state: RootState) =>
-  state.complianceTransactions.uniqueClientIdsLoading;
-
-export const selectUniqueClientIdsError = (state: RootState) =>
-  state.complianceTransactions.uniqueClientIdsError;
 
 export const { setFilters, setPage, setLimit } = complianceTransactionsSlice.actions;
 export default complianceTransactionsSlice.reducer;

@@ -2,12 +2,12 @@ import React, { useEffect, useMemo, useState } from 'react';
 
 import { CheckSquare, Copy,Filter, Search, Square, TrendingUp } from 'lucide-react';
 
-import { api } from '../../../api/api';
 import { Badge } from '../../../components/ui/badge';
 import { Button } from '../../../components/ui/button';
 import { Checkbox } from '../../../components/ui/checkbox';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../../../components/ui/dialog';
 import { useCryptoPrices } from '../../../hooks/useCryptoPrices';
+import { flowtraceService } from '../../../services/flowtraceService';
 
 type Props = {
   open: boolean;
@@ -158,56 +158,56 @@ const NodeTxPickerOptimized: React.FC<Props> = ({
       setLoading(true);
       
       try {
-        console.log(`🚀 NodeTxPicker: Fetching data for ${address}`);
+        console.log(`🚀 NodeTxPicker: Using optimized FlowTrace service for ${address}`);
         const startTime = Date.now();
 
-        // Fetch transactions and attribution using blockchain API
-        const [transactionsResponse, attributionResponse] = await Promise.all([
-          api.blockchain.getAddressTransactions(address, { page: 1, limit: 100 }),
-          api.blockchain.getBitcoinAttribution(address).catch(() => null)
-        ]);
+        // Use the optimized FlowTrace service
+        const optimizedResponse = await flowtraceService.expandNodeOptimized(address, {
+          includeRiskScores: true,
+          includeTransactions: true
+        });
 
         const endTime = Date.now();
         const loadTime = endTime - startTime;
 
-        console.log(`✅ NodeTxPicker: Data loaded in ${loadTime}ms`);
+        console.log(`✅ NodeTxPicker: Optimized data loaded in ${loadTime}ms`);
+        console.log(`📊 Performance: ${optimizedResponse.performance.apiCallsSaved} API calls saved`);
 
         // Store performance metrics
-        setPerformanceMetrics({
-          totalTime: loadTime,
-          apiCallsSaved: 0,
-          optimization: 'react-query-cache'
-        });
+        setPerformanceMetrics(optimizedResponse.performance);
 
-        // Convert transactions to enhanced format
-        const enhancedTxs: EnhancedTransaction[] = transactionsResponse.txs.map((tx: any, index: number) => {
-          const entityName = attributionResponse?.entity || 'Unknown Entity';
-          const entityId = attributionResponse?.entity || 'unknown';
+        // Convert optimized response to the format expected by the component
+        const enhancedTxs: EnhancedTransaction[] = optimizedResponse.data.enhancedData.map((item: any, index: number) => {
+          const entityName = item.attribution?.entity || item.entityProfile?.proper_name || 'Unknown Entity';
+          const entityId = item.attribution?.entity || 'unknown';
+          const entityType = item.entityProfile?.entity_type || 'wallet';
+          const logo = item.entityProfile?.logo_url || null;
+          const riskScore = item.entityProfile?.risk_score || 0;
 
           return {
-            txid: tx.txid || `tx_out_${index}`,
-            time: tx.time || 0,
-            inputs: [],
-            outputs: [tx],
+            txid: `tx_${item.direction}_${index}`,
+            time: item.timestamp || 0,
+            inputs: item.direction === 'in' ? [item] : [],
+            outputs: item.direction === 'out' ? [item] : [],
             entityName,
             entityId,
-            entityType: 'wallet',
-            logo: undefined,
-            riskScore: 0,
-            amount: tx.value?.toString() || '0',
-            currency: 'BTC',
-            direction: 'out' as 'in' | 'out',
-            usdValue: calculateUsdValue(parseFloat(tx.value || '0'), 'BTC'),
-            date: tx.time ? new Date(tx.time * 1000).toISOString().split('T')[0] : 'Unknown',
-            entityTags: [],
-            ofac: false,
+            entityType,
+            logo,
+            riskScore,
+            amount: item.amount?.toString() || '0',
+            currency: item.currency || 'BTC',
+            direction: item.direction,
+            usdValue: calculateUsdValue(parseFloat(item.amount || '0'), item.currency || 'BTC'),
+            date: item.timestamp ? new Date(item.timestamp * 1000).toISOString().split('T')[0] : 'Unknown',
+            entityTags: item.entityProfile?.entity_tags || [],
+            ofac: item.entityProfile?.entity_tags?.includes('ofac sanctioned') || false,
             isBeneficialOwnerOverride: false,
             displayTitle: entityName,
-            cospendId: attributionResponse?.cospend_id || address,
+            cospendId: item.attribution?.cospend_id || item.addr,
             transactionCount: 1,
-            originalTxHash: tx.txid,
-            attribution: attributionResponse,
-            entityProfile: null
+            originalTxHash: item.txid,
+            attribution: item.attribution,
+            entityProfile: item.entityProfile
           };
         });
 
@@ -225,7 +225,8 @@ const NodeTxPickerOptimized: React.FC<Props> = ({
           withEntityType: enhancedTxs.filter(tx => tx.entityType && tx.entityType !== 'unknown').length,
           withRiskScore: enhancedTxs.filter(tx => tx.riskScore !== undefined).length,
           withLogo: enhancedTxs.filter(tx => tx.logo).length,
-          loadTime: `${loadTime}ms`
+          loadTime: `${loadTime}ms`,
+          apiCallsSaved: optimizedResponse.performance.apiCallsSaved
         };
         console.log('Optimized data availability summary:', dataSummary);
 

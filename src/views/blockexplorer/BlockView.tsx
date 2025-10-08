@@ -7,6 +7,7 @@ import Pagination from '../../components/common/Pagination';
 import { BlockLoader } from '../../components/ui/blockchain-loader';
 import { useAttribution } from '../../context/AttributionContext';
 import { useToast } from '../../hooks/use-toast';
+import { BsBlock } from '../../styles/Table';
 import { IBtcBlock } from '../../typings/Block';
 import { BtcTransaction } from '../../typings/BtcTransaction';
 
@@ -128,8 +129,8 @@ const BlockView: React.FC = () => {
       />
       
       <div className="w-full">
-  
-          <h3 className="py-2">Transactions ({totalTxs.toLocaleString()})</h3>
+        <BsBlock className="font-mono">
+          <h3>Transactions ({totalTxs.toLocaleString()})</h3>
 
           {isLoading ? (
             <div className="flex items-center justify-center p-8">
@@ -137,9 +138,7 @@ const BlockView: React.FC = () => {
             </div>
           ) : (
             <>
-              <div className="space-y-4">
-                {transactions.map((tx: BtcTransaction) => <BtcTransactionTable key={tx._id} transaction={tx} />)}
-              </div>
+              {transactions.map(tx => <BtcTransactionTable key={tx._id} transaction={tx} />)}
               <Pagination
                 currentPage={currentPage}
                 totalPages={totalPages}
@@ -147,6 +146,7 @@ const BlockView: React.FC = () => {
               />
             </>
           )}
+        </BsBlock>
       </div>
     </div>
   );

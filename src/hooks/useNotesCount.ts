@@ -5,10 +5,10 @@ import { useSelector } from 'react-redux';
 import { notesApi } from '../api/notes';
 import { selectCurrentOrganization } from '../store/slices/organizationsSlice';
 
-export type NoteContextType = 'transaction' | 'address' | 'cluster' | 'block';
+export type NoteContextType = 'transaction' | 'address' | 'cluster';
 
 interface UseNotesCountOptions {
-  contextType?: NoteContextType;
+  contextType: NoteContextType;
   contextId?: string;
   enabled?: boolean;
 }
@@ -21,7 +21,7 @@ export const useNotesCount = ({ contextType, contextId, enabled = true }: UseNot
   const currentOrganization = useSelector(selectCurrentOrganization);
 
   const fetchNotesCount = useCallback(async () => {
-    if (!enabled || !currentOrganization || !contextId || !contextType) {
+    if (!enabled || !currentOrganization || !contextId) {
       setTotalNotesCount(0);
       setError(null);
       return;
@@ -43,10 +43,6 @@ export const useNotesCount = ({ contextType, contextId, enabled = true }: UseNot
         case 'cluster':
           response = await notesApi.getClusterNotes(currentOrganization._id, contextId);
           break;
-        case 'block':
-          // Blocks don't have notes in the current system
-          setTotalNotesCount(0);
-          return;
         default:
           throw new Error(`Unsupported context type: ${contextType}`);
       }

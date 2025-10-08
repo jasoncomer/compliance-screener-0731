@@ -1,11 +1,10 @@
 import React, { useCallback, useEffect, useMemo,useRef, useState } from 'react';
 
-import { AlertCircle,BarChart3, StickyNote } from 'lucide-react';
+import { AlertCircle,BarChart3 } from 'lucide-react';
 
 import AddressSearchInput from '../../components/common/AddressSearchInput';
 import EmptyState from '../../components/common/EmptyState';
 import EntityHeightMeasurer from '../../components/EntityHeightMeasurer';
-import NotesPanel from '../../components/common/NotesPanel';
 import ViewWrapper from '../../components/ViewWrapper';
 import { useAttribution } from '../../context/AttributionContext';
 import { useTheme } from '../../context/ThemeContext';
@@ -32,7 +31,8 @@ import { SimpleSankeyTest } from './components/SimpleSankeyTest';
 import { 
   EntityDetails,
   GeographicPresence,
-  RiskAssessment,
+  RiskAssessment, 
+  RiskScoreModal,
   TopCounterparties, 
   TransactionActivity,
   TransactionHistory} from './components';
@@ -44,6 +44,7 @@ const RiskDashboard: React.FC = React.memo(() => {
   const [hasData, setHasData] = useState(false);
   const [address, setAddress] = useState('');
   const [searchValue, setSearchValue] = useState('');
+  const [riskScoreModalVisible, setRiskScoreModalVisible] = useState(false);
   const [addressNotFound, setAddressNotFound] = useState<boolean>(false);
   const [entityDetailsHeight, setEntityDetailsHeight] = useState<number | undefined>(undefined);
   const entityDetailsRef = useRef<HTMLDivElement>(null);
@@ -579,6 +580,25 @@ const RiskDashboard: React.FC = React.memo(() => {
     return entity?.revisit_site || false;
   }, [items]);
 
+  // Risk level helper functions - memoized
+  const getRiskLevel = useCallback((score: number): string => {
+    if (score >= 80) return 'High';
+    if (score >= 50) return 'Medium';
+    if (score >= 20) return 'Low';
+    return 'Very Low';
+  }, []);
+
+  const getRiskDescription = useCallback((score: number): string => {
+    if (score >= 80) {
+      return 'This address shows significant risk indicators including high transaction volumes, connections to known risky entities, and unusual activity patterns.';
+    } else if (score >= 50) {
+      return 'This address displays moderate risk factors with some concerning transaction patterns and entity connections that warrant attention.';
+    } else if (score >= 20) {
+      return 'This address shows low risk indicators with mostly normal transaction patterns and few concerning connections.';
+    } else {
+      return 'This address appears to be low risk with normal transaction patterns and no significant concerning indicators.';
+    }
+  }, []);
 
   // Generate transaction activity data from real transaction data - memoized
   const transactionActivityData = useMemo(() => {
@@ -903,6 +923,10 @@ const RiskDashboard: React.FC = React.memo(() => {
     handleAddressSearch(value);
   }, [handleAddressSearch]);
 
+  const handleRiskScoreClick = useCallback(() => {
+    setRiskScoreModalVisible(true);
+  }, []);
+
   // Handle counterparty click to navigate to that address - memoized
   const handleCounterpartyClick = useCallback((address: string) => {
     if (address && address.trim()) {
@@ -1051,35 +1075,28 @@ const RiskDashboard: React.FC = React.memo(() => {
         </div>
       ) : (
         <div className="space-y-6">
-          {/* Address Header, Summary, and Risk Assessment Layout */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6 mt-6 lg:mt-8 items-stretch">
-            {/* Left Column - Address Header and Summary (1/3 width) */}
-            <div className="flex flex-col gap-3 lg:gap-4 h-full">
-              {/* Address Header Card */}
-              <div className="rounded-2xl border p-3 lg:p-4 bg-gray-50 dark:bg-background border-gray-200 dark:border-gray-700 flex-shrink-0">
-                <AddressHeader 
-                  address={address}
-                  entityTags={entityTags}
-                  entityName={getDisplayName}
-                  entityId={primaryEntityId}
-                  entityType={primaryEntityId ? getEntityType(primaryEntityId) : undefined}
-                />
-              </div>
+          {/* Address Header - Full Width */}
+          <div className="rounded-2xl border p-6 bg-gray-50 dark:bg-background border-gray-200 dark:border-gray-700 mt-8">
+            <AddressHeader 
+              address={address}
+              entityTags={entityTags}
+              entityName={getDisplayName}
+              entityId={primaryEntityId}
+              entityType={primaryEntityId ? getEntityType(primaryEntityId) : undefined}
+            />
+          </div>
 
-              {/* Summary Stats */}
-              <div className="flex-1 min-h-0 flex flex-col">
-                <AddressSummary {...addressSummaryProps} />
-              </div>
-            </div>
-
-            {/* Right Column - Risk Assessment (2/3 width) */}
-            <div className="lg:col-span-2 h-full">
-              <RiskAssessment 
-                riskScores={enhancedRiskScore}
-                address={address}
-                isLoading={isLoadingRiskScore || loading}
-              />
-            </div>
+          {/* Summary Stats and Risk Assessment - Two Columns */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <AddressSummary {...addressSummaryProps} />
+            <RiskAssessment 
+              score={enhancedRiskScore ? Math.round(enhancedRiskScore.overallRisk * 100) : 0}
+              level={enhancedRiskScore ? getRiskLevel(enhancedRiskScore.overallRisk * 100) : 'Unknown'}
+              description={enhancedRiskScore ? getRiskDescription(enhancedRiskScore.overallRisk * 100) : 'No risk data available'}
+              isLoading={isLoadingRiskScore || loading}
+              onSeeDetails={handleRiskScoreClick}
+              boInfo={enhancedRiskScore?.boInfo}
+            />
           </div>
 
           {/* Transaction Activity - Full Width - Show for every address */}
@@ -1124,10 +1141,11 @@ const RiskDashboard: React.FC = React.memo(() => {
           {/* Top Counterparties and Transaction History - Two Columns */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="rounded-2xl border p-6 bg-gray-50 dark:bg-background border-gray-200 dark:border-gray-700">
-              <TopCounterparties
-                incoming={counterpartyData.incoming}
-                outgoing={counterpartyData.outgoing}
+              <TopCounterparties 
+                incoming={counterpartyData.incoming} 
+                outgoing={counterpartyData.outgoing} 
                 onCounterpartyClick={handleCounterpartyClick}
+                transactions={transformedTransactions}
               />
             </div>
             
@@ -1229,23 +1247,6 @@ const RiskDashboard: React.FC = React.memo(() => {
           />
         </div>
       )}
-
-          {/* Notes Section - Full Width */}
-          {address && (
-            <div className="rounded-2xl border p-6 bg-gray-50 dark:bg-background border-gray-200 dark:border-gray-700">
-              <div className="flex items-center space-x-3 mb-6">
-                <div className="w-10 h-10 bg-yellow-100 dark:bg-yellow-900/30 rounded-xl flex items-center justify-center">
-                  <StickyNote className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
-                </div>
-                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Address Notes</h2>
-              </div>
-              <NotesPanel 
-                type="address"
-                address={address}
-                inline={true}
-              />
-            </div>
-          )}
         </div>
       )}
 
@@ -1373,6 +1374,16 @@ const RiskDashboard: React.FC = React.memo(() => {
           </div>
           <p className="mt-1">{addressError.message}</p>
         </div>
+      )}
+
+      {riskScoreModalVisible && (
+        <RiskScoreModal
+          visible={riskScoreModalVisible}
+          onClose={() => setRiskScoreModalVisible(false)}
+          riskScores={enhancedRiskScore}
+          address={address}
+          loading={isLoadingRiskScore}
+        />
       )}
     </ViewWrapper>
   );

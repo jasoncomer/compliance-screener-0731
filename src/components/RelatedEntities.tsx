@@ -1,147 +1,133 @@
 import React, { useEffect,useState } from 'react';
 
-import { User } from 'lucide-react';
+import { UserOutlined } from '@ant-design/icons';
+import { Avatar,Card, Typography } from 'antd';
+import styled from 'styled-components';
 
-import { useSelector } from 'react-redux';
+import { colors } from '@/design-system/tokens'
+
 import { api } from '../api/api';
-import { RootState } from '../store/store';
 
-import { cn } from '@/design-system/utils';
-import { Card } from './ui/card';
-import { Avatar, AvatarFallback } from './ui/avatar';
+const { Title } = Typography;
 
 interface ContainerProps {
   isEmpty?: boolean;
-  children: React.ReactNode;
-  className?: string;
 }
 
-const Container: React.FC<ContainerProps> = ({ isEmpty, children, className }) => (
-  <div className={cn(
-    "text-left h-fit min-h-0 flex flex-col flex-1 max-h-[50%]",
-    isEmpty && "hidden",
-    className
-  )}>
-    {children}
-  </div>
-);
+const Container = styled.div<ContainerProps>`
+  text-align: left;
+  height: fit-content;
+  min-height: 0;
+  display: ${props => props.isEmpty ? 'none' : 'flex'};
+  flex-direction: column;
+  flex: 1;
+  max-height: 50%;
 
-interface SectionTitleProps {
-  level?: 1 | 2 | 3 | 4 | 5;
-  children: React.ReactNode;
-  className?: string;
-}
+  &:empty {
+    display: none;
+  }
+`;
 
-const SectionTitle: React.FC<SectionTitleProps> = ({ level = 4, children, className }) => {
-  const HeadingTag = `h${level}` as keyof JSX.IntrinsicElements;
-  const sizeClasses = {
-    1: "text-2xl font-bold",
-    2: "text-xl font-semibold", 
-    3: "text-lg font-semibold",
-    4: "text-base font-medium",
-    5: "text-sm font-medium"
-  };
+const SectionTitle = styled(Title)`
+  &.ant-typography {
+    margin-bottom: 12px;
+    margin-top: 0px;
+    font-size: 16px;
+  }
+`;
+
+const CustodianSection = styled.div`
+  padding-right: 8px;
+  margin-bottom: 16px;
+  padding-right: 22px
+`;
+
+const BeneficialOwnersSection = styled.div`
+  display: flex;
+  flex-direction: column;
+  padding-right: 8px;
+  margin-bottom: 0;
+`;
+
+const BeneficialOwnersList = styled.div`
+  overflow-y: auto;
+  flex: 1;
+  padding-right: 8px;
+  max-height: 150px;
   
-  return (
-    <HeadingTag className={cn("mb-3 mt-0 text-gray-900 dark:text-white", sizeClasses[level], className)}>
-      {children}
-    </HeadingTag>
-  );
-};
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  &::-webkit-scrollbar-thumb {
+    background: ${({ theme }) => theme.theme === 'dark' ? '#303030' : '#d9d9d9'};
+    border-radius: 3px;
+  }
 
-interface CustodianSectionProps {
-  children: React.ReactNode;
-  className?: string;
-}
+  /* Remove any potential fade effects from mask-image */
+  -webkit-mask-image: none;
+  mask-image: none;
+`;
 
-const CustodianSection: React.FC<CustodianSectionProps> = ({ children, className }) => (
-  <div className={cn("pr-2 mb-4", className)}>
-    {children}
-  </div>
-);
 
-interface BeneficialOwnersSectionProps {
-  children: React.ReactNode;
-  className?: string;
-}
-
-const BeneficialOwnersSection: React.FC<BeneficialOwnersSectionProps> = ({ children, className }) => (
-  <div className={cn("flex flex-col pr-2 mb-0", className)}>
-    {children}
-  </div>
-);
-
-interface BeneficialOwnersListProps {
-  children: React.ReactNode;
-  className?: string;
-}
-
-const BeneficialOwnersList: React.FC<BeneficialOwnersListProps> = ({ children, className }) => (
-  <div className={cn(
-    "overflow-y-auto flex-1 pr-2 max-h-[150px]",
-    "scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600",
-    "scrollbar-track-transparent",
-    className
-  )}>
-    {children}
-  </div>
-);
-
-interface EntityListProps {
-  children: React.ReactNode;
-  className?: string;
-}
-
-const EntityList: React.FC<EntityListProps> = ({ children, className }) => (
-  <div className={cn("grid grid-cols-[repeat(auto-fill,minmax(250px,1fr))] gap-2 mt-0", className)}>
-    {children}
-  </div>
-);
+const EntityList = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 8px;
+  margin-top: 0px;
+`;
 
 interface StyledCardProps {
   isEmpty?: boolean;
-  children: React.ReactNode;
-  className?: string;
-  onClick?: () => void;
 }
 
-const StyledCard: React.FC<StyledCardProps> = ({ isEmpty, children, className, onClick }) => (
-  <Card 
-    onClick={onClick}
-    className={cn(
-      "cursor-pointer transition-all duration-300 mb-0 p-3",
-      isEmpty 
-        ? "bg-transparent border-gray-300 dark:border-gray-700" 
-        : "bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-700 hover:shadow-lg hover:-translate-y-0.5 hover:border-gray-400 dark:hover:border-gray-600",
-      className
-    )}
-  >
-    {children}
-  </Card>
-);
+const StyledCard = styled(Card)<StyledCardProps>`
+  cursor: pointer;
+  transition: all 0.3s;
+  margin-bottom: 0;
+  border: 1px solid ${({ theme }) => theme.theme === 'dark' ? '#303030' : '#d9d9d9'};
+  background: ${({ theme, isEmpty }) => isEmpty ? 'transparent' : theme.theme === 'dark' ? '#1f1f1f' : '#fff'};
+
+  &:hover {
+    box-shadow: ${({ isEmpty }) => isEmpty ? 'none' : '0 4px 12px rgba(0, 0, 0, 0.1)'};
+    transform: ${({ isEmpty }) => isEmpty ? 'none' : 'translateY(-2px)'};
+    border-color: ${({ theme, isEmpty }) => isEmpty ? theme.theme === 'dark' ? '#303030' : '#d9d9d9' : theme.theme === 'dark' ? '#404040' : '#b9b9b9'};
+  }
+  
+  .ant-card-body {
+    padding: 12px;
+    border-radius: 8px;
+  }
+`;
 
 interface CardContentProps {
   isEmpty?: boolean;
-  children: React.ReactNode;
-  className?: string;
 }
 
-const CardContent: React.FC<CardContentProps> = ({ isEmpty, children, className }) => (
-  <div className={cn("flex items-center gap-2", isEmpty && "opacity-50", className)}>
-    {children}
-  </div>
-);
+const CardContent = styled.div<CardContentProps>`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  opacity: ${({ isEmpty }) => isEmpty ? 0.5 : 1};
+`;
 
-interface EntityInfoProps {
-  children: React.ReactNode;
-  className?: string;
-}
-
-const EntityInfo: React.FC<EntityInfoProps> = ({ children, className }) => (
-  <div className={cn("flex-1", className)}>
-    {children}
-  </div>
-);
+const EntityInfo = styled.div`
+  flex: 1;
+  
+  .entity-name {
+    font-weight: 500;
+    margin-bottom: 2px;
+  }
+  
+  .entity-type {
+    color: ${({ theme }) => theme.theme === 'dark' ? colors.gray[400] : colors.gray[600]};
+    font-size: 12px;
+  }
+`;
 
 interface RelatedEntitiesProps {
   entity: string;
@@ -155,7 +141,6 @@ const RelatedEntities: React.FC<RelatedEntitiesProps> = ({ entity, onHasEntities
   } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { itemsMap } = useSelector((state: RootState) => state.sot);
 
   useEffect(() => {
     const fetchRelatedEntities = async () => {
@@ -188,49 +173,23 @@ const RelatedEntities: React.FC<RelatedEntitiesProps> = ({ entity, onHasEntities
   if (error) return null;
   if (!relatedEntities) return null;
   if (!relatedEntities.unique_bos || !relatedEntities.unique_custodians) return null;
-  
-  // Get current entity information for filtering
-  const currentEntity = Object.values(itemsMap).find(sot => sot.entity_id === entity);
-  
-  // Filter out the current entity from beneficial owners and custodians
-  const filteredBeneficialOwners = (relatedEntities.unique_bos || []).filter(entityName => {
-    if (!currentEntity) return true;
-    const currentEntityName = currentEntity.proper_name?.toLowerCase();
-    const currentEntityId = currentEntity.entity_id?.toLowerCase();
-    const entityNameLower = entityName.toLowerCase();
-    
-    // Don't show the current entity as its own beneficial owner
-    return entityNameLower !== currentEntityName && entityNameLower !== currentEntityId;
-  });
-  
-  const filteredCustodians = (relatedEntities.unique_custodians || []).filter(entityName => {
-    if (!currentEntity) return true;
-    const currentEntityName = currentEntity.proper_name?.toLowerCase();
-    const currentEntityId = currentEntity.entity_id?.toLowerCase();
-    const entityNameLower = entityName.toLowerCase();
-    
-    // Don't show the current entity as its own custodian
-    return entityNameLower !== currentEntityName && entityNameLower !== currentEntityId;
-  });
-  
-  if (filteredBeneficialOwners.length === 0 && filteredCustodians.length === 0) return null;
+  if (relatedEntities.unique_bos.length === 0 && relatedEntities.unique_custodians.length === 0) return null;
 
   const renderBeneficialOwners = () => {
-    if (!filteredBeneficialOwners || filteredBeneficialOwners.length === 0) {
+    if (!relatedEntities.unique_bos || relatedEntities.unique_bos.length === 0) {
       return null;
     }
 
-    const entityCards = filteredBeneficialOwners.map((entityName, index) => (
+    const entityCards = relatedEntities.unique_bos.map((entityName, index) => (
       <StyledCard key={index}>
         <CardContent>
-          <Avatar className="h-10 w-10">
-            <AvatarFallback>
-              <User className="h-5 w-5" />
-            </AvatarFallback>
-          </Avatar>
+          <Avatar
+            size="large"
+            icon={<UserOutlined />}
+          />
           <EntityInfo>
-            <div className="font-medium mb-0.5">{entityName}</div>
-            <div className="text-xs text-gray-600 dark:text-gray-400">Beneficial Owner</div>
+            <div className="entity-name">{entityName}</div>
+            <div className="entity-type">Beneficial Owner</div>
           </EntityInfo>
         </CardContent>
       </StyledCard>
@@ -238,14 +197,14 @@ const RelatedEntities: React.FC<RelatedEntitiesProps> = ({ entity, onHasEntities
 
     return (
       <BeneficialOwnersSection>
-        <SectionTitle level={4}>Beneficial Owner ({filteredBeneficialOwners.length})</SectionTitle>
+        <SectionTitle level={4}>Beneficial Owner ({relatedEntities.unique_bos.length})</SectionTitle>
         <BeneficialOwnersList>
           <EntityList>
             {entityCards.length > 0 ? entityCards : (
               <StyledCard isEmpty={true}>
                 <CardContent isEmpty={true}>
                   <EntityInfo>
-                    <div className="font-medium text-gray-500">None found</div>
+                    <div className="entity-name" style={{ color: '#888' }}>None found</div>
                   </EntityInfo>
                 </CardContent>
               </StyledCard>
@@ -257,18 +216,17 @@ const RelatedEntities: React.FC<RelatedEntitiesProps> = ({ entity, onHasEntities
   };
 
   const renderCustodians = () => {
-    const custodians = filteredCustodians || [];
+    const custodians = relatedEntities.unique_custodians || [];
     const custodianCards = custodians.map((entityName, index) => (
       <StyledCard key={index}>
         <CardContent>
-          <Avatar className="h-10 w-10">
-            <AvatarFallback>
-              <User className="h-5 w-5" />
-            </AvatarFallback>
-          </Avatar>
+          <Avatar
+            size="large"
+            icon={<UserOutlined />}
+          />
           <EntityInfo>
-            <div className="font-medium mb-0.5">{entityName}</div>
-            <div className="text-xs text-gray-600 dark:text-gray-400">Custodian</div>
+            <div className="entity-name">{entityName}</div>
+            <div className="entity-type">Custodian</div>
           </EntityInfo>
         </CardContent>
       </StyledCard>
@@ -282,7 +240,7 @@ const RelatedEntities: React.FC<RelatedEntitiesProps> = ({ entity, onHasEntities
             <StyledCard isEmpty={true}>
               <CardContent isEmpty={true}>
                 <EntityInfo>
-                  <div className="font-medium text-gray-500">None found</div>
+                  <div className="entity-name" style={{ color: '#888' }}>None found</div>
                 </EntityInfo>
               </CardContent>
             </StyledCard>

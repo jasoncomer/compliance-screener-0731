@@ -2,8 +2,6 @@ import { useCallback, useEffect, useState } from 'react';
 
 import { SOT } from '../../../typings/interfaces';
 import { getAssociateCountries, getEntityTags, getSocialMediaProfiles } from '../../../utils/sotUtils';
-import { isValidBlockchainAddress } from '../../../utils/addressValidation';
-import { flowtraceService } from '../../../services/flowtraceService';
 import { ConsolidatedEntity } from '../types';
 
 interface UseEntitySearchProps {
@@ -120,39 +118,6 @@ export const useEntitySearch = ({ sot, allowCSAM, debouncedSearchValue }: UseEnt
         return;
       }
 
-      // Check if the search text is a blockchain address
-      const isBlockchainAddress = isValidBlockchainAddress(searchText);
-      
-      let addressAttributionResults: ConsolidatedEntity[] = [];
-      
-      // If it's a valid blockchain address, try to find the associated entity
-      if (isBlockchainAddress) {
-        try {
-          const entityProfile = await flowtraceService.fetchEntityProfile(searchText);
-          
-          if (entityProfile?.entityId) {
-            // Find the SOT entity that matches the attributed entity ID
-            const attributedEntity = sot.find(sotItem => sotItem.entity_id === entityProfile.entityId);
-            
-            if (attributedEntity) {
-              // Just return the entity - simple!
-              addressAttributionResults = [consolidateEntity(
-                attributedEntity,
-                'address_attribution',
-                0
-              )];
-            }
-          }
-        } catch (error) {
-          console.warn(`⚠️ Address Search: Failed to fetch attribution for address ${searchText}:`, error);
-        }
-        
-        // For address searches, return only the attribution result (no text search)
-        setSearchResults(addressAttributionResults);
-        setLoading(false);
-        return;
-      }
-
       const searchableFields = [
         'entity_id',
         'proper_name',
@@ -175,8 +140,6 @@ export const useEntitySearch = ({ sot, allowCSAM, debouncedSearchValue }: UseEnt
         'associate_country_4',
         'associate_country_5',
         'associate_country_6',
-        'ens_address',
-        'contact_address',
       ];
 
       // Use our enhanced search function (no more sifter!)
@@ -227,29 +190,12 @@ export const useEntitySearch = ({ sot, allowCSAM, debouncedSearchValue }: UseEnt
       const sortedEntities = Object.values(consolidatedEntities)
         .sort((a, b) => b.searchScore - a.searchScore);
 
-      // Combine address attribution results with regular search results
-      // Prioritize address attribution results if they exist
-      const allResults = [...addressAttributionResults, ...sortedEntities];
-      
-      // Remove duplicates based on entity_id, keeping the highest scored result
-      const uniqueResults = allResults.reduce((acc, entity) => {
-        const existing = acc.find(e => e.entity_id === entity.entity_id);
-        if (!existing || entity.searchScore > existing.searchScore) {
-          // Remove existing if it exists and has lower score
-          if (existing) {
-            const index = acc.indexOf(existing);
-            acc.splice(index, 1);
-          }
-          acc.push(entity);
-        }
-        return acc;
-      }, [] as ConsolidatedEntity[]);
+      // Log search results summary (only in development)
+      if (process.env.NODE_ENV === 'development' && sortedEntities.length > 0) {
+        console.log('🔍 VASP Search Results:', sortedEntities.length, 'entities found');
+      }
 
-      // Sort final results by score
-      const finalResults = uniqueResults.sort((a, b) => b.searchScore - a.searchScore);
-
-
-      setSearchResults(finalResults);
+      setSearchResults(sortedEntities);
     } catch (error) {
       console.error('Search error:', error);
       setSearchResults([]);

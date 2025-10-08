@@ -7,7 +7,6 @@ import EmptyState from '../../components/common/EmptyState';
 import NotesModal from '../../components/common/NotesModal';
 import SearchInput from '../../components/common/SearchInput';
 import ViewWrapper from '../../components/ViewWrapper';
-import { useNotesCount } from '../../hooks/useNotesCount';
 import { determineInputType } from '../../utils/crypto';
 
 import Address from './address-page/Address';
@@ -90,13 +89,6 @@ const BlockExplorer: React.FC = () => {
   const [newNotesCount, setNewNotesCount] = useState(0);
   const [currentContext, setCurrentContext] = useState<CurrentContext>({ type: 'general' });
 
-  // Use notes count hook to get total notes count
-  const { totalNotesCount } = useNotesCount({
-    contextType: currentContext.type === 'general' ? undefined : currentContext.type as 'transaction' | 'address' | 'block',
-    contextId: currentContext.id,
-    enabled: currentContext.type !== 'general'
-  });
-
 
   useEffect(() => {
     // Simpler context detection based on route patterns
@@ -173,7 +165,7 @@ const BlockExplorer: React.FC = () => {
       fullWidth={true}
       className="bg-gray-200 dark:bg-gray-900"
     >
-      <div className="sticky top-[0] z-20 pt-2 py-2 mb-2 bg-gray-200 dark:bg-gray-900">
+      <div className="sticky top-[0] z-20 pt-2 py-2 mb-2 border-b bg-gray-200 dark:bg-gray-900">
         <div className="flex justify-between items-center gap-4">
           <div className="flex-1 max-w-2xl">
             <SearchInput
@@ -196,7 +188,6 @@ const BlockExplorer: React.FC = () => {
               onClick={showNotesModal}
               title="View Notes"
               newNotesCount={newNotesCount}
-              totalNotesCount={totalNotesCount}
             >
               Notes
             </NotesButton>

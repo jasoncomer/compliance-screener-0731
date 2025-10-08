@@ -82,8 +82,7 @@ export const compliance = {
       timestamp?: { from?: string; to?: string };
       minAmount?: number;
       maxAmount?: number;
-      minRiskLevel?: number;
-      maxRiskLevel?: number;
+      riskLevel?: 'high' | 'medium' | 'low';
       page?: number;
       limit?: number;
       sortBy?: string;
@@ -169,13 +168,6 @@ export const compliance = {
     addressId: string,
   ): Promise<MonitoredAddressChange[]> => {
     const endpoint = `/compliance/monitored-addresses/${addressId}/history`;
-    const response = await axiosInstance.get(endpoint);
-    return response.data.data;
-  },
-
-  // Get unique client IDs
-  getUniqueClientIds: async (): Promise<string[]> => {
-    const endpoint = `/compliance/client-ids`;
     const response = await axiosInstance.get(endpoint);
     return response.data.data;
   }

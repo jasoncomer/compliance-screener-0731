@@ -1,0 +1,8 @@
+#!/bin/sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+# Add Homebrew's bin directory to PATH
+export PATH="/opt/homebrew/bin:$PATH"
+
+# Run build before pushing
+/opt/homebrew/bin/npm run build 

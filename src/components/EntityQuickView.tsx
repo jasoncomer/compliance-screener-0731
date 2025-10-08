@@ -3,7 +3,6 @@ import ReactDOM from 'react-dom';
 
 import { Eye, Globe, Send, Twitter, User } from 'lucide-react';
 
-import { colors } from '../design-system/tokens';
 import { SOT } from '../typings/interfaces';
 import { EEntityType } from '../typings/SOT';
 import { getEntityTypeLabel } from '../utils/display-labels';
@@ -146,30 +145,8 @@ const CompactSOTView: React.FC<{
 
         <div className="pt-3 mt-3 border-t border-gray-200 dark:border-gray-700 text-center">
           <button
-            type="button"
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              onViewFull(sot);
-            }}
-            onMouseDown={(e) => {
-              e.stopPropagation();
-            }}
-            onMouseUp={(e) => {
-              e.stopPropagation();
-            }}
-            className="px-4 py-2 text-white rounded-md text-sm font-medium cursor-pointer transition-colors"
-            style={{ 
-              pointerEvents: 'auto', 
-              zIndex: 100000,
-              backgroundColor: colors.brand.primary,
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = colors.brand.primaryHover;
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = colors.brand.primary;
-            }}
+            onClick={() => onViewFull(sot)}
+            className="text-blue-600 dark:text-blue-400 hover:underline text-sm font-medium"
           >
             View Full Profile
           </button>
@@ -236,7 +213,7 @@ const EntityQuickView: React.FC<EntityQuickViewProps> = ({
     if (!isOverPopoverRef.current) {
       closeTimeoutRef.current = setTimeout(() => {
         setIsOpen(false);
-      }, 500); // Increased delay to give time to move mouse to popup
+      }, 100); // Reduced delay to make it more responsive
     }
   };
 
@@ -254,7 +231,7 @@ const EntityQuickView: React.FC<EntityQuickViewProps> = ({
     if (!isOverButtonRef.current) {
       closeTimeoutRef.current = setTimeout(() => {
         setIsOpen(false);
-      }, 500);
+      }, 100);
     }
   };
 
@@ -273,8 +250,7 @@ const EntityQuickView: React.FC<EntityQuickViewProps> = ({
     const style: React.CSSProperties = {
       position: 'fixed',
       width: popoverWidth,
-      zIndex: 99999, // Increased z-index to ensure it's on top
-      pointerEvents: 'auto',
+      zIndex: 9999,
     };
 
     // Calculate position based on placement
@@ -323,8 +299,7 @@ const EntityQuickView: React.FC<EntityQuickViewProps> = ({
 
     const style: React.CSSProperties = {
       position: 'fixed',
-      zIndex: 99998, // Match increased z-index
-      pointerEvents: 'auto',
+      zIndex: 9998,
     };
 
     // Create invisible bridge based on placement
@@ -343,37 +318,25 @@ const EntityQuickView: React.FC<EntityQuickViewProps> = ({
     return style;
   };
 
-  const popoverContent = React.useMemo(() => {
-    if (!isOpen || !sot) {
-      return null;
-    }
-
-    return (
-      <>
-        {/* Invisible bridge to maintain hover state when moving between button and popover */}
-        <div
-          style={{
-            ...getBridgeStyle(),
-            pointerEvents: 'auto'
-          }}
-          onMouseEnter={handlePopoverMouseEnter}
-          onMouseLeave={handlePopoverMouseLeave}
-        />
-        <div
-          style={{
-            ...getPopoverStyle(),
-            pointerEvents: 'auto'
-          }}
-          onMouseEnter={handlePopoverMouseEnter}
-          onMouseLeave={handlePopoverMouseLeave}
-        >
-          <div className="max-h-[550px] overflow-y-auto rounded-lg shadow-2xl border border-gray-200 dark:border-gray-700">
-            <CompactSOTView sot={sot} onViewFull={onViewFull} />
-          </div>
+  const popoverContent = isOpen && sot && (
+    <>
+      {/* Invisible bridge to maintain hover state when moving between button and popover */}
+      <div
+        style={getBridgeStyle()}
+        onMouseEnter={handlePopoverMouseEnter}
+        onMouseLeave={handlePopoverMouseLeave}
+      />
+      <div
+        style={getPopoverStyle()}
+        onMouseEnter={handlePopoverMouseEnter}
+        onMouseLeave={handlePopoverMouseLeave}
+      >
+        <div className="max-h-[550px] overflow-y-auto rounded-lg shadow-2xl border border-gray-200 dark:border-gray-700">
+          <CompactSOTView sot={sot} onViewFull={onViewFull} />
         </div>
-      </>
-    );
-  }, [isOpen, sot, buttonRect]);
+      </div>
+    </>
+  );
 
   return (
     <>
@@ -383,12 +346,11 @@ const EntityQuickView: React.FC<EntityQuickViewProps> = ({
         onClick={(e) => onQuickView(e, entity._id)}
         onMouseEnter={handleButtonMouseEnter}
         onMouseLeave={handleButtonMouseLeave}
-        title="Quick view entity profile (hover to preview)"
       >
         <Eye className="h-4 w-4 text-gray-500 dark:text-gray-400" />
       </button>
       {/* Render popover using React Portal to escape modal context */}
-      {typeof document !== 'undefined' && popoverContent && ReactDOM.createPortal(popoverContent, document.body)}
+      {typeof document !== 'undefined' && ReactDOM.createPortal(popoverContent, document.body)}
     </>
   );
 };

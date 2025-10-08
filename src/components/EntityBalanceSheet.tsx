@@ -1,58 +1,44 @@
 import React, { useEffect, useState } from 'react';
 
-import { EntityBalance, getEntityBalance } from '../api/entityBalanceSheet';
+import { Card, Spin,Table } from 'antd';
+
+import { EntityBalance,getEntityBalance } from '../api/entityBalanceSheet';
 
 interface EntityBalanceSheetProps {
   currentEntityId?: string;
 }
 
-// Loading spinner component following design system
-const LoadingSpinner: React.FC = () => (
-  <div className="flex justify-center items-center py-6">
-    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"></div>
-  </div>
-);
-
-// Native table component following design system
-interface BalanceTableProps {
-  data: EntityBalance | null;
-}
-
-const BalanceTable: React.FC<BalanceTableProps> = ({ data }) => {
-  const btcBalance = data?.btc_bal;
-  const displayBalance = btcBalance === null || btcBalance === undefined ? '0 BTC' : `${btcBalance} BTC`;
-
-  return (
-    <div className="w-full">
-      <table className="w-full border-collapse">
-        <thead>
-          <tr className="border-b border-gray-200 dark:border-gray-700">
-            <th className="text-left py-2 px-0 text-sm font-medium text-gray-600 dark:text-gray-300">
-              Chain
-            </th>
-            <th className="text-left py-2 px-0 text-sm font-medium text-gray-600 dark:text-gray-300">
-              BTC Balance
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr className="border-b border-gray-100 dark:border-gray-800">
-            <td className="py-3 px-0">
-              <img
-                src="https://s2.coinmarketcap.com/static/img/coins/64x64/1.png"
-                alt="BTC"
-                className="h-6 w-6"
-              />
-            </td>
-            <td className="py-3 px-0 text-sm text-gray-900 dark:text-gray-100">
-              {displayBalance}
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  );
+const CARD_STYLES = {
+  style: { border: 'none', margin: 0, padding: 0 },
+  styles: {
+    header: { border: 'none', paddingLeft: 0 },
+    body: { paddingLeft: 0, paddingRight: '40%' }
+  }
 };
+
+const COLUMNS = [
+  {
+    title: 'Chain',
+    dataIndex: 'btc_logo',
+    key: 'btc_logo',
+    render: () => (
+      <img
+        src="https://s2.coinmarketcap.com/static/img/coins/64x64/1.png"
+        alt="BTC"
+        style={{ height: 25 }}
+      />
+    )
+  },
+  {
+    title: 'BTC Balance',
+    dataIndex: 'btc_bal',
+    key: 'btc_bal',
+    render: (value: number | null | undefined) => {
+      if (value === null || value === undefined) return '0 BTC';
+      return `${value} BTC`;
+    }
+  }
+];
 
 const EntityBalanceSheet: React.FC<EntityBalanceSheetProps> = ({ currentEntityId }) => {
   const [loading, setLoading] = useState(true);
@@ -86,18 +72,32 @@ const EntityBalanceSheet: React.FC<EntityBalanceSheetProps> = ({ currentEntityId
     fetchData();
   }, [currentEntityId]);
 
+  const renderTable = (dataSource: any[]) => (
+    <Table
+      dataSource={dataSource}
+      columns={COLUMNS}
+      rowKey="entity_id"
+      pagination={false}
+    />
+  );
+
   const renderContent = () => {
     if (loading) {
-      return <LoadingSpinner />;
+      return (
+        <div style={{ textAlign: 'center', padding: '24px' }}>
+          <Spin size="large" />
+        </div>
+      );
     }
 
-    return <BalanceTable data={data} />;
+    const tableData = data || { entity_id: currentEntityId };
+    return renderTable([tableData]);
   };
 
   return (
-    <div className="w-full">
+    <Card {...CARD_STYLES}>
       {renderContent()}
-    </div>
+    </Card>
   );
 };
 

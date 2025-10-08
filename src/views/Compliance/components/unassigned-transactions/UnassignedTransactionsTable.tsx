@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo,useState } from 'react';
 
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { Column,DataTable } from '@/components/ui/data-table';
 import { Spinner } from '@/components/ui/spinner';
 
@@ -20,7 +19,6 @@ import { getComplianceReportStatusClassName } from '../../utils/compliance.utils
 import { currencySymbols } from '../CurrencySelector';
 
 import { UnassignedTransactionModal } from './UnassignedTransactionModal';
-import CreateCaseModal from '../cases/CreateCaseModal';
 
 import '../../../../styles/transactionGrouping.css';
 
@@ -62,8 +60,6 @@ const UnassignedTransactionsTable: React.FC<TransactionsTableProps> = ({
   const [isDetailsModalVisible, setIsDetailsModalVisible] = useState(false);
   const [_selectedTransactionId, setSelectedTransactionId] = useState<string | null>(null);
   const [selectedTransactionData, setSelectedTransactionData] = useState<IComplianceTransaction | null>(null);
-  const [isCreateCaseModalVisible, setIsCreateCaseModalVisible] = useState(false);
-  const [caseTransactionData, setCaseTransactionData] = useState<IComplianceTransaction | null>(null);
   const { getPrice, prices } = useCryptoPrices();
   const [btcPrice, setBtcPrice] = useState<number>(0);
   
@@ -89,7 +85,7 @@ const UnassignedTransactionsTable: React.FC<TransactionsTableProps> = ({
   const updateAssigneeMutation = useUpdateTransactionAssignee();
 
   // Handle assignment
-  const handleAssign = async (assigneeId: string, notes?: string, status?: string) => {
+  const handleAssign = async (assigneeId: string, notes?: string) => {
     if (!selectedTransactionData) return;
     
     try {
@@ -108,14 +104,8 @@ const UnassignedTransactionsTable: React.FC<TransactionsTableProps> = ({
       console.log('Transaction assigned successfully:', {
         transactionId: selectedTransactionData._id,
         assigneeId,
-        notes,
-        status
+        notes
       });
-
-      // Force refresh of the data to ensure UI updates immediately
-      if (onTransactionUpdate) {
-        onTransactionUpdate(selectedTransactionData);
-      }
     } catch (error) {
       console.error('Failed to assign transaction:', error);
       
@@ -223,7 +213,6 @@ const UnassignedTransactionsTable: React.FC<TransactionsTableProps> = ({
 
   // Configure row selection
   const rowSelection = {
-    type: "checkbox" as const,
     selectedRowKeys,
     onChange: (keys: React.Key[]) => onSelectChange(keys),
   };
@@ -259,23 +248,9 @@ const UnassignedTransactionsTable: React.FC<TransactionsTableProps> = ({
         if (!counterpartyEntities.length) return (
           <span className="text-gray-400">N/A</span>
         );
-        
-        // Helper function to truncate addresses
-        const truncateCounterpartyAddress = (address: string): string => {
-          if (address.length <= 10) return address; // Don't truncate short addresses
-          return `${address.slice(0, 6)}...${address.slice(-4)}`;
-        };
-        
         return (
           <span className="text-gray-600 dark:text-gray-400">
-            {counterpartyEntities.map((entity) => {
-              const displayName = attributions[entity]?.entity || entity;
-              // If it's a Bitcoin address (starts with 1, 3, or bc1), truncate it
-              if (entity.match(/^[13bc]/)) {
-                return truncateCounterpartyAddress(displayName);
-              }
-              return displayName;
-            }).join(', ')}
+            {counterpartyEntities.map((entity) => attributions[entity]?.entity || entity).join(', ')}
           </span>
         )
       }
@@ -372,27 +347,6 @@ const UnassignedTransactionsTable: React.FC<TransactionsTableProps> = ({
         );
       }
     },
-    {
-      title: 'Actions',
-      key: 'actions',
-      width: 120,
-      render: (_, record: IComplianceTransaction) => (
-        <div className="flex space-x-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={(e) => {
-              e.stopPropagation();
-              setCaseTransactionData(record);
-              setIsCreateCaseModalVisible(true);
-            }}
-            disabled={record.status === 'UNASSIGNED'}
-          >
-            Create Case
-          </Button>
-        </div>
-      ),
-    },
   ];
 
   // Add error boundary for the table
@@ -444,18 +398,6 @@ const UnassignedTransactionsTable: React.FC<TransactionsTableProps> = ({
         teamMembers={teamMembers}
         onTransactionUpdate={handleTransactionUpdate}
         calculatedRiskScore={selectedTransactionData ? calculatedRiskScores[selectedTransactionData._id]?.overallRisk : undefined}
-      />
-
-      <CreateCaseModal
-        isOpen={isCreateCaseModalVisible}
-        onClose={() => {
-          setIsCreateCaseModalVisible(false);
-          setCaseTransactionData(null);
-        }}
-        transactionId={caseTransactionData?._id || ''}
-        transactionTxId={caseTransactionData?.txId || ''}
-        clientId={caseTransactionData?.clientId || ''}
-        amount={caseTransactionData?.amount || 0}
       />
 
     </div>

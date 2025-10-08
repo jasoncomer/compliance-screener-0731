@@ -168,7 +168,7 @@ const EntityDetails: React.FC<EntityDetailsProps> = ({
         {/* View in VASP Explorer Button */}
         {entityId && (
           <button
-            onClick={() => window.open(`/home/vasp-explorer?entity=${entityId}`, '_blank')}
+            onClick={() => window.open(`/home/blockham?entity=${entityId}`, '_blank')}
             className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors bg-orange-500 hover:bg-orange-600 text-white shadow-sm`}
           >
             <DatabaseOutlined className="mr-1" />

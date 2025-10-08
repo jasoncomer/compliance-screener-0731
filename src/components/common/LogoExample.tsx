@@ -4,7 +4,7 @@ import { BankOutlined,UserOutlined } from '@ant-design/icons';
 import { Button, Card, Divider, Space, Typography } from 'antd';
 
 import { useLogo } from '../../hooks/useLogo';
-import { logoService } from '../../services/logoService';
+import { LogoService } from '../../services/logoService';
 
 import { SimpleLogo } from './Logo';
 
@@ -28,7 +28,7 @@ export const LogoExample: React.FC = () => {
 
   const handleGetLogoUrl = async () => {
     try {
-      const url = logoService.getLogoUrl(selectedEntityId);
+      const url = await LogoService.getLogoUrlWithFallback(selectedEntityId, selectedEntityType);
       if (url) {
         console.log('Logo URL:', url);
       } else {

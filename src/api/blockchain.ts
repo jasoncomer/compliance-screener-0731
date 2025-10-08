@@ -73,24 +73,7 @@ const getBlockTransactions = async (height: number, params: { page: number, limi
   return res.data;
 };
 
-interface BitcoinAttributionResponse {
-  data: IAttribution;
-}
 
-const getBitcoinAttribution = async (address: string): Promise<IAttribution | null> => {
-  try {
-    const res = await axiosInstance.get<BitcoinAttributionResponse>(
-      `/blockchain/bitcoin/attribution/${address}`
-    );
-    return res.data.data;
-  } catch (error: any) {
-    // 404 means no attribution data exists (normal case)
-    if (error.response?.status === 404) {
-      return null;
-    }
-    throw error;
-  }
-};
 
 export const blockchain = {
   generateReport,
@@ -102,5 +85,4 @@ export const blockchain = {
   getAddressTransactions,
   getAddressBlockStats,
   getBlockTransactions,
-  getBitcoinAttribution,
 };

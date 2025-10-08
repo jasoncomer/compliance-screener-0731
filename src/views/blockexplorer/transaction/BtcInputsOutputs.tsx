@@ -180,6 +180,13 @@ const BtcInputsOutputs: React.FC<BtcInputsOutputsProps> = ({ data, type }) => {
     return Object.values(itemsMap).find(sot => sot.entity_id === entityId) || null;
   }, [itemsMap]);
 
+  const handleViewFullProfile = useCallback((sot: any) => {
+    window.location.href = `/home/blockham?entity=${sot.entity_id}`;
+  }, []);
+
+  const handleQuickView = useCallback((e: React.MouseEvent, _entityId: string) => {
+    e.stopPropagation();
+  }, []);
 
   const toggleExpand = useCallback(() => {
     setIsExpanded(prev => !prev);
@@ -228,10 +235,8 @@ const BtcInputsOutputs: React.FC<BtcInputsOutputsProps> = ({ data, type }) => {
           {...rowData}
           index={index}
           renderAmt={renderAmt}
-          onViewFullProfile={(s) => {
-            if (s?.entity_id) window.open(`/home/vasp-explorer?entity=${s.entity_id}`, '_blank')?.focus();
-          }}
-          onQuickView={(e) => e.stopPropagation()}
+          onViewFullProfile={handleViewFullProfile}
+          onQuickView={handleQuickView}
         />
       ))}
 

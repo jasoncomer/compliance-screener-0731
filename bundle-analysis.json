@@ -1,0 +1,16 @@
+vite v5.3.3 building for production...
+transforming...
+✓ 17940 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/assets/favicon-16x16-4RWmu-jk.png         0.62 kB
+dist/index.html                                0.77 kB │ gzip:     0.40 kB
+dist/assets/favicon-32x32-Drxow-Gd.png         1.58 kB
+dist/assets/favicon-DRBrFMcn.ico              15.41 kB
+dist/assets/apple-touch-icon-DjDxmCh1.png     18.93 kB
+dist/assets/darkmode_logo-mX6CB3g2.png        79.64 kB
+dist/assets/index-CaWOTSzq.css                35.10 kB │ gzip:     6.78 kB
+dist/assets/index-BI79o9hj.js              3,601.55 kB │ gzip: 1,088.27 kB
+[2m[1m8[2m[22m chunks of [2m[1m3.58 MB[2m[22m (gzip: [2m[1m1.42 MB[2m[22m | map: [2m[1m14.11 MB[2m[22m)
+✓ built in 25.41s
+server run on  [38;2;91;69;222mhttp://localhost:8888[39m

@@ -90,6 +90,7 @@ const BulkSelectComponent: React.FC<BulkSelectComponentProps> = ({
     console.log('🚀 BulkAssign - Starting bulk assign with:', {
       transactionIds,
       assignee: selectedReviewer,
+      currentFilters: filters
     });
     
     bulkUpdateMutation.mutate(
@@ -238,20 +239,18 @@ const BulkSelectComponent: React.FC<BulkSelectComponentProps> = ({
                 <SelectValue placeholder="Select a reviewer" />
               </SelectTrigger>
               <SelectContent>
-                {(organizationMembers || [])
-                  .filter(member => member.userId)
-                  .map(member => {
-                    const isDisabled = member.status === EMemberStatus.PENDING;
-                    return (
-                      <SelectItem
-                        key={member.userId}
-                        value={member.userId!}
-                        disabled={isDisabled}
-                      >
-                        {getUserDisplayName(member)}
-                      </SelectItem>
-                    );
-                  })}
+                {(organizationMembers || []).map(member => {
+                  const isDisabled = member.status === EMemberStatus.PENDING;
+                  return (
+                    <SelectItem 
+                      key={member.userId} 
+                      value={member.userId} 
+                      disabled={isDisabled}
+                    >
+                      {getUserDisplayName(member)}
+                    </SelectItem>
+                  );
+                })}
               </SelectContent>
             </Select>
           </div>

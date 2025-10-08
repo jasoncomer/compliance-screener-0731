@@ -9,8 +9,7 @@ import {
   Hash,
   History,
   Shield,
-  User,
-  AlertTriangle} from "lucide-react";
+  User} from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -33,7 +32,6 @@ import { TransactionRiskModal } from '../../components/modals/TransactionRiskMod
 import { getComplianceReportStatusClassName } from '../../utils/compliance.utils';
 import CaseAssignmentHistoryModal from '../CaseAssignmentHistoryModal';
 import { EntityQuickViewModal } from '../EntityQuickViewModal';
-import { CaseReportSection } from '../../../../components/CaseReportSection';
 
 interface TransactionDetailsModalProps {
   isVisible: boolean;
@@ -76,13 +74,11 @@ export const TransactionDetailsModal: FC<TransactionDetailsModalProps> = React.m
 
   // Get team members for assignment
   const teamMembers = useMemo(() => {
-    return Object.values(organizationMembers)
-      .filter(member => member._id)
-      .map(member => ({
-        id: member._id!,
-        name: getUserDisplayName(member),
-        role: member.role || 'Reviewer'
-      }));
+    return Object.values(organizationMembers).map(member => ({
+      id: member._id,
+      name: getUserDisplayName(member),
+      role: member.role || 'Reviewer'
+    }));
   }, [organizationMembers]);
 
   // Initialize assignment notes with existing notes if available
@@ -107,7 +103,6 @@ export const TransactionDetailsModal: FC<TransactionDetailsModalProps> = React.m
       setAssignmentNotes('');
     }
   };
-
 
   // Get risk level and color
   const getRiskLevel = (score: number) => {
@@ -146,7 +141,7 @@ export const TransactionDetailsModal: FC<TransactionDetailsModalProps> = React.m
                   </SelectTrigger>
                   <SelectContent>
                     {teamMembers.map((member) => (
-                      <SelectItem key={member.id} value={member.id}>
+                      <SelectItem key={member.id} value={member.id || ''}>
                         <div className="flex items-center gap-2">
                           <User className="h-4 w-4" />
                           {member.name}
@@ -374,28 +369,6 @@ export const TransactionDetailsModal: FC<TransactionDetailsModalProps> = React.m
                 </CardContent>
               </Card>
 
-              {/* SAR Report Generation */}
-              <Card className="bg-gray-50 border-gray-200">
-                <CardHeader className="pb-2">
-                  <CardTitle className="flex items-center gap-2 text-lg">
-                    <AlertTriangle className="h-4 w-4" />
-                    Regulatory Actions
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <Button 
-                    onClick={() => console.log('SAR generation moved to Case Report section')}
-                    className="w-full bg-indigo-600 hover:bg-indigo-700 text-white"
-                  >
-                    <FileText className="h-4 w-4 mr-2" />
-                    Generate SAR Report
-                  </Button>
-                  <p className="text-xs text-gray-500 text-center">
-                    Generate a Suspicious Activity Report for regulatory submission
-                  </p>
-                </CardContent>
-              </Card>
-
               <div className="flex-1"></div>
             </div>
           </div>
@@ -427,13 +400,6 @@ export const TransactionDetailsModal: FC<TransactionDetailsModalProps> = React.m
           setSelectedEntityId(null);
         }}
         entityId={selectedEntityId}
-      />
-
-      {/* Case Report Section */}
-      <CaseReportSection
-        caseId={transaction?._id || 'default-case-id'}
-        transactionId={transaction?.txId || transactionId || 'default-tx-id'}
-        organizationId={transaction?.organizationId || 'default-org-id'}
       />
     </>
   );

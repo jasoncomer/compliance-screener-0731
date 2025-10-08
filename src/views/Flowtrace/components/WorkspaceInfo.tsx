@@ -29,31 +29,28 @@ export const WorkspaceInfo: React.FC<WorkspaceInfoProps> = ({
   };
 
   return (
-    <div className={`flex flex-col gap-1 ${className}`}>
-      <div className="flex items-center gap-2">
-        <div className="flex items-center gap-1.5">
-          <GitBranch className="h-3.5 w-3.5 text-gray-500 dark:text-gray-400" />
-          <span className="font-medium text-sm text-gray-900 dark:text-gray-100">{workspaceName}</span>
-        </div>
-
-        {versionName && (
-          <Badge variant="outline" className="text-xs">
-            {versionName}
-          </Badge>
-        )}
+    <div className={`flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 ${className}`}>
+      <div className="flex items-center gap-1">
+        <GitBranch className="h-3.5 w-3.5" />
+        <span className="font-medium">{workspaceName}</span>
       </div>
-
+      
+      {versionName && (
+        <Badge variant="outline" className="text-xs">
+          {versionName}
+        </Badge>
+      )}
+      
+      {hasUnsavedChanges && (
+        <Badge variant="destructive" className="text-xs">
+          Unsaved
+        </Badge>
+      )}
+      
       {versionTimestamp && (
-        <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-500">
-          <div className="flex items-center gap-1">
-            <Clock className="h-3 w-3" />
-            <span>{formatTimestamp(versionTimestamp)}</span>
-          </div>
-          {hasUnsavedChanges && (
-            <Badge variant="outline" className="text-xs bg-orange-50 dark:bg-orange-950 text-orange-600 dark:text-orange-400 border-orange-300 dark:border-orange-700 ml-auto">
-              Unsaved
-            </Badge>
-          )}
+        <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-500">
+          <Clock className="h-3 w-3" />
+          <span>{formatTimestamp(versionTimestamp)}</span>
         </div>
       )}
     </div>

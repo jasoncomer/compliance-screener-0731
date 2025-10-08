@@ -41,6 +41,7 @@ const ArchivedCasesTab: React.FC<ArchivedCasesTabProps> = ({ isActive, className
 
   // Track available filter options
   const [availableBlockchains, setAvailableBlockchains] = useState<string[]>([]);
+  const [availableClientIds, setAvailableClientIds] = useState<string[]>([]);
 
   // Load transactions from Redux store
   useEffect(() => {
@@ -61,6 +62,10 @@ const ArchivedCasesTab: React.FC<ArchivedCasesTabProps> = ({ isActive, className
       // Extract unique blockchains
       const blockchains = [...new Set(transactions.map(tx => tx.blockchain))];
       setAvailableBlockchains(blockchains);
+
+      // Extract unique client IDs
+      const clientIds = [...new Set(transactions.map(tx => tx.clientId))];
+      setAvailableClientIds(clientIds);
     }
   }, [transactions]);
 
@@ -75,9 +80,7 @@ const ArchivedCasesTab: React.FC<ArchivedCasesTabProps> = ({ isActive, className
     const mergedFilters = {
       ...newFilters,
       page: 1,
-      limit: pageSize,
-      sortBy: 'timestamp',
-      sortOrder: 'desc' as const
+      limit: pageSize
     };
 
     // If no specific status is selected, show all archived statuses
@@ -85,10 +88,7 @@ const ArchivedCasesTab: React.FC<ArchivedCasesTabProps> = ({ isActive, className
       mergedFilters.status = ARCHIVED_STATUSES.join(',');
     }
 
-    console.log('ArchivedCasesTab - Sending filters to Redux:', mergedFilters);
-    // Dispatch setFilters first, then use the mergedFilters directly to avoid race condition
     dispatch(setFilters(mergedFilters));
-    dispatch(fetchComplianceTransactions(mergedFilters));
   };
 
   // Clear all filters
@@ -96,9 +96,7 @@ const ArchivedCasesTab: React.FC<ArchivedCasesTabProps> = ({ isActive, className
     dispatch(setFilters({
       page: 1,
       limit: pageSize,
-      status: ARCHIVED_STATUSES.join(','),
-      sortBy: 'timestamp',
-      sortOrder: 'desc' as const
+      status: ARCHIVED_STATUSES.join(',')
     }));
   };
 
@@ -119,22 +117,13 @@ const ArchivedCasesTab: React.FC<ArchivedCasesTabProps> = ({ isActive, className
       {/* Filter Panel */}
       <ComplianceFilterPanel
         className="mb-4"
-        showStatusFilter={true}
-        showAssignedToFilter={true}
-        showCounterpartyEntityFilter={true}
-        showTransactionIdFilter={true}
-        showBlockchainFilter={true}
-        showClientIdFilter={true}
-        showRiskLevelFilter={true}
-        showAmountFilter={true}
-        showDateRangeFilter={true}
-        showReviewDateRangeFilter={true}
         statusOptions={[
           { value: EComplianceTransactionStatus.APPROVED, label: 'Approved' },
           { value: EComplianceTransactionStatus.CLOSED_WITH_NOTE, label: 'Approved with Note' },
           { value: EComplianceTransactionStatus.CLOSED_WITH_SAR, label: 'Closed with SAR' }
         ]}
         availableBlockchains={availableBlockchains}
+        availableClientIds={availableClientIds}
         defaultStatus={ARCHIVED_STATUSES}
         onFilterChange={handleFilterChange}
         onClearFilters={handleClearFilters}

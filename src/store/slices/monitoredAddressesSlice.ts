@@ -174,10 +174,6 @@ const monitoredAddressesSlice = createSlice({
           delete state.addressHistory[addressId];
         }
       })
-      .addCase(deleteMonitoredAddress.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.error.message || 'Failed to delete monitored address';
-      })
       
       // Bulk upload addresses
       .addCase(bulkUploadAddresses.pending, (state) => {

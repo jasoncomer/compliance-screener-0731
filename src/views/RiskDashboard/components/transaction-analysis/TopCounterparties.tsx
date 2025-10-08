@@ -1,13 +1,13 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo,useState } from 'react';
 
-import { ArrowDownRight, ArrowUpRight, BarChart3, Check, Copy, ExternalLink, TrendingUp, X } from 'lucide-react';
+import { ArrowDownRight,ArrowUpRight, BarChart3, Check, Copy, ExternalLink, TrendingUp, X } from 'lucide-react';
 
-import EntityQuickView from '../../../../components/EntityQuickView';
 import { useAttribution } from '../../../../context/AttributionContext';
 import { useTheme } from '../../../../context/ThemeContext';
 import { useAppSelector } from '../../../../store/hooks';
 import { RootState } from '../../../../store/store';
 import { truncateAddress } from '../../../../utils/crypto';
+import { TransformedTransaction } from '../../../../utils/transactionTransformers';
 
 interface Counterparty {
   entity: string;
@@ -23,12 +23,14 @@ interface TopCounterpartiesProps {
   incoming: Counterparty[];
   outgoing: Counterparty[];
   onCounterpartyClick?: (address: string) => void;
+  transactions?: TransformedTransaction[];
 }
 
-const TopCounterparties: React.FC<TopCounterpartiesProps> = ({
-  incoming,
-  outgoing,
-  onCounterpartyClick
+const TopCounterparties: React.FC<TopCounterpartiesProps> = ({ 
+  incoming, 
+  outgoing, 
+  onCounterpartyClick,
+  transactions = []
 }) => {
   const { theme } = useTheme();
   const [activeTab, setActiveTab] = useState('all');
@@ -44,16 +46,25 @@ const TopCounterparties: React.FC<TopCounterpartiesProps> = ({
   // Helper function to get entity name for a counterparty address
   const getEntityName = (counterpartyAddress: string): string | null => {
     if (!counterpartyAddress || counterpartyAddress === 'Unknown') return null;
-
+    
     const attribution = attributions[counterpartyAddress];
     if (!attribution) return null;
-
+    
     const entityId = attribution.entity || attribution.bo || attribution.custodian;
     if (!entityId) return null;
-
+    
     const entity = Object.values(itemsMap).find(sot => sot.entity_id === entityId);
     // Only return proper_name if it exists and is not empty
     return entity?.proper_name || null;
+  };
+
+
+  // Get transactions for a specific counterparty
+  const getCounterpartyTransactions = (address: string) => {
+    return transactions.filter(tx => 
+      (tx.type === 'in' && tx.from === address) || 
+      (tx.type === 'out' && tx.to === address)
+    );
   };
 
   // Modal functions
@@ -94,6 +105,11 @@ const TopCounterparties: React.FC<TopCounterpartiesProps> = ({
     }
   };
 
+  const formatTime = (timeString: string) => {
+    const date = new Date(timeString);
+    return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  };
+
   const allCounterparties = useMemo(() => {
     return [...incoming, ...outgoing].sort((a, b) => {
       if (counterpartyMode === 'volume') {
@@ -106,21 +122,15 @@ const TopCounterparties: React.FC<TopCounterpartiesProps> = ({
   }, [incoming, outgoing, counterpartyMode]);
 
   const filteredData = useMemo(() => {
-    let data;
     switch(activeTab) {
       case 'inflow':
-        data = allCounterparties.filter(c => c.direction === 'inflow');
-        break;
+        return allCounterparties.filter(c => c.direction === 'inflow');
       case 'outflow':
-        data = allCounterparties.filter(c => c.direction === 'outflow');
-        break;
+        return allCounterparties.filter(c => c.direction === 'outflow');
       case 'all':
       default:
-        data = allCounterparties;
-        break;
+        return allCounterparties;
     }
-    // Limit to maximum 5 entities for "Top 5 Counterparties"
-    return data.slice(0, 5);
   }, [activeTab, allCounterparties]);
 
   return (
@@ -131,7 +141,7 @@ const TopCounterparties: React.FC<TopCounterpartiesProps> = ({
           <h4 className={`text-lg font-semibold ${
             theme === 'dark' ? 'text-white' : 'text-gray-900'
           }`}>
-            Top 5 Counterparties
+            Top Counterparties
           </h4>
           <div className="flex space-x-2">
             <button
@@ -237,36 +247,12 @@ const TopCounterparties: React.FC<TopCounterpartiesProps> = ({
                             <div className="flex flex-col">
                               {(() => {
                                 const entityName = getEntityName(record.address);
-                                if (!entityName) return null;
-                                
-                                const attribution = attributions[record.address];
-                                const entityId = attribution?.entity || attribution?.bo || attribution?.custodian;
-                                const sot = entityId ? Object.values(itemsMap).find(s => s.entity_id === entityId) : null;
-                                
-                                return (
-                                  <div className="flex items-center gap-2 mb-1">
-                                    <span className={`text-xs font-medium ${
-                                      theme === 'dark' ? 'text-blue-400' : 'text-blue-600'
-                                    }`}>
-                                      {entityName}
-                                    </span>
-                                    {sot && (
-                                      <EntityQuickView
-                                        entity={{
-                                          _id: sot._id,
-                                          proper_name: sot.proper_name,
-                                          entity_id: sot.entity_id
-                                        }}
-                                        sot={sot}
-                                        onViewFull={(s) => {
-                                          if (s?.entity_id) window.open(`/home/vasp-explorer?entity=${s.entity_id}`, '_blank')?.focus();
-                                        }}
-                                        onQuickView={(e) => e.stopPropagation()}
-                                        popoverPlacement="right"
-                                        popoverWidth={450}
-                                      />
-                                    )}
-                                  </div>
+                                return entityName && (
+                                  <span className={`text-xs font-medium mb-1 ${
+                                    theme === 'dark' ? 'text-blue-400' : 'text-blue-600'
+                                  }`}>
+                                    {entityName}
+                                  </span>
                                 );
                               })()}
                               <span 
@@ -434,6 +420,75 @@ const TopCounterparties: React.FC<TopCounterpartiesProps> = ({
                 </div>
               </div>
 
+              {/* Recent Transactions */}
+              <div>
+                <h4 className={`text-lg font-semibold mb-4 ${
+                  theme === 'dark' ? 'text-white' : 'text-gray-900'
+                }`}>Recent Transactions</h4>
+                <div className="overflow-x-auto">
+                  <div className="max-h-64 overflow-y-auto">
+                    <table className="w-full">
+                    <thead>
+                      <tr className={`border-b ${
+                        theme === 'dark' ? 'border-gray-700' : 'border-gray-200'
+                      }`}>
+                        <th className={`text-left py-2 px-2 text-xs font-semibold ${
+                          theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
+                        }`}>Time</th>
+                        <th className={`text-left py-2 px-2 text-xs font-semibold ${
+                          theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
+                        }`}>Direction</th>
+                        <th className={`text-left py-2 px-2 text-xs font-semibold ${
+                          theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
+                        }`}>Amount</th>
+                        <th className={`text-left py-2 px-2 text-xs font-semibold ${
+                          theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
+                        }`}>USD Value</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {getCounterpartyTransactions(selectedCounterparty.address).map((tx, index) => (
+                        <tr 
+                          key={index}
+                          className={`border-b ${
+                            theme === 'dark' ? 'border-gray-700' : 'border-gray-200'
+                          }`}
+                        >
+                          <td className={`py-2 px-2 text-xs ${
+                            theme === 'dark' ? 'text-gray-300' : 'text-gray-700'
+                          }`}>
+                            {formatTime(tx.time)}
+                          </td>
+                          <td className="py-2 px-2">
+                            <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium ${
+                              tx.direction === 'inflow' 
+                                ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300' 
+                                : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300'
+                            }`}>
+                              {tx.direction === 'inflow' ? (
+                                <ArrowUpRight className="w-3 h-3" />
+                              ) : (
+                                <ArrowDownRight className="w-3 h-3" />
+                              )}
+                            </span>
+                          </td>
+                          <td className={`py-2 px-2 text-xs font-mono ${
+                            theme === 'dark' ? 'text-gray-300' : 'text-gray-700'
+                          }`}>
+                            {tx.description}
+                          </td>
+                          <td className={`py-2 px-2 text-xs ${
+                            theme === 'dark' ? 'text-gray-300' : 'text-gray-700'
+                          }`}>
+                            {tx.usd}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  </div>
+                </div>
+              </div>
             </div>
 
             {/* Modal Footer */}

@@ -6,7 +6,6 @@ import { useSelector } from 'react-redux';
 import styled from 'styled-components';
 
 import { ICreateNote, INote, notesApi } from '../../api/notes';
-import { config } from '../../config/config';
 import { useAppContext } from '../../context/AppContext';
 import { useTheme } from '../../context/ThemeContext';
 import { selectCurrentOrganization } from '../../store/slices/organizationsSlice';
@@ -14,32 +13,20 @@ import { selectCurrentOrganization } from '../../store/slices/organizationsSlice
 const { TextArea } = Input;
 const { Text } = Typography;
 
-const PanelContainer = styled.div<{ $themeMode: string; $expanded: boolean; $inline?: boolean }>`
-  ${props => props.$inline ? `
-    position: relative;
-    width: 100%;
-    max-height: none;
-    background: transparent;
-    border-radius: 0;
-    box-shadow: none;
-    z-index: auto;
-    overflow: visible;
-    transition: none;
-  ` : `
-    position: fixed;
-    top: 70px;
-    right: 20px;
-    width: 450px;
-    max-height: ${props.$expanded ? '400px' : '95px'};
-    background: ${props.$themeMode === 'dark' ? '#1f1f1f' : '#ffffff'};
-    border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    z-index: 100;
-    overflow: hidden;
-    transition: max-height 0.3s ease;
-  `}
+const PanelContainer = styled.div<{ $themeMode: string; $expanded: boolean }>`
+  position: fixed;
+  top: 70px;
+  right: 20px;
+  width: 450px;
+  max-height: ${props => props.$expanded ? '400px' : '95px'};
   display: flex;
   flex-direction: column;
+  background: ${({ $themeMode }) => $themeMode === 'dark' ? '#1f1f1f' : '#ffffff'};
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 100;
+  overflow: hidden;
+  transition: max-height 0.3s ease;
 `;
 
 const NoteItem = styled.div<{ $themeMode: string; $isLatest?: boolean; $isEditing?: boolean }>`
@@ -164,10 +151,9 @@ interface NotesPanelProps {
   transactionId?: string;
   address?: string;
   type?: 'general' | 'transaction' | 'address';
-  inline?: boolean; // New prop to control positioning
 }
 
-const NotesPanel: React.FC<NotesPanelProps> = ({ transactionId, address, type = 'general', inline = false }) => {
+const NotesPanel: React.FC<NotesPanelProps> = ({ transactionId, address, type = 'general' }) => {
   const { theme } = useTheme();
   const { user: currentUser } = useAppContext();
   const [notes, setNotes] = useState<INote[]>([]);
@@ -209,7 +195,7 @@ const NotesPanel: React.FC<NotesPanelProps> = ({ transactionId, address, type = 
 
       setNotes(response.data || []);
     } catch (error) {
-      if (config.isDev) console.error('Failed to fetch notes:', error);
+      if (process.env.NODE_ENV === 'development') console.error('Failed to fetch notes:', error);
       message.error('Failed to load notes');
     } finally {
       setLoading(false);
@@ -233,7 +219,7 @@ const NotesPanel: React.FC<NotesPanelProps> = ({ transactionId, address, type = 
       fetchNotes();
       message.success('Note added successfully');
     } catch (error) {
-      if (config.isDev) console.error('Failed to add note:', error);
+      if (process.env.NODE_ENV === 'development') console.error('Failed to add note:', error);
       message.error('Failed to add note');
     } finally {
       setSubmitting(false);
@@ -304,7 +290,7 @@ const NotesPanel: React.FC<NotesPanelProps> = ({ transactionId, address, type = 
   };
 
   return (
-    <PanelContainer $themeMode={theme} $expanded={expanded} $inline={inline}>      
+    <PanelContainer $themeMode={theme} $expanded={expanded}>      
       <NotesContainer 
         ref={notesContainerRef} 
         id="notes-container" 

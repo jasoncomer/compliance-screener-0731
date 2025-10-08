@@ -44,151 +44,117 @@ const BlockSummary: React.FC<BlockSummaryProps> = ({
   };
 
   return (
-    <>
-      {/* Main Cards - Modern Minimalistic Design */}
-      <div className="flex flex-wrap gap-4 justify-start">
-        {/* Block Hash Card */}
-        <div className="flex flex-col bg-white dark:bg-gray-900 shadow-sm hover:shadow-md transition-shadow rounded-xl p-5 flex-1 min-w-[280px] text-gray-900 dark:text-gray-100 relative border border-gray-200 dark:border-gray-700 min-h-[160px]">
-          <div className="absolute top-4 right-4">
-            <Hash className="w-5 h-5 text-gray-300 dark:text-gray-700" />
-          </div>
-          <div className="flex items-center gap-2 mb-3">
-            <div className="p-2 bg-orange-50 dark:bg-orange-900/10 rounded-lg">
-              <Hash className="w-5 h-5 text-orange-500" />
+    <div className="w-full dark:bg-gray-900 border-b border-gray-200 dark:border-none">
+      <div className="px-4 py-2">
+        <div className="flex flex-wrap gap-3 justify-start">
+          {/* Block Hash Card */}
+          <div className="flex flex-col bg-gradient-to-br from-slate-100 to-gray-200 dark:from-background dark:to-background shadow-md rounded-2xl p-2 flex-1 min-w-[250px] text-gray-900 dark:text-gray-100 relative border border-slate-200 dark:border-gray-700 min-h-[160px] max-h-[200px]">
+            <div className="absolute top-2 right-2 opacity-10 text-2xl select-none pointer-events-none">#</div>
+            <div className="flex items-center gap-1 mb-1">
+              <Hash className="w-4 h-4 text-orange-600 dark:text-orange-400" />
+              <span className="text-xs font-medium text-gray-700 dark:text-gray-300">Block Hash</span>
+              <button
+                onClick={onCopyClick}
+                className="p-0.5 hover:bg-gray-300 dark:hover:bg-gray-600 rounded transition-colors"
+                title="Copy block hash"
+              >
+                {copySuccess ? <CheckCircle className="w-3 h-3 text-green-600" /> : <Copy className="w-3 h-3 text-gray-500" />}
+              </button>
             </div>
-            <div className="flex-1">
-              <div className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Block Hash</div>
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-mono text-gray-700 dark:text-gray-300">{truncateHash(block.hash)}</span>
-                <button
-                  onClick={onCopyClick}
-                  className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors"
-                  title="Copy block hash"
-                >
-                  {copySuccess ? <CheckCircle className="w-3.5 h-3.5 text-green-500" /> : <Copy className="w-3.5 h-3.5 text-gray-400" />}
-                </button>
+            <div className="text-lg font-bold break-all mb-1 font-mono">{truncateHash(block.hash)}</div>
+            
+            {/* Block Height */}
+            <div className="mb-1 p-1 bg-orange-50 dark:bg-orange-900/20 rounded border border-orange-200 dark:border-orange-800">
+              <div className="text-xs font-medium text-orange-700 dark:text-orange-300">Block Height</div>
+              <div className="text-xs text-orange-600 dark:text-orange-400 font-mono">
+                #{block.number.toLocaleString()}
               </div>
             </div>
-          </div>
-
-          {/* Block Height */}
-          <div className="mb-3 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
-            <div className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Block Height</div>
-            <div className="text-sm font-medium text-gray-700 dark:text-gray-300 font-mono">
-              #{block.number.toLocaleString()}
-            </div>
-          </div>
-
-        </div>
-
-        {/* Block Size & Weight Card */}
-        <div className="flex flex-col bg-white dark:bg-gray-900 shadow-sm hover:shadow-md transition-shadow rounded-xl p-5 flex-1 min-w-[280px] text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-700 min-h-[160px]">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <div className="p-2 bg-blue-50 dark:bg-blue-900/10 rounded-lg">
-                <Database className="w-5 h-5 text-blue-500" />
-              </div>
-              <div>
-                <div className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Block Size & Weight</div>
-                <div className="text-2xl font-bold">{formatBytes(block.size)} <span className="text-sm font-normal text-gray-500">Size</span></div>
-              </div>
-            </div>
-          </div>
-          <div className="flex flex-col gap-3 mt-auto">
-            <div className="flex items-center justify-between p-3 bg-blue-50 dark:bg-blue-900/10 rounded-lg">
-              <div className="flex items-center gap-2">
-                <Database className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                <span className="text-sm font-medium text-blue-700 dark:text-blue-300">Size</span>
-              </div>
-              <span className="text-sm font-semibold text-blue-700 dark:text-blue-300">{formatBytes(block.size)}</span>
-            </div>
-            <div className="flex items-center justify-between p-3 bg-purple-50 dark:bg-purple-900/10 rounded-lg">
-              <div className="flex items-center gap-2">
-                <Zap className="w-4 h-4 text-purple-600 dark:text-purple-400" />
-                <span className="text-sm font-medium text-purple-700 dark:text-purple-300">Weight</span>
-              </div>
-              <span className="text-sm font-semibold text-purple-700 dark:text-purple-300">{block.weight.toLocaleString()}</span>
-            </div>
-            <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
-              <div className="flex items-center gap-2">
-                <Box className="w-4 h-4 text-gray-400" />
-                <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Stripped</span>
-              </div>
-              <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">{formatBytes(block.stripped_size)}</span>
-            </div>
-            <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
-              <div className="flex items-center gap-2">
-                <Hash className="w-4 h-4 text-gray-400" />
-                <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Merkle Root</span>
-              </div>
-              <span className="text-sm font-semibold text-gray-900 dark:text-gray-100 font-mono">{truncateStringMiddle(block.merkle_root, 12)}</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Block Information Card */}
-        <div className="flex flex-col bg-white dark:bg-gray-900 shadow-sm hover:shadow-md transition-shadow rounded-xl p-5 flex-1 min-w-[280px] text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-700 min-h-[160px]">
-          <div className="flex items-center gap-2 mb-4">
-            <div className="p-2 bg-purple-50 dark:bg-purple-900/10 rounded-lg">
-              <Clock className="w-5 h-5 text-purple-500" />
-            </div>
-            <div className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Block Information</div>
-          </div>
-          <div className="space-y-3">
-            <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
-              <div className="flex items-center gap-2">
-                <Clock className="w-4 h-4 text-gray-400" />
-                <span className="text-sm text-gray-600 dark:text-gray-400">Timestamp</span>
-              </div>
-              <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">{formatTimestamp(Number(block.timestamp))}</span>
-            </div>
-            <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
-              <div className="flex items-center gap-2">
-                <Hash className="w-4 h-4 text-gray-400" />
-                <span className="text-sm text-gray-600 dark:text-gray-400">Version</span>
-              </div>
-              <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">{block.version}</span>
-            </div>
-            <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
-              <span className="text-sm text-gray-600 dark:text-gray-400">Nonce</span>
-              <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">{typeof block.nonce === 'number' ? block.nonce.toLocaleString() : block.nonce}</span>
-            </div>
-            <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
-              <span className="text-sm text-gray-600 dark:text-gray-400">Bits</span>
-              <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">{block.bits}</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Transaction Count Card */}
-        <div className="flex flex-col bg-white dark:bg-gray-900 shadow-sm hover:shadow-md transition-shadow rounded-xl p-5 flex-1 min-w-[240px] text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-700 min-h-[160px]">
-          <div className="flex items-center gap-2 mb-4">
-            <div className="p-2 bg-green-50 dark:bg-green-900/10 rounded-lg">
-              <ArrowLeftRight className="w-5 h-5 text-green-500" />
-            </div>
-            <div className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Transactions</div>
-          </div>
-          <div className="flex flex-col items-center justify-center flex-1">
-            <div className="flex flex-col items-center">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="p-2 rounded-full bg-gray-50 dark:bg-gray-800">
-                  <CheckCircle className="w-6 h-6 text-green-500" />
+            
+            {/* Merkle Root */}
+            <div className="flex items-start gap-1 mt-auto">
+              <div className="flex gap-1 flex-wrap overflow-hidden">
+                <div className="text-xs bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded border font-mono">
+                  Merkle: {truncateStringMiddle(block.merkle_root, 12)}
                 </div>
-                <span className="text-3xl font-bold text-green-600 dark:text-green-400">{block.transaction_count.toLocaleString()}</span>
               </div>
-              <span className="text-xs text-gray-500 dark:text-gray-400">Total Transactions</span>
-              
-              {/* Coinbase transaction indicator */}
-              <div className="mt-3 flex flex-col gap-1">
-                <div className="text-xs bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-300 px-2 py-1 rounded border border-yellow-200 dark:border-yellow-800">
-                  +1 Coinbase TX
+            </div>
+          </div>
+
+          {/* Block Size & Weight Card */}
+          <div className="flex flex-col justify-between bg-gradient-to-br from-slate-50 to-gray-100 dark:from-background dark:to-background shadow-md rounded-2xl p-5 flex-1 min-w-[250px] text-gray-900 dark:text-gray-100 border border-slate-200 dark:border-gray-700 min-h-[160px] max-h-[200px]">
+            <div className="flex items-center gap-1 mb-1">
+              <Database className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+              <span className="text-xs font-medium">Block Size & Weight</span>
+            </div>
+            <div className="flex flex-col gap-1 mt-1">
+              <div className="flex justify-between items-center bg-blue-50 dark:bg-blue-900/20 rounded px-2 py-1 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+                <span className="flex items-center gap-1 font-medium text-xs"><Database className="w-3 h-3" /> Size</span>
+                <span className="font-bold text-xs">{formatBytes(block.size)}</span>
+              </div>
+              <div className="flex justify-between items-center bg-purple-50 dark:bg-purple-900/20 rounded px-2 py-1 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800">
+                <span className="flex items-center gap-1 font-medium text-xs"><Zap className="w-3 h-3" /> Weight</span>
+                <span className="font-bold text-xs">{block.weight.toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between items-center bg-gray-50 dark:bg-gray-800 rounded px-2 py-1 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700">
+                <span className="flex items-center gap-1 font-medium text-xs"><Box className="w-3 h-3" /> Stripped</span>
+                <span className="font-bold text-xs">{formatBytes(block.stripped_size)}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Block Information Card */}
+          <div className="flex flex-col justify-between bg-gradient-to-br from-slate-50 to-gray-100 dark:from-background dark:to-background shadow-md rounded-2xl p-6 flex-1 min-w-[250px] text-gray-900 dark:text-gray-100 border border-slate-200 dark:border-gray-700 min-h-[160px] max-h-[200px]">
+            <div className="flex items-center gap-1 mb-1">
+              <Clock className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+              <span className="text-xs font-medium">Block Information</span>
+            </div>
+            <div className="flex flex-col gap-1 mt-1">
+              <div className="flex justify-between items-center p-1 bg-gray-50 dark:bg-background rounded">
+                <span className="text-gray-600 dark:text-gray-300 text-xs">Timestamp</span>
+                <span className="font-bold text-xs">{formatTimestamp(Number(block.timestamp))}</span>
+              </div>
+              <div className="flex justify-between items-center p-1 bg-gray-50 dark:bg-background rounded">
+                <span className="text-gray-600 dark:text-gray-300 text-xs">Version</span>
+                <span className="font-bold text-xs">{block.version}</span>
+              </div>
+              <div className="flex justify-between items-center p-1 bg-gray-50 dark:bg-background rounded">
+                <span className="text-gray-600 dark:text-gray-300 text-xs">Nonce</span>
+                <span className="font-bold text-xs">{typeof block.nonce === 'number' ? block.nonce.toLocaleString() : block.nonce}</span>
+              </div>
+              <div className="flex justify-between items-center p-1 bg-gray-50 dark:bg-background rounded">
+                <span className="text-gray-600 dark:text-gray-300 text-xs">Bits</span>
+                <span className="font-bold text-xs">{block.bits}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Transaction Count Card */}
+          <div className="flex flex-col justify-between bg-gradient-to-br from-slate-50 to-gray-100 dark:from-background dark:to-background shadow-md rounded-2xl p-5 flex-1 min-w-[200px] text-gray-900 dark:text-gray-100 items-center border border-slate-200 dark:border-gray-700 min-h-[160px] max-h-[200px]">
+            <div className="flex items-center gap-1 mb-1">
+              <ArrowLeftRight className="w-4 h-4 text-green-600 dark:text-green-400" />
+              <span className="text-xs font-medium">Transactions</span>
+            </div>
+            <div className="flex flex-col items-center justify-center flex-1">
+              <div className="flex flex-col items-center">
+                <div className="flex items-center gap-1 mb-1">
+                  <CheckCircle className="w-6 h-6 text-green-500" />
+                  <span className="text-2xl font-extrabold text-green-600 dark:text-green-400">{block.transaction_count.toLocaleString()}</span>
+                </div>
+                <span className="text-xs text-gray-600 dark:text-gray-400">Total Transactions</span>
+                
+                {/* Coinbase transaction indicator */}
+                <div className="mt-2 flex flex-col gap-1">
+                  <div className="text-xs bg-yellow-100 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-300 px-2 py-1 rounded border border-yellow-200 dark:border-yellow-800">
+                    +1 Coinbase TX
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
       </div>
-    </>
+    </div>
   );
 };
 

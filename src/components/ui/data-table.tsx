@@ -140,28 +140,6 @@ export function DataTable<T extends Record<string, any>>({
     expandable?.expandedRowKeys || []
   )
 
-  // Track last external pagination values to avoid unnecessary updates
-  const lastExternalCurrent = React.useRef(pagination && typeof pagination !== 'boolean' ? pagination.current || 1 : 1);
-  const lastExternalPageSize = React.useRef(pagination && typeof pagination !== 'boolean' ? pagination.pageSize || 10 : 10);
-
-  // Sync external pagination props with internal state
-  React.useEffect(() => {
-    if (pagination && typeof pagination !== 'boolean') {
-      const externalCurrent = pagination.current || 1;
-      const externalPageSize = pagination.pageSize || 10;
-
-      // Only update if the external values have actually changed
-      if (externalCurrent !== lastExternalCurrent.current) {
-        lastExternalCurrent.current = externalCurrent;
-        setCurrentPage(externalCurrent);
-      }
-      if (externalPageSize !== lastExternalPageSize.current) {
-        lastExternalPageSize.current = externalPageSize;
-        setPageSize(externalPageSize);
-      }
-    }
-  }, [pagination && typeof pagination !== 'boolean' ? pagination.current : undefined, pagination && typeof pagination !== 'boolean' ? pagination.pageSize : undefined]);
-
   // Get row key
   const getRowKey = (record: T, index: number): string => {
     if (typeof rowKey === "function") {
@@ -233,29 +211,12 @@ export function DataTable<T extends Record<string, any>>({
     return sorted
   }, [dataSource, sortColumn, sortOrder, columns])
 
-  // Ensure current page is valid when data changes
-  React.useEffect(() => {
-    if (pagination && sortedData.length > 0) {
-      const maxPage = Math.ceil(sortedData.length / pageSize);
-      if (currentPage > maxPage) {
-        setCurrentPage(Math.max(1, maxPage));
-      }
-    }
-  }, [sortedData.length, pageSize, currentPage, pagination]);
-
   // Paginate data
   const paginatedData = React.useMemo(() => {
     if (!pagination) return sortedData
 
     const startIndex = (currentPage - 1) * pageSize
-    const endIndex = startIndex + pageSize
-    
-    // Ensure we don't go beyond available data
-    if (startIndex >= sortedData.length) {
-      return []
-    }
-    
-    return sortedData.slice(startIndex, endIndex)
+    return sortedData.slice(startIndex, startIndex + pageSize)
   }, [sortedData, currentPage, pageSize, pagination])
 
   // Handle selection
@@ -327,7 +288,7 @@ export function DataTable<T extends Record<string, any>>({
     <div className={cn("w-full", className)}>
       {title && <div className="mb-4">{title()}</div>}
 
-      <div className={cn("w-full overflow-auto rounded-lg border border-gray-200 dark:border-gray-700", scroll?.x && "overflow-x-auto")} style={{ maxHeight: scroll?.y || 'auto' }}>
+      <div className={cn("w-full overflow-auto rounded-lg border border-gray-200 dark:border-gray-700", scroll?.x && "overflow-x-auto")}>
         <Table className={cn(bordered && "border border-gray-200 dark:border-gray-700")}>
           {showHeader && (
             <TableHeader className="sticky top-0 z-20 bg-gray-100 dark:bg-gray-800">
@@ -612,7 +573,6 @@ export function DataTable<T extends Record<string, any>>({
                       size="icon"
                       className="h-8 w-8"
                       onClick={() => {
-                        console.log('Pagination button clicked:', { page, currentPage, pageSize });
                         setCurrentPage(page)
                         pagination.onChange?.(page, pageSize)
                       }}

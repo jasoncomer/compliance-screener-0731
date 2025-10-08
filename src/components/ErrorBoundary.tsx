@@ -3,7 +3,6 @@ import { Component, ErrorInfo, ReactNode } from 'react';
 import { AlertCircle,RefreshCw } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
-import { config } from '@/config/config';
 import { cn } from '@/lib/utils';
 
 interface Props {
@@ -58,7 +57,7 @@ class ErrorBoundary extends Component<Props, State> {
                 </h3>
                 <div className="mt-2 text-sm text-red-700 dark:text-red-300">
                   <p>An error occurred while rendering this component.</p>
-                  {config.isDev && this.state.error && (
+                  {process.env.NODE_ENV === 'development' && this.state.error && (
                     <details className="mt-2.5 text-left">
                       <summary className="cursor-pointer hover:underline">
                         Error Details

@@ -1,22 +1,19 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef,useState } from 'react';
 
-import { Delete, Edit, ArrowRight } from 'lucide-react';
+import { DeleteOutlined,EditOutlined, SendOutlined } from '@ant-design/icons';
+import { Button, Input, message as antMessage, Modal, Popconfirm,Spin, Typography } from 'antd';
 import { useSelector } from 'react-redux';
 import styled from 'styled-components';
 
-import { Button } from '../ui/button';
-import { Input } from '../ui/input';
-import { Modal } from '../ui/modal';
-import { Textarea } from '../ui/textarea';
-import { message } from '../ui/message';
-
+import { colors } from '@/design-system/tokens'
 
 import { ICreateNote, INote, notesApi } from '../../api/notes';
-import { config } from '../../config/config';
 import { useAppContext } from '../../context/AppContext';
 import { useTheme } from '../../context/ThemeContext';
 import { selectCurrentOrganization } from '../../store/slices/organizationsSlice';
 import { truncateAddress } from '../../utils/crypto';
+
+const { Text } = Typography;
 
 interface ThemeProps {
   themeMode: string;
@@ -137,7 +134,7 @@ const NotesContainer = styled.div`
   max-height: 350px;
   overflow-y: auto;
   margin-bottom: 16px;
-  padding: 8px 8px 0 8px;
+  padding: 0 8px;
   
   &::-webkit-scrollbar {
     width: 4px;
@@ -157,9 +154,47 @@ const NotesContainer = styled.div`
   }
 `;
 
-// Removed ChatDate styled component - using Tailwind classes instead
+const ChatDate = styled.div`
+  text-align: center;
+  margin: 16px 0 8px;
+  font-size: 12px;
+  color: ${({ theme }) => theme.theme === 'dark' ? '#aaa' : '#666'};
+  
+  span {
+    background-color: ${({ theme }) => theme.theme === 'dark' ? '#333' : '#eee'};
+    padding: 4px 10px;
+    border-radius: 12px;
+  }
+`;
 
-// Removed styled-components - using Tailwind classes instead
+const InputContainer = styled.div.withConfig({
+  shouldForwardProp: (prop) => prop !== 'themeMode'
+})<ThemeProps>`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  background: ${({ themeMode }) => themeMode === 'dark' ? '#1f1f1f' : '#ffffff'};
+  border-radius: 8px;
+  padding: 8px;
+`;
+
+const SendButton = styled(Button)`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #A53D10;
+  border-color: #A53D10;
+  
+  &:hover, &:focus {
+    background-color: #C74D1B;
+    border-color: #C74D1B;
+  }
+`;
+
+const StyledInput = styled(Input)`
+  border-radius: 18px;
+`;
 
 interface NotesModalProps {
   visible: boolean;
@@ -172,6 +207,40 @@ interface NotesModalProps {
   onNewNotesCountChange?: (count: number) => void;
 }
 
+// Custom message utility that respects theme context
+const useCustomMessage = () => {
+  const { theme } = useTheme();
+  
+  // Create themed message API handlers
+  const message = {
+    success: (content: string) => {
+      antMessage.success({
+        content,
+        className: `message-${theme}`
+      });
+    },
+    error: (content: string) => {
+      antMessage.error({
+        content,
+        className: `message-${theme}`
+      });
+    },
+    warning: (content: string) => {
+      antMessage.warning({
+        content,
+        className: `message-${theme}`
+      });
+    },
+    info: (content: string) => {
+      antMessage.info({
+        content,
+        className: `message-${theme}`
+      });
+    }
+  };
+  
+  return message;
+};
 
 const NotesModal: React.FC<NotesModalProps> = ({ 
   visible, 
@@ -184,6 +253,7 @@ const NotesModal: React.FC<NotesModalProps> = ({
 }) => {
   const { theme } = useTheme();
   const { user: currentUser } = useAppContext();
+  const message = useCustomMessage(); // Use our custom message hook
   const [notes, setNotes] = useState<INote[]>([]);
   const [newNote, setNewNote] = useState('');
   const [loading, setLoading] = useState(false);
@@ -219,7 +289,7 @@ const NotesModal: React.FC<NotesModalProps> = ({
             // Reset unseen count when user views the notes
             setUnseenNotesCount(0);
           } catch (error) {
-            if (config.isDev) console.error('Failed to mark notes as viewed:', error);
+            if (process.env.NODE_ENV === 'development') console.error('Failed to mark notes as viewed:', error);
           }
         }
       }
@@ -249,7 +319,7 @@ const NotesModal: React.FC<NotesModalProps> = ({
         setUnseenNotesCount(response.data.count);
       } catch (error: any) {
         // Only log non-404 errors in development
-        if (config.isDev && error?.response?.status !== 404) {
+        if (process.env.NODE_ENV === 'development' && error?.response?.status !== 404) {
           console.error('Failed to calculate unseen count:', error);
         }
         // Fallback: set count to 0 if API fails
@@ -294,7 +364,7 @@ const NotesModal: React.FC<NotesModalProps> = ({
 
       setNotes(response.data || []);
     } catch (error) {
-      if (config.isDev) console.error('Failed to fetch notes:', error);
+      if (process.env.NODE_ENV === 'development') console.error('Failed to fetch notes:', error);
       message.error('Failed to load notes');
     } finally {
       setLoading(false);
@@ -332,14 +402,14 @@ const NotesModal: React.FC<NotesModalProps> = ({
       //       );
       //       setUnseenNotesCount(response.data.count);
       //     } catch (error) {
-      //       if (config.isDev) console.error('Failed to recalculate unseen count:', error);
+      //       if (process.env.NODE_ENV === 'development') console.error('Failed to recalculate unseen count:', error);
       //     }
       //   }
       // }
-
+      
       message.success('Note added successfully');
     } catch (error) {
-      if (config.isDev) console.error('Failed to add note:', error);
+      if (process.env.NODE_ENV === 'development') console.error('Failed to add note:', error);
       message.error('Failed to add note');
     } finally {
       setSubmitting(false);
@@ -461,12 +531,28 @@ const NotesModal: React.FC<NotesModalProps> = ({
   return (
     <Modal
       title={
-        <div className="flex items-center gap-2">
-          <span className= "text-foreground">{getModalTitle()}</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span>{getModalTitle()}</span>
           {noteType === 'cluster' && cospendId && (
             <button
               onClick={handleCopyClusterId}
-              className="bg-transparent border-none cursor-pointer p-1 flex items-center text-muted-foreground hover:text-foreground rounded transition-colors hover:bg-muted"
+              style={{
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                padding: '4px',
+                display: 'flex',
+                alignItems: 'center',
+                color: theme === 'dark' ? '#ccc' : '#666',
+                borderRadius: '4px',
+                transition: 'background-color 0.2s'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = theme === 'dark' ? '#333' : '#f0f0f0';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'transparent';
+              }}
               title="Copy cluster ID"
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -478,43 +564,68 @@ const NotesModal: React.FC<NotesModalProps> = ({
         </div>
       }
       open={visible}
-      onClose={onClose}
-      size="lg"
+      onCancel={onClose}
+      footer={null}
+      width={500}
     >
-      <div className="text-foreground">
+      <div style={{ color: theme === 'light' ? colors.black : colors.white }}>
         {!currentOrganization ? (
-          <div className="text-warning-foreground bg-warning/10 border border-warning/20 rounded-md p-3">
-            You need to be part of an organization to use notes.
-          </div>
+          <Text type="warning">You need to be part of an organization to use notes.</Text>
         ) : (
           <>
             {/* Note Type Toggle - only show for address type */}
             {(type as string) === 'address' && cospendId && (
-              <div className="flex items-center gap-2 p-3 bg-muted rounded-lg mb-4 border border-border">
-                <span className="text-xs font-medium text-muted-foreground">
+              <div style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: '8px', 
+                padding: '8px 12px', 
+                backgroundColor: theme === 'dark' ? '#2a2a2a' : '#f5f5f5',
+                borderRadius: '8px',
+                marginBottom: '16px',
+                border: `1px solid ${theme === 'dark' ? '#404040' : '#d9d9d9'}`
+              }}>
+                <span style={{ 
+                  fontSize: '12px', 
+                  fontWeight: '500',
+                  color: theme === 'dark' ? '#ccc' : '#666'
+                }}>
                   Notes for:
                 </span>
-                <div className="flex bg-background rounded-md p-0.5">
+                <div style={{ 
+                  display: 'flex', 
+                  backgroundColor: theme === 'dark' ? '#1a1a1a' : '#fff',
+                  borderRadius: '6px',
+                  padding: '2px'
+                }}>
                   <button
                     onClick={() => setNoteType('address')}
-                    className={`px-2 py-1 text-xs rounded transition-all ${
-                      noteType === 'address' 
-                        ? 'bg-primary text-primary-foreground' 
-                        : 'text-muted-foreground hover:text-foreground'
-                    }`}
+                    style={{
+                      padding: '4px 8px',
+                      fontSize: '12px',
+                      borderRadius: '4px',
+                      border: 'none',
+                      cursor: 'pointer',
+                      backgroundColor: noteType === 'address' ? '#1890ff' : 'transparent',
+                      color: noteType === 'address' ? '#fff' : (theme === 'dark' ? '#ccc' : '#666'),
+                      transition: 'all 0.2s'
+                    }}
                   >
                     Address
                   </button>
                   <button
                     onClick={() => setNoteType('cluster')}
                     disabled={!cospendId}
-                    className={`px-2 py-1 text-xs rounded transition-all ${
-                      noteType === 'cluster' 
-                        ? 'bg-primary text-primary-foreground' 
-                        : !cospendId 
-                          ? 'text-muted-foreground/50 cursor-not-allowed' 
-                          : 'text-muted-foreground hover:text-foreground'
-                    }`}
+                    style={{
+                      padding: '4px 8px',
+                      fontSize: '12px',
+                      borderRadius: '4px',
+                      border: 'none',
+                      cursor: cospendId ? 'pointer' : 'not-allowed',
+                      backgroundColor: noteType === 'cluster' ? '#1890ff' : 'transparent',
+                      color: noteType === 'cluster' ? '#fff' : (!cospendId ? '#999' : (theme === 'dark' ? '#ccc' : '#666')),
+                      transition: 'all 0.2s'
+                    }}
                   >
                     Cluster {!cospendId && '(N/A)'}
                   </button>
@@ -524,30 +635,28 @@ const NotesModal: React.FC<NotesModalProps> = ({
             
             <NotesContainer ref={notesContainerRef}>
               {loading ? (
-                <div className="text-center p-5">
-                  <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
-                </div>
+                <div style={{ textAlign: 'center', padding: '20px' }}><Spin /></div>
               ) : notes.length === 0 ? (
-                <div className="text-muted-foreground text-center p-4">No notes yet. Be the first to add a note!</div>
+                <Text type="secondary">No notes yet. Be the first to add a note!</Text>
               ) : (
                 <>
                   {Object.entries(groupNotesByDate())
                     .sort(([dateA], [dateB]) => new Date(dateA).getTime() - new Date(dateB).getTime())
-                    .map(([date, dateNotes], index) => (
+                    .map(([date, dateNotes]) => (
                     <React.Fragment key={date}>
-                      <div className={`text-center text-xs text-muted-foreground ${index === 0 ? '-mt-1 mb-2' : 'mt-4 mb-2'}`}>
-                        <span className="bg-muted px-3 py-1 rounded-full">
-                          {formatDateHeader(date)}
-                        </span>
-                      </div>
+                      <ChatDate theme={{ theme }}><span>{formatDateHeader(date)}</span></ChatDate>
                       {dateNotes.map(note => (
                         editingNoteId === note._id ? (
                           <CurrentUserNote key={note._id} themeMode={theme}>
                             <div>
-                              <Textarea
+                              <Input.TextArea
                                 value={editContent}
                                 onChange={(e) => setEditContent(e.target.value)}
                                 rows={2}
+                                allowClear={false}
+                                showCount={false}
+                                count={undefined}
+                                onClear={undefined}
                                 onKeyDown={(e) => {
                                   if (e.key === 'Enter' && !e.shiftKey) {
                                     e.preventDefault();
@@ -557,20 +666,17 @@ const NotesModal: React.FC<NotesModalProps> = ({
                                   }
                                 }}
                                 autoFocus
-                                className="bg-transparent border-border text-foreground placeholder:text-muted-foreground hover:border-ring focus:border-ring focus:ring-2 focus:ring-ring/20"
                               />
-                              <div className="flex justify-end gap-2 mt-2">
-                                <Button 
-                                  size="sm" 
-                                  variant="outline"
-                                  onClick={cancelEdit}
-                                >
+                              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '8px' }}>
+                                <Button size="small" onClick={cancelEdit}>
                                   Cancel
                                 </Button>
                                 <Button 
-                                  size="sm" 
+                                  size="small" 
+                                  type="primary" 
                                   onClick={saveEdit}
                                   disabled={!editContent.trim()}
+                                  style={{ backgroundColor: '#A53D10', borderColor: '#A53D10' }}
                                 >
                                   Save
                                 </Button>
@@ -583,15 +689,20 @@ const NotesModal: React.FC<NotesModalProps> = ({
                               {isNoteOwner(note) && (
                                 <ActionIcons themeMode={theme}>
                                   <ActionIcon themeMode={theme} onClick={() => handleEditNote(note)}>
-                                    <Edit className="h-3 w-3" />
+                                    <EditOutlined style={{ fontSize: '12px' }} />
                                   </ActionIcon>
-                                  <ActionIcon themeMode={theme} onClick={() => {
-                                    if (window.confirm('Delete this note?')) {
-                                      deleteNote(note._id);
-                                    }
-                                  }}>
-                                    <Delete className="h-3 w-3" />
-                                  </ActionIcon>
+                                  <Popconfirm
+                                    title="Delete this note?"
+                                    onConfirm={() => deleteNote(note._id)}
+                                    okText="Yes"
+                                    cancelText="No"
+                                    placement="left"
+                                    okButtonProps={{ style: { backgroundColor: '#A53D10', borderColor: '#A53D10' } }}
+                                  >
+                                    <ActionIcon themeMode={theme}>
+                                      <DeleteOutlined style={{ fontSize: '12px' }} />
+                                    </ActionIcon>
+                                  </Popconfirm>
                                 </ActionIcons>
                               )}
                               <NoteContent>{note.content}</NoteContent>
@@ -617,30 +728,22 @@ const NotesModal: React.FC<NotesModalProps> = ({
               )}
             </NotesContainer>
 
-            <div className="flex items-center gap-2 mt-2 p-2">
-              <Input
+            <InputContainer themeMode={theme}>
+              <StyledInput
                 placeholder="Add a note..."
                 value={newNote}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewNote(e.target.value)}
                 onKeyPress={(e: React.KeyboardEvent<HTMLInputElement>) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), handleAddNote())}
                 disabled={submitting}
-                variant="outline"
-                size="sm"
-                className="flex-1 rounded-full"
               />
-              <Button
+              <SendButton
+                type="primary"
+                icon={<SendOutlined />}
                 onClick={handleAddNote}
-                disabled={!newNote.trim() || submitting}
-                size="sm"
-                className="bg-[#A53D10] hover:bg-[#C74D1B] text-white border-none h-8 w-8 p-0"
-              >
-                {submitting ? (
-                  <div className="inline-block animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
-                ) : (
-                  <ArrowRight className="h-3 w-3" />
-                )}
-              </Button>
-            </div>
+                loading={submitting}
+                disabled={!newNote.trim()}
+              />
+            </InputContainer>
           </>
         )}
       </div>
