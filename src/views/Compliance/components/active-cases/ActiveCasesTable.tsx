@@ -321,8 +321,6 @@ const ActiveCasesTable: React.FC<ActiveCasesTableProps> = React.memo(({
     return result;
   }, [transactions]);
 
-
-
   // Define columns for DataTable
   const columns: Column<IComplianceTransaction>[] = useMemo(() => [
     {
