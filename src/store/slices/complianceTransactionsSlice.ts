@@ -310,6 +310,8 @@ export const selectActiveTransactions = createSelector(
     
     console.log('🔍 Redux Selector - hasServerSideFilters:', hasServerSideFilters);
     
+    console.log('🔍 Redux Selector - hasServerSideFilters:', hasServerSideFilters);
+    
     if (hasServerSideFilters) {
       // Even with server-side filtering, ensure we only return active statuses
       const defaultActiveStatuses = [

@@ -13,7 +13,6 @@ import { calculateDetailedRiskAnalysis, calculateSimpleRiskScore, InputTransacti
 import { useAppDispatch, useAppSelector } from '../../../../store/hooks';
 import { fetchComplianceTransactions, selectComplianceFilters } from '../../../../store/slices/complianceTransactionsSlice';
 import { updateTransactionAssignee, updateTransactionStatus } from '../../../../store/slices/complianceTransactionsSlice';
-import { selectActiveOrgMembersMap } from '../../../../store/slices/organizationsSlice';
 import { EComplianceTransactionStatus, IComplianceTransaction } from '../../../../typings/compliance';
 import { truncateAddress } from '../../../../utils/crypto';
 import { getBlockchainLabel, getUserDisplayName } from '../../../../utils/display-labels';
@@ -23,7 +22,9 @@ import { currencySymbols } from '../CurrencySelector';
 import { TransactionRiskModal } from '../modals/TransactionRiskModal';
 
 import '../../../../styles/transactionGrouping.css';
+import { selectActiveOrgMembersMap } from '@/store/slices/organizationsSlice';
 import { Checkbox } from '@radix-ui/react-checkbox';
+
 
 // Status mapping for display labels
 const getStatusDisplayLabel = (status: EComplianceTransactionStatus): string => {

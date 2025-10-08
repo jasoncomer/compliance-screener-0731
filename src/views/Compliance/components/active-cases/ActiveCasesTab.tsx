@@ -17,6 +17,7 @@ import {
 import { selectCurrentOrganization } from '../../../../store/slices/organizationsSlice';
 import { EComplianceTransactionStatus, TransactionFilters } from '../../../../typings/compliance';
 import ComplianceFilterPanel from '../ComplianceFilterPanel';
+import BulkSelectComponent from '../BulkSelectComponent';
 
 import ActiveCasesTable from './ActiveCasesTable';
 
@@ -43,6 +44,9 @@ const ActiveCasesTab: React.FC<ActiveCasesTabProps> = ({ isActive, className }) 
 
   // Track available filter options
   const [availableBlockchains, setAvailableBlockchains] = useState<string[]>([]);
+  
+  // Track selected row keys for bulk operations
+  const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
 
   // Validate and sanitize transactions data
   const validatedTransactions = React.useMemo(() => {

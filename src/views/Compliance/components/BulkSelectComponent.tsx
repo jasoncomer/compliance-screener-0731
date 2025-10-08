@@ -89,7 +89,7 @@ const BulkSelectComponent: React.FC<BulkSelectComponentProps> = ({
     const transactionIds = selectedRowKeys.map(key => String(key));
     console.log('🚀 BulkAssign - Starting bulk assign with:', {
       transactionIds,
-      assignee: selectedReviewer
+      assignee: selectedReviewer,
     });
     
     bulkUpdateMutation.mutate(
